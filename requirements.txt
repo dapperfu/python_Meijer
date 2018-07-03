@@ -1,0 +1,7 @@
+jupyter
+notebook
+
+requests
+
+mitmproxy
+
