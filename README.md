@@ -23,7 +23,6 @@ End goal is for Meijer PR/Engineering to either incorporate my ideas or me to ha
 3. [Android Apk decompiler](http://www.javadecompilers.com/apk)
 
 
-
 ### Hurdles.
 
 Tests for Mock Location, in:
