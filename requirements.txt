@@ -1,7 +1,4 @@
 jupyter
 notebook
-
 requests
-
-mitmproxy
-
+cached_property

@@ -1,0 +1,43 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: master
+    hooks:
+    -   id: check-added-large-files
+    -   id: check-ast
+    -   id: check-byte-order-marker
+    -   id: check-case-conflict
+    -   id: check-executables-have-shebangs
+    -   id: check-json
+    -   id: pretty-format-json
+    -   id: check-merge-conflict
+    -   id: check-toml
+    -   id: check-xml
+    -   id: check-yaml
+    -   id: detect-private-key
+    -   id: end-of-file-fixer
+    -   id: mixed-line-ending
+    -   id: requirements-txt-fixer
+    -   id: trailing-whitespace
+-   repo: https://github.com/psf/black
+    rev: master
+    hooks:
+    -   id: black
+        args: [--target-version=py37]
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: master
+    hooks:
+    -   id: reorder-python-imports
+        args: [--py37-plus]
+-   repo: https://github.com/asottile/pyupgrade
+    rev: master
+    hooks:
+    -   id: pyupgrade
+        args: [--py37-plus]
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: master
+    hooks:
+    -   id: mypy
+-   repo: https://github.com/Lucas-C/pre-commit-hooks 
+    rev: master
+    hooks:
+    -   id: remove-crlf
