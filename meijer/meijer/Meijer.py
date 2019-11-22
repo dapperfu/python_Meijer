@@ -3,11 +3,13 @@ import base64
 import json
 import os
 from typing import List
-from .requests import RequestsMixin
-#from .MeijerList import MeijerList
 
 import requests
 from cached_property import cached_property
+
+from .requests import RequestsMixin
+
+# from .MeijerList import MeijerList
 
 # From Meijer_v5.20.1_apkpure.com/res/values/strings.xml
 account_services_client_id = "mma"
