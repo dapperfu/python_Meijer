@@ -14,9 +14,9 @@ readme = ''
 setup(
     long_description=readme,
     name='meijer',
-    version='0.0.1',
+    version='0.0.2',
     description='Reverse engineered API for Meijer apps & services.',
-    python_requires='==3.*,>=3.6.0',
+    python_requires='==3.*,>=3.8.0',
     author='jed',
     author_email='jed@bored',
     entry_points={"console_scripts": ["meijer = meijer:cli"]},
