@@ -15,16 +15,19 @@ def test_meijer_store_count3(meijer):
     """ Count the number of Meijer stores returned by the API."""
     assert len(meijer.stores()) == 248
 
+
 def test_meijer_coupons(meijer):
     """ Count the number of Meijer stores returned by the API."""
     meijer.coupons
+
 
 @pytest.fixture(scope="session")
 def coupons(meijer):
     return meijer.coupons
 
+
 def test_clip_coupons(meijer, coupons):
-    for coupon in coupons[0:5]:
+    for coupon in coupons[:5]:
         meijer.clip(coupon)
 
 
@@ -32,6 +35,7 @@ def test_clip_coupons(meijer, coupons):
 def stores(meijer):
     return meijer.stores()
 
+
 def test_get_store(meijer, stores):
-    for store in stores[0:1]:
-        print(store)
+    for store in stores[:1]:
+        meijer.get_store(store["unitid"])

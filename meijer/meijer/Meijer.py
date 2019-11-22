@@ -54,20 +54,24 @@ class Meijer:
         r = self.session.post(**request)
         self.r_ = r  # debugs
         assert r.status_code == 200
-        return r
+        try:
+            return r.json()
+        except:
+            return r
 
     def get(self, **request):
         r = self.session.get(**request)
         self.r_ = r  # debugs
         assert r.status_code == 200
-        return r
+        try:
+            return r.json()
+        except:
+            return r
 
     def login(self):
         request = dict()
         request["url"] = "https://login.meijer.com/as/token.oauth2"
-        request["headers"] = {
-                "Authorization": f"Basic {basic_token}",
-        }
+        request["headers"] = {"Authorization": f"Basic {basic_token}"}
         request["params"] = {
             "grant_type": "password",
             "scope": "openid",
@@ -80,7 +84,7 @@ class Meijer:
         # token_type=Bearer
         # expires_in=604799 (7 days)
         r = self.post(**request)
-        for key, value in r.json().items():
+        for key, value in r.items():
             setattr(self, key, value)
 
         # Break apart the JWT to get the MeijerID data
@@ -116,7 +120,7 @@ class Meijer:
             '{"categoryId":"","ceilingCount":0,"ceilingDuration":0,"currentPage":1,"displayReasonFilters":[],"getOfferCountPerDepartment":true,"offerClass":1,"offerIds":[],"pageSize":9999,"rewardCouponId":0,"searchCriteria":"","showClippedCoupons":false,"showOnlySpecialOffers":false,"showRedeemedOffers":false,"sortType":"BySuggested","storeId":52,"tagId":"","upcList":[],"zip":""}'
         )
         r = self.post(**request)
-        return r.json()["listOfCoupons"]
+        return r["listOfCoupons"]
 
     def clip(self, coupon):
         if isinstance(coupon, dict):
@@ -126,9 +130,7 @@ class Meijer:
 
         request = {
             "url": "https://mperksservices.meijer.com/dgtlmPerksMMA/api/offers/Clip",
-            "json":  {
-                "meijerOfferId": meijerOfferId
-            }
+            "json": {"meijerOfferId": meijerOfferId},
         }
         request["headers"] = {
             "Accept": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
@@ -155,7 +157,7 @@ class Meijer:
             "numToReturn": "10000",
         }
         r = self.get(**request)
-        return r.json()["store"]
+        return r["store"]
 
     def get_store(self, store_id):
         request = dict()
@@ -165,10 +167,8 @@ class Meijer:
             store_id
         )
         request["headers"] = {"Version": "7"}
-        r = self.session.get(**request)
-        self.r_ = r
-        assert r.status_code == 200
-        return r.json()["store"][0]
+        r = self.get(**request)
+        return r["store"]
 
     def __repr__(self):
         return "Meijer<>"

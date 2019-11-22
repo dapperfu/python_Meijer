@@ -13,15 +13,19 @@ readme = ""
 setup(
     long_description=readme,
     name="meijer",
-    version="0.0.2",
+    version="0.1.0",
     description="Reverse engineered API for Meijer apps & services.",
-    python_requires="==3.*,>=3.8.0",
+    python_requires="<3.8,==3.*,>=3.7.0",
     author="jed",
     author_email="jed@bored",
     entry_points={"console_scripts": ["meijer = meijer:cli"]},
     packages=["meijer"],
     package_dir={"": "."},
     package_data={},
-    install_requires=["cached-property==1.*,>=1.5.0", "requests==2.*,>=2.22.0"],
-    extras_require={"dev": ["pytest==3.*,>=3.0.0"]},
+    install_requires=[
+        "cached-property==1.*,>=1.5.0",
+        "click<8,>=7.0",
+        "requests==2.*,>=2.22.0",
+    ],
+    extras_require={"dev": ["notebook", "pytest==3.*,>=3.0.0"]},
 )
