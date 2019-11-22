@@ -5,15 +5,18 @@ description = "Reverse engineered API for Meijer apps & services."
 authors = ["jed <jed@bored>"]
 
 [tool.poetry.dependencies]
-python = "==3.*,>=3.6.0"
-requests = "^2.22"
-cached-property = "^1.5"
+python = "==3.*,>=3.8.0"
+requests = "==2.*,>=2.22.0"
+cached-property = "==1.*,>=1.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "==3.*,>=3.0.0"
+notebook = "*"
+
 
 [tool.poetry.scripts]
 meijer = "meijer:cli"
+
 
 
 [tool.dephell.main]
