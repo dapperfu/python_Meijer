@@ -8,10 +8,7 @@ So, just rewrite the URL
 import mitmproxy
 
 # Location of the store you would like to Shop'n'Scan at.
-emulated_store = {
-    "latitude": 43.0080700,
-    "longitude": -85.6916800,
-}
+emulated_store = {"latitude": 43.0080700, "longitude": -85.6916800}
 
 
 def request(flow):
