@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "meijer"
+version = "0.0.2"
+description = "Reverse engineered API for Meijer apps & services."
+authors = ["jed <jed@bored>"]
+
+[tool.poetry.dependencies]
+python = "==3.*,>=3.6.0"
+requests = "^2.22"
+cached-property = "^1.5"
+
+[tool.poetry.dev-dependencies]
+pytest = "==3.*,>=3.0.0"
+
+[tool.poetry.scripts]
+meijer = "meijer:cli"
+
+
+[tool.dephell.main]
+from = {format = "poetry", path = "pyproject.toml"}
+to = {format = "setuppy", path = "setup.py"}
+
+[tool.dephell.poetry]
+from = {format = "poetry", path = "pyproject.toml"}
+to = {format = "poetrylock", path = "poetry.lock"}
