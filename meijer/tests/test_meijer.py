@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from meijer import __version__
 from meijer import Meijer
 
@@ -9,16 +11,24 @@ def test_version():
 
 
 def test_meijer_instance():
-    meijer_email, meijer_pass, = os.environ["MEIJER_API_KEY"].strip().split("|")
-    m = Meijer(meijer_email, meijer_pass)
+    meijer_api_key = os.environ["MEIJER_API_KEY"]
+    m = Meijer(meijer_api_key)
+
 
 def test_meijer_login():
-    meijer_email, meijer_pass, = os.environ["MEIJER_API_KEY"].strip().split("|")
-    m = Meijer(meijer_email, meijer_pass)
+    meijer_api_key = os.environ["MEIJER_API_KEY"]
+    m = Meijer(meijer_api_key)
     m.login()
 
+
 def test_meijer_store_count():
-    meijer_email, meijer_pass, = os.environ["MEIJER_API_KEY"].strip().split("|")
-    m = Meijer(meijer_email, meijer_pass)
+    meijer_api_key = os.environ["MEIJER_API_KEY"]
+    m = Meijer(meijer_api_key)
     m.login()
-    assert len(m.stores)==248
+    assert len(m.stores()) == 248
+
+
+@pytest.fixture(scope="function")
+def meijer():
+    meijer_api_key, = os.environ["MEIJER_API_KEY"]
+    m = Meijer(meijer_api_key)

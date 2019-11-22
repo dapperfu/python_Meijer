@@ -1,71 +1,103 @@
 """Meijer object file."""
 import base64
 import json
+from typing import List
 
 import requests
 from cached_property import cached_property
 
+# From Meijer_v5.20.1_apkpure.com/res/values/strings.xml
+account_services_client_id = "mma"
+account_services_secret = "drAqas76Re7RekeBanaMaNEMah7paDE5"
+# Token string, decoded
+token_decoded = f"{account_services_client_id}:{account_services_secret}".encode(
+    "UTF-8"
+)
+# Token string, encoded
+basic_token = base64.encodebytes(token_decoded).decode("UTF-8").strip()
+
 
 class Meijer:
-    # From Meijer_v5.20.1_apkpure.com/res/values/strings.xml
-    account_services_client_id = "mma"
-    account_services_secret = "drAqas76Re7RekeBanaMaNEMah7paDE5"
-    # Token string, decoded
-    token_decoded = f"{account_services_client_id}:{account_services_secret}".encode(
-        "UTF-8"
-    )
-    # Token string, encoded
-    basic_token = base64.encodebytes(token_decoded).decode("UTF-8").strip()
-
-    def __init__(self, user: str, password: str):
+    def __init__(self, meijer_api_key: str):
         """Meijer: Use the Meijer App, programatically, in Python.
 
         user: username/e-mail address for mperks
         pass: password.
         """
+        user, password = meijer_api_key.strip().split("|")
         self.user = user
         self.password = password
 
         # This is set on login.
         self.bearer_token = None
 
+    @cached_property
+    def session(self):
         # Create a requests session.
-        self.session = requests.Session()
-        # Login
-        self.login()
+        s = requests.Session()
+        s.headers.update(
+            {
+                "Authorization": f"Basic {basic_token}",
+                "Platform": "Android",
+                "Version": "5.20.1",
+                "Build": "52001000",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Connection": "Keep-Alive",
+                "Accept-Encoding": "gzip",
+                "User-Agent": "okhttp/3.8.0",
+            }
+        )
+        return s
+
+    def post(self, **request):
+        r = self.session.post(**request)
+        self.r_ = r  # debugs
+        assert r.status_code == 200
+        return r
+
+    def get(self, **request):
+        r = self.session.get(**request)
+        self.r_ = r  # debugs
+        assert r.status_code == 200
+        return r
 
     def login(self):
         request = dict()
         request["url"] = "https://login.meijer.com/as/token.oauth2"
-        request["headers"] = {
-            "Authorization": f"Basic {self.basic_token}",
-            "Platform": "Android",
-            "Version": "5.20.1",
-            "Build": "52001000",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip",
-            "User-Agent": "okhttp/3.8.0",
-        }
         request["params"] = {
             "grant_type": "password",
             "scope": "openid",
             "username": self.user,
             "password": self.password,
         }
-        r = self.session.post(**request)
-        self.r_ = r  # debugs
-        assert r.status_code == 200
 
+        # access_token=<JWT Token>
+        # refresh_token=<Refresh Token>
+        # token_type=Bearer
+        # expires_in=604799 (7 days)
+        r = self.post(**request)
         for key, value in r.json().items():
             setattr(self, key, value)
 
+        # Break apart the JWT to get the MeijerID data
+        # scope=['openid']
+        # client_id=mma
+        # iss=https://login.meijer.com/
+        # sub=<INT>
+        # eguest_id=<INT>
+        # has_digital=<INT>
+        # digital_id=<INT>
+        # has_mperks=<INT>
+        # mperks_shopper_id=<INT>
+        # mperks_ext_shopper_id=<UUID>
+        # exp=<>
         _, meijer_id64, _ = self.access_token.split(".")
         ids = json.loads(base64.decodebytes(f"{meijer_id64}=".encode()))
         for key, value in ids.items():
             setattr(self, key, value)
-
         self.bearer_token = f"{self.token_type} {self.access_token}"
+        #
+        self.session.headers.update({"Authorization": self.bearer_token})
 
     @cached_property
     def coupons(self):
@@ -74,14 +106,7 @@ class Meijer:
         request["url"] = "https://mperksservices.meijer.com/dgtlmPerksMMA/api/offers"
         request["headers"] = {
             "Accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-            "Authorization": self.bearer_token,
-            "Platform": "Android",
-            "Version": "5.20.1",
-            "Build": "52001000",
             "Content-Type": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-            "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip",
-            "User-Agent": "okhttp/3.8.0",
         }
         request["json"] = json.loads(
             '{"categoryId":"","ceilingCount":0,"ceilingDuration":0,"currentPage":1,"displayReasonFilters":[],"getOfferCountPerDepartment":true,"offerClass":1,"offerIds":[],"pageSize":9999,"rewardCouponId":0,"searchCriteria":"","showClippedCoupons":false,"showOnlySpecialOffers":false,"showRedeemedOffers":false,"sortType":"BySuggested","storeId":52,"tagId":"","upcList":[],"zip":""}'
@@ -116,18 +141,18 @@ class Meijer:
         self.r_ = r
         assert r.status_code == 200
 
-    @cached_property
-    def stores(self):
-        request = dict()
-        request["url"] = "https://mservices.meijer.com/storeinfo/api/mobile/near"
-        request["headers"] = {
-            "Version": "7",
-            "Authorization": self.bearer_token,
-            "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip",
-            "User-Agent": "okhttp/3.8.0",
+    def stores(self, location: List[float] = None, distance: float = None):
+        if location is None:
+            latitude, longitude = 43.016570, -85.726290
+        else:
+            latitude, longitude = location
+        if distance is None:
+            distance = 10000
+
+        request = {
+            "url": "https://mservices.meijer.com/storeinfo/api/mobile/near",
+            "headers": {"Version": "7"},
         }
-        latitude, longitude = 43.016570, -85.726290
         request["params"] = {
             "latitude": latitude,
             "longitude": longitude,
@@ -146,13 +171,7 @@ class Meijer:
         ] = "https://mservices.meijer.com/storeinfo/api/mobile/stores/{}?dataVariant=2".format(
             store_id
         )
-        request["headers"] = {
-            "Version": "7",
-            "Authorization": self.bearer_token,
-            "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip",
-            "User-Agent": "okhttp/3.8.0",
-        }
+        request["headers"] = {"Version": "7"}
         r = self.session.get(**request)
         self.r_ = r
         assert r.status_code == 200
