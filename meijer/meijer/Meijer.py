@@ -3,6 +3,8 @@ import base64
 import json
 import os
 from typing import List
+from .requests import RequestsMixin
+#from .MeijerList import MeijerList
 
 import requests
 from cached_property import cached_property
@@ -18,7 +20,7 @@ token_decoded = f"{account_services_client_id}:{account_services_secret}".encode
 basic_token = base64.encodebytes(token_decoded).decode("UTF-8").strip()
 
 
-class Meijer:
+class Meijer(RequestsMixin):
     def __init__(self, meijer_api_key: str = None):
         """Meijer: Use the Meijer App, programatically, in Python.
 
@@ -31,42 +33,6 @@ class Meijer:
         self.user = user
         self.password = password
         self.login()
-
-    @cached_property
-    def session(self):
-        # Create a requests session.
-        s = requests.Session()
-        s.headers.update(
-            {
-                "Authorization": f"Basic {basic_token}",
-                "Platform": "Android",
-                "Version": "5.20.1",
-                "Build": "52001000",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Connection": "Keep-Alive",
-                "Accept-Encoding": "gzip",
-                "User-Agent": "okhttp/3.8.0",
-            }
-        )
-        return s
-
-    def post(self, **request):
-        r = self.session.post(**request)
-        self.r_ = r  # debugs
-        assert r.status_code == 200
-        try:
-            return r.json()
-        except:
-            return r
-
-    def get(self, **request):
-        r = self.session.get(**request)
-        self.r_ = r  # debugs
-        assert r.status_code == 200
-        try:
-            return r.json()
-        except:
-            return r
 
     def login(self):
         request = dict()
