@@ -2,7 +2,7 @@
 
 - What: Reverse engineered API for Meijer apps & services.
 - Why: I can't actually get in contact with a Meijer Engineer. Their Facebook team just "takes feedback."
-  On n'est jamais servi si bien que par soi-même. 
+  On n'est jamais servi si bien que par soi-même.
 - How: [mitmproxy](https://mitmproxy.org/), Python with [requests](http://docs.python-requests.org/en/master/)
 
 ## Motivation
@@ -14,7 +14,7 @@ The Meijer "[Shop & Scan](https://www.meijer.com/content/content.jsp?pageName=sh
 - It's hard to flip between your shopping list and the app.
 - You can't "parallel" shop with kids or SO. If you both start a shop and scan and try to checkout it'll only import the last one. (We found this one out the hardway).
 
-Decompiling the Meijer.apk it looks like it's mostly just a REST app. So I setup a mitmproxy to watch for traffic. 
+Decompiling the Meijer.apk it looks like it's mostly just a REST app. So I setup a mitmproxy to watch for traffic.
 
 End goal is for Meijer PR/Engineering to either incorporate my ideas or me to have my own shopping tool, whichever comes first.
 
@@ -53,7 +53,7 @@ public void onLocationChanged(Location location) {
     }
 }
 ```
-    
+
 5.3.0:
 
 They updated it to give you a warning that Mock Locations are not allowed.

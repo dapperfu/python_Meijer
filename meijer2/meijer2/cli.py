@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 .. currentmodule:: meijer2.cli
 .. moduleauthor:: Jed <jed@bored>
@@ -18,7 +17,9 @@ can be used as a handy facility for running the task from a command line.
     `Read-The-Docs <http://luigi.readthedocs.io/en/stable/>`_ page.
 """
 import logging
+
 import click
+
 from .__init__ import __version__
 
 LOGGING_LEVELS = {
@@ -30,7 +31,7 @@ LOGGING_LEVELS = {
 }  #: a mapping of `verbose` option counts to logging levels
 
 
-class Info(object):
+class Info:
     """
     An information object to pass data between CLI functions.
     """

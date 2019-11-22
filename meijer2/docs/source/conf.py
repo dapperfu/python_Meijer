@@ -3,9 +3,7 @@
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-
 # -- Path setup --------------------------------------------------------------
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -108,7 +106,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns: List[str] = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -122,7 +120,7 @@ todo_include_todos = False
 # a list of builtin themes.
 
 # fmt: off
-  # noqa
+# noqa
 # fmt: on
 html_theme = "alabaster"
 
@@ -132,8 +130,8 @@ html_theme_options = {
     "github_repo": "meijer2",
 }
 # fmt: off
-  # noqa
-  # noqa
+# noqa
+# noqa
 # fmt: on
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -163,7 +161,7 @@ htmlhelp_basename = "meijer2doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
+latex_elements: Dict[str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -178,32 +176,20 @@ latex_elements = {
     # 'figure_align': 'htbp',
 }
 
+from typing import Dict, List
+
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (
-        master_doc,
-        "meijer2.tex",
-        "meijer2 Documentation",
-        "jed-frey",
-        "manual",
-    )
+    (master_doc, "meijer2.tex", "meijer2 Documentation", "jed-frey", "manual")
 ]
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (
-        master_doc,
-        "meijer2",
-        "meijer2 Documentation",
-        [author],
-        1,
-    )
-]
+man_pages = [(master_doc, "meijer2", "meijer2 Documentation", [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 

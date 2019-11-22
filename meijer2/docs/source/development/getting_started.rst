@@ -15,7 +15,7 @@ Get the Source
 ==============
 
 The source code for the `meijer2` project lives at
-`github <https://github.com/jed-frey/meijer2>`_.  
+`github <https://github.com/jed-frey/meijer2>`_.
 You can use `git clone` to get it.
 
 .. code-block:: bash

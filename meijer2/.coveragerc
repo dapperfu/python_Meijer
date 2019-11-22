@@ -10,4 +10,3 @@ omit =
 
 [html]
 directory=./htmlcov
-

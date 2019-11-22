@@ -15,6 +15,3 @@ You can use pip to install `meijer2`.
 .. code-block:: sh
 
     pip install meijer2
-
-
-

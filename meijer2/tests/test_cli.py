@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 .. currentmodule:: test_cli
 .. moduleauthor:: Jed <jed@bored>
@@ -9,10 +8,12 @@ This is the test module for the project's command-line interface (CLI)
 module.
 """
 # fmt: off
+from click.testing import CliRunner
+from click.testing import Result
+
 import meijer2.cli as cli
 from meijer2 import __version__
 # fmt: on
-from click.testing import CliRunner, Result
 
 
 # To learn more about testing Click applications, visit the link below.
