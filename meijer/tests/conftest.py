@@ -1,23 +1,23 @@
 import uuid
 
-import pytest
+from pytest import fixture
 
 
-@pytest.fixture(scope="session")
+@fixture(scope="session")
 def session_uuid():
     yield uuid.uuid4()
 
 
-@pytest.fixture(scope="module")
+@fixture(scope="module")
 def module_uuid():
     yield uuid.uuid4()
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def class_uuid():
     yield uuid.uuid4()
 
 
-@pytest.fixture(scope="function")
+@fixture(scope="function")
 def function_uuid():
     yield uuid.uuid4()
