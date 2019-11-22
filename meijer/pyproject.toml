@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "meijer"
-version = "0.0.2"
+version = "0.1.0"
 description = "Reverse engineered API for Meijer apps & services."
 authors = ["jed <jed@bored>"]
 
 [tool.poetry.dependencies]
-python = "==3.*,>=3.7.0,<3.8"
+python = "<3.8,==3.*,>=3.7.0"
 requests = "==2.*,>=2.22.0"
 cached-property = "==1.*,>=1.5.0"
 click = ">=7.0,<8"
@@ -17,6 +17,7 @@ notebook = "*"
 
 [tool.poetry.scripts]
 meijer = "meijer:cli"
+
 
 
 

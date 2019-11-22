@@ -1,6 +1,6 @@
 """Python module for Meijer's 'API' exosed to the mobile app."""
 
-__version__ = "0.0.2"
+__version__ = "0.1.0"
 
 from .Meijer import Meijer
 
