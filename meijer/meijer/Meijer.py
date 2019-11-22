@@ -1,6 +1,7 @@
 """Meijer object file."""
 import base64
 import json
+import os
 from typing import List
 
 import requests
@@ -18,18 +19,18 @@ basic_token = base64.encodebytes(token_decoded).decode("UTF-8").strip()
 
 
 class Meijer:
-    def __init__(self, meijer_api_key: str):
+    def __init__(self, meijer_api_key: str = None):
         """Meijer: Use the Meijer App, programatically, in Python.
 
         user: username/e-mail address for mperks
         pass: password.
         """
+        if meijer_api_key is None:
+            meijer_api_key = os.environ["MEIJER_API_KEY"]
         user, password = meijer_api_key.strip().split("|")
         self.user = user
         self.password = password
-
-        # This is set on login.
-        self.bearer_token = None
+        self.login()
 
     @cached_property
     def session(self):
@@ -64,6 +65,9 @@ class Meijer:
     def login(self):
         request = dict()
         request["url"] = "https://login.meijer.com/as/token.oauth2"
+        request["headers"] = {
+                "Authorization": f"Basic {basic_token}",
+        }
         request["params"] = {
             "grant_type": "password",
             "scope": "openid",
@@ -111,9 +115,7 @@ class Meijer:
         request["json"] = json.loads(
             '{"categoryId":"","ceilingCount":0,"ceilingDuration":0,"currentPage":1,"displayReasonFilters":[],"getOfferCountPerDepartment":true,"offerClass":1,"offerIds":[],"pageSize":9999,"rewardCouponId":0,"searchCriteria":"","showClippedCoupons":false,"showOnlySpecialOffers":false,"showRedeemedOffers":false,"sortType":"BySuggested","storeId":52,"tagId":"","upcList":[],"zip":""}'
         )
-        r = self.session.post(**request)
-        self.r_ = r
-        assert r.status_code == 200
+        r = self.post(**request)
         return r.json()["listOfCoupons"]
 
     def clip(self, coupon):
@@ -122,24 +124,17 @@ class Meijer:
         elif isinstance(coupon, [str, int]):
             meijerOfferId = coupon
 
-        request[
-            "url"
-        ] = "https://mperksservices.meijer.com/dgtlmPerksMMA/api/offers/Clip"
+        request = {
+            "url": "https://mperksservices.meijer.com/dgtlmPerksMMA/api/offers/Clip",
+            "json":  {
+                "meijerOfferId": meijerOfferId
+            }
+        }
         request["headers"] = {
             "Accept": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
-            "Authorization": self.bearer_token,
-            "Platform": "Android",
-            "Version": "5.20.1",
-            "Build": "52001000",
             "Content-Type": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
-            "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip",
-            "User-Agent": "okhttp/3.8.0",
         }
-        request["json"] = {"meijerOfferId": meijerOfferId}
-        r = self.session.post(**request)
-        self.r_ = r
-        assert r.status_code == 200
+        r = self.post(**request)
 
     def stores(self, location: List[float] = None, distance: float = None):
         if location is None:
@@ -156,12 +151,10 @@ class Meijer:
         request["params"] = {
             "latitude": latitude,
             "longitude": longitude,
-            "miles": "10000",
+            "miles": distance,
             "numToReturn": "10000",
         }
-        r = self.session.get(**request)
-        self.r_ = r
-        assert r.status_code == 200
+        r = self.get(**request)
         return r.json()["store"]
 
     def get_store(self, store_id):
