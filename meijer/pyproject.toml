@@ -8,13 +8,14 @@ authors = ["jed <jed@bored>"]
 python = "<3.8,==3.*,>=3.7.0"
 requests = "==2.*,>=2.22.0"
 cached-property = "==1.*,>=1.5.0"
-click = ">=7.0,<8"
+click = "<8,>=7.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "==3.*,>=3.0.0"
 
 [tool.poetry.scripts]
 meijer = "meijer.cli:cli"
+
 
 [tool.dephell.main]
 from = {format = "poetry", path = "pyproject.toml"}
