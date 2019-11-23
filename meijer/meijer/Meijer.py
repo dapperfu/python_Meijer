@@ -9,7 +9,7 @@ from cached_property import cached_property
 
 from .requests import RequestsMixin
 
-# from .MeijerList import MeijerList
+from .MeijerList import MeijerList
 
 # From Meijer_v5.20.1_apkpure.com/res/values/strings.xml
 account_services_client_id = "mma"
@@ -34,6 +34,7 @@ class Meijer(RequestsMixin):
         user, password = meijer_api_key.strip().split("|")
         self.user = user
         self.password = password
+        self.list = MeijerList(self)
         self.login()
 
     def login(self):
