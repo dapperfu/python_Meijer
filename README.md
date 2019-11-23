@@ -1,4 +1,4 @@
-# python_Meijer
+# ```python-meijer```
 
 - What: Reverse engineered API for Meijer apps & services.
 - Why: I can't actually get in contact with a Meijer Engineer. Their Facebook team just "takes feedback."
@@ -30,6 +30,22 @@ End goal is for Meijer PR/Engineering to either incorporate my ideas or me to ha
 - Jupyter Notebook as a development environment.
 
 ## Lessons Learned
+
+### Misc.
+
+- Shopping lists doesn't support Unicode, no emoji's for you.
+
+### Security Disclosure
+
+Prior to Nov 2018 the Meijer backend would leak personal information if you looped through an index.
+
+- Don't make your mPerks PIN the same as your ATM PIN.
+- Change them if they are.
+
+[Security Disclosure Notebook sent to Meijer, Nov 2018](https://nbviewer.jupyter.org/github/jed-frey/python_Meijer/blob/master/v1/Meijer%20Security%20Disclosure.ipynb).
+
+![](security.png)
+
 
 ### You can't trick the Meijer App with mock locations.
 

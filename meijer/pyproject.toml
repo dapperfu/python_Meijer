@@ -12,14 +12,9 @@ click = ">=7.0,<8"
 
 [tool.poetry.dev-dependencies]
 pytest = "==3.*,>=3.0.0"
-notebook = "*"
-
 
 [tool.poetry.scripts]
-meijer = "meijer:cli"
-
-
-
+meijer = "meijer.cli:cli"
 
 [tool.dephell.main]
 from = {format = "poetry", path = "pyproject.toml"}
