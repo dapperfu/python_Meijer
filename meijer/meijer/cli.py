@@ -19,6 +19,7 @@ import logging
 
 import click
 
+
 from .__init__ import __version__
 from meijer import Meijer
 
