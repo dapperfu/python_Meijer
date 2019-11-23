@@ -7,9 +7,8 @@ from typing import List
 import requests
 from cached_property import cached_property
 
-from .requests import RequestsMixin
-
 from .MeijerList import MeijerList
+from .requests import RequestsMixin
 
 # From Meijer_v5.20.1_apkpure.com/res/values/strings.xml
 account_services_client_id = "mma"
@@ -138,6 +137,17 @@ class Meijer(RequestsMixin):
         request["headers"] = {"Version": "7"}
         r = self.get(**request)
         return r["store"]
+
+    def get_upc(self, upc="4125010200", storeID="226"):
+        request = dict()
+        request[
+            "url"
+        ] = f"https://mservices.meijer.com/DRNavMobileSvc/search/products?storeId={storeID}&q.upc={upc}"
+        request["headers"] = {
+            "Accept": "application/vnd.meijer.search.product-v1.2+json"
+        }
+        r = self.get(**request)
+        return r
 
     def __repr__(self):
         return "Meijer<>"
