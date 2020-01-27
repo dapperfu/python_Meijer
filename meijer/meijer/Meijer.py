@@ -27,8 +27,8 @@ class Meijer(RequestsMixin):
     def __init__(self, meijer_api_key: str = None):
         """Meijer: Use the Meijer App, programatically, in Python.
 
-        user: username/e-mail address for mperks
-        pass: password.
+        meijer_api_key: email & password separated by pipe (|)
+            Default read from environment variable MEIJER_API_KEY.
         """
         if meijer_api_key is None:
             meijer_api_key = os.environ["MEIJER_API_KEY"]

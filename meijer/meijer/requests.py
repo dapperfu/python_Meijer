@@ -1,3 +1,4 @@
+"""High level Mixin for simplifying Request requests."""
 from cached_property import cached_property
 import requests
 import base64
@@ -5,8 +6,9 @@ import base64
 class RequestsMixin():
     @cached_property
     def session(self):
-        # Create a requests session.
+        """Requests session."""
         s = requests.Session()
+        # Totally real Android App.
         s.headers.update(
             {
                 "Platform": "Android",
@@ -21,9 +23,13 @@ class RequestsMixin():
         return s
 
     def post(self, **request):
+        """Post."""
         r = self.session.post(**request)
-        self.r_ = r  # debugs
+        # Debugging
+        self.r_ = r
+        # Make sure it's good.
         assert r.status_code == 200 or r.status_code == 201
+        # 99.9% of the time we're working with JSON.
         try:
             return r.json()
         except:
