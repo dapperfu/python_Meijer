@@ -1,4 +1,6 @@
-cached_property
 jupyter
 notebook
 requests
+cached_property
+
+-e meijer/
