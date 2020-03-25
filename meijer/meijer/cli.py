@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 .. currentmodule:: meijer2.cli
 
@@ -18,10 +17,9 @@ can be used as a handy facility for running the task from a command line.
 import logging
 
 import click
-
+from meijer import Meijer
 
 from .__init__ import __version__
-from meijer import Meijer
 
 LOGGING_LEVELS = {
     0: logging.NOTSET,
