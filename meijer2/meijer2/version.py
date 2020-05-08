@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 .. currentmodule:: meijer2.version
 .. moduleauthor:: Jed <jed@bored>

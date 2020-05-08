@@ -1,9 +1,11 @@
 """High level Mixin for simplifying Request requests."""
-from cached_property import cached_property
-import requests
 import base64
 
-class RequestsMixin():
+import requests
+from cached_property import cached_property
+
+
+class RequestsMixin:
     @cached_property
     def session(self):
         """Requests session."""
@@ -43,7 +45,6 @@ class RequestsMixin():
             return r.json()
         except:
             return r
-
 
     def put(self, **request):
         r = self.session.put(**request)

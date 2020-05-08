@@ -160,8 +160,9 @@ html_sidebars = {
 htmlhelp_basename = "meijer2doc"
 
 # -- Options for LaTeX output ---------------------------------------------
+from typing import Dict
 
-latex_elements: Dict[str] = {
+latex_elements: Dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
