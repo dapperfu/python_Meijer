@@ -1,6 +1,10 @@
-jupyter
-notebook
-requests
-cached_property
 
 -e meijer/
+cached_property
+fsspec
+jupyter
+matplotlib
+notebook
+pandas
+requests
+tqdm

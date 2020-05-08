@@ -1,6 +1,6 @@
 # py-meijer
 
-Python module for interacting with Meijer's mPerks. 
+Python module for interacting with Meijer's mPerks.
 
 
 
@@ -31,12 +31,12 @@ Show shopping list:
 
 Adding a pre-set list:
 
-    $ cat list 
+    $ cat list
     1% Milk
     2% Milk
     4% Milk
     8% Milk
-     
+
     $ meijer list add < list
 
 

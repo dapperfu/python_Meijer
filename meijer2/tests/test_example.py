@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 .. currentmodule:: test_example
 .. moduleauthor:: Jed <jed@bored>
