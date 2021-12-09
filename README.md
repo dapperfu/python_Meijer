@@ -1,5 +1,6 @@
 # ```python-meijer```
 
+- Forked from https://github.com/dapperfu/python_Meijer for tweaks and usage in another project
 - What: Reverse engineered API for Meijer apps & services.
 - Why: I can't actually get in contact with a Meijer Engineer. Their Facebook team just "takes feedback."
   On n'est jamais servi si bien que par soi-même.

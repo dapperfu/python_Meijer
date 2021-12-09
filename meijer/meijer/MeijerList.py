@@ -1,11 +1,11 @@
+from typing import Dict
+
+
 class MeijerListItem:
     def __init__(self, meijer_list, **kwargs):
         self.list = meijer_list
         for key, value in kwargs.items():
             setattr(self, key, valu)
-
-
-from typing import Dict
 
 
 class MeijerList:

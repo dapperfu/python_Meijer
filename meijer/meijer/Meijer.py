@@ -149,6 +149,66 @@ class Meijer(RequestsMixin):
         r = self.get(**request)
         return r
 
+    def get_name(self, name="chicken", storeID="226"):
+        request = dict()
+        request[
+            "url"
+        ] = f"https://ac.cnstrc.com/search/{name}?page=1&num_results_per_page=30&filters%5BavailableInStores%5D={storeID}&key=key_GdYuTcnduTUtsZd6" #I think this key is constant for all meijer requests, but lets check that as well
+        request["headers"] = {
+            "Accept": "application/vnd.meijer.search.product-v1.2+json"
+        }
+        r = self.get(**request)
+        return r
+
+    def add_to_cart(self, upc="4125010200", storeID="226"):
+        request = dict()
+        request[
+            "url"
+        ] = f"https://api.meijer.com/digital/occ/v3/carts/current/add/{upc}/1.0?store={storeID}&fields=FULL&retainOutOfStock=true"
+        request["headers"] = {
+            "Accept": "application/json",
+            "Ocp-Apim-Subscription-Key": "58763460fcb547f99a1c82e5daa4cbf6"
+
+        }
+        r = self.post(**request)
+        return r
+
+    def get_receipts(self):
+        request = dict()
+        request[
+            "url"
+        ] = f"https://mperksservices.meijer.com/dgtlmPerksMMA/api/digitalreceipt/DigitalReceiptsSummary"
+        request["json"] = {}
+        request["headers"] = {
+            "Accept": "application/vnd.meijer.digitalmperks.digitalreceipts-v2.0+json",
+            "Platform": "Android",
+            "Version": "8.4.3",
+            "Build": "80403000",
+            "Content-Type": "application/vnd.meijer.digitalmperks.digitalreceipts-v2.0+json"
+
+        }
+        r = self.post(**request)
+        return r
+
+    def get_digital_receipt(self, receiptID):
+        request = dict()
+        request[
+            "url"
+        ] = f"https://mperksservices.meijer.com/dgtlmPerksMMA/api/digitalreceipt/ViewDigitalReceipt"
+
+        request["json"] = {"receiptID": receiptID}
+        request["headers"] = {
+            "Accept": "application/vnd.meijer.digitalmperks.viewdigitalreceipt-v1.0+json",
+            "Platform": "Android",
+            "Version": "8.4.3",
+            "Build": "80403000",
+            "Content-Type": "application/vnd.meijer.digitalmperks.viewdigitalreceipt-v1.0+json"
+
+
+        }
+        r = self.post(**request)
+        return r
+
     def __repr__(self):
         return "Meijer<>"
 
