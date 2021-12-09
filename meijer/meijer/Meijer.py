@@ -153,7 +153,7 @@ class Meijer(RequestsMixin):
         request = dict()
         request[
             "url"
-        ] = f"https://ac.cnstrc.com/search/{name}?page=1&num_results_per_page=30&filters%5BavailableInStores%5D={storeID}&key=key_GdYuTcnduTUtsZd6" #I think this key is constant for all meijer requests, but lets check that as well
+        ] = f"https://ac.cnstrc.com/search/{name}?page=1&num_results_per_page=30&filters%5BavailableInStores%5D={storeID}&key=key_GdYuTcnduTUtsZd6"
         request["headers"] = {
             "Accept": "application/vnd.meijer.search.product-v1.2+json"
         }
