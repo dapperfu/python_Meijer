@@ -120,19 +120,6 @@ End goal is for Meijer PR/Engineering to either incorporate my ideas or me to ha
 
 - Shopping lists doesn't support Unicode, no emoji's for you.
 
-### Security Disclosure
-
-Prior to Nov 2018 the Meijer backend would leak personal information if you looped through an index.
-
-- Don't make your mPerks PIN the same as your ATM PIN.
-- Change them if they are.
-
-[Security Disclosure Notebook sent to Meijer, Nov 2018](https://nbviewer.jupyter.org/github/jed-frey/python_Meijer/blob/master/v1/Meijer%20Security%20Disclosure.ipynb).
-
-![](security.png)
-
-{Meijer was informed of this Nov 2018. If Meijer did not inform you that your data may have been accessed, take it up with them.}
-
 ### You can't trick the Meijer App with mock locations.
 
 Tests for Mock Location, in:
