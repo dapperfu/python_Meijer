@@ -112,8 +112,6 @@ The Meijer "[Shop & Scan](https://www.meijer.com/content/content.jsp?pageName=sh
 
 Decompiling the Meijer.apk it looks like it's mostly just a REST app. So I setup a mitmproxy to watch for traffic.
 
-End goal is for Meijer PR/Engineering to either incorporate my ideas or me to have my own shopping tool, whichever comes first.
-
 ## Lessons Learned
 
 ### Misc.
