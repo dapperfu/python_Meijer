@@ -1,25 +1,50 @@
 # ```python-meijer```
 
-- What: Reverse engineered API for Meijer apps & services.
+- What: Reverse engineered API for Meijer shopping list.
 - Why: I can't actually get in contact with a Meijer Engineer. Their Facebook team just "takes feedback."
   On n'est jamais servi si bien que par soi-même.
 - How: [mitmproxy](https://mitmproxy.org/), Python with [requests](http://docs.python-requests.org/en/master/)
 
-## Usage
+## Installation 
 
-Still alpha/beta quality. Also my project for dephell/poetry exploration.
+pip install -e "git+https://github.com/dapperfu/python_Meijer.git#subdirectory=meijer&#egg=meijer" 
+
+## Development Installation
 
 ```
 git clone https://github.com/dapperfu/python_Meijer.git
 cd python_Meijer
-# Create virtual environment
-make venv
+# Create & Activate virtual environment
+python3 -mvenv venv
+source venv/bin/activate
+# Install development li
+pip install -U pip wheel setuptools
+pip install -r requirements.txt
+```
 
+## Usage
+
+Meijer login information is stored in the environmental variable `MEIJER_API_KEY`.
+
+```export MEIJER_API_KEY="user|pass"```
+
+1. *Don't use the same login for Meijer's shopping list as your Bank, 'k?*
+2. If you use a `|` in your password, you can edit the delimiter in `Meijer.py`
+
+### Shell completion.
+
+Shell completion through [click](https://click.palletsprojects.com/en/8.1.x/shell-completion/)
+
+Add `meijer` Bash completion to the terminal:
+
+```
+_meijer_COMPLETE=bash_source meijer > ~/.meijer-complete.bash
+echo ". ~/.meijer-complete.bash" >> ~/.bashrc
 ```
 
 ### Shopping list.
 
-Click help:
+
 
 ```
 $ meijer list
@@ -77,7 +102,7 @@ $ meijer list show
 [ ] 1% Milk
 ```
 
-## Tools.
+## Development Tools.
 
 - [HTC One M7](https://www.htc.com/us/smartphones/htc-one-m7/).
 - Android 6. [Android 7.0+ makes it very difficult to use self signed certs](https://github.com/mitmproxy/mitmproxy/issues/2054#issuecomment-281836486). It's just easier to have an old device laying around for MITM proxy. It is still possible but requires root and more steps than "Install Cert".
