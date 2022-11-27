@@ -1,3 +1,0 @@
-[submodule ".mk_inc"]
-	path = .mk_inc
-	url = https://github.com/jed-frey/make_sandwich.git
