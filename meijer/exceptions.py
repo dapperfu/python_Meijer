@@ -28,3 +28,9 @@ class MeijerRateLimitError(MeijerError):
     """Raised when rate limits are exceeded."""
 
     pass
+
+
+class CartError(MeijerError):
+    """Raised when cart operations fail."""
+
+    pass

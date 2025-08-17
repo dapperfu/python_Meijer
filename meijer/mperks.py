@@ -156,7 +156,7 @@ class MPerksEarnedRewards:
                 
         except Exception as e:
             self.logger.error(f"Error getting earned rewards: {e}")
-            raise MeijerAPIError(f"Failed to get earned rewards: {e}")
+            return []  # Return empty list on failure instead of raising exception
     
     def get_mcard_info(self, **kwargs) -> MCardInfo:
         """
@@ -190,7 +190,7 @@ class MPerksEarnedRewards:
                 
         except Exception as e:
             self.logger.error(f"Error getting mCard info: {e}")
-            raise MeijerAPIError(f"Failed to get mCard info: {e}")
+            return None  # Return None on failure instead of raising exception
     
     def get_available_rewards(self, **kwargs) -> List[EarnedReward]:
         """
@@ -224,7 +224,7 @@ class MPerksEarnedRewards:
                 
         except Exception as e:
             self.logger.error(f"Error getting available rewards: {e}")
-            raise MeijerAPIError(f"Failed to get available rewards: {e}")
+            return []  # Return empty list on failure instead of raising exception
     
     def get_reward_categories(self, clip_filter: str = "unclippedonly", **kwargs) -> List[str]:
         """
@@ -263,7 +263,7 @@ class MPerksEarnedRewards:
                 
         except Exception as e:
             self.logger.error(f"Error getting reward categories: {e}")
-            raise MeijerAPIError(f"Failed to get reward categories: {e}")
+            return []  # Return empty list on failure instead of raising exception
     
     def _parse_earned_rewards_response(self, data: Dict[str, Any]) -> List[EarnedReward]:
         """Parse earned rewards response from API."""

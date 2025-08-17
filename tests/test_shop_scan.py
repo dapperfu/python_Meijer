@@ -1,230 +1,364 @@
 #!/usr/bin/env python3
 """
-Test and demonstration of Meijer Shop & Scan functionality.
-
-This script demonstrates the complete Shop & Scan workflow:
-1. Authentication and setup
-2. Check Shop & Scan availability
-3. Start a shopping trip
-4. Scan items (simulate 2 items as per user's test case)
-5. Finalize checkout
+Tests for the Shop & Scan module.
 """
 
-import logging
-from typing import Optional
-from meijer import Meijer, MeijerAPIError, MeijerAuthenticationError
+import pytest
+from unittest.mock import Mock, patch, MagicMock
+from meijer.shop_scan import ShopNScan
+from meijer.models import MeijerItem
+from meijer.exceptions import MeijerAPIError
 
 
-def main():
-    """Test Shop & Scan workflow."""
-    print("🛒 TESTING MEIJER SHOP & SCAN FUNCTIONALITY")
-    print("=" * 60)
-
-    # Setup logging
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
-
-    try:
-        with Meijer(debug=True) as meijer:
-            # Step 1: Authentication
-            print("\n1. 🔐 Authenticating...")
-            if not meijer.login():
-                print("❌ Login failed - cannot proceed with Shop & Scan test")
-                return
-
-            print("✅ Authentication successful")
-
-            # Step 2: Check Shop & Scan availability
-            print("\n2. 🔍 Checking Shop & Scan availability...")
-            shop_scan = meijer.shop_scan
-
-            if shop_scan.is_enabled():
-                print("✅ Shop & Scan is enabled for this user")
-            else:
-                print("❌ Shop & Scan is not available for this user")
-                print("   This could be due to:")
-                print("   - Account restrictions")
-                print("   - Geographic limitations")
-                print("   - Service temporarily unavailable")
-                return
-
-            # Step 3: Get configuration (optional)
-            print("\n3. ⚙️  Getting Shop & Scan configuration...")
-            config = shop_scan.get_config()
-            if config:
-                print("✅ Configuration retrieved successfully")
-                print(
-                    f"   Config keys: {list(config.keys()) if isinstance(config, dict) else 'N/A'}"
-                )
-            else:
-                print("⚠️  Could not retrieve configuration (proceeding anyway)")
-
-            # Step 4: Start a shopping trip
-            print("\n4. 🏪 Starting Shop & Scan trip...")
-
-            # Use a common Meijer store ID (store 52 is often used in examples)
-            store_id = "52"
-
-            if shop_scan.start_trip(store_id):
-                trip_summary = shop_scan.get_trip_summary()
-                print(f"✅ Trip started successfully")
-                print(f"   Trip ID: {trip_summary['trip_id']}")
-                print(f"   Store ID: {trip_summary['store_id']}")
-                print(f"   Started at: {trip_summary['started_at']}")
-            else:
-                print("❌ Failed to start shopping trip")
-                return
-
-            # Step 5: Simulate scanning items (matching user's test case: 2 items scanned)
-            print("\n5. 📱 Scanning items...")
-
-            # Test barcodes (these would be real product barcodes in actual use)
-            test_items = [
-                {"barcode": "012345678905", "description": "Test Item 1"},
-                {"barcode": "012345678912", "description": "Test Item 2"},
-            ]
-
-            scanned_items = []
-
-            for i, item_info in enumerate(test_items, 1):
-                barcode = item_info["barcode"]
-                expected_desc = item_info["description"]
-
-                print(f"   Scanning item {i}: {barcode}")
-
-                try:
-                    scanned_item = shop_scan.scan_item(barcode)
-
-                    if scanned_item:
-                        scanned_items.append(scanned_item)
-                        print(f"   ✅ Item {i} scanned successfully:")
-                        print(f"      Description: {scanned_item.description}")
-                        print(f"      Price: ${scanned_item.price:.2f}")
-                        print(f"      Quantity: {scanned_item.quantity}")
-                    else:
-                        print(f"   ❌ Failed to scan item {i} (barcode: {barcode})")
-                        print(f"      This could indicate:")
-                        print(f"      - Invalid barcode")
-                        print(f"      - Item not available at this store")
-                        print(f"      - API endpoint issue")
-
-                except MeijerAPIError as e:
-                    print(f"   ❌ API Error scanning item {i}: {e}")
-                except Exception as e:
-                    print(f"   ❌ Unexpected error scanning item {i}: {e}")
-
-            # Step 6: Review cart contents
-            print("\n6. 🛍️  Reviewing cart contents...")
-            cart = shop_scan.get_cart()
-
-            if cart:
-                print(f"✅ Cart contains {len(cart)} items:")
-                total_value = 0
-
-                for i, item in enumerate(cart, 1):
-                    item_total = item.price * item.quantity
-                    total_value += item_total
-
-                    print(f"   {i}. {item.description}")
-                    print(f"      Barcode: {item.barcode}")
-                    print(
-                        f"      Price: ${item.price:.2f} x {item.quantity} = ${item_total:.2f}"
-                    )
-
-                print(f"\n   💰 Cart subtotal: ${total_value:.2f}")
-
-                # Get trip summary
-                trip_summary = shop_scan.get_trip_summary()
-                print(f"   📊 Trip total: ${trip_summary['total_amount']:.2f}")
-
-            else:
-                print("❌ Cart is empty - no items were successfully scanned")
-                return
-
-            # Step 7: Finalize checkout
-            print("\n7. 💳 Finalizing checkout...")
-
-            try:
-                checkout_result = shop_scan.finalize_checkout()
-
-                if checkout_result:
-                    print("✅ Checkout finalized successfully!")
-                    print(
-                        f"   Checkout response keys: {list(checkout_result.keys()) if isinstance(checkout_result, dict) else 'N/A'}"
-                    )
-
-                    # Show final trip status
-                    final_summary = shop_scan.get_trip_summary()
-                    if final_summary:
-                        print(f"   Final status: {final_summary['status']}")
-                        print(f"   Final total: ${final_summary['total_amount']:.2f}")
-                else:
-                    print("❌ Checkout finalization failed")
-                    print("   This could indicate:")
-                    print("   - Payment processing issues")
-                    print("   - API endpoint problems")
-                    print("   - Cart validation errors")
-
-            except MeijerAPIError as e:
-                print(f"❌ API Error during checkout: {e}")
-            except Exception as e:
-                print(f"❌ Unexpected error during checkout: {e}")
-
-            # Step 8: End trip (cleanup)
-            print("\n8. 🏁 Ending shopping trip...")
-
-            if shop_scan.end_trip():
-                print("✅ Trip ended successfully")
-            else:
-                print("⚠️  Trip end may have failed (but local state cleared)")
-
-            print("\n" + "=" * 60)
-            print("🛒 SHOP & SCAN TEST COMPLETE")
-            print("=" * 60)
-
-    except MeijerAuthenticationError as e:
-        print(f"❌ Authentication Error: {e}")
-        print("   Please check your credentials in auth.txt")
-
-    except MeijerAPIError as e:
-        print(f"❌ API Error: {e}")
-        print("   This may indicate API endpoint or network issues")
-
-    except Exception as e:
-        print(f"❌ Unexpected Error: {e}")
-        print("   Please check the implementation and try again")
-
-
-def demonstrate_shop_scan_features():
-    """Demonstrate key Shop & Scan features without full workflow."""
-    print("\n🔍 SHOP & SCAN FEATURE DEMONSTRATION")
-    print("-" * 40)
-
-    with Meijer() as meijer:
-        if meijer.login():
-            shop_scan = meijer.shop_scan
-
-            print("Available Shop & Scan methods:")
-            methods = [
-                "is_enabled()",
-                "get_config()",
-                "start_trip(store_id)",
-                "scan_item(barcode)",
-                "get_cart()",
-                "finalize_checkout()",
-                "end_trip()",
-                "get_trip_summary()",
-            ]
-
-            for method in methods:
-                print(f"   • meijer.shop_scan.{method}")
-
-            print(f"\nEndpoints configured:")
-            for name, endpoint in shop_scan.endpoints.items():
-                print(f"   • {name}: {endpoint}")
+class TestShopNScan:
+    """Test the ShopNScan class."""
+    
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mock_client = Mock()
+        self.mock_client.logger = Mock()
+        self.mock_client._make_request = Mock()
+        self.shop_scan = ShopNScan(self.mock_client)
+    
+    def test_init(self):
+        """Test ShopNScan initialization."""
+        assert self.shop_scan.meijer == self.mock_client
+        assert self.shop_scan.logger == self.mock_client.logger
+        assert "lookup_item" in self.shop_scan.endpoints
+        assert "add_to_cart" in self.shop_scan.endpoints
+        assert "remove_from_cart" in self.shop_scan.endpoints
+        assert "get_cart" in self.shop_scan.endpoints
+        assert "clear_cart" in self.shop_scan.endpoints
+    
+    def test_lookup_barcode_price_shopscan_success(self):
+        """Test successful barcode lookup via Shop & Scan API."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "product": {
+                "id": "prod123",
+                "name": "Test Product",
+                "description": "Test Description",
+                "brand": "Test Brand",
+                "category": "Test Category",
+                "upc": "123456789012",
+                "price": 9.99,
+                "salePrice": 7.99,
+                "unitPrice": 0.50,
+                "isWeighted": True,
+                "weightUnit": "lb",
+                "weightAmount": 2.0,
+                "imageUrl": "https://example.com/image.jpg"
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.lookup_barcode_price("123456789012")
+        
+        assert result is not None
+        assert isinstance(result, MeijerItem)
+        assert result.id == "prod123"
+        assert result.title == "Test Product"  # title comes from name field
+        assert result.description == "Test Description"
+        assert result.brand == "Test Brand"
+        assert result.category == "Test Category"
+        assert result.upc == "123456789012"
+        assert result.price == 9.99
+        assert result.sale_price == 7.99
+        assert result.unit_price == "0.5"  # unit_price is converted to string
+        assert result.is_weighted is True
+        assert result.weight_unit == "lb"
+        assert result.weight_amount == 2.0
+        assert result.image_url == "https://example.com/image.jpg"
+        
+        # Verify the request was made correctly
+        call_args = self.mock_client._make_request.call_args
+        assert call_args[0][0] in ["GET", "POST"]  # method could be either
+        
+        # Verify barcode is passed either as param or in json_data
+        if "params" in call_args[1]:
+            params = call_args[1]["params"]
+            if "barcode" in params:
+                assert params["barcode"] == "123456789012"
+        elif "json_data" in call_args[1]:
+            json_data = call_args[1]["json_data"]
+            assert json_data["barcode"] == "123456789012"
+    
+    def test_lookup_barcode_price_shopscan_failure(self):
+        """Test failed barcode lookup via Shop & Scan API."""
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_response.text = "Product not found"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.lookup_barcode_price("123456789012")
+        
+        assert result is None
+    
+    def test_lookup_barcode_price_shopscan_exception(self):
+        """Test barcode lookup with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan.lookup_barcode_price("123456789012")
+        
+        assert result is None
+    
+    def test_add_to_cart_success(self):
+        """Test successful cart addition."""
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_response.text = "Created"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.add_to_cart("123456789012", quantity=2, store_id="store123")
+        
+        assert result is True
+        
+        # Verify the request was made correctly
+        call_args = self.mock_client._make_request.call_args
+        assert call_args[0][0] == "POST"  # method
+        assert self.shop_scan.endpoints["add_to_cart"] in call_args[0][1]  # URL contains endpoint
+        
+        # Verify data structure
+        json_data = call_args[1]["json_data"]
+        assert json_data["barcode"] == "123456789012"
+        assert json_data["quantity"] == 2
+        assert json_data["storeId"] == "store123"
+    
+    def test_add_to_cart_failure(self):
+        """Test failed cart addition."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.add_to_cart("123456789012")
+        
+        assert result is False
+    
+    def test_add_to_cart_exception(self):
+        """Test cart addition with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan.add_to_cart("123456789012")
+        
+        assert result is False
+    
+    def test_remove_from_cart_success(self):
+        """Test successful cart removal."""
+        mock_response = Mock()
+        mock_response.status_code = 204
+        mock_response.text = "No Content"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.remove_from_cart("123456789012", store_id="store123")
+        
+        assert result is True
+        
+        # Verify the request was made correctly
+        call_args = self.mock_client._make_request.call_args
+        assert call_args[0][0] == "POST"  # method
+        assert self.shop_scan.endpoints["remove_from_cart"] in call_args[0][1]  # URL contains endpoint
+        
+        # Verify data structure
+        json_data = call_args[1]["json_data"]
+        assert json_data["barcode"] == "123456789012"
+        assert json_data["storeId"] == "store123"
+    
+    def test_remove_from_cart_failure(self):
+        """Test failed cart removal."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.remove_from_cart("123456789012")
+        
+        assert result is False
+    
+    def test_remove_from_cart_exception(self):
+        """Test cart removal with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan.remove_from_cart("123456789012")
+        
+        assert result is False
+    
+    def test_get_cart_success(self):
+        """Test successful cart retrieval."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "cart": {
+                "items": [
+                    {
+                        "barcode": "123456789012",
+                        "quantity": 2,
+                        "price": 9.99,
+                        "name": "Test Product"
+                    }
+                ],
+                "total": 19.98
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.get_cart(store_id="store123")
+        
+        assert result is not None
+        assert isinstance(result, list)  # get_cart returns a list of items
+        assert len(result) > 0
+        
+        # Verify the request was made correctly
+        call_args = self.mock_client._make_request.call_args
+        assert call_args[0][0] == "GET"  # method
+        assert self.shop_scan.endpoints["get_cart"] in call_args[0][1]  # URL contains endpoint
+        
+        # Verify parameters
+        params = call_args[1]["params"]
+        assert params["storeId"] == "store123"
+    
+    def test_get_cart_failure(self):
+        """Test cart retrieval failure."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.get_cart()
+        
+        assert result == []  # get_cart returns empty list on failure
+    
+    def test_get_cart_exception(self):
+        """Test cart retrieval with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan.get_cart()
+        
+        assert result == []  # get_cart returns empty list on exception
+    
+    def test_clear_cart_success(self):
+        """Test successful cart clearing."""
+        mock_response = Mock()
+        mock_response.status_code = 204
+        mock_response.text = "No Content"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.clear_cart(store_id="store123")
+        
+        assert result is True
+        
+        # Verify the request was made correctly
+        call_args = self.mock_client._make_request.call_args
+        assert call_args[0][0] == "POST"  # method
+        assert self.shop_scan.endpoints["clear_cart"] in call_args[0][1]  # URL contains endpoint
+        
+        # Verify parameters
+        params = call_args[1]["params"]
+        assert params["storeId"] == "store123"
+    
+    def test_clear_cart_failure(self):
+        """Test failed cart clearing."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.clear_cart()
+        
+        assert result is False
+    
+    def test_clear_cart_exception(self):
+        """Test cart clearing with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan.clear_cart()
+        
+        assert result is False
+    
+    def test_parse_shopscan_response_success(self):
+        """Test successful Shop & Scan response parsing."""
+        response_data = {
+            "product": {
+                "id": "prod123",
+                "name": "Test Product",
+                "description": "Test Description",
+                "brand": "Test Brand",
+                "category": "Test Category",
+                "upc": "123456789012",
+                "price": 9.99,
+                "salePrice": 7.99,
+                "unitPrice": 0.50,
+                "isWeighted": True,
+                "weightUnit": "lb",
+                "weightAmount": 2.0,
+                "imageUrl": "https://example.com/image.jpg"
+            }
+        }
+        
+        result = self.shop_scan._parse_shopscan_response(response_data, "123456789012")
+        
+        assert result is not None
+        assert isinstance(result, MeijerItem)
+        assert result.id == "prod123"
+        assert result.title == "Test Product"  # title comes from name field
+        assert result.description == "Test Description"
+        assert result.brand == "Test Brand"
+        assert result.category == "Test Category"
+        assert result.upc == "123456789012"
+        assert result.price == 9.99
+        assert result.sale_price == 7.99
+        assert result.unit_price == "0.5"  # unit_price is converted to string
+        assert result.is_weighted is True
+        assert result.weight_unit == "lb"
+        assert result.weight_amount == 2.0
+        assert result.image_url == "https://example.com/image.jpg"
+    
+    def test_parse_shopscan_response_no_product(self):
+        """Test Shop & Scan response parsing with no product."""
+        response_data = {"otherData": "value"}
+        
+        result = self.shop_scan._parse_shopscan_response(response_data, "123456789012")
+        
+        assert result is None
+    
+    def test_parse_shopscan_response_missing_fields(self):
+        """Test Shop & Scan response parsing with missing fields."""
+        response_data = {
+            "product": {
+                "id": "prod123"
+                # Missing many fields including name
+            }
+        }
+        
+        result = self.shop_scan._parse_shopscan_response(response_data, "123456789012")
+        
+        assert result is not None
+        assert result.id == "prod123"
+        assert result.title == "Unknown Product"  # title falls back to default when name is missing
+        assert result.description is None
+        assert result.brand is None
+        assert result.category is None
+        assert result.upc == "123456789012"  # upc is set to the barcode parameter
+        assert result.price is None
+        assert result.is_weighted is False
+    
+    def test_parse_shopscan_response_none_data(self):
+        """Test Shop & Scan response parsing with None data."""
+        result = self.shop_scan._parse_shopscan_response(None, "123456789012")
+        
+        assert result is None
 
 
 if __name__ == "__main__":
-    main()
-    demonstrate_shop_scan_features()
+    pytest.main([__file__])

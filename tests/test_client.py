@@ -61,18 +61,20 @@ class TestMeijerClient:
             "refresh_token": "refresh_token_123"
         }
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
-            json.dump(config_data, f)
-            config_file = f.name
-        
-        try:
+        # Create a temporary directory for the test
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_dir = Path(temp_dir) / ".config"
+            config_dir.mkdir()
+            config_file = config_dir / "meijer.txt"
+            
+            with open(config_file, 'w') as f:
+                json.dump(config_data, f)
+            
             # Mock the home directory to use our test config
-            monkeypatch.setattr(Path, 'home', lambda: Path(config_file).parent)
+            monkeypatch.setattr(Path, 'home', lambda: Path(temp_dir))
             client = Meijer()
             assert client._access_token == "config_token_123"
             assert client._refresh_token == "refresh_token_123"
-        finally:
-            os.unlink(config_file)
     
     def test_get_api_headers(self):
         """Test API headers generation."""
@@ -228,11 +230,11 @@ class TestMeijerClient:
         """Test shopping list convenience methods."""
         # Test get_shopping_list
         mock_items = [Mock(spec=ListItem)]
-        self.client.shopping_list.get.return_value = mock_items
+        self.client.shopping_list.get_list.return_value = mock_items
         
         result = self.client.get_shopping_list()
         assert result == mock_items
-        self.client.shopping_list.get.assert_called_once()
+        self.client.shopping_list.get_list.assert_called_once()
         
         # Test add_to_shopping_list
         self.client.shopping_list.add_item_with_details.return_value = True
@@ -350,12 +352,12 @@ class TestMeijerClient:
             mock_response.json.return_value = {
                 "stores": [
                     {
-                        "storeId": "123",
-                        "name": "Nearby Store",
-                        "city": "Test City",
-                        "state": "MI",
-                        "latitude": 42.0,
-                        "longitude": -83.0,
+                        "UnitId": "123",
+                        "Name": "Nearby Store",
+                        "City": "Test City",
+                        "State": "MI",
+                        "Latitude": 42.0,
+                        "Longitude": -83.0,
                         "distance": 5.2
                     }
                 ]

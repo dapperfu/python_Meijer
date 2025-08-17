@@ -252,7 +252,7 @@ class ShopNScan:
             
             return MeijerItem(
                 id=product_data.get("id", ""),
-                title=product_data.get("title", ""),
+                title=product_data.get("name", product_data.get("title", "")),
                 description=product_data.get("description"),
                 brand=product_data.get("brand"),
                 category=product_data.get("category"),
@@ -263,7 +263,7 @@ class ShopNScan:
                 large_image_url=product_data.get("largeImageUrl"),
                 price=product_data.get("price"),
                 sale_price=product_data.get("salePrice"),
-                unit_price=product_data.get("unitPrice"),
+                unit_price=str(product_data.get("unitPrice")) if product_data.get("unitPrice") else None,
                 is_weighted=product_data.get("isWeighted", False),
                 weight_unit=product_data.get("weightUnit"),
                 weight_amount=product_data.get("weightAmount"),
@@ -366,7 +366,10 @@ class ShopNScan:
             
             if response.status_code == 200:
                 data = response.json()
+                # Handle both direct items array and nested cart structure
                 cart_items = data.get("items", [])
+                if not cart_items and "cart" in data:
+                    cart_items = data["cart"].get("items", [])
                 
                 items = []
                 for item_data in cart_items:

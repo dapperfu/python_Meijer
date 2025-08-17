@@ -477,7 +477,7 @@ class Search:
                 large_image_url=item_data.get("large_image_url"),
                 price=item_data.get("price"),
                 sale_price=item_data.get("sale_price"),
-                unit_price=str(item_data.get("unit_price", item_data.get("price"))) if item_data.get("unit_price") or item_data.get("price") else None,
+                unit_price=item_data.get("price"),
                 is_weighted=item_data.get("priceByWeight", False),
                 weight_unit=item_data.get("weight_unit"),
                 weight_amount=item_data.get("weight_amount"),

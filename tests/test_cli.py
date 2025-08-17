@@ -84,6 +84,10 @@ class TestCLIFunctions:
             )
         ]
         
+        # Ensure the Mock objects have proper string behavior for slicing
+        for item in mock_items:
+            item.name = str(item.name)
+        
         with patch('meijer.cli.click.echo') as mock_echo:
             display_items_table(mock_items, "Test List")
             

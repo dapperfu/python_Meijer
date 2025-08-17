@@ -65,6 +65,7 @@ class Meijer:
         self._access_token = None
         self._refresh_token = None
         self._token_expires_at = None
+        self._user_credentials = None
         
         # Load authentication
         self._load_auth(auth)
@@ -78,26 +79,6 @@ class Meijer:
                 self._load_auth_from_file(auth)
         else:
             self._load_auth_from_config()
-    
-    def _load_auth_from_config(self):
-        """Load authentication from ~/.config/meijer.txt."""
-        config_path = Path.home() / ".config" / "meijer.txt"
-        if config_path.exists():
-            try:
-                with open(config_path, 'r') as f:
-                    config = json.load(f)
-                
-                self._access_token = config.get("access_token")
-                self._refresh_token = config.get("refresh_token")
-                
-                if self._access_token:
-                    self.logger.info("Loaded authentication from config file")
-                    return
-                    
-            except Exception as e:
-                self.logger.warning(f"Failed to load config file: {e}")
-        
-        self.logger.info("No authentication found in config file")
     
     def _load_auth_from_file(self, auth_file: str):
         """Load authentication from plain text auth file."""
@@ -142,14 +123,25 @@ class Meijer:
             self.logger.error(f"Failed to load auth file: {e}")
             raise
     
-    def _load_auth_from_log(self, log_file: str):
-        """Load authentication from mitmproxy log file."""
-        try:
-            # This would require mitmproxy analysis
-            # For now, just log that we need to implement this
-            self.logger.info(f"Log file authentication not yet implemented: {log_file}")
-        except Exception as e:
-            self.logger.error(f"Failed to load auth from log: {e}")
+    def _load_auth_from_config(self):
+        """Load authentication from ~/.config/meijer.txt."""
+        config_path = Path.home() / ".config" / "meijer.txt"
+        if config_path.exists():
+            try:
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                
+                self._access_token = config.get("access_token")
+                self._refresh_token = config.get("refresh_token")
+                
+                if self._access_token:
+                    self.logger.info("Loaded authentication from config file")
+                    return
+                    
+            except Exception as e:
+                self.logger.warning(f"Failed to load config file: {e}")
+        
+        self.logger.info("No authentication found in config file")
     
     def _ensure_authenticated(self) -> bool:
         """Ensure we have a valid access token."""
@@ -188,7 +180,7 @@ class Meijer:
         }
         
         if self._access_token:
-            headers["authorization"] = f"Bearer {self._access_token}"
+            headers["Authorization"] = f"Bearer {self._access_token}"
         
         return headers
     
@@ -225,7 +217,7 @@ class Meijer:
             
             return response
             
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             self.logger.error(f"Request failed: {e}")
             raise MeijerAPIError(f"Request failed: {e}")
     
@@ -340,6 +332,10 @@ class Meijer:
                 # Parse the response data into MeijerStore objects
                 for store_data in data.get("stores", []):
                     try:
+                        # Ensure UnitId is present and not empty
+                        if not store_data.get("UnitId"):
+                            self.logger.warning(f"Failed to parse store data: Unit ID cannot be empty")
+                            continue
                         store = MeijerStore.from_api_data(store_data, self)
                         stores.append(store)
                     except Exception as e:
