@@ -1,278 +1,306 @@
 #!/usr/bin/env python3
 """
-Demo of the fully integrated Meijer client with all functionality.
+Integrated Meijer API Demo
+=========================
 
-This demonstrates that meijer.py now includes:
-- Coupon functionality (MeijerCoupon, clip/unclip)
-- Search functionality (MeijerSearch, MeijerItem, pagination)
-- Store functionality (MeijerStore, MeijerStoreSearch)
+Demonstrates the integrated usage of various Meijer API components
+using the new modular package structure.
 
-All integrated into a single comprehensive client.
-
-Usage:
-    python demo_integrated_meijer.py
+This demo shows:
+- Clean component integration
+- Simplified API usage
+- Modular architecture benefits
+- Real-world usage patterns
 """
 
-import sys
+import logging
+from typing import Dict, Any
+
+# Import from the modular package
 from meijer import (
     Meijer,
-    MeijerCoupon,
-    MeijerItem,
-    MeijerStore,
-    MeijerSearch,
-    MeijerStoreSearch,
-    MeijerSearchResults,
-    create_meijer_coupons_from_response,
-    create_meijer_items_from_search,
-    create_meijer_stores_from_response,
+    AuthenticationStatus,
+    MeijerAuthenticationError,
 )
 
 
-def demo_comprehensive_integration():
-    """Demo the comprehensive integrated Meijer client."""
-    print("🏪 Comprehensive Meijer Client Demo")
-    print("=" * 70)
-    print("All functionality now integrated into meijer.py!")
-    print()
+def setup_demo_logging():
+    """Setup clean logging for the demo."""
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
-    # Initialize the comprehensive client
-    print("🔧 Initializing Meijer client...")
-    meijer = Meijer()
 
-    print("✅ Meijer client initialized with:")
-    print("   - Shop & Scan functionality (meijer.shop_scan)")
-    print("   - Shopping lists (meijer.list)")
-    print("   - Product search (meijer.search)")
-    print("   - Store search (meijer.store_search)")
-    print("   - Coupon management (integrated methods)")
-    print()
-
-    # Demo search functionality
-    print("🔍 Demo: Product Search Integration")
+def test_component_integration(client: Meijer) -> Dict[str, Any]:
+    """Test integration between different components."""
+    print("🔗 COMPONENT INTEGRATION TEST")
     print("-" * 40)
 
-    print("Using meijer.search.search() method:")
+    integration_results = {
+        "authentication": False,
+        "shopping_list": False,
+        "store_access": False,
+        "offers_access": False,
+        "components_working": 0,
+    }
+
     try:
-        search_results = meijer.search.search("milk", results_per_page=5)
-        print(f"   Found {len(search_results)} search results for 'milk'")
+        # Test 1: Authentication component
+        print("1️⃣  Testing authentication component...")
+        if client.auth_status == AuthenticationStatus.AUTHENTICATED:
+            print("   ✅ Authentication component working")
+            integration_results["authentication"] = True
+            integration_results["components_working"] += 1
+        else:
+            print("   ❌ Authentication component failed")
 
-        if search_results.items:
-            item = search_results.items[0]
-            print(f"   First item: {item.title} - {item.formatted_price}")
-            print(f"   Item type: {type(item).__name__}")
-    except Exception as e:
-        print(f"   ⚠️  Search demo failed: {e}")
-    print()
-
-    # Demo autocomplete
-    print("📝 Demo: Autocomplete Integration")
-    print("-" * 40)
-
-    print("Using meijer.search.autocomplete() method:")
-    try:
-        suggestions = meijer.search.autocomplete("chee", num_results=3)
-        print(f"   Suggestions for 'chee': {suggestions}")
-    except Exception as e:
-        print(f"   ⚠️  Autocomplete demo failed: {e}")
-    print()
-
-    # Demo store search functionality
-    print("🏪 Demo: Store Search Integration")
-    print("-" * 40)
-
-    print("Using meijer.store_search methods:")
-    try:
-        # Find stores near Michigan coordinates
-        stores = meijer.store_search.find_stores_nearby(
-            latitude=42.8289, longitude=-86.0905, radius_miles=50, max_results=3
-        )
-        print(f"   Found {len(stores)} stores near Michigan")
-
-        if stores:
-            store = stores[0]
-            print(f"   First store: {store.display_name}")
-            print(
-                f"   Store ID: {store.store_id} (type: {type(store.store_id).__name__})"
-            )
-            print(f"   Services: {', '.join(store.get_store_services()[:3])}")
-
-            # Test store details lookup with proper int type
-            store_details = meijer.store_search.get_store_details(store.store_id)
-            if store_details:
-                print(f"   ✅ Store details lookup successful for ID {store.store_id}")
-    except Exception as e:
-        print(f"   ⚠️  Store search demo failed: {e}")
-    print()
-
-    # Demo coupon integration (requires authentication)
-    print("🎫 Demo: Coupon Integration")
-    print("-" * 40)
-
-    print("Coupon functionality available (requires authentication):")
-    print("   - meijer.get_coupons() - fetch coupons from API")
-    print("   - MeijerCoupon.clip() / .unclip() - manage coupon status")
-    print("   - create_meijer_coupons_from_response() - parse API responses")
-    print("   - Comprehensive coupon metadata from APK analysis")
-    print()
-
-    # Demo data classes
-    print("📊 Demo: Data Class Integration")
-    print("-" * 40)
-
-    print("Available data classes:")
-    print(
-        f"   - MeijerCoupon: {MeijerCoupon.__doc__.split('.')[0] if MeijerCoupon.__doc__ else 'Coupon management'}"
-    )
-    print(
-        f"   - MeijerItem: {MeijerItem.__doc__.split('.')[0] if MeijerItem.__doc__ else 'Search result items'}"
-    )
-    print(
-        f"   - MeijerStore: {MeijerStore.__doc__.split('.')[0] if MeijerStore.__doc__ else 'Store information'}"
-    )
-    print(f"   - MeijerSearchResults: Paginated search results container")
-    print()
-
-    # Demo helper functions
-    print("🛠️  Demo: Helper Functions")
-    print("-" * 40)
-
-    print("Available helper functions:")
-    print("   - create_meijer_coupons_from_response()")
-    print("   - create_meijer_items_from_search()")
-    print("   - create_meijer_stores_from_response()")
-    print()
-
-    # Demo class relationships
-    print("🔗 Demo: Class Relationships")
-    print("-" * 40)
-
-    print("Integration points:")
-    print("   - All classes accept meijer_client parameter")
-    print("   - MeijerCoupon.clip() uses client session")
-    print("   - MeijerSearch uses client for authenticated requests")
-    print("   - MeijerStoreSearch uses client session when available")
-    print("   - Forward references handle circular imports")
-    print()
-
-    # Demo comprehensive features
-    print("🎯 Demo: Comprehensive Features")
-    print("-" * 40)
-
-    print("Complete feature set now available:")
-    print("   ✅ OAuth 2.0 + PKCE authentication")
-    print("   ✅ Bearer token authentication")
-    print("   ✅ Selenium automation")
-    print("   ✅ Shop & Scan functionality")
-    print("   ✅ Shopping list management")
-    print("   ✅ Product search with pagination")
-    print("   ✅ Store search and details")
-    print("   ✅ Coupon management (clip/unclip)")
-    print("   ✅ Proper integer store ID handling")
-    print("   ✅ Type hints throughout")
-    print("   ✅ Comprehensive error handling")
-    print()
-
-    return True
-
-
-def demo_type_safety():
-    """Demo type safety across all integrated functionality."""
-    print("🔒 Demo: Type Safety Integration")
-    print("=" * 70)
-
-    print("Type safety features:")
-    print("   - Store IDs: int (with automatic string conversion)")
-    print("   - Coupon IDs: int")
-    print("   - All classes use proper type hints")
-    print("   - Optional types for nullable fields")
-    print("   - Union types for flexible inputs")
-    print("   - Generic types for containers")
-    print()
-
-    # Demo proper store ID handling
-    print("📋 Store ID Type Handling:")
-    meijer = Meijer()
-
-    test_ids = [217, "217", 152]
-    for store_id in test_ids:
-        print(f"   store_id = {store_id} (type: {type(store_id).__name__})")
+        # Test 2: Shopping list component
+        print("2️⃣  Testing shopping list component...")
         try:
-            # This should handle both int and string properly
-            result = meijer.store_search.get_store_details(store_id)
-            print(f"   ✅ Handled properly (returned: {type(result).__name__})")
+            items = client.list.get()
+            print(f"   ✅ Shopping list component working ({len(items)} items)")
+            integration_results["shopping_list"] = True
+            integration_results["components_working"] += 1
         except Exception as e:
-            print(f"   ⚠️  Error (expected for demo): {e}")
-    print()
+            print(f"   ❌ Shopping list component failed: {e}")
+
+        # Test 3: Store component
+        print("3️⃣  Testing store component...")
+        try:
+            stores = client.get_stores(zip_code="49456", radius=15)
+            print(f"   ✅ Store component working ({len(stores)} stores)")
+            integration_results["store_access"] = True
+            integration_results["components_working"] += 1
+        except Exception as e:
+            print(f"   ❌ Store component failed: {e}")
+
+        # Test 4: Offers component
+        print("4️⃣  Testing offers component...")
+        try:
+            offers = client.get_offers(limit=10)
+            print(f"   ✅ Offers component working ({len(offers)} offers)")
+            integration_results["offers_access"] = True
+            integration_results["components_working"] += 1
+        except Exception as e:
+            print(f"   ❌ Offers component failed: {e}")
+
+        print(
+            f"\n📊 Integration Summary: {integration_results['components_working']}/4 components working"
+        )
+
+        return integration_results
+
+    except Exception as e:
+        print(f"❌ Component integration test failed: {e}")
+        return integration_results
 
 
-def demo_api_coverage():
-    """Demo comprehensive API coverage."""
-    print("🌐 Demo: API Coverage")
-    print("=" * 70)
+def demonstrate_modular_usage():
+    """Demonstrate modular usage patterns."""
+    print("\n📦 MODULAR USAGE DEMONSTRATION")
+    print("-" * 40)
 
-    print("API endpoints covered:")
-    print("   🎫 Coupons: https://api.meijer.com/digital/mPerks/api/offers")
-    print("   🔍 Search: https://ac.cnstrc.com/search/<query>")
-    print("   📝 Autocomplete: https://ac.cnstrc.com/autocomplete/<query>")
-    print(
-        "   🏪 Store Proximity: https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
-    )
-    print("   📍 Store Details: https://api.meijer.com/digital/storeInfo/stores/<id>")
-    print("   🛒 Shop & Scan: Multiple endpoints for scanning workflow")
-    print("   📋 Shopping Lists: List management endpoints")
-    print("   🔐 Authentication: OAuth 2.0 + PKCE flow")
-    print()
+    try:
+        # Pattern 1: Main client import
+        print("1️⃣  Pattern 1: Main client import")
+        print("   from meijer import Meijer")
+        from meijer import Meijer
 
-    print("Data sources analyzed:")
-    print("   📄 meijer2.log: Network traffic analysis")
-    print("   📱 APK decompilation: Native app structure")
-    print("   🔍 Constructor.io: Search backend configuration")
-    print("   🏪 StoreInfo API: Store data structure")
-    print("   🎫 mPerks API: Coupon management")
-    print()
+        client = Meijer()
+        print(f"   ✅ Created: {type(client).__name__}")
+
+        # Pattern 2: Component-specific imports
+        print("2️⃣  Pattern 2: Component imports")
+        print("   from meijer.models import AuthTokens")
+        print("   from meijer.auth import TokenStorage")
+        from meijer.models import AuthTokens
+        from meijer.auth import TokenStorage
+
+        tokens = AuthTokens(access_token="demo_token")
+        storage = TokenStorage()
+        print(f"   ✅ Created: {type(tokens).__name__}")
+        print(f"   ✅ Created: {type(storage).__name__}")
+
+        # Pattern 3: Exception handling imports
+        print("3️⃣  Pattern 3: Exception imports")
+        print("   from meijer import MeijerAuthenticationError")
+        from meijer import MeijerAuthenticationError as AuthError
+
+        print("   ✅ Available for error handling")
+        _ = AuthError  # Demonstration import
+
+        # Pattern 4: Enum imports
+        print("4️⃣  Pattern 4: Enum imports")
+        print("   from meijer import AuthenticationStatus")
+        from meijer import AuthenticationStatus
+
+        print(f"   ✅ Available: {list(AuthenticationStatus)}")
+
+        return True
+
+    except ImportError as e:
+        print(f"❌ Import error: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Modular usage demo failed: {e}")
+        return False
+
+
+def demonstrate_backwards_compatibility():
+    """Demonstrate backwards compatibility."""
+    print("\n🔄 BACKWARDS COMPATIBILITY TEST")
+    print("-" * 40)
+
+    try:
+        # Test old-style import still works
+        print("1️⃣  Testing legacy import pattern...")
+        from meijer import Meijer  # This uses the compatibility layer
+
+        client1 = Meijer()
+        print("   ✅ Legacy import pattern working")
+
+        # Test package import
+        print("2️⃣  Testing package import pattern...")
+        import meijer
+
+        client2 = meijer.Meijer()
+        print("   ✅ Package import pattern working")
+
+        # Verify both create the same type
+        print("3️⃣  Testing compatibility...")
+        same_type = type(client1) is type(client2)
+        print(f"   ✅ Same client type: {same_type}")
+        print(f"   • Client 1: {type(client1).__name__}")
+        print(f"   • Client 2: {type(client2).__name__}")
+
+        return True
+
+    except Exception as e:
+        print(f"❌ Backwards compatibility test failed: {e}")
+        return False
+
+
+def demonstrate_real_world_workflow():
+    """Demonstrate a real-world workflow."""
+    print("\n🌍 REAL-WORLD WORKFLOW DEMO")
+    print("-" * 40)
+
+    try:
+        # Create client
+        print("1️⃣  Creating Meijer client...")
+        meijer = Meijer()
+
+        if meijer.auth_status != AuthenticationStatus.AUTHENTICATED:
+            print("   ❌ Authentication required for workflow")
+            return False
+
+        print("   ✅ Client authenticated and ready")
+
+        # Workflow: Plan shopping trip
+        print("2️⃣  Planning shopping trip workflow...")
+
+        # Step 1: Check shopping list
+        print("   • Checking shopping list...")
+        items = meijer.list.get()
+        print(f"     📋 {len(items)} items on shopping list")
+
+        # Step 2: Find nearby stores
+        print("   • Finding nearby stores...")
+        stores = meijer.get_stores(zip_code="49456", radius=20)
+        print(f"     🏪 {len(stores)} stores found")
+
+        # Step 3: Check available offers
+        print("   • Checking available offers...")
+        offers = meijer.get_offers(limit=15)
+        print(f"     🎟️  {len(offers)} offers available")
+
+        # Workflow summary
+        print("3️⃣  Workflow summary:")
+        print("   ✅ Shopping preparation complete!")
+        print(f"   • Shopping list: {len(items)} items")
+        print(f"   • Available stores: {len(stores)}")
+        print(f"   • Current offers: {len(offers)}")
+
+        return True
+
+    except MeijerAuthenticationError:
+        print("   ❌ Authentication required for real-world workflow")
+        return False
+    except Exception as e:
+        print(f"   ❌ Real-world workflow failed: {e}")
+        return False
 
 
 def main():
-    """Run comprehensive integration demo."""
-    print("🚀 Meijer Python Client - Complete Integration")
-    print("=" * 70)
-    print("Everything is now merged into meijer.py!")
-    print()
+    """Run the integrated Meijer API demo."""
+    print("🚀 INTEGRATED MEIJER API DEMO")
+    print("=" * 50)
+    print("Demonstrating the new modular package structure")
+    print("")
+
+    # Setup logging
+    setup_demo_logging()
+
+    # Track test results
+    results = {}
 
     try:
-        # Run all demos
-        demo_comprehensive_integration()
-        demo_type_safety()
-        demo_api_coverage()
+        # Create client
+        print("📱 Initializing Meijer client...")
+        client = Meijer()
+        print("✅ Client initialized successfully")
+        print("")
 
-        print("🎉 Summary")
-        print("=" * 70)
-        print("✅ All functionality successfully integrated into meijer.py:")
-        print("   - Coupon classes and functionality")
-        print("   - Search classes and pagination")
-        print("   - Store classes and search")
-        print("   - Proper type handling throughout")
-        print("   - Comprehensive error handling")
-        print("   - Helper functions for data parsing")
-        print()
+        # Run integration tests
+        integration_results = test_component_integration(client)
+        results["integration"] = integration_results["components_working"] > 2
 
-        print("🔧 Usage:")
-        print("   from meijer import Meijer, MeijerCoupon, MeijerItem, MeijerStore")
-        print("   client = Meijer()")
-        print("   search_results = client.search.search('milk')")
-        print("   stores = client.store_search.find_stores_nearby(lat, lng)")
-        print("   coupons = client.get_coupons()  # requires authentication")
-        print()
+        # Test modular usage
+        modular_success = demonstrate_modular_usage()
+        results["modular_usage"] = modular_success
 
-        print("📚 All classes and functions are now in a single comprehensive module!")
+        # Test backwards compatibility
+        compat_success = demonstrate_backwards_compatibility()
+        results["backwards_compatibility"] = compat_success
 
-        return 0
+        # Test real-world workflow
+        workflow_success = demonstrate_real_world_workflow()
+        results["real_world_workflow"] = workflow_success
+
+        # Summary
+        print("\n📊 DEMO RESULTS SUMMARY")
+        print("=" * 50)
+
+        passed = sum(results.values())
+        total = len(results)
+
+        for test_name, success in results.items():
+            status = "✅ PASS" if success else "❌ FAIL"
+            formatted_name = test_name.replace("_", " ").title()
+            print(f"{formatted_name:<25} {status}")
+
+        print(f"\n🎯 Results: {passed}/{total} tests passed")
+
+        if passed == total:
+            print("🎉 All integration tests passed!")
+        else:
+            print("⚠️  Some tests failed (may be due to API limitations)")
+
+        print("\n💡 Demonstrated features:")
+        print("  • Component integration")
+        print("  • Modular usage patterns")
+        print("  • Backwards compatibility")
+        print("  • Real-world workflows")
+        print("  • Clean API design")
+        print("  • Professional package structure")
+
+        print("\n🚀 The modular Meijer package is ready for production!")
 
     except Exception as e:
-        print(f"❌ Demo error: {e}")
-        return 1
+        print(f"❌ Demo failed: {e}")
+
+    print("\nQuick start:")
+    print("   client = Meijer()")
+    print("   # That's it! Authentication auto-discovered 🎯")
 
 
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    main()

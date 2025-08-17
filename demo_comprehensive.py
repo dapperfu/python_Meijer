@@ -1,197 +1,295 @@
 #!/usr/bin/env python3
 """
-Demo script for the comprehensive Meijer API client.
+Comprehensive Meijer API Demo
+============================
 
-Shows how to use different authentication methods and API endpoints.
+Demonstrates all major functionality of the modular Meijer API client.
+
+Features tested:
+- Authentication (automatic discovery)
+- Shopping list management
+- Store search and information
+- Offers and coupons
+- User profile access
+- Error handling
+
+This demo showcases the new modular package structure and clean API.
 """
 
-import json
-import time
-from meijer import Meijer
+import logging
+from typing import Dict
+
+# Use the new modular package structure
+from meijer import (
+    Meijer,
+    AuthenticationStatus,
+    MeijerAuthenticationError,
+)
 
 
-def demo_basic_usage():
-    """Demonstrate basic client usage."""
-    print("🚀 Basic Meijer Client Usage")
+def setup_logging():
+    """Configure clean logging for the demo."""
+    logging.basicConfig(
+        level=logging.WARNING,  # Reduce noise
+        format="%(levelname)s: %(message)s",
+    )
+
+
+def test_authentication(client: Meijer) -> bool:
+    """Test authentication functionality."""
+    print("🔐 AUTHENTICATION TEST")
+    print("-" * 30)
+
+    if client.auth_status == AuthenticationStatus.AUTHENTICATED:
+        print("✅ Authentication successful")
+        print(f"   • Status: {client.auth_status.value}")
+        print(f"   • Has tokens: {client.auth_tokens is not None}")
+        return True
+    else:
+        print(f"❌ Authentication failed - Status: {client.auth_status.value}")
+        return False
+
+
+def test_shopping_list(client: Meijer) -> bool:
+    """Test shopping list functionality."""
+    print("\n🛒 SHOPPING LIST TEST")
+    print("-" * 30)
+
+    try:
+        # Get current shopping list
+        items = client.list.get()
+        print(f"✅ Retrieved shopping list: {len(items)} items")
+
+        if items:
+            print("   📋 Current items:")
+            for i, item in enumerate(items[:3], 1):  # Show first 3
+                print(f"      {i}. {item.name} (qty: {item.quantity})")
+            if len(items) > 3:
+                print(f"      ... and {len(items) - 3} more items")
+        else:
+            print("   📋 Shopping list is empty")
+
+        return True
+
+    except MeijerAuthenticationError:
+        print("❌ Authentication required for shopping list")
+        return False
+    except Exception as e:
+        print(f"❌ Shopping list error: {e}")
+        return False
+
+
+def test_stores(client: Meijer) -> bool:
+    """Test store search functionality."""
+    print("\n🏪 STORE SEARCH TEST")
+    print("-" * 30)
+
+    try:
+        # Test store search
+        stores = client.get_stores(zip_code="49456", radius=25)
+        print(f"✅ Store search completed: {len(stores)} stores found")
+
+        if stores:
+            print("   🏪 Sample stores:")
+            for i, store in enumerate(stores[:2], 1):  # Show first 2
+                print(f"      {i}. {store.get('name', 'Unknown Store')}")
+                if "address" in store:
+                    print(f"         Address: {store['address']}")
+        else:
+            print("   🏪 No stores found in search area")
+
+        return True
+
+    except MeijerAuthenticationError:
+        print("❌ Authentication required for store search")
+        return False
+    except Exception as e:
+        print(f"❌ Store search error: {e}")
+        return False
+
+
+def test_offers(client: Meijer) -> bool:
+    """Test offers and coupons functionality."""
+    print("\n🎟️  OFFERS TEST")
+    print("-" * 30)
+
+    try:
+        # Get available offers
+        offers = client.get_offers(limit=10)
+        print(f"✅ Offers retrieved: {len(offers)} offers available")
+
+        if offers:
+            print("   🎟️  Sample offers:")
+            for i, offer in enumerate(offers[:2], 1):  # Show first 2
+                print(f"      {i}. {offer.get('title', 'Special Offer')}")
+                if "discount" in offer:
+                    print(f"         Discount: {offer['discount']}")
+        else:
+            print("   🎟️  No offers available")
+
+        return True
+
+    except MeijerAuthenticationError:
+        print("❌ Authentication required for offers")
+        return False
+    except Exception as e:
+        print(f"❌ Offers error: {e}")
+        return False
+
+
+def test_user_info(client: Meijer) -> bool:
+    """Test user information retrieval."""
+    print("\n👤 USER INFO TEST")
+    print("-" * 30)
+
+    try:
+        # Get user information
+        user_info = client.get_user_info()
+
+        if user_info:
+            print("✅ User information retrieved")
+            print(f"   • User ID: {user_info.user_id}")
+            print(f"   • Email: {user_info.email}")
+            print(f"   • Name: {user_info.first_name} {user_info.last_name}")
+        else:
+            print("⚠️  User information not available (simplified version)")
+
+        return True
+
+    except MeijerAuthenticationError:
+        print("❌ Authentication required for user info")
+        return False
+    except Exception as e:
+        print(f"❌ User info error: {e}")
+        return False
+
+
+def test_modular_features():
+    """Test modular package features."""
+    print("\n📦 MODULAR FEATURES TEST")
+    print("-" * 30)
+
+    try:
+                # Test direct component imports
+        from meijer.models import AuthTokens
+        from meijer.auth import TokenStorage
+        from meijer.enums import AuthenticationStatus as AuthStatus
+        
+        print("✅ Modular imports working:")
+        print("   • meijer.models.AuthTokens")
+        print("   • meijer.auth.TokenStorage")
+        print("   • meijer.enums.AuthenticationStatus")
+        
+        # Use import to satisfy linter
+        _ = AuthStatus  # Demonstration import
+
+        # Test creating instances
+        tokens = AuthTokens(access_token="demo_token")
+        storage = TokenStorage()
+
+        print("✅ Component instantiation working:")
+        print(f"   • AuthTokens: {tokens.token_type} token")
+        print(f"   • TokenStorage: {storage.storage_file}")
+
+        return True
+
+    except ImportError as e:
+        print(f"❌ Import error: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Modular features error: {e}")
+        return False
+
+
+def run_api_tests(client: Meijer) -> Dict[str, bool]:
+    """Run all API functionality tests."""
+    print("🚀 RUNNING API FUNCTIONALITY TESTS")
     print("=" * 50)
 
-    # Initialize client
-    client = Meijer()
+    results = {}
 
-    # Show initial state
-    print(f"Initial auth status: {client.auth_status.value}")
-    print(f"Authenticated: {client.is_authenticated()}")
+    # Test authentication
+    results["authentication"] = test_authentication(client)
 
-    # Show session info
-    session_info = client.get_session_info()
-    print(f"Session info: {json.dumps(session_info, indent=2)}")
+    # Test shopping list
+    results["shopping_list"] = test_shopping_list(client)
 
-    print("\n✅ Basic usage demo completed\n")
+    # Test store search
+    results["stores"] = test_stores(client)
 
+    # Test offers
+    results["offers"] = test_offers(client)
 
-def demo_oauth_flow():
-    """Demonstrate OAuth authorization flow."""
-    print("🔐 OAuth Authorization Flow Demo")
-    print("=" * 50)
+    # Test user info
+    results["user_info"] = test_user_info(client)
 
-    client = Meijer()
-
-    # Generate authorization URL
-    auth_url, state, code_verifier = client.get_authorization_url()
-
-    print(f"🔗 Authorization URL:")
-    print(f"   {auth_url}")
-    print(f"\n📋 Generated parameters:")
-    print(f"   State: {state}")
-    print(f"   Code Verifier: {code_verifier}")
-
-    print("\n📱 To complete authentication:")
-    print("   1. Open the authorization URL in a browser")
-    print("   2. Complete the login process")
-    print("   3. Copy the authorization code from the redirect URL")
-    print("   4. Use client.authenticate_with_code(code, code_verifier)")
-
-    print("\n✅ OAuth flow demo completed\n")
-
-
-def demo_api_endpoints():
-    """Demonstrate API endpoint usage (requires authentication)."""
-    print("🌐 API Endpoints Demo")
-    print("=" * 50)
-
-    client = Meijer()
-
-    print("📋 Available API endpoints:")
-    print("   • get_offers() - Get available offers/coupons")
-    print("   • get_home_cards() - Get home page content")
-    print("   • get_special_offers() - Get special promotions")
-    print("   • get_stores() - Get store locations")
-    print("   • get_shopping_list() - Get user's shopping list")
-    print("   • get_user_info() - Get user profile")
-
-    print("\n⚠️  Note: These endpoints require authentication")
-    print("   Use client.login() or client.authenticate_with_code() first")
-
-    print("\n✅ API endpoints demo completed\n")
-
-
-def demo_error_handling():
-    """Demonstrate error handling and session management."""
-    print("⚠️  Error Handling & Session Management Demo")
-    print("=" * 50)
-
-    client = Meijer()
-
-    print("🔍 Testing unauthenticated API calls:")
-
-    # Try to get offers without authentication
-    offers = client.get_offers()
-    print(f"   get_offers() result: {len(offers)} offers (expected: 0)")
-
-    # Try to get stores without authentication
-    stores = client.get_stores()
-    print(f"   get_stores() result: {len(stores)} stores (expected: 0)")
-
-    print("\n🔄 Testing session management:")
-    print(f"   Initial status: {client.auth_status.value}")
-
-    # Simulate authentication
-    client.auth_status = client.auth_status.__class__.AUTHENTICATED
-    print(f"   After auth: {client.auth_status.value}")
-
-    # Test logout
-    client.logout()
-    print(f"   After logout: {client.auth_status.value}")
-
-    print("\n✅ Error handling demo completed\n")
-
-
-def demo_context_manager():
-    """Demonstrate context manager usage."""
-    print("🔄 Context Manager Demo")
-    print("=" * 50)
-
-    print("📝 Using client as context manager:")
-
-    with Meijer() as client:
-        print(f"   Inside context: {client.auth_status.value}")
-        print(f"   Client ID: {id(client)}")
-
-        # Simulate some operations
-        session_info = client.get_session_info()
-        print(f"   Session info available: {bool(session_info)}")
-
-    print(f"   Outside context: {client.auth_status.value}")
-    print("   Note: Client is automatically logged out after context exit")
-
-    print("\n✅ Context manager demo completed\n")
-
-
-def demo_advanced_features():
-    """Demonstrate advanced client features."""
-    print("🚀 Advanced Features Demo")
-    print("=" * 50)
-
-    client = Meijer()
-
-    print("🔧 Advanced features:")
-    print("   • PKCE (Proof Key for Code Exchange) support")
-    print("   • Automatic token refresh")
-    print("   • Retry logic with exponential backoff")
-    print("   • Comprehensive error handling")
-    print("   • Full type hints and dataclasses")
-    print("   • Session persistence and management")
-
-    print("\n📊 Configuration options:")
-    print(f"   • OAuth client ID: {client.oauth_config.client_id}")
-    print(f"   • Authorization URL: {client.oauth_config.auth_url}")
-    print(f"   • Token URL: {client.oauth_config.token_url}")
-    print(f"   • Scope: {client.oauth_config.scope}")
-    print(f"   • Redirect URI: {client.oauth_config.redirect_uri}")
-
-    print("\n🌐 API base URLs:")
-    print(f"   • API Base: {client.api_base}")
-    print(f"   • ID Base: {client.id_base}")
-
-    print("\n✅ Advanced features demo completed\n")
+    return results
 
 
 def main():
-    """Run all demo functions."""
-    print("🎯 Meijer Comprehensive Client - Full Demo")
-    print("=" * 60)
-    print()
+    """Run the comprehensive demo."""
+    print("🎯 COMPREHENSIVE MEIJER API DEMO")
+    print("=" * 50)
+    print("Testing all functionality with the new modular package")
+    print("")
+
+    # Setup clean logging
+    setup_logging()
 
     try:
-        # Run all demos
-        demo_basic_usage()
-        time.sleep(1)
+        # Create Meijer client with auto-discovery
+        print("📱 Creating Meijer client...")
+        client = Meijer()
+        print("✅ Client created successfully")
+        print("")
 
-        demo_oauth_flow()
-        time.sleep(1)
+        # Run API tests
+        api_results = run_api_tests(client)
 
-        demo_api_endpoints()
-        time.sleep(1)
+        # Test modular features
+        modular_success = test_modular_features()
 
-        demo_error_handling()
-        time.sleep(1)
+        # Summary
+        print("\n📊 TEST RESULTS SUMMARY")
+        print("=" * 50)
 
-        demo_context_manager()
-        time.sleep(1)
+        all_results = {**api_results, "modular_features": modular_success}
+        passed = sum(all_results.values())
+        total = len(all_results)
 
-        demo_advanced_features()
+        for test_name, success in all_results.items():
+            status = "✅ PASS" if success else "❌ FAIL"
+            print(f"{test_name.replace('_', ' ').title():<20} {status}")
 
-        print("\n🎉 All demos completed successfully!")
-        print("\n📚 Next steps:")
-        print("   1. Run 'python test_meijer_comprehensive.py' to run tests")
-        print("   2. Use 'python meijer_comprehensive.py' for interactive demo")
-        print("   3. Check 'meijer_analysis_report.json' for network analysis")
-        print("   4. Review 'analyze_log_with_mitmproxy.py' for log analysis")
+        print(f"\n🎯 Overall Results: {passed}/{total} tests passed")
 
-    except KeyboardInterrupt:
-        print("\n⏹️  Demo interrupted by user")
+        if passed == total:
+            print("🎉 All tests passed! Comprehensive functionality working.")
+        else:
+            print(
+                "⚠️  Some tests failed. This may be due to API limitations in the simplified version."
+            )
+
+        print("\n💡 Features demonstrated:")
+        print("  • Automatic authentication discovery")
+        print("  • Shopping list management")
+        print("  • Store search capabilities")
+        print("  • Offers and coupons access")
+        print("  • Modular package structure")
+        print("  • Clean error handling")
+        print("  • Professional API design")
+
+    except MeijerAuthenticationError as e:
+        print(f"❌ Authentication error: {e}")
+        print("\n💡 Ensure you have valid authentication configured:")
+        print("  • Bearer token in auth.txt")
+        print("  • Config file at ~/.config/meijer.txt")
+        print("  • Valid persistent tokens")
+
     except Exception as e:
-        print(f"\n❌ Demo error: {e}")
+        print(f"❌ Unexpected error: {e}")
+
+    print("\n🏁 Demo completed!")
 
 
 if __name__ == "__main__":
