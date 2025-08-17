@@ -23,7 +23,7 @@ from .stores import MeijerStore
 
 class Meijer:
     """
-    Unified Meijer API client with all authentication methods and functionality.
+    Meijer API client with all authentication methods and functionality.
 
     This client consolidates all working authentication approaches:
     - OAuth 2.0 with PKCE (interactive and programmatic)
@@ -47,7 +47,7 @@ class Meijer:
         timeout: int = 30,
     ):
         """
-        Initialize the unified Meijer client.
+        Initialize the Meijer client.
 
         Args:
             auth: Path to auth file (auto-detects bearer= or user=/password=) or None for auto-discovery
@@ -102,7 +102,7 @@ class Meijer:
         if self._restore_authentication():
             pass  # Method already logs success
 
-        self.logger.info("Unified Meijer client initialized with all functionality")
+        self.logger.info("Meijer client initialized with all functionality")
 
     def _setup_logging(self):
         """Setup logging configuration."""
@@ -166,7 +166,7 @@ class Meijer:
 
     def login(self) -> bool:
         """
-        Unified login method that intelligently tries all available authentication methods.
+        Login method that intelligently tries all available authentication methods.
 
         Authentication methods (in priority order):
         1. Auth file (if specified) - intelligently detects bearer= or user=/password=

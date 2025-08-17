@@ -241,7 +241,8 @@ class MeijerStore:
         # Extract gas station information if available
         gas_station = None
         # Create gas station if gas station amenities or hours are present
-        if data.get("GasStationAmenities") or data.get("GasStationHours"):
+        if (data.get("GasStationAmenities") is not None and data.get("GasStationAmenities")) or \
+           (data.get("GasStationHours") is not None and data.get("GasStationHours")):
             try:
                 from .gas import MeijerGas
                 gas_station = MeijerGas.from_api_data(

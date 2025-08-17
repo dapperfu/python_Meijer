@@ -205,13 +205,13 @@ class MeijerGas:
         """
         # Extract gas station amenities if available
         amenities = []
-        if "GasStationAmenities" in data:
+        if "GasStationAmenities" in data and data["GasStationAmenities"] is not None:
             for amenity_data in data["GasStationAmenities"]:
                 amenities.append(amenity_data.get("AmentityType", "Unknown"))
         
         # Extract gas station hours if available
         hours = None
-        if "GasStationHours" in data and data["GasStationHours"]:
+        if "GasStationHours" in data and data["GasStationHours"] is not None:
             try:
                 # Find the first set of hours (assuming consistent hours across days)
                 first_hour = data["GasStationHours"][0]
@@ -227,7 +227,7 @@ class MeijerGas:
                     is_24_hours=False,  # Meijer gas stations are typically not 24 hours
                     days_open=days_open
                 )
-            except (ValueError, TypeError) as e:
+            except (ValueError, TypeError, IndexError) as e:
                 logger.warning(f"Failed to parse gas station hours: {e}")
         
         # Determine amenities based on available data
