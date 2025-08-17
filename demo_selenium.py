@@ -42,7 +42,7 @@ def demo_selenium_auth():
         
         # Perform automated login
         print("🚀 Starting Selenium-based OAuth authentication...")
-        print("📱 A Chrome browser will open automatically")
+        print("📱 A Firefox browser will open automatically")
         print("🔐 Credentials will be filled in automatically")
         print("⚠️  If MFA is required, you'll need to enter the code manually")
         print()
