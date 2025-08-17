@@ -284,6 +284,106 @@ class Search:
             self.logger.error(f"Error searching by barcode {barcode}: {e}")
             return None
     
+    def browse(self, collection_id: str, page: int = 1, results_per_page: int = 24, **kwargs) -> SearchResult:
+        """
+        Browse products by collection/category ID.
+        
+        Args:
+            collection_id: Collection/category ID to browse
+            page: Page number (1-based)
+            results_per_page: Number of results per page
+            **kwargs: Additional browse parameters
+            
+        Returns:
+            SearchResult object containing browse results
+        """
+        try:
+            url = f"{self.constructor_base_url}{self.endpoints['browse']}/{collection_id}"
+            
+            params = {
+                "key": self.api_key,
+                "num_results_per_page": results_per_page,
+                "page": page,
+                "fmt_options[groups_max_depth]": 2,
+                "fmt_options[groups_start]": "current",
+                **kwargs,
+            }
+            
+            self.logger.info(f"Browsing collection: '{collection_id}' (page {page}, {results_per_page} results)")
+            
+            response = self.meijer._make_request("GET", url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_search_response(data, collection_id, page, results_per_page, "browse")
+            else:
+                self.logger.error(f"Browse failed: {response.status_code} - {response.text}")
+                return SearchResult(
+                    total_results=0,
+                    results=[],
+                    current_page=page,
+                    total_pages=0,
+                    query=collection_id,
+                    sort_by="browse"
+                )
+                
+        except Exception as e:
+            self.logger.error(f"Error during browse: {e}")
+            return SearchResult(
+                total_results=0,
+                results=[],
+                current_page=page,
+                total_pages=0,
+                query=collection_id,
+                sort_by="browse"
+            )
+    
+    def get_popular_searches(self) -> List[str]:
+        """
+        Get popular search terms based on analysis.
+        
+        Returns:
+            List of popular search terms
+        """
+        # Return popular terms discovered from log analysis
+        popular_terms = ['lego', 'milk', 'lego/search', 'mi', 'milk/search', 'milk/click_through', 'lego/select', 'lego/click_through']
+        return popular_terms
+    
+    def track_search_behavior(self, 
+                             search_term: str, 
+                             num_results: int, 
+                             customer_ids: Optional[List[str]] = None):
+        """
+        Track search behavior for analytics (observed in Constructor.io calls).
+        
+        Args:
+            search_term: The search term used
+            num_results: Number of results returned
+            customer_ids: List of customer IDs that were clicked/viewed
+        """
+        endpoint = f"{self.constructor_base_url}/behavior"
+        
+        params = {
+            "key": self.api_key,
+            "term": search_term,
+            "num_results": num_results,
+            "action": "search-results",
+            "c": "cioand-2.31.0",  # Client version
+            "num_results_per_page": 30,
+            "page": 1
+        }
+        
+        if customer_ids:
+            params["customer_ids"] = ",".join(customer_ids)
+        
+        try:
+            response = self.meijer._make_request("GET", endpoint, params=params)
+            # Don't raise for status - analytics calls may return 204
+            self.logger.debug(f"Tracked search behavior for '{search_term}'")
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to track search behavior: {e}")
+    
     def _parse_search_response(
         self,
         data: Dict[str, Any],

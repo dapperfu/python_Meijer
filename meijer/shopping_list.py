@@ -5,7 +5,7 @@ Meijer Shopping List Management
 Shopping list functionality for the Meijer API client.
 """
 
-from typing import List, TYPE_CHECKING, Optional
+from typing import List, TYPE_CHECKING, Optional, Dict, Any
 from urllib.parse import urljoin
 
 try:
@@ -72,7 +72,9 @@ class MeijerList:
                 data = response.json()
                 items = []
                 for item_data in data.get("listItems", []):
-                    items.append(ListItem(**item_data))
+                    # Map API response keys to ListItem constructor parameters
+                    mapped_data = self._map_api_response_to_listitem(item_data)
+                    items.append(ListItem(**mapped_data))
                 return items
             else:
                 self.logger.error(
@@ -137,7 +139,7 @@ class MeijerList:
             }
 
             response = self.meijer._make_request(
-                "POST", url, headers=headers, json=data
+                "POST", url, headers=headers, json_data=data
             )
 
             if response.status_code in [200, 201]:
@@ -228,7 +230,9 @@ class MeijerList:
                 items = []
                 # Use correct field name from API response: 'favoriteListItems' not 'favoriteItems'
                 for item_data in data.get("favoriteListItems", []):
-                    items.append(ListItem(**item_data))
+                    # Map API response keys to ListItem constructor parameters
+                    mapped_data = self._map_api_response_to_listitem(item_data)
+                    items.append(ListItem(**mapped_data))
                 return items
             else:
                 self.logger.error(
@@ -270,7 +274,7 @@ class MeijerList:
             }
 
             response = self.meijer._make_request(
-                "POST", url, headers=headers, json=data
+                "POST", url, headers=headers, json_data=data
             )
 
             if response.status_code in [200, 201]:  # 201 = Created (success) 
@@ -302,51 +306,52 @@ class MeijerList:
             
             self.logger.info(f"Found {len(favorites)} favorites")
             for i, item in enumerate(favorites):
-                self.logger.info(f"  {i+1}. ID:{getattr(item, 'listItemId', 'N/A')} UPC:{getattr(item, 'itemPartNumber', 'N/A')} Desc:{getattr(item, 'itemDescription', 'N/A')}")
+                self.logger.info(f"  {i+1}. ID:{getattr(item, 'list_item_id', 'N/A')} UPC:{getattr(item, 'item_part_number', 'N/A')} Desc:{getattr(item, 'item_description', 'N/A')}")
             
             # Try multiple ways to match the item
             target_item = None
             for item in favorites:
                 # Try exact UPC match
-                if getattr(item, 'itemPartNumber', None) == upc:
+                if getattr(item, 'item_part_number', None) == upc:
                     target_item = item
-                    self.logger.info(f"Found exact UPC match: {item.listItemId}")
+                    self.logger.info(f"Found exact UPC match: {item.list_item_id}")
                     break
                 # Try description match as fallback 
-                elif getattr(item, 'itemDescription', '') and upc in getattr(item, 'itemDescription', ''):
+                elif getattr(item, 'item_description', '') and upc in getattr(item, 'item_description', ''):
                     target_item = item
-                    self.logger.info(f"Found description match: {item.listItemId}")
+                    self.logger.info(f"Found description match: {item.list_item_id}")
                     break
                     
             if not target_item:
                 self.logger.warning(f"Item {upc} not found in favorites after refresh")
                 self.logger.warning("Available favorites:")
                 for item in favorites:
-                    self.logger.warning(f"  - UPC: {getattr(item, 'itemPartNumber', 'None')}, Desc: {getattr(item, 'itemDescription', 'None')}")
+                    self.logger.warning(f"  - UPC: {getattr(item, 'item_part_number', 'None')}, Desc: {getattr(item, 'item_description', 'None')}")
                 return False
 
-            self.logger.info(f"Attempting to delete favorite item ID: {target_item.listItemId}")
-
-            url = urljoin(self.meijer.api_base_url, self.endpoints["delete_bulk_favorites"])
+            self.logger.info(f"Attempting to delete favorite item ID: {target_item.list_item_id}")
+            
+            # Use real endpoint with listItemIds array from APK (Hq/d.java)
+            url = urljoin(self.meijer.api_base_url, self.endpoints["delete_favorite"])
             headers = self.meijer._get_api_headers()
             
-            # Use real headers from APK analysis (Hq/d.java)  
+            # Use real headers from APK analysis
             headers.update({
                 "Content-Type": "application/vnd.meijer.listManagement.favorites-v1.0+json",
                 "Accept": "application/vnd.meijer.listManagement.favorites-v1.0+json"
             })
 
-            # Real request body structure from APK (DeleteFavoritesListItemsRequest)
+            # Real request body structure from APK (DeleteFavoritesItemsRequest)
             data = {
-                "listItemIds": [target_item.listItemId]  # Array of Long listItemIds to delete
+                "listItemIds": [target_item.list_item_id]  # Array of Long listItemIds to delete
             }
 
             response = self.meijer._make_request(
-                "POST", url, headers=headers, json=data
+                "POST", url, headers=headers, json_data=data
             )
 
             if response.status_code in [200, 201, 204, 205]:  # Accept all success codes
-                self.logger.info(f"Successfully removed item {upc} (ID:{target_item.listItemId}) from favorites")
+                self.logger.info(f"Successfully removed item {upc} (ID:{target_item.list_item_id}) from favorites")
                 return True
             else:
                 self.logger.error(f"Failed to remove from favorites: {response.status_code} - {response.text}")
@@ -388,8 +393,8 @@ class MeijerList:
             search_client = None
             
             try:
-                from .search import MeijerSearch
-                search_client = MeijerSearch(self.meijer)
+                from .search import Search
+                search_client = Search(self.meijer)
             except ImportError:
                 self.logger.error("❌ Search functionality not available for defrag")
                 return False
@@ -412,8 +417,8 @@ class MeijerList:
                 matched_product = None
                 match_confidence = "Low"
                 
-                if search_results and search_results.items:
-                    first_result = search_results.items[0]
+                if search_results and search_results.results:
+                    first_result = search_results.results[0]
                     
                     # Calculate match confidence based on name similarity
                     original_name = item.name.lower()
@@ -425,26 +430,29 @@ class MeijerList:
                     elif any(word in matched_name for word in original_name.split()):
                         match_confidence = "Medium"
                     
-                    if first_result.aisle or first_result.section:
+                    # Check if the result has location information
+                    # Note: Constructor.io search results may not have aisle info
+                    # We might need to use a different API for location data
+                    if hasattr(first_result, 'aisle') and first_result.aisle:
                         location_info = {
                             'aisle': first_result.aisle,
-                            'section': first_result.section,
-                            'zone': first_result.zone,
-                            'zone_code': first_result.zone_code
+                            'section': getattr(first_result, 'section', None),
+                            'zone': getattr(first_result, 'zone', None),
+                            'zone_code': getattr(first_result, 'zone_code', None)
                         }
-                        self.logger.info(f"📍 Found location: Aisle {first_result.aisle}, Section {first_result.section}")
-                        
-                        # Store matched product details
-                        matched_product = {
-                            'title': first_result.title,
-                            'price': first_result.formatted_price,
-                            'brand': first_result.brand,
-                            'category': first_result.category,
-                            'aisle': first_result.aisle,
-                            'section': first_result.section
-                        }
+                        self.logger.info(f"📍 Found location: Aisle {first_result.aisle}, Section {getattr(first_result, 'section', 'Unknown')}")
                     else:
-                        self.logger.warning(f"⚠️  No location data found for {item.name}")
+                        self.logger.info(f"📍 No aisle data in search result for {item.name}")
+                    
+                    # Store matched product details
+                    matched_product = {
+                        'title': first_result.title,
+                        'price': getattr(first_result, 'price', 'N/A'),
+                        'brand': getattr(first_result, 'brand', 'N/A'),
+                        'category': getattr(first_result, 'category', 'N/A'),
+                        'aisle': getattr(first_result, 'aisle', 'Unknown'),
+                        'section': getattr(first_result, 'section', 'Unknown')
+                    }
                 else:
                     self.logger.warning(f"⚠️  No search results found for {item.name}")
                 
@@ -533,7 +541,7 @@ class MeijerList:
             self.logger.info("🗑️  Clearing current shopping list...")
             deleted_count = 0
             for item in current_items:
-                if self.delete_item(str(item.listItemId)):
+                if self.delete_item(str(item.list_item_id)):
                     deleted_count += 1
                 else:
                     self.logger.warning(f"⚠️  Failed to delete item: {item.name}")
@@ -577,11 +585,15 @@ class MeijerList:
                 
                 enhanced_notes = " | ".join(notes_parts) if notes_parts else None
                 
+                # Limit notes to 60 characters as required by the API
+                if enhanced_notes and len(enhanced_notes) > 60:
+                    enhanced_notes = enhanced_notes[:57] + "..."
+                
                 # Re-add the item with enhanced location information
                 success = self.add_item_with_details(
-                    upc=item.itemPartNumber or f"ITEM_{item.listItemId}",
+                    upc=item.item_part_number or f"ITEM_{item.list_item_id}",
                     quantity=item.quantity,
-                    description=item.itemDescription,
+                    description=item.item_description,
                     notes=enhanced_notes,
                     display_order=idx
                 )
@@ -613,5 +625,66 @@ class MeijerList:
         except Exception as e:
             self.logger.error(f"❌ Error during shopping list defrag: {e}")
             return False
+
+    def _map_api_response_to_listitem(self, item_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Map API response keys from camelCase to snake_case for ListItem constructor.
+        
+        Args:
+            item_data: Raw API response data with camelCase keys
+            
+        Returns:
+            Dict with snake_case keys for ListItem constructor
+        """
+        # Mapping from API response keys to ListItem constructor parameters
+        key_mapping = {
+            'listItemId': 'list_item_id',
+            'listItemTypeId': 'list_item_type_id',
+            'itemDisplayOrder': 'item_display_order',
+            'itemPartNumber': 'item_part_number',
+            'itemDescription': 'item_description',
+            'storeId': 'store_id',
+            'isComplete': 'is_complete',
+            'isFavorite': 'is_favorite',
+            'listingId': 'listing_id',
+            'promotionStart': 'promotion_start',
+            'promotionEnd': 'promotion_end',
+            'couponId': 'coupon_id'
+        }
+        
+        mapped_data = {}
+        for api_key, constructor_key in key_mapping.items():
+            if api_key in item_data:
+                mapped_data[constructor_key] = item_data[api_key]
+        
+        # Handle special cases
+        if 'promotionStart' in item_data and item_data['promotionStart']:
+            try:
+                from datetime import datetime
+                mapped_data['promotion_start'] = datetime.fromisoformat(item_data['promotionStart'].replace('Z', '+00:00')).date()
+            except (ValueError, TypeError):
+                mapped_data['promotion_start'] = None
+        
+        if 'promotionEnd' in item_data and item_data['promotionEnd']:
+            try:
+                from datetime import datetime
+                mapped_data['promotion_end'] = datetime.fromisoformat(item_data['promotionEnd'].replace('Z', '+00:00')).date()
+            except (ValueError, TypeError):
+                mapped_data['promotion_end'] = None
+        
+        # Set default values for required fields
+        mapped_data.setdefault('list_item_id', 0)
+        mapped_data.setdefault('list_item_type_id', 1)
+        mapped_data.setdefault('item_display_order', 1)
+        mapped_data.setdefault('item_description', 'Unknown Item')
+        mapped_data.setdefault('quantity', 1)
+        mapped_data.setdefault('store_id', 0)
+        mapped_data.setdefault('notes', None)
+        mapped_data.setdefault('is_complete', False)
+        mapped_data.setdefault('is_favorite', False)
+        mapped_data.setdefault('listing_id', None)
+        mapped_data.setdefault('coupon_id', 0)
+        
+        return mapped_data
 
 

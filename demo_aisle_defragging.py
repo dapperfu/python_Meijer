@@ -16,11 +16,9 @@ from typing import List, Dict, Any
 # Add the parent directory to the path so we can import meijer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from meijer_item import (
+from meijer import (
     MeijerItem, 
-    create_meijer_item_from_product_api,
-    sort_items_by_aisle,
-    group_items_by_aisle
+    create_meijer_items_from_search
 )
 
 

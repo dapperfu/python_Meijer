@@ -119,8 +119,8 @@ class MPerksEarnedRewards:
         self.endpoints = {
             "earned_rewards": "/loyalty/mPerks/api/reward/earned",
             "mcard_info": "/loyalty/mPerks/api/reward/mCard/info",
-            "available_rewards": "/loyalty/mPerks/api/reward/available",
-            "reward_categories": "/loyalty/mPerks/api/reward/categories"
+            "available_rewards": "/digital/mperks40/customer/v1/rewards/available",
+            "reward_categories": "/loyalty/mPerks/api/offers/Categories"
         }
     
     def get_earned_rewards(self, **kwargs) -> List[EarnedReward]:
@@ -137,13 +137,14 @@ class MPerksEarnedRewards:
             MeijerAPIError: If the API request fails
         """
         try:
-            url = f"{self.meijer.base_url}{self.endpoints['earned_rewards']}"
+            url = f"{self.meijer.api_base_url}{self.endpoints['earned_rewards']}"
             
-            # Set proper headers for mPerks earned rewards
-            headers = {
+            # Get default headers and merge with custom ones
+            headers = self.meijer._get_api_headers()
+            headers.update({
                 "Accept": "application/vnd.meijer.digitalmperks.earnedrewards-v1.0+json",
                 "Content-Type": "application/vnd.meijer.digitalmperks.earnedrewards-v1.0+json"
-            }
+            })
             
             response = self.meijer._make_request("POST", url, headers=headers, **kwargs)
             
@@ -171,12 +172,13 @@ class MPerksEarnedRewards:
             MeijerAPIError: If the API request fails
         """
         try:
-            url = f"{self.meijer.base_url}{self.endpoints['mcard_info']}"
+            url = f"{self.meijer.api_base_url}{self.endpoints['mcard_info']}"
             
-            # Set proper headers for mCard info
-            headers = {
+            # Get default headers and merge with custom ones
+            headers = self.meijer._get_api_headers()
+            headers.update({
                 "Accept": "application/vnd.meijer.digitalmperks.mcardinfo-v1.0+json"
-            }
+            })
             
             response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
             
@@ -204,12 +206,13 @@ class MPerksEarnedRewards:
             MeijerAPIError: If the API request fails
         """
         try:
-            url = f"{self.meijer.base_url}{self.endpoints['available_rewards']}"
+            url = f"{self.meijer.api_base_url}{self.endpoints['available_rewards']}"
             
-            # Set proper headers for available rewards
-            headers = {
+            # Get default headers and merge with custom ones
+            headers = self.meijer._get_api_headers()
+            headers.update({
                 "Accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json"
-            }
+            })
             
             response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
             
@@ -223,11 +226,12 @@ class MPerksEarnedRewards:
             self.logger.error(f"Error getting available rewards: {e}")
             raise MeijerAPIError(f"Failed to get available rewards: {e}")
     
-    def get_reward_categories(self, **kwargs) -> List[str]:
+    def get_reward_categories(self, clip_filter: str = "unclippedonly", **kwargs) -> List[str]:
         """
         Get available reward categories.
         
         Args:
+            clip_filter: Filter for clipped/unclipped offers ("clippedonly", "unclippedonly")
             **kwargs: Additional query parameters
             
         Returns:
@@ -237,14 +241,19 @@ class MPerksEarnedRewards:
             MeijerAPIError: If the API request fails
         """
         try:
-            url = f"{self.meijer.base_url}{self.endpoints['reward_categories']}"
+            url = f"{self.meijer.api_base_url}{self.endpoints['reward_categories']}"
             
-            # Set proper headers for reward categories
-            headers = {
+            # Get default headers and merge with custom ones
+            headers = self.meijer._get_api_headers()
+            headers.update({
                 "Accept": "application/vnd.meijer.digitalmperks.categories-v1.0+json"
-            }
+            })
             
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
+            # Add required clipFilter parameter
+            params = {"clipFilter": clip_filter}
+            params.update(kwargs)
+            
+            response = self.meijer._make_request("GET", url, headers=headers, params=params, **kwargs)
             
             if response.status_code == 200:
                 data = response.json()

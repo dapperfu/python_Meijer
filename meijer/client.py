@@ -12,13 +12,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from .models import MeijerItem, ListItem, MeijerCoupon, Store, SearchResult
 from .shopping_list import MeijerList
-from .coupons import MeijerCoupon, MeijerCouponManager
+from .coupons import MeijerCouponManager
 from .search import Search
 from .shop_scan import ShopNScan
+from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
+from .models import MeijerItem, ListItem, MeijerCoupon, Store, SearchResult
 from .stores import MeijerStore
-from .exceptions import MeijerAuthenticationError, MeijerAPIError
+from .exceptions import MeijerError, MeijerAuthenticationError, MeijerAPIError, MeijerRateLimitError
 
 
 class Meijer:
@@ -50,11 +51,12 @@ class Meijer:
         self.api_base_url = "https://api.meijer.com"
         self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis
         
-        # Initialize components
+        # Initialize component instances
         self.shopping_list = MeijerList(self)
         self.coupons = MeijerCouponManager(self)
         self.search = Search(self)
         self.shop_scan = ShopNScan(self)
+        self.mperks = MPerksEarnedRewards(self)
         
         # Authentication state
         self._access_token = None
@@ -657,3 +659,53 @@ class Meijer:
     def is_authenticated(self) -> bool:
         """Check if client is authenticated."""
         return self._access_token is not None
+    
+    # mPerks convenience methods
+    def get_earned_rewards(self, **kwargs) -> List[EarnedReward]:
+        """
+        Get earned rewards from mPerks.
+        
+        Args:
+            **kwargs: Additional query parameters
+            
+        Returns:
+            List of EarnedReward objects
+        """
+        return self.mperks.get_earned_rewards(**kwargs)
+    
+    def get_mcard_info(self, **kwargs) -> MCardInfo:
+        """
+        Get mCard information from mPerks.
+        
+        Args:
+            **kwargs: Additional query parameters
+            
+        Returns:
+            MCardInfo object
+        """
+        return self.mperks.get_mcard_info(**kwargs)
+    
+    def get_available_rewards(self, **kwargs) -> List[EarnedReward]:
+        """
+        Get available rewards that can be earned.
+        
+        Args:
+            **kwargs: Additional query parameters
+            
+        Returns:
+            List of EarnedReward objects
+        """
+        return self.mperks.get_available_rewards(**kwargs)
+    
+    def get_reward_categories(self, clip_filter: str = "unclippedonly", **kwargs) -> List[str]:
+        """
+        Get available reward categories.
+        
+        Args:
+            clip_filter: Filter for clipped/unclipped offers ("clippedonly", "unclippedonly")
+            **kwargs: Additional query parameters
+            
+        Returns:
+            List of category names
+        """
+        return self.mperks.get_reward_categories(clip_filter, **kwargs)

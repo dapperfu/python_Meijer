@@ -8,7 +8,7 @@ including shopping lists, coupons, product search, and Shop & Scan functionality
 __version__ = "2.0.0"
 __author__ = "Meijer API Client Contributors"
 
-# Import main client class
+# Import main client
 from .client import Meijer
 
 # Import data models
@@ -18,14 +18,17 @@ from .models import (
     MeijerCoupon,
     Store,
     SearchResult,
-    ItemType
+    ItemType,
+    create_meijer_items_from_search
 )
 
 # Import component classes
 from .shopping_list import MeijerList
-from .coupons import MeijerCoupon
 from .search import Search
 from .shop_scan import ShopNScan
+from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
+from .stores import MeijerStore
+from .gas import MeijerGas
 
 # Import exceptions
 from .exceptions import (
@@ -35,18 +38,30 @@ from .exceptions import (
     MeijerRateLimitError
 )
 
-# Export main classes for easy access
 __all__ = [
+    # Main client
     "Meijer",
+    
+    # Data models
     "MeijerItem",
     "ListItem", 
     "MeijerCoupon",
     "Store",
     "SearchResult",
     "ItemType",
+    "create_meijer_items_from_search",
+    
+    # Component classes
     "MeijerList",
     "Search",
     "ShopNScan",
+    "MPerksEarnedRewards",
+    "EarnedReward",
+    "MCardInfo",
+    "MeijerStore",
+    "MeijerGas",
+    
+    # Exceptions
     "MeijerError",
     "MeijerAuthenticationError",
     "MeijerAPIError",

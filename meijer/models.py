@@ -25,6 +25,7 @@ class MeijerItem:
     Represents a product/item from Meijer's system.
     
     Based on the ProductFullDetails class from the decompiled APK.
+    Enhanced to support Constructor.io search API responses.
     """
     id: str
     title: str
@@ -38,7 +39,7 @@ class MeijerItem:
     large_image_url: Optional[str] = None
     price: Optional[float] = None
     sale_price: Optional[float] = None
-    unit_price: Optional[float] = None
+    unit_price: Optional[str] = None
     is_weighted: bool = False
     weight_unit: Optional[str] = None
     weight_amount: Optional[float] = None
@@ -49,10 +50,128 @@ class MeijerItem:
     tags: List[str] = field(default_factory=list)
     raw_data: Optional[Dict[str, Any]] = None
     
+    # Constructor.io specific fields
+    data_id: Optional[str] = None
+    data_ean: Optional[int] = None
+    data_isbopas: Optional[bool] = None
+    data_isbuyable: Optional[bool] = None
+    data_isalcohol: Optional[bool] = None
+    data_hasmperks: Optional[bool] = None
+    data_specialbuy: Optional[bool] = None
+    data_deactivated: Optional[bool] = None
+    data_productunit: Optional[str] = None
+    data_qtyincrement: Optional[int] = None
+    data_chokinghazard: Optional[bool] = None
+    data_ispurchasable: Optional[bool] = None
+    data_pricebyweight: Optional[bool] = None
+    data_mperksofferid: Optional[List[Any]] = None
+    data_isagerestricted: Optional[bool] = None
+    data_ebtfoodstampable: Optional[bool] = None
+    data_pickupavailableflag: Optional[bool] = None
+    data_homedeliverynotavailable: Optional[bool] = None
+    data_requiresdiscreteinventorytracking: Optional[bool] = None
+    data_ismap: Optional[bool] = None
+    data_variation_id: Optional[str] = None
+    data_pricegoodthrough: Optional[str] = None
+    data_stocklevelstatus: Optional[str] = None
+    data_discountsalepricevalue: Optional[Union[float, int]] = None
+    data_discountvalue: Optional[float] = None
+    data_discountsavingstext: Optional[str] = None
+    data_discountsalepricetype: Optional[str] = None
+    data_depositvalue: Optional[float] = None
+    data_maxorderquantity: Optional[int] = None
+    data_discountsalepricetext: Optional[str] = None
+    data_packagesize: Optional[str] = None
+    data_group_ids: Optional[List[Any]] = None
+    data_ingredients: Optional[str] = None
+    matched_terms: Optional[List[Any]] = field(default_factory=list)
+    
+    # Aisle location fields for defragging
+    aisle_primary: Optional[str] = None
+    aisle_locations: List[str] = field(default_factory=list)
+    
     def __post_init__(self):
         """Validate and set default values."""
         if not self.title:
             self.title = self.description or "Unknown Product"
+    
+    @classmethod
+    def from_constructor_response(cls, item_data: Dict[str, Any], client: Optional[Any] = None) -> "MeijerItem":
+        """
+        Create a MeijerItem from Constructor.io API response data.
+        
+        Parameters
+        ----------
+        item_data : Dict[str, Any]
+            Raw item data from Constructor.io search response
+        client : Any, optional
+            Meijer client for additional operations
+            
+        Returns
+        -------
+        MeijerItem
+            New MeijerItem instance
+        """
+        # Extract common Constructor.io fields
+        value = item_data.get('value', '')
+        data = item_data.get('data', {})
+        
+        # Create instance with discovered field mappings
+        kwargs = {
+            'id': data.get('data_id', str(item_data.get('id', ''))),
+            'title': value,
+            'description': data.get('data_description', ''),
+            'brand': data.get('data_brand', ''),
+            'category': data.get('data_category', ''),
+            'subcategory': data.get('data_subcategory', ''),
+            'upc': str(data.get('data_ean', '')) if data.get('data_ean') else None,
+            'sku': data.get('data_sku', ''),
+            'image_url': data.get('data_image_url', ''),
+            'price': float(data.get('data_price', 0)) if data.get('data_price') else None,
+            'sale_price': float(data.get('data_discountsalepricevalue', 0)) if data.get('data_discountsalepricevalue') else None,
+            'unit_price': data.get('data_priceunit', ''),
+            'is_weighted': data.get('data_pricebyweight', False),
+            'is_available': data.get('data_ispurchasable', True),
+            'raw_data': item_data,
+            
+            # Constructor.io specific fields
+            'data_id': data.get('data_id', ''),
+            'data_ean': data.get('data_ean'),
+            'data_isbopas': data.get('data_isbopas', False),
+            'data_isbuyable': data.get('data_isbuyable', False),
+            'data_isalcohol': data.get('data_isalcohol', False),
+            'data_hasmperks': data.get('data_hasmperks', False),
+            'data_specialbuy': data.get('data_specialbuy', False),
+            'data_deactivated': data.get('data_deactivated', False),
+            'data_productunit': data.get('data_productunit', ''),
+            'data_qtyincrement': data.get('data_qtyincrement', 1),
+            'data_chokinghazard': data.get('data_chokinghazard', False),
+            'data_ispurchasable': data.get('data_ispurchasable', True),
+            'data_pricebyweight': data.get('data_pricebyweight', False),
+            'data_mperksofferid': data.get('data_mperksofferid', []),
+            'data_isagerestricted': data.get('data_isagerestricted', False),
+            'data_ebtfoodstampable': data.get('data_ebtfoodstampable', False),
+            'data_pickupavailableflag': data.get('data_pickupavailableflag', False),
+            'data_homedeliverynotavailable': data.get('data_homedeliverynotavailable', False),
+            'data_requiresdiscreteinventorytracking': data.get('data_requiresdiscreteinventorytracking', False),
+            'data_ismap': data.get('data_ismap', False),
+            'data_variation_id': data.get('data_variation_id', ''),
+            'data_pricegoodthrough': data.get('data_pricegoodthrough', ''),
+            'data_stocklevelstatus': data.get('data_stocklevelstatus', ''),
+            'data_discountsalepricevalue': data.get('data_discountsalepricevalue'),
+            'data_discountvalue': data.get('data_discountvalue'),
+            'data_discountsavingstext': data.get('data_discountsavingstext', ''),
+            'data_discountsalepricetype': data.get('data_discountsalepricetype', ''),
+            'data_depositvalue': data.get('data_depositvalue'),
+            'data_maxorderquantity': data.get('data_maxorderquantity'),
+            'data_discountsalepricetext': data.get('data_discountsalepricetext', ''),
+            'data_packagesize': data.get('data_packagesize', ''),
+            'data_group_ids': data.get('data_group_ids', []),
+            'data_ingredients': data.get('data_ingredients', ''),
+            'matched_terms': item_data.get('matched_terms', [])
+        }
+        
+        return cls(**kwargs)
     
     @property
     def display_name(self) -> str:
@@ -369,3 +488,47 @@ class SearchResult:
             "filters": self.filters,
             "sortBy": self.sort_by
         }
+
+
+def create_meijer_items_from_search(search_data: Dict[str, Any], client: Optional[Any] = None) -> List[MeijerItem]:
+    """
+    Create a list of MeijerItem objects from Constructor.io search response.
+    
+    Parameters
+    ----------
+    search_data : Dict[str, Any]
+        Raw search response data from Constructor.io
+    client : Any, optional
+        Meijer client for additional operations
+        
+    Returns
+    -------
+    List[MeijerItem]
+        List of MeijerItem instances
+    """
+    items = []
+    
+    try:
+        # Extract results from different possible response formats
+        results = search_data.get('results', [])
+        if not results:
+            # Try alternative field names
+            results = search_data.get('response', {}).get('results', [])
+        
+        for item_data in results:
+            try:
+                item = MeijerItem.from_constructor_response(item_data, client)
+                items.append(item)
+            except Exception as e:
+                # Log error but continue processing other items
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to create MeijerItem from data: {e}")
+                continue
+                
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error processing search response: {e}")
+    
+    return items

@@ -7,8 +7,7 @@ then 30 more, and efficiently handling large result sets.
 """
 
 from typing import List
-from meijer_search import MeijerSearch, MeijerSearchResults
-from meijer_item import MeijerItem
+from meijer import Search, MeijerItem
 
 
 def example_basic_pagination():
@@ -18,7 +17,7 @@ def example_basic_pagination():
     print("📋 Example 1: Basic Pagination (30 + 30 + 30)")
     print("-" * 50)
 
-    search = MeijerSearch()
+    search = Search()
 
     # Get first 30 results
     print("🔍 Getting first 30 results for 'milk'...")
@@ -56,7 +55,7 @@ def example_collect_first_100_items():
     print("📋 Example 2: Collect First 100 Items")
     print("-" * 50)
 
-    search = MeijerSearch()
+    search = Search()
 
     # Search for items
     results = search.search("organic", results_per_page=30)
@@ -101,7 +100,7 @@ def example_search_all_pages():
     print("📋 Example 3: Search All Pages for Items > $10")
     print("-" * 50)
 
-    search = MeijerSearch()
+    search = Search()
 
     # Search for products
     results = search.search("vitamins", results_per_page=25)
@@ -141,7 +140,7 @@ def example_paginated_category_browse():
     print("📋 Example 4: Browse Category with Pagination")
     print("-" * 50)
 
-    search = MeijerSearch()
+    search = Search()
 
     # Browse a category
     category = "back-to-school-feeding-reading"
@@ -181,7 +180,7 @@ def example_filtered_pagination():
     print("📋 Example 5: Store-Filtered Pagination")
     print("-" * 50)
 
-    search = MeijerSearch()
+    search = Search()
 
     # Search with store filter
     store_id = "217"
@@ -219,7 +218,7 @@ def example_jump_to_specific_page():
     print("📋 Example 6: Jump to Specific Pages")
     print("-" * 50)
 
-    search = MeijerSearch()
+    search = Search()
 
     # Get initial results
     results = search.search("snacks", results_per_page=20)
@@ -255,7 +254,7 @@ def example_performance_comparison():
     print("📋 Example 7: Performance Comparison")
     print("-" * 50)
 
-    search = MeijerSearch()
+    search = Search()
     results = search.search("health", results_per_page=30)
 
     print(f"📊 Comparing approaches for {results.total_results} items:")
