@@ -1145,6 +1145,61 @@ def read_bearer_auth_file(filepath: str = "bearer_auth.txt") -> Tuple[str, str]:
         raise ValueError(f"Error reading bearer auth file: {e}")
 
 
+def read_oauth_auth_file(filepath: str = "auth.txt") -> Tuple[str, Optional[str], str, Optional[int], Optional[str]]:
+    """
+    Read OAuth tokens (access + refresh) and metadata from auth.txt file.
+    
+    Args:
+        filepath: Path to the auth file
+        
+    Returns:
+        tuple: (access_token, refresh_token, user_agent, expires_in, scope)
+        
+    Raises:
+        FileNotFoundError: If the file doesn't exist
+        ValueError: If the file format is invalid
+    """
+    try:
+        access_token = None
+        refresh_token = None
+        user_agent = None
+        expires_in = None
+        scope = None
+        
+        with open(filepath, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+                    
+                if line.startswith('bearer='):
+                    access_token = line.split('=', 1)[1]
+                elif line.startswith('refresh_token='):
+                    refresh_token = line.split('=', 1)[1]
+                elif line.startswith('user_agent='):
+                    user_agent = line.split('=', 1)[1]
+                elif line.startswith('expires_in='):
+                    try:
+                        expires_in = int(line.split('=', 1)[1])
+                    except ValueError:
+                        pass
+                elif line.startswith('scope='):
+                    scope = line.split('=', 1)[1]
+        
+        if not access_token:
+            raise ValueError(f"No bearer token found in {filepath}")
+        
+        if not user_agent:
+            user_agent = "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
+        
+        return access_token, refresh_token, user_agent, expires_in, scope
+    
+    except FileNotFoundError:
+        raise FileNotFoundError(f"OAuth auth file not found: {filepath}")
+    except Exception as e:
+        raise ValueError(f"Error reading OAuth auth file: {e}")
+
+
 def main():
     """Example usage of the comprehensive Meijer client."""
     print("🚀 Meijer Comprehensive API Client")
