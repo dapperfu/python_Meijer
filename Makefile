@@ -26,10 +26,10 @@ log:
 	@LOG_FILE="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
 	mitmweb \
 		--mode wireguard \
-		--listen-host 0.0.0.0 \
-		--listen-port 8080 \
-		--socks5-listen-port 1080 \
-		--socks5-listen-host 0.0.0.0 \
+		--mode regular@0.0.0.0:8080 \
+		--mode socks5@0.0.0.0:1080 \
+		--web-port 8081 \
+		--web-host 0.0.0.0 \
 		-w "$$LOG_FILE" \
 		-s shop_n_scan_faker.py \
 		--set block_global=false || \
