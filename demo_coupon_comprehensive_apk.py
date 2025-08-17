@@ -334,8 +334,8 @@ class ComprehensiveCouponDemo:
         # Validate APK implementation
         self.validate_apk_implementation()
         
-        # Fetch and analyze coupons
-        coupons = self.fetch_and_analyze_coupons(limit=30)
+        # Fetch and analyze coupons (now gets all 473 available!)
+        coupons = self.fetch_and_analyze_coupons(limit=1000)
         
         if not coupons:
             print("\n⚠️  No coupons available for testing")

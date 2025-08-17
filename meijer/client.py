@@ -384,12 +384,13 @@ class Meijer:
             self.logger.error(f"Error getting stores: {e}")
             return []
 
-    def get_coupons(self, limit: int = 100) -> List["MeijerCoupon"]:
+    def get_coupons(self, limit: int = 1000, use_pagination: bool = True) -> List["MeijerCoupon"]:
         """
-        Fetch coupons from mPerks API.
+        Fetch coupons from mPerks API with pagination support.
 
         Args:
-            limit: Maximum number of coupons to fetch
+            limit: Maximum number of coupons to fetch (default 1000 to get all ~473 available)
+            use_pagination: Whether to use pagination to fetch all available coupons
 
         Returns:
             List of MeijerCoupon objects
@@ -399,7 +400,16 @@ class Meijer:
             return []
 
         try:
-            # Use the same endpoint and method as get_offers
+            # Import coupon creation function
+            try:
+                from .coupons import create_meijer_coupons_from_response
+            except ImportError:
+                self.logger.warning(
+                    "Coupon functionality not yet available in modular version"
+                )
+                return []
+
+            # Setup API request parameters
             url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
             headers = self._get_api_headers()
             headers.update(
@@ -409,44 +419,81 @@ class Meijer:
                 }
             )
 
-            # Same request body structure
-            request_body = {
-                "sortType": "BySuggested",
-                "pageSize": min(limit, 9999),
-                "currentPage": 1,
-                "offerClass": 1,
-                "searchCriteria": "",
-                "storeId": 0,
-                "ceilingCount": 0,
-                "ceilingDuration": 0,
-                "rewardCouponId": 0,
-                "tagId": "",
-                "getOfferCountPerDepartment": True,
-                "upcList": [],
-                "showClippedCoupons": True,
-                "showOnlySpecialOffers": False,
-                "showRedeemedOffers": False,
-                "offerIds": [],
-                "displayReasonFilters": [],
-            }
+            all_coupons = []
+            current_page = 1
+            total_fetched = 0
+            
+            # Determine page size strategy
+            if use_pagination:
+                # Use smaller page size for pagination (API max seems to be around 50)
+                page_size = min(50, limit) if limit < 1000 else 50
+                max_pages = (limit // page_size) + 1
+            else:
+                # Try to get everything in one request
+                page_size = min(limit, 9999)
+                max_pages = 1
 
-            response = self._make_request(
-                "POST", url, headers=headers, json=request_body
-            )
+            self.logger.info(f"Fetching coupons: limit={limit}, pagination={use_pagination}, page_size={page_size}")
 
-            coupon_data = response.json()
-            # Import coupon creation function when available
-            try:
-                from .coupons import create_meijer_coupons_from_response
+            while current_page <= max_pages and total_fetched < limit:
+                # Base request body structure
+                request_body = {
+                    "sortType": "BySuggested",
+                    "pageSize": page_size,
+                    "currentPage": current_page,
+                    "offerClass": 1,
+                    "searchCriteria": "",
+                    "storeId": 0,
+                    "ceilingCount": 0,
+                    "ceilingDuration": 0,
+                    "rewardCouponId": 0,
+                    "tagId": "",
+                    "getOfferCountPerDepartment": True,
+                    "upcList": [],
+                    "showClippedCoupons": True,
+                    "showOnlySpecialOffers": False,
+                    "showRedeemedOffers": False,
+                    "offerIds": [],
+                    "displayReasonFilters": [],
+                }
 
-                coupons = create_meijer_coupons_from_response(coupon_data, self)
-                self.logger.info(f"Fetched {len(coupons)} coupons")
-                return coupons
-            except ImportError:
-                self.logger.warning(
-                    "Coupon functionality not yet available in modular version"
+                self.logger.debug(f"Fetching page {current_page} with page size {page_size}")
+
+                response = self._make_request(
+                    "POST", url, headers=headers, json=request_body
                 )
-                return []
+
+                coupon_data = response.json()
+                
+                # Log API response metadata
+                total_available = coupon_data.get("couponCount", 0)
+                available_count = coupon_data.get("availableCouponCount", 0)
+                self.logger.info(f"Page {current_page}: API reports {total_available} total coupons, {available_count} available")
+
+                # Parse coupons from this page
+                page_coupons = create_meijer_coupons_from_response(coupon_data, self)
+                
+                if not page_coupons:
+                    self.logger.info(f"No more coupons found on page {current_page}, stopping pagination")
+                    break
+
+                all_coupons.extend(page_coupons)
+                total_fetched += len(page_coupons)
+                
+                self.logger.info(f"Page {current_page}: Added {len(page_coupons)} coupons (total: {total_fetched})")
+
+                # Check if we have enough or if we should stop pagination
+                if not use_pagination or len(page_coupons) < page_size or total_fetched >= limit:
+                    break
+
+                current_page += 1
+
+            # Limit the final result if needed
+            if len(all_coupons) > limit:
+                all_coupons = all_coupons[:limit]
+
+            self.logger.info(f"Successfully fetched {len(all_coupons)} coupons total")
+            return all_coupons
 
         except Exception as e:
             self.logger.error(f"Failed to fetch coupons: {e}")
