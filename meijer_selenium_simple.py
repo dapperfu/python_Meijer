@@ -21,6 +21,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.webdriver.common.action_chains import ActionChains
 
 from meijer_comprehensive import MeijerComprehensiveClient
 
@@ -54,7 +55,7 @@ class MeijerSeleniumAuth:
         self.logger = logging.getLogger(__name__)
     
     def _setup_driver(self) -> webdriver.Firefox:
-        """Setup Firefox WebDriver with automatic driver management."""
+        """Setup Firefox WebDriver with automatic driver management and stealth measures."""
         try:
             # Firefox options
             firefox_options = Options()
@@ -62,12 +63,28 @@ class MeijerSeleniumAuth:
             if self.headless:
                 firefox_options.add_argument("--headless")
             
-            # Add options for better compatibility
+            # Use actual mobile app user agents from mitmproxy log analysis
+            mobile_user_agents = [
+                "Mozilla/5.0 (Linux; Android 10; One Build/QQ3A.200705.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/81.0.4044.138 Mobile Safari/537.36 (Mobile; afma-sdk-a-v251815999.244410000.1)",
+                "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36"
+            ]
+            
+            # Randomly select a user agent to avoid patterns
+            import random
+            selected_ua = random.choice(mobile_user_agents)
+            firefox_options.add_argument(f"--user-agent={selected_ua}")
+            
+            # Add stealth options to avoid detection
             firefox_options.add_argument("--no-sandbox")
             firefox_options.add_argument("--disable-dev-shm-usage")
-            firefox_options.add_argument("--width=1920")
-            firefox_options.add_argument("--height=1080")
-            firefox_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            firefox_options.add_argument("--disable-blink-features=AutomationControlled")
+            firefox_options.add_argument("--disable-extensions")
+            firefox_options.add_argument("--disable-plugins")
+            firefox_options.add_argument("--disable-images")  # Faster loading
+            firefox_options.add_argument("--disable-javascript")  # Disable JS initially for stealth
+            firefox_options.add_argument("--disable-web-security")
+            firefox_options.add_argument("--allow-running-insecure-content")
+            firefox_options.add_argument("--disable-features=VizDisplayCompositor")
             
             # Use webdriver-manager to automatically download and manage geckodriver
             geckodriver_path = GeckoDriverManager().install()
@@ -80,7 +97,49 @@ class MeijerSeleniumAuth:
             # Set window size after driver creation (Firefox-specific)
             self.driver.set_window_size(1920, 1080)
             
-            self.logger.info("✅ Firefox WebDriver initialized successfully")
+            # Execute stealth JavaScript to hide automation indicators
+            stealth_script = """
+            // Remove webdriver property
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined,
+            });
+            
+            // Remove automation flags
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+            
+            // Override permissions
+            const originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = (parameters) => (
+                parameters.name === 'notifications' ?
+                    Promise.resolve({ state: Notification.permission }) :
+                    originalQuery(parameters)
+            );
+            
+            // Override plugins
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5],
+            });
+            
+            // Override languages
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['en-US', 'en'],
+            });
+            
+            // Override webdriver
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => false,
+            });
+            """
+            
+            self.driver.execute_script(stealth_script)
+            
+            # Re-enable JavaScript after stealth measures
+            self.driver.execute_script("document.documentElement.style.pointerEvents = 'auto';")
+            
+            self.logger.info(f"✅ Firefox WebDriver initialized with stealth measures")
+            self.logger.info(f"📱 Using User-Agent: {selected_ua[:80]}...")
             return self.driver
             
         except Exception as e:
@@ -132,6 +191,45 @@ class MeijerSeleniumAuth:
         except Exception as e:
             self.logger.error(f"Error extracting auth code: {e}")
             return None
+    
+    def _human_like_delay(self, min_delay: float = 0.5, max_delay: float = 2.0):
+        """Add human-like random delays between actions."""
+        import random
+        import time
+        delay = random.uniform(min_delay, max_delay)
+        time.sleep(delay)
+    
+    def _human_like_typing(self, element, text: str):
+        """Type text with human-like timing and variations."""
+        import random
+        import time
+        
+        # Clear field first
+        element.clear()
+        
+        # Type with random delays between characters
+        for char in text:
+            element.send_keys(char)
+            # Random delay between 50-150ms (human-like typing speed)
+            time.sleep(random.uniform(0.05, 0.15))
+    
+    def _human_like_click(self, element):
+        """Perform human-like click with random positioning."""
+        import random
+        
+        # Get element dimensions
+        size = element.size
+        location = element.location
+        
+        # Click at random position within the element (more human-like)
+        x_offset = random.randint(5, max(5, size['width'] - 5))
+        y_offset = random.randint(5, max(5, size['height'] - 5))
+        
+        # Use ActionChains for more natural clicking
+        actions = ActionChains(self.driver)
+        actions.move_to_element_with_offset(element, x_offset, y_offset)
+        actions.click()
+        actions.perform()
     
     def authenticate(self, auth_url: str) -> Optional[str]:
         """
@@ -190,8 +288,10 @@ class MeijerSeleniumAuth:
             
             # Fill in email/username immediately
             self.logger.info("🔐 Filling in email...")
-            username_field.clear()
-            username_field.send_keys(self.username)
+            self._human_like_typing(username_field, self.username)
+            
+            # Human-like delay before clicking Next
+            self._human_like_delay(1.0, 2.5)
             
             # Look for Next button to proceed to password field
             next_selectors = [
@@ -217,10 +317,18 @@ class MeijerSeleniumAuth:
             
             if next_button:
                 self.logger.info("🖱️  Clicking Next button...")
-                next_button.click()
+                self._human_like_click(next_button)
                 
-                # Reduced wait time after clicking Next
-                time.sleep(1)  # Reduced from 3 to 1 second
+                # Wait for page transition with human-like timing
+                self._human_like_delay(2.0, 4.0)
+                
+                # Check if we're still on the same page (Next button might have failed)
+                current_url = self.driver.current_url
+                if 'authorize' in current_url:
+                    self.logger.warning("⚠️  Still on authorization page, Next button may have failed")
+                    self.logger.info("🔄 Trying alternative approach - looking for password field directly")
+                else:
+                    self.logger.info("✅ Successfully navigated to next step")
             else:
                 self.logger.info("ℹ️  No Next button found, proceeding to password field")
             
@@ -254,12 +362,20 @@ class MeijerSeleniumAuth:
             
             if not password_field:
                 self.logger.error("❌ Password field not found within timeout")
+                self.logger.info("🔍 Current page source preview:")
+                try:
+                    page_source = self.driver.page_source
+                    self.logger.info(f"📄 Page source (first 500 chars): {page_source[:500]}...")
+                except:
+                    self.logger.info("❌ Could not retrieve page source")
                 return None
             
-            # Fill in password
+            # Fill in password with human-like typing
             self.logger.info("🔐 Filling in password...")
-            password_field.clear()
-            password_field.send_keys(self.password)
+            self._human_like_typing(password_field, self.password)
+            
+            # Human-like delay before clicking submit
+            self._human_like_delay(1.5, 3.0)
             
             # Find and click submit button using the specific selector
             submit_selectors = [
@@ -291,9 +407,9 @@ class MeijerSeleniumAuth:
                 self.logger.error("❌ Submit button not found")
                 return None
             
-            # Click submit button
+            # Click submit button with human-like behavior
             self.logger.info("🖱️  Clicking submit button...")
-            submit_button.click()
+            self._human_like_click(submit_button)
             
             # Wait for login to process and check for 2FA
             time.sleep(5)
