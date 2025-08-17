@@ -359,16 +359,30 @@ class Meijer:
 
     def get_stores(
         self, zip_code: str = None, radius: int = 25
-    ) -> List[Dict[str, Any]]:
-        """Get store information from store locator API."""
+    ) -> List["MeijerStore"]:
+        """
+        Get store information from store locator API.
+        
+        Parameters
+        ----------
+        zip_code : str, optional
+            ZIP code to search around (default: None, uses device location)
+        radius : int, optional
+            Search radius in miles (default: 25)
+            
+        Returns
+        -------
+        List[MeijerStore]
+            List of MeijerStore objects found in the area
+        """
         try:
-            # Store locator endpoint from APK analysis
-            url = f"{self.api_base_url}/stores/locator"
+            # Use the correct store proximity endpoint from APK analysis
+            url = f"{self.api_base_url}/digital/storeInfo/v2/stores/proximity"
             headers = self._get_api_headers()
 
             params = {}
             if zip_code:
-                params["zipCode"] = zip_code  # Use correct parameter name
+                params["zipCode"] = zip_code
             if radius:
                 params["radius"] = radius
 
@@ -376,7 +390,19 @@ class Meijer:
 
             if response.status_code == 200:
                 data = response.json()
-                return data.get("stores", data.get("data", []))
+                stores_data = data.get("stores", data.get("data", []))
+                
+                # Convert to MeijerStore objects
+                stores = []
+                for store_data in stores_data:
+                    try:
+                        store = MeijerStore.from_api_data(store_data, self)
+                        stores.append(store)
+                    except Exception as e:
+                        self.logger.warning(f"Failed to parse store data: {e}")
+                        continue
+                
+                return stores
             else:
                 raise MeijerAPIError(f"Failed to get stores: {response.status_code}")
 

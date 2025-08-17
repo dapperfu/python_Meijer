@@ -387,6 +387,9 @@ class MeijerList:
                 self.logger.error("❌ Search functionality not available for defrag")
                 return False
             
+            # Create detailed matching table data
+            matching_table_data = []
+            
             for item in current_items:
                 self.logger.info(f"🔍 Searching for: {item.name}")
                 
@@ -399,8 +402,22 @@ class MeijerList:
                 
                 # Find the first matching result
                 location_info = None
+                matched_product = None
+                match_confidence = "Low"
+                
                 if search_results and search_results.items:
                     first_result = search_results.items[0]
+                    
+                    # Calculate match confidence based on name similarity
+                    original_name = item.name.lower()
+                    matched_name = first_result.title.lower()
+                    
+                    # Simple similarity check
+                    if original_name in matched_name or matched_name in original_name:
+                        match_confidence = "High"
+                    elif any(word in matched_name for word in original_name.split()):
+                        match_confidence = "Medium"
+                    
                     if first_result.aisle or first_result.section:
                         location_info = {
                             'aisle': first_result.aisle,
@@ -409,15 +426,61 @@ class MeijerList:
                             'zone_code': first_result.zone_code
                         }
                         self.logger.info(f"📍 Found location: Aisle {first_result.aisle}, Section {first_result.section}")
+                        
+                        # Store matched product details
+                        matched_product = {
+                            'title': first_result.title,
+                            'price': first_result.formatted_price,
+                            'brand': first_result.brand,
+                            'category': first_result.category,
+                            'aisle': first_result.aisle,
+                            'section': first_result.section
+                        }
                     else:
                         self.logger.warning(f"⚠️  No location data found for {item.name}")
                 else:
                     self.logger.warning(f"⚠️  No search results found for {item.name}")
                 
+                # Add to detailed table data
+                matching_table_data.append({
+                    'Original Item': item.name,
+                    'Closest Match': matched_product['title'] if matched_product else 'No match found',
+                    'Brand': matched_product.get('brand', 'N/A') if matched_product else 'N/A',
+                    'Price': matched_product.get('price', 'N/A') if matched_product else 'N/A',
+                    'Aisle': matched_product.get('aisle', 'Unknown') if matched_product else 'Unknown',
+                    'Section': matched_product.get('section', 'Unknown') if matched_product else 'Unknown',
+                    'Match Confidence': match_confidence,
+                    'Category': matched_product.get('category', 'N/A') if matched_product else 'N/A'
+                })
+                
                 items_with_locations.append({
                     'item': item,
-                    'location': location_info
+                    'location': location_info,
+                    'matched_product': matched_product,
+                    'match_confidence': match_confidence
                 })
+            
+            # Display detailed matching table
+            self.logger.info("📊 Product Matching Results:")
+            self.logger.info("=" * 80)
+            
+            # Create a formatted table display
+            table_header = f"{'Original Item':<25} {'Closest Match':<35} {'Aisle':<8} {'Price':<10} {'Confidence':<12}"
+            self.logger.info(table_header)
+            self.logger.info("-" * 80)
+            
+            for row in matching_table_data:
+                # Truncate long names for display
+                original = row['Original Item'][:24] if len(row['Original Item']) > 24 else row['Original Item']
+                match = row['Closest Match'][:34] if len(row['Closest Match']) > 34 else row['Closest Match']
+                aisle = row['Aisle'][:7] if row['Aisle'] and len(str(row['Aisle'])) > 7 else row['Aisle'] or 'Unknown'
+                price = row['Price'][:9] if row['Price'] and len(str(row['Price'])) > 9 else row['Price'] or 'N/A'
+                confidence = row['Match Confidence'][:11] if len(row['Match Confidence']) > 11 else row['Match Confidence']
+                
+                table_row = f"{original:<25} {match:<35} {aisle:<8} {price:<10} {confidence:<12}"
+                self.logger.info(table_row)
+            
+            self.logger.info("=" * 80)
             
             # Step 3: Sort items by aisle number (handle non-numeric aisles gracefully)
             def get_aisle_sort_key(item_data):
@@ -447,16 +510,20 @@ class MeijerList:
             
             self.logger.info(f"✅ Deleted {deleted_count} items")
             
-            # Step 5: Re-add items in sorted order with location notes
-            self.logger.info("📝 Re-adding items in aisle order...")
+            # Step 5: Re-add items in sorted order with enhanced location notes
+            self.logger.info("📝 Re-adding items in aisle order with enhanced notes...")
             added_count = 0
             
             for idx, item_data in enumerate(sorted_items, 1):
                 item = item_data['item']
                 location = item_data['location']
+                matched_product = item_data.get('matched_product')
+                match_confidence = item_data.get('match_confidence', 'Unknown')
                 
-                # Create notes with location information
+                # Create enhanced notes with detailed information
                 notes_parts = []
+                
+                # Add location information
                 if location:
                     if location.get('aisle'):
                         notes_parts.append(f"Aisle: {location['aisle']}")
@@ -465,31 +532,51 @@ class MeijerList:
                     if location.get('zone'):
                         notes_parts.append(f"Zone: {location['zone']}")
                 
+                # Add matched product details
+                if matched_product:
+                    notes_parts.append(f"Matched: {matched_product['title']}")
+                    if matched_product.get('brand'):
+                        notes_parts.append(f"Brand: {matched_product['brand']}")
+                    if matched_product.get('price'):
+                        notes_parts.append(f"Price: {matched_product['price']}")
+                    notes_parts.append(f"Match Confidence: {match_confidence}")
+                
                 # Preserve original notes if they exist
                 if item.notes:
-                    notes_parts.append(f"Notes: {item.notes}")
+                    notes_parts.append(f"Original Notes: {item.notes}")
                 
-                location_notes = " | ".join(notes_parts) if notes_parts else None
+                enhanced_notes = " | ".join(notes_parts) if notes_parts else None
                 
-                # Re-add the item with location information
+                # Re-add the item with enhanced location information
                 success = self.add_item_with_details(
                     upc=item.itemPartNumber or f"ITEM_{item.listItemId}",
                     quantity=item.quantity,
                     description=item.itemDescription,
-                    notes=location_notes,
+                    notes=enhanced_notes,
                     display_order=idx
                 )
                 
                 if success:
                     added_count += 1
                     aisle_info = location.get('aisle', 'Unknown') if location else 'Unknown'
-                    self.logger.info(f"✅ Added: {item.name} (Aisle: {aisle_info})")
+                    match_title = matched_product['title'][:30] + "..." if matched_product and len(matched_product['title']) > 30 else matched_product.get('title', 'No match') if matched_product else 'No match'
+                    self.logger.info(f"✅ Added: {item.name} (Aisle: {aisle_info}, Match: {match_title})")
                 else:
                     self.logger.warning(f"⚠️  Failed to re-add item: {item.name}")
             
-            # Summary
+            # Summary with detailed statistics
             self.logger.info(f"🎉 Defrag complete! Reorganized {added_count} items by aisle")
             self.logger.info(f"📊 Summary: {deleted_count} deleted, {added_count} re-added")
+            
+            # Show confidence distribution
+            confidence_counts = {}
+            for item_data in items_with_locations:
+                confidence = item_data.get('match_confidence', 'Unknown')
+                confidence_counts[confidence] = confidence_counts.get(confidence, 0) + 1
+            
+            self.logger.info("🎯 Match Confidence Summary:")
+            for confidence, count in confidence_counts.items():
+                self.logger.info(f"   {confidence}: {count} item(s)")
             
             return added_count > 0
             

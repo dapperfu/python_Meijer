@@ -78,10 +78,17 @@ except ImportError:
 # Shop & Scan functionality
 try:
     from .shop_scan import ShopNScan
-
     SHOP_SCAN_AVAILABLE = True
 except ImportError:
     SHOP_SCAN_AVAILABLE = False
+
+# Store functionality
+try:
+    from .stores import MeijerStore
+    from .gas import MeijerGas
+    STORES_AVAILABLE = True
+except ImportError:
+    STORES_AVAILABLE = False
 
 __all__ = [
     # Exceptions
@@ -131,3 +138,6 @@ if SEARCH_AVAILABLE:
 
 if SHOP_SCAN_AVAILABLE:
     __all__.extend(["ShopNScan"])
+
+if STORES_AVAILABLE:
+    __all__.extend(["MeijerStore", "MeijerGas"])
