@@ -373,6 +373,15 @@ class MeijerStore:
         """
         return self.gas_station
     
+    def has_gas_station(self) -> bool:
+        """Check if store has a gas station."""
+        # Check for gas station amenities and hours, which are more reliable indicators
+        has_gas_amenities = bool(self._raw_data and self._raw_data.get("GasStationAmenities"))
+        has_gas_hours = bool(self._raw_data and self._raw_data.get("GasStationHours"))
+        
+        # A store has a gas station if it has gas station amenities or hours
+        return has_gas_amenities or has_gas_hours
+    
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert store data to dictionary format.

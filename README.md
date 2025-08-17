@@ -1,297 +1,342 @@
-# Meijer API Client
+# 🛒 Meijer CLI Tool
 
-A comprehensive Python library for interacting with the Meijer mobile app API, supporting authentication, shopping lists, store data, product search, coupons, and more.
+A comprehensive command-line interface for managing your Meijer shopping lists with powerful features like defrag organization, interactive TUI, and batch operations.
+
+## ✨ Features
+
+- **📋 Shopping List Management**: Add, remove, and organize items
+- **🔍 Product Search**: Automatic product matching with location data
+- **🏪 Aisle Organization**: Defrag functionality to organize by store layout
+- **⭐ Favorites Integration**: Add items from your favorites list
+- **📁 Batch Operations**: Add multiple items from files or stdin
+- **🎮 Interactive Mode**: Rich TUI for easy list management
+- **📊 Beautiful Tables**: Professional CLI output with tabulate
+- **🔐 Authentication**: Multiple auth methods (bearer token, OAuth, etc.)
 
 ## 🚀 Quick Start
 
-```python
-from meijer import Meijer
-
-# Option 1: Automatic authentication (from ~/.config/meijer.txt)
-client = Meijer("", "")
-
-# Option 2: Manual Bearer token authentication  
-client = Meijer("", "")
-client.login_with_oauth_tokens()  # reads from auth.txt
-
-# Use the API
-shopping_list = client.get_shopping_list()
-stores = client.search_stores("49456")
-products = client.search_products("milk")
-```
-
-## 📦 Installation
+### Installation
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or: venv\Scripts\activate  # Windows
+# Install the CLI tool
+pip install -e .
 
-# Install dependencies
-pip install -r requirements.txt
+# Verify installation
+meijer --version
 ```
 
-## 🔐 Authentication
+### Basic Usage
 
-### Bearer Token (Recommended)
-
-1. Extract token from mitmproxy logs:
 ```bash
-python extract_bearer_token.py
+# Show your shopping list
+meijer list show
+
+# Add an item
+meijer list add "Milk"
+
+# Add by UPC
+meijer list add 0123456789
+
+# Organize by aisle (defrag)
+meijer list defrag
 ```
 
-2. Creates `auth.txt`:
-```
-bearer=eyJraWQiOiJXMmxQc0g5Sy1lTWRo...
-refresh_token=pM0rVRS-yk0G8kp95cqD...
-user_agent=Meijer/101200000 okhttp/4.12.0...
-expires_in=28800
-scope=openid offline_access profile
-```
+## 📖 Command Reference
 
-3. Use automatically:
-```python
-client = Meijer("", "")  # Auto-loads from ~/.config/meijer.txt
-```
+### Shopping List Commands
 
-### OAuth Flow
+#### `meijer list show`
+Display your current shopping list.
 
-The system supports full OAuth 2.0 with PKCE, but extracting Bearer tokens from mitmproxy is simpler for development.
+**Options:**
+- `--completed`: Show only completed items
+- `--pending`: Show only pending items
 
-## 🛍️ Core Features
-
-### Shopping Lists
-```python
-# Get shopping list
-shopping_list = client.get_shopping_list()
-
-# Add item
-client.add_to_shopping_list("12345678901")  # UPC code
-
-# Remove item  
-client.remove_from_shopping_list(item_id)
-```
-
-### Store Search
-```python
-# Find stores by ZIP code
-stores = client.search_stores("49456")
-
-# Get store details
-store = client.get_store_details(store_id)
-
-# Get store hours, services, pharmacy info
-```
-
-### Product Search
-```python
-# Search products
-products = client.search_products("organic milk")
-
-# Search with filters
-products = client.search_products("cereal", store_id="123")
-
-# Paginated results supported
-```
-
-### Coupons
-```python
-# Get available coupons
-coupons = client.get_coupons()
-
-# Clip coupon
-client.clip_coupon(coupon_id)
-
-# Get clipped coupons
-clipped = client.get_clipped_coupons()
-```
-
-### mPerks & Loyalty
-```python
-# Get mPerks data
-mperks = client.get_mperks()
-
-# Get transaction history
-transactions = client.get_transactions()
-
-# Get points balance
-points = client.get_points_balance()
-```
-
-## 🔄 Token Management
-
-The system includes automatic token refresh:
-
-- **Valid tokens**: Used without refresh
-- **Expiring tokens**: Automatically refreshed (5-minute buffer)
-- **Failed refresh**: Gracefully handled, user re-authentication needed
-- **Persistent storage**: Tokens saved to `~/.config/meijer.txt`
-
-```python
-# Manual token operations
-client.clear_config()          # Clear stored tokens
-client._refresh_tokens()       # Force refresh
-client._check_and_refresh_tokens()  # Check and refresh if needed
-```
-
-## 🏪 Store Data
-
-### Store Information
-- Store hours and services
-- Pharmacy hours
-- Department information
-- Contact details and address
-- Store amenities (pharmacy, grocery pickup, etc.)
-
-### Store Search
-- Search by ZIP code, city, or coordinates
-- Distance-based results
-- Filter by services (24-hour, pharmacy, etc.)
-
-## 🛒 Shopping Features
-
-### Product Search
-- Text-based product search
-- UPC code lookup
-- Category browsing
-- Price and availability
-- Store-specific inventory
-
-### Shopping Lists
-- Create and manage multiple lists
-- Add/remove items by UPC or search
-- Quantity management
-- Cross-device synchronization
-
-## 🎫 Promotions & Savings
-
-### Digital Coupons
-- Browse available coupons
-- Clip digital coupons to mPerks
-- View clipped coupon status
-- Automatic application at checkout
-
-### mPerks Rewards
-- Points balance and history
-- Exclusive member offers
-- Personalized deals
-- Transaction history
-
-## 🔧 Development Tools
-
-### Demo Scripts
+**Examples:**
 ```bash
-# Basic functionality
-python demo_comprehensive.py
-
-# Store search
-python demo_meijer_stores.py
-
-# Product search
-python demo_meijer_search.py
-
-# Coupons
-python demo_meijer_coupons.py
-
-# Pagination
-python demo_pagination.py
+meijer list show                    # Show all items
+meijer list show --completed        # Show only completed items
+meijer list show --pending          # Show only pending items
 ```
 
-### Analysis Tools
+#### `meijer list add`
+Add items to your shopping list.
+
+**Usage:**
 ```bash
-# Analyze mitmproxy logs
-python mitmproxy_analyzer.py
-
-# Extract Bearer tokens
-python extract_bearer_token.py
-
-# Store data analysis
-python store_info_analyzer.py
-
-# Coupon analysis
-python coupon_analyzer.py
+meijer list add "Item Name"         # Add by description
+meijer list add 0123456789          # Add by UPC
+meijer list add < items.txt         # Add from file
+echo "Milk" | meijer list add       # Add from stdin
 ```
 
-### Testing
+**Options:**
+- `--quantity, -q`: Quantity to add (default: 1)
+- `--notes, -n`: Additional notes for the item
+- `--file, -f`: Read items from specified file
+
+**Examples:**
 ```bash
-# Run all tests
-python test_unified.py
-
-# Test specific features
-python test_token_refresh.py
-python test_shop_scan.py
-python test_token_persistence.py
+meijer list add "Organic Bananas" -q 2 -n "Get yellow ones"
+meijer list add -f grocery_list.txt
+cat items.txt | meijer list add
 ```
 
-## 📁 Project Structure
+#### `meijer list favorites`
+Show your favorite items.
 
-```
-├── meijer.py                 # Main unified API client
-├── auth.txt                  # Authentication tokens
-├── requirements.txt          # Dependencies
-├── demo_*.py                # Demo scripts
-├── test_*.py                # Test suites
-├── extract_*.py             # Token extraction tools
-├── *_analyzer.py            # Log analysis tools
-└── old/                     # Legacy implementations
+**Example:**
+```bash
+meijer list favorites
 ```
 
-## 🐛 Troubleshooting
+#### `meijer list clear`
+Clear completed items from your shopping list.
 
-### Authentication Issues
-- **401 Unauthorized**: Token expired, extract fresh token
-- **403 Forbidden**: IP blocked, change network/wait
-- **Invalid tokens**: Check `auth.txt` format
+**Example:**
+```bash
+meijer list clear
+```
 
-### Common Errors
-- **Network timeouts**: Retry with backoff
-- **Rate limiting**: Implement delays between requests
-- **Invalid store ID**: Verify store exists and is open
+#### `meijer list clearall`
+Clear ALL items from your shopping list (with confirmation).
 
-### Token Refresh "Errors"
-The 401 errors during token refresh testing are **expected behavior**:
-- Current access tokens are still valid (8+ hour expiry)  
-- Refresh tokens from logs are expired (single-use)
-- System correctly handles this scenario
-- Fresh OAuth flows will work perfectly
+**Example:**
+```bash
+meijer list clearall
+```
 
-## 🔒 Security Notes
+#### `meijer list defrag`
+Organize your shopping list by aisle number for efficient shopping.
 
-- Never commit `auth.txt` or Bearer tokens to git
-- Tokens are stored in `~/.config/meijer.txt` for persistence
-- Use environment variables for production deployments
-- Rotate tokens regularly
+**Options:**
+- `--store-id`: Specific store ID for location lookup
 
-## 📄 License
+**Examples:**
+```bash
+meijer list defrag                   # Defrag with current store
+meijer list defrag --store-id 123    # Defrag for specific store
+```
 
-MIT License - see LICENSE file
+**What defrag does:**
+1. Searches for each item to find store location
+2. Sorts items by ascending aisle number
+3. Adds location information to item notes
+4. Creates efficient shopping route
+
+#### `meijer list interactive`
+Launch interactive TUI for shopping list management.
+
+**Features:**
+- Add/remove items
+- Mark items complete/incomplete
+- Add from favorites
+- Defrag list
+- Real-time updates
+
+**Requirements:**
+```bash
+pip install rich  # For enhanced TUI
+```
+
+### Utility Commands
+
+#### `meijer status`
+Show authentication and connection status.
+
+**Example:**
+```bash
+meijer status
+```
+
+#### `meijer version`
+Show version information.
+
+**Example:**
+```bash
+meijer version
+```
+
+## 📁 File Input Examples
+
+### Text File Format
+Create a file `grocery_list.txt`:
+```text
+Milk
+Bread
+Eggs
+Bananas
+# This is a comment
+Ground Beef
+```
+
+### Add from File
+```bash
+meijer list add < grocery_list.txt
+# or
+meijer list add -f grocery_list.txt
+```
+
+### Pipe from Command
+```bash
+echo "Milk\nBread\nEggs" | meijer list add
+cat grocery_list.txt | meijer list add
+```
+
+## 🔧 Configuration
+
+### Authentication
+The CLI tool supports multiple authentication methods:
+
+1. **Auth File** (`auth.txt`):
+   ```bash
+   bearer=your_bearer_token_here
+   ```
+
+2. **Config File** (`~/.config/meijer.txt`):
+   ```json
+   {
+     "bearer_token": "your_token_here",
+     "user_agent": "Meijer/101200000"
+   }
+   ```
+
+3. **Environment Variables**:
+   ```bash
+   export MEIJER_BEARER_TOKEN="your_token_here"
+   export MEIJER_USER_AGENT="Meijer/101200000"
+   ```
+
+### Store ID
+For location-specific features like defrag, you can specify a store ID:
+```bash
+meijer list defrag --store-id 217
+```
+
+## 📊 Output Examples
+
+### Shopping List Display
+```
+📊 Shopping List (5 items):
++---+----------------------------------------+-----+----------+------------------------------+
+| # | Item                                   | Qty | Status   | Notes                        |
++===+========================================+=====+==========+==============================+
+| 1 | Milk                                   |   1 | ⏳ Pending| Aisle: 5 | Section: Dairy |
+| 2 | Bread                                  |   1 | ⏳ Pending| Aisle: 2 | Section: Bakery|
+| 3 | Cereal                                 |   1 | ⏳ Pending| Aisle: 4 | Section: Breakf|
+| 4 | Oreos                                  |   1 | ⏳ Pending| Aisle: 4 | Section: Cookie|
+| 5 | Ground Turkey                          |   1 | ⏳ Pending| Aisle: 8 | Section: Meat  |
++---+----------------------------------------+-----+----------+------------------------------+
+```
+
+### Defrag Process
+```
+🔧 Starting shopping list defrag...
+📊 Product Matching Results:
++-----------------+----------------------------------+-----------+---------+---------+-----------+--------------+
+| Original Item   | Closest Match                    | Brand     | Price   |   Aisle | Section   | Confidence   |
++=================+==================================+===========+=========+=========+===========+==============+
+| Milk            | Meijer Brand Milk, 2%            | Meijer    | $3.99   |       5 | Dairy     | High         |
+| Bread           | Wonder Bread, Classic White      | Wonder    | $2.49   |       2 | Bakery    | High         |
+| Cereal          | Kellogg's Frosted Flakes         | Kellogg's | $4.99   |       4 | Breakfast | Medium       |
++-----------------+----------------------------------+-----------+---------+---------+-----------+--------------+
+```
+
+## 🛠️ Development
+
+### Installation for Development
+```bash
+git clone https://github.com/dapperfu/python_Meijer.git
+cd python_Meijer
+pip install -e ".[dev]"
+```
+
+### Running Tests
+```bash
+python test_defrag.py
+python test_tabulate.py
+```
+
+### Code Quality
+```bash
+# Format code
+black meijer_cli.py
+
+# Type checking
+mypy meijer_cli.py
+
+# Run tests
+pytest
+```
+
+## 📦 Dependencies
+
+### Required
+- `click>=8.0.0`: CLI framework
+- `tabulate>=0.9.0`: Table formatting
+- `requests>=2.25.0`: HTTP requests
+- `urllib3>=1.26.0`: HTTP client
+
+### Optional
+- `rich>=12.0.0`: Enhanced TUI (interactive mode)
+- `pandas>=1.3.0`: Data analysis
+- `jupyter>=1.0.0`: Notebook support
+
+## 🎯 Use Cases
+
+### Daily Shopping
+```bash
+# Quick add items
+meijer list add "Milk"
+meijer list add "Bread"
+
+# Organize for shopping
+meijer list defrag
+
+# View organized list
+meijer list show
+```
+
+### Batch Operations
+```bash
+# Add from recipe
+meijer list add -f recipe.txt
+
+# Add from voice notes
+echo "Milk, Bread, Eggs" | tr ',' '\n' | meijer list add
+```
+
+### List Management
+```bash
+# Clear completed items
+meijer list clear
+
+# Start fresh
+meijer list clearall
+
+# Interactive management
+meijer list interactive
+```
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch
-3. Follow existing code style
-4. Add tests for new features
-5. Submit pull request
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-## 🎯 Current Status
+## 📄 License
 
-✅ **Fully Functional:**
-- Authentication (Bearer token + OAuth)
-- Shopping list management  
-- Store search and data
-- Product search with pagination
-- Digital coupons
-- mPerks integration
-- Automatic token refresh
-- Persistent configuration
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-🔧 **In Development:**
-- Enhanced error handling
-- More comprehensive testing
-- Documentation improvements
+## 🙏 Acknowledgments
+
+- Built with [Click](https://click.palletsprojects.com/) for CLI functionality
+- Enhanced with [Tabulate](https://pypi.org/project/tabulate/) for beautiful tables
+- Interactive mode powered by [Rich](https://rich.readthedocs.io/)
+- Meijer API integration for shopping list management
 
 ---
 
-**Note**: This client reverse-engineers the Meijer mobile app API for educational and personal use. Use responsibly and in accordance with Meijer's terms of service.
+**Happy organized shopping! 🛒✨**
