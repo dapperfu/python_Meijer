@@ -16,6 +16,7 @@ notebook:
 
 .PHONY: log
 log:
-	mitmdump --mode wireguard -w meijer_mitm.log -s shop_n_scan_faker.py
-	python meijer_cli.py auth meijer_mitm.log
-	rm meijer_mitm.log
+	@mitmdump --mode wireguard -w meijer_mitm.log -s shop_n_scan_faker.py &
+	@sleep 2
+	@python meijer_cli.py auth meijer_mitm.log
+	# rm meijer_mitm.log
