@@ -53,6 +53,15 @@ try:
 except ImportError:
     SELENIUM_AVAILABLE = False
 
+# Optional mitmproxy imports
+try:
+    from mitmproxy import flow
+    from mitmproxy import http
+    from mitmproxy.io import FlowReader
+    MITMPROXY_AVAILABLE = True
+except ImportError:
+    MITMPROXY_AVAILABLE = False
+
 
 class MeijerError(Exception):
     """Base exception for Meijer API errors."""
@@ -965,6 +974,148 @@ class ShopNScan:
         except Exception as e:
             self.logger.error(f"Error adding item to cart: {e}")
             return False
+
+
+def extract_bearer_token_from_mitmproxy(log_file_path: str) -> Optional[Tuple[str, str, datetime]]:
+    """
+    Extract the last (most recent) Bearer token from a mitmproxy log file.
+    
+    Args:
+        log_file_path: Path to the mitmproxy log file
+        
+    Returns:
+        Tuple of (bearer_token, user_agent, timestamp) if found, None otherwise
+    """
+    if not MITMPROXY_AVAILABLE:
+        logging.error("mitmproxy is not available. Install with: pip install mitmproxy")
+        return None
+    
+    try:
+        log_path = Path(log_file_path)
+        if not log_path.exists():
+            logging.error(f"Mitmproxy log file not found: {log_file_path}")
+            return None
+        
+        logging.info(f"📂 Parsing mitmproxy log: {log_file_path}")
+        
+        bearer_tokens = []
+        
+        with open(log_path, 'rb') as f:
+            reader = FlowReader(f)
+            
+            for flow_obj in reader.stream():
+                try:
+                    if isinstance(flow_obj, http.HTTPFlow):
+                        request = flow_obj.request
+                        
+                        # Check if request is to meijer.com domain
+                        if not _is_meijer_domain(request.pretty_host):
+                            continue
+                        
+                        # Look for Authorization header with Bearer token
+                        auth_header = request.headers.get('authorization', '')
+                        if auth_header and auth_header.startswith('Bearer '):
+                            bearer_token = auth_header[7:]  # Remove 'Bearer ' prefix
+                            user_agent = request.headers.get('user-agent', '')
+                            timestamp = datetime.fromtimestamp(flow_obj.timestamp_start)
+                            
+                            bearer_tokens.append({
+                                'token': bearer_token,
+                                'user_agent': user_agent,
+                                'timestamp': timestamp,
+                                'url': request.pretty_url
+                            })
+                            
+                            logging.debug(f"Found Bearer token at {timestamp}: {bearer_token[:20]}...")
+                
+                except Exception as e:
+                    logging.debug(f"Error processing flow: {e}")
+                    continue
+        
+        if not bearer_tokens:
+            logging.warning("No Bearer tokens found in mitmproxy log")
+            return None
+        
+        # Sort by timestamp and get the most recent
+        bearer_tokens.sort(key=lambda x: x['timestamp'])
+        latest_token = bearer_tokens[-1]
+        
+        logging.info(f"✅ Found {len(bearer_tokens)} Bearer tokens, using latest from {latest_token['timestamp']}")
+        logging.info(f"   URL: {latest_token['url']}")
+        logging.info(f"   Token: {latest_token['token'][:20]}...")
+        
+        return (
+            latest_token['token'],
+            latest_token['user_agent'],
+            latest_token['timestamp']
+        )
+        
+    except Exception as e:
+        logging.error(f"Error parsing mitmproxy log: {e}")
+        return None
+
+
+def _is_meijer_domain(host: str) -> bool:
+    """Check if host is a Meijer domain."""
+    meijer_domains = [
+        'meijer.com',
+        'api.meijer.com',
+        'id.meijer.com',
+        'mservices.meijer.com',
+        'static.meijer.com'
+    ]
+    
+    return any(domain in host.lower() for domain in meijer_domains)
+
+
+def load_auth_from_config_file(config_file_path: str = None) -> Optional[Tuple[str, str]]:
+    """
+    Load authentication from .config/meijer.txt or specified file.
+    
+    Args:
+        config_file_path: Optional path to config file, defaults to ~/.config/meijer.txt
+        
+    Returns:
+        Tuple of (bearer_token, user_agent) if found, None otherwise
+    """
+    try:
+        if config_file_path is None:
+            # Use default ~/.config/meijer.txt
+            home_dir = Path.home()
+            config_file_path = home_dir / '.config' / 'meijer.txt'
+        else:
+            config_file_path = Path(config_file_path)
+        
+        if not config_file_path.exists():
+            logging.debug(f"Config file not found: {config_file_path}")
+            return None
+        
+        logging.info(f"📂 Loading auth from config: {config_file_path}")
+        
+        bearer_token = None
+        user_agent = None
+        
+        with open(config_file_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('bearer=') or line.startswith('bearer_token='):
+                    bearer_token = line.split('=', 1)[1]
+                elif line.startswith('user_agent='):
+                    user_agent = line.split('=', 1)[1]
+        
+        if bearer_token:
+            if not user_agent:
+                user_agent = "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
+            
+            logging.info(f"✅ Loaded bearer token from config: {bearer_token[:20]}...")
+            return bearer_token, user_agent
+        
+        logging.warning(f"No bearer token found in config file: {config_file_path}")
+        return None
+        
+    except Exception as e:
+        logging.error(f"Error loading config file: {e}")
+        return None
 
 
 class Meijer:

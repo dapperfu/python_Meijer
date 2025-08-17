@@ -380,9 +380,9 @@ class MeijerStore:
         return bool(value)
     
     @property
-    def store_id(self) -> str:
-        """Get the store ID as string."""
-        return str(self.unit_id)
+    def store_id(self) -> int:
+        """Get the store ID as integer."""
+        return self.unit_id
     
     @property
     def display_name(self) -> str:
