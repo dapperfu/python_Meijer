@@ -15,21 +15,3 @@ class AuthenticationStatus(Enum):
     AUTHENTICATED = "authenticated"
     EXPIRED = "expired"
     FAILED = "failed"
-
-
-class HatColor(Enum):
-    """Hat color enumeration for coupons."""
-
-    RED = "red"
-    BLUE = "blue"
-    GREEN = "green"
-    YELLOW = "yellow"
-
-
-class BorderColor(Enum):
-    """Border color enumeration for coupons."""
-
-    RED = "red"
-    BLUE = "blue"
-    GREEN = "green"
-    YELLOW = "yellow"
