@@ -7,9 +7,13 @@ Main client class for the Meijer API.
 
 import logging
 import requests
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
 
 from .models import AuthTokens, UserInfo, OAuthConfig
+
+if TYPE_CHECKING:
+    from .coupons import MeijerCoupon
+    from .search import MeijerSearchResults
 from .enums import AuthenticationStatus
 from .exceptions import MeijerAuthenticationError, MeijerAPIError
 from .auth import TokenStorage, MeijerAuth, load_auth_from_config_file, load_auth_file
@@ -87,6 +91,11 @@ class Meijer:
 
         # Initialize shopping list functionality
         self.list = MeijerList(self)
+
+        # Initialize Shop & Scan functionality
+        from .shop_scan import ShopNScan
+
+        self.shop_scan = ShopNScan(self)
 
         # Try to restore authentication
         if self._restore_authentication():
@@ -282,9 +291,16 @@ class Meijer:
             if not self._ensure_authenticated():
                 raise MeijerAuthenticationError("Authentication required")
 
-            # This would be implemented with actual API endpoints
-            self.logger.warning("get_offers not implemented in simplified version")
-            return []
+            url = f"{self.api_base_url}/loyalty/offers"
+            headers = self._get_api_headers()
+
+            params = {"limit": limit}
+            response = self._make_request("GET", url, headers=headers, params=params)
+
+            if response.status_code == 200:
+                return response.json().get("offers", [])
+            else:
+                raise MeijerAPIError(f"Failed to get offers: {response.status_code}")
 
         except Exception as e:
             self.logger.error(f"Error getting offers: {e}")
@@ -295,13 +311,151 @@ class Meijer:
     ) -> List[Dict[str, Any]]:
         """Get store information."""
         try:
-            if not self._ensure_authenticated():
-                raise MeijerAuthenticationError("Authentication required")
+            url = f"{self.api_base_url}/stores"
+            headers = self._get_api_headers()
 
-            # This would be implemented with actual API endpoints
-            self.logger.warning("get_stores not implemented in simplified version")
-            return []
+            params = {}
+            if zip_code:
+                params["zip"] = zip_code
+            if radius:
+                params["radius"] = radius
+
+            response = self._make_request("GET", url, headers=headers, params=params)
+
+            if response.status_code == 200:
+                return response.json().get("stores", [])
+            else:
+                raise MeijerAPIError(f"Failed to get stores: {response.status_code}")
 
         except Exception as e:
             self.logger.error(f"Error getting stores: {e}")
             return []
+
+    def get_coupons(self, limit: int = 100) -> List["MeijerCoupon"]:
+        """
+        Fetch coupons from mPerks API.
+
+        Args:
+            limit: Maximum number of coupons to fetch
+
+        Returns:
+            List of MeijerCoupon objects
+        """
+        if not self._ensure_authenticated():
+            self.logger.warning("Not authenticated - cannot fetch coupons")
+            return []
+
+        try:
+            response = self._make_request(
+                "GET",
+                f"{self.api_base_url}/digital/mPerks/api/offers",
+                params={"limit": limit},
+            )
+
+            coupon_data = response.json()
+            # Import coupon creation function when available
+            try:
+                from .coupons import create_meijer_coupons_from_response
+
+                coupons = create_meijer_coupons_from_response(coupon_data, self)
+                self.logger.info(f"Fetched {len(coupons)} coupons")
+                return coupons
+            except ImportError:
+                self.logger.warning(
+                    "Coupon functionality not yet available in modular version"
+                )
+                return []
+
+        except Exception as e:
+            self.logger.error(f"Failed to fetch coupons: {e}")
+            return []
+
+    def search_products(self, query: str, **kwargs) -> "MeijerSearchResults":
+        """
+        Search for products using Constructor.io.
+
+        Args:
+            query: Search query
+            **kwargs: Additional search parameters
+
+        Returns:
+            MeijerSearchResults object
+        """
+        try:
+            from .search import MeijerSearch
+
+            search_client = MeijerSearch(self)
+            return search_client.search(query, **kwargs)
+        except ImportError:
+            self.logger.warning(
+                "Search functionality not yet available in modular version"
+            )
+            return None
+
+    def get_autocomplete(self, query: str, num_results: int = 10) -> List[str]:
+        """
+        Get autocomplete suggestions.
+
+        Args:
+            query: Partial search query
+            num_results: Number of suggestions
+
+        Returns:
+            List of suggestion strings
+        """
+        try:
+            from .search import MeijerSearch
+
+            search_client = MeijerSearch(self)
+            return search_client.autocomplete(query, num_results)
+        except ImportError:
+            self.logger.warning(
+                "Search functionality not yet available in modular version"
+            )
+            return []
+
+    def clip_coupon(self, coupon) -> bool:
+        """Clip (activate) a coupon."""
+        try:
+            from .coupons import clip_coupon
+
+            if hasattr(coupon, "meijer_offer_id"):
+                return clip_coupon(self, coupon.meijer_offer_id)
+            elif isinstance(coupon, int):
+                return clip_coupon(self, coupon)
+            else:
+                self.logger.error("Invalid coupon parameter")
+                return False
+        except ImportError:
+            self.logger.warning(
+                "Coupon functionality not yet available in modular version"
+            )
+            return False
+
+    def unclip_coupon(self, coupon) -> bool:
+        """Unclip (deactivate) a coupon."""
+        try:
+            from .coupons import unclip_coupon
+
+            if hasattr(coupon, "meijer_offer_id"):
+                return unclip_coupon(self, coupon.meijer_offer_id)
+            elif isinstance(coupon, int):
+                return unclip_coupon(self, coupon)
+            else:
+                self.logger.error("Invalid coupon parameter")
+                return False
+        except ImportError:
+            self.logger.warning(
+                "Coupon functionality not yet available in modular version"
+            )
+            return False
+
+    def get_clipped_coupons(self) -> List["MeijerCoupon"]:
+        """Get list of clipped coupons."""
+        coupons = self.get_coupons()
+        return [c for c in coupons if c.is_clipped]
+
+    def get_available_coupons(self) -> List["MeijerCoupon"]:
+        """Get list of available (unclipped) coupons."""
+        coupons = self.get_coupons()
+        return [c for c in coupons if not c.is_clipped]
