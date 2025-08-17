@@ -11,6 +11,9 @@ __author__ = "Meijer API Client Contributors"
 # Import main client
 from .client import Meijer
 
+# Import CLI functionality
+from .cli import cli
+
 # Import data models
 from .models import (
     MeijerItem,
@@ -41,6 +44,9 @@ from .exceptions import (
 __all__ = [
     # Main client
     "Meijer",
+    
+    # CLI functionality
+    "cli",
     
     # Data models
     "MeijerItem",
