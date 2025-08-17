@@ -456,7 +456,7 @@ def list_interactive():
             console.print("6. Refresh")
             console.print("0. Exit")
             
-            choice = Prompt.ask("\n[bold cyan]Choose action[/bold]", choices=["0", "1", "2", "3", "4", "5", "6"])
+            choice = Prompt.ask("\n[bold cyan]Choose action[/bold cyan]", choices=["0", "1", "2", "3", "4", "5", "6"])
             
             if choice == "0":
                 break

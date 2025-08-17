@@ -180,7 +180,7 @@ class MeijerSearch:
 
             params = {
                 "key": self.api_key,
-                "results_per_page": results_per_page,
+                "num_results_per_page": results_per_page,  # Changed from results_per_page
                 "page": page,
                 "sort_by": sort_by,
                 "fmt_options[groups_max_depth]": 2,
