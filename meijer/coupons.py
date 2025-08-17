@@ -279,7 +279,7 @@ def create_meijer_coupons_from_response(
             coupon = MeijerCoupon(
                 meijer_offer_id=meijer_offer_id,
                 title=title,
-                description=description or "",
+                description=description,
                 image_url=actual_offer.get("imageURL"),
                 large_image_url=actual_offer.get("largeImageURL"),
                 terms_and_conditions=actual_offer.get("termsAndConditions", ""),
