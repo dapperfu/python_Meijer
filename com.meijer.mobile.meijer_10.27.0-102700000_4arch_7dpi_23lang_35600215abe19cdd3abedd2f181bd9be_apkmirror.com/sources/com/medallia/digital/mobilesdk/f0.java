@@ -1,0 +1,423 @@
+package com.medallia.digital.mobilesdk;
+
+import com.fullstory.FS;
+import com.google.firebase.perf.network.FirebasePerfUrlConnection;
+import com.medallia.digital.mobilesdk.o6;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONObject;
+
+/* loaded from: classes7.dex */
+abstract class f0<T> implements Runnable {
+
+    /* renamed from: i, reason: collision with root package name */
+    private static final int f91929i = 1048576;
+
+    /* renamed from: j, reason: collision with root package name */
+    private static final String f91930j = "Content-Type";
+
+    /* renamed from: k, reason: collision with root package name */
+    private static final int f91931k = 600;
+
+    /* renamed from: l, reason: collision with root package name */
+    private static final String f91932l = "application/json";
+
+    /* renamed from: m, reason: collision with root package name */
+    static final int f91933m = -44;
+
+    /* renamed from: n, reason: collision with root package name */
+    private static final String f91934n = "BaseRequest: Error parsing server response ";
+
+    /* renamed from: o, reason: collision with root package name */
+    static final int f91935o = -45;
+
+    /* renamed from: p, reason: collision with root package name */
+    private static final String f91936p = "BaseRequest: Error no Connection Available";
+
+    /* renamed from: q, reason: collision with root package name */
+    static final int f91937q = -46;
+
+    /* renamed from: r, reason: collision with root package name */
+    private static final String f91938r = "BaseRequest: Error timeout";
+
+    /* renamed from: s, reason: collision with root package name */
+    private static final String f91939s = "https";
+
+    /* renamed from: a, reason: collision with root package name */
+    private final d f91940a;
+
+    /* renamed from: b, reason: collision with root package name */
+    private final String f91941b;
+
+    /* renamed from: c, reason: collision with root package name */
+    private final o6.a f91942c;
+
+    /* renamed from: d, reason: collision with root package name */
+    private final Map<String, String> f91943d;
+
+    /* renamed from: e, reason: collision with root package name */
+    private final JSONObject f91944e;
+
+    /* renamed from: f, reason: collision with root package name */
+    private int f91945f;
+
+    /* renamed from: g, reason: collision with root package name */
+    private final int f91946g;
+
+    /* renamed from: h, reason: collision with root package name */
+    private String f91947h;
+
+    class a extends v4 {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ String f91948a;
+
+        a(String str) {
+            this.f91948a = str;
+        }
+
+        @Override // com.medallia.digital.mobilesdk.v4
+        public void a() {
+            StringBuilder sb2 = new StringBuilder();
+            sb2.append("Message: ");
+            String str = this.f91948a;
+            if (str == null) {
+                str = "Unknown network error";
+            }
+            sb2.append(str);
+            sb2.append(" StatusCode ");
+            String str2 = this.f91948a;
+            int i10 = f0.f91931k;
+            sb2.append(str2 != null ? f0.this.f91945f : f0.f91931k);
+            a4.c(sb2.toString());
+            if (f0.this.f91942c != null) {
+                o6.a aVar = f0.this.f91942c;
+                if (this.f91948a != null) {
+                    i10 = f0.this.f91945f;
+                }
+                aVar.a(new i6(i10));
+            }
+        }
+    }
+
+    static /* synthetic */ class b {
+
+        /* renamed from: a, reason: collision with root package name */
+        static final /* synthetic */ int[] f91950a;
+
+        static {
+            int[] iArr = new int[c.values().length];
+            f91950a = iArr;
+            try {
+                iArr[c.ContentType.ordinal()] = 1;
+            } catch (NoSuchFieldError unused) {
+            }
+            try {
+                f91950a[c.Accept.ordinal()] = 2;
+            } catch (NoSuchFieldError unused2) {
+            }
+        }
+    }
+
+    private enum c {
+        ContentType,
+        Accept;
+
+        @Override // java.lang.Enum
+        public String toString() {
+            int i10 = b.f91950a[ordinal()];
+            return i10 != 1 ? i10 != 2 ? "" : "Accept" : f0.f91930j;
+        }
+    }
+
+    enum d {
+        DEPRECATED_GET_OR_POST,
+        GET,
+        POST,
+        PUT,
+        DELETE,
+        HEAD,
+        OPTIONS,
+        TRACE,
+        PATCH
+    }
+
+    f0(d dVar, String str, HashMap<String, String> map, JSONObject jSONObject, int i10, o6.a aVar) {
+        this.f91940a = dVar;
+        this.f91941b = str;
+        this.f91942c = aVar;
+        this.f91944e = jSONObject;
+        this.f91943d = a(map);
+        this.f91946g = i10;
+    }
+
+    private String c() {
+        return f91932l;
+    }
+
+    private Map<String, String> d() {
+        Map<String, String> map = this.f91943d;
+        return map != null ? map : new HashMap();
+    }
+
+    private d f() {
+        return this.f91940a;
+    }
+
+    protected abstract void a(T t10);
+
+    protected abstract T b(InputStream inputStream);
+
+    public String e() {
+        return this.f91947h;
+    }
+
+    protected o6.a g() {
+        return this.f91942c;
+    }
+
+    protected int h() {
+        return this.f91945f;
+    }
+
+    protected String i() {
+        return this.f91941b;
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* JADX WARN: Removed duplicated region for block: B:52:0x00a3  */
+    /* JADX WARN: Removed duplicated region for block: B:59:0x0095 A[EXC_TOP_SPLITTER, SYNTHETIC] */
+    /* JADX WARN: Removed duplicated region for block: B:64:0x004a A[EXC_TOP_SPLITTER, SYNTHETIC] */
+    /* JADX WARN: Removed duplicated region for block: B:70:? A[SYNTHETIC] */
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+        To view partially-correct add '--show-bad-code' argument
+    */
+    public void j() throws java.lang.Throwable {
+        /*
+            r5 = this;
+            boolean r0 = com.medallia.digital.mobilesdk.x8.b()
+            if (r0 == 0) goto La7
+            r0 = 0
+            java.net.HttpURLConnection r1 = r5.a()     // Catch: java.lang.Throwable -> L57 java.lang.Exception -> L5a java.net.SocketTimeoutException -> L74
+            int r2 = r1.getResponseCode()     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            r5.f91945f = r2     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            r3 = 400(0x190, float:5.6E-43)
+            if (r2 >= r3) goto L3d
+            java.io.InputStream r0 = r1.getInputStream()     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            java.lang.Object r2 = r5.b(r0)     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            int r3 = r5.f91945f     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            r4 = -44
+            if (r3 != r4) goto L39
+            java.lang.StringBuilder r3 = new java.lang.StringBuilder     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            r3.<init>()     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            java.lang.String r4 = "BaseRequest: Error parsing server response "
+            r3.append(r4)     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            r3.append(r2)     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            java.lang.String r2 = r3.toString()     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            goto L45
+        L35:
+            r2 = move-exception
+            goto L93
+        L37:
+            r2 = move-exception
+            goto L5c
+        L39:
+            r5.a(r2)     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            goto L48
+        L3d:
+            java.io.InputStream r2 = r1.getErrorStream()     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+            java.lang.String r2 = r5.a(r2)     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+        L45:
+            r5.a(r2)     // Catch: java.lang.Throwable -> L35 java.lang.Exception -> L37 java.net.SocketTimeoutException -> L75
+        L48:
+            if (r0 == 0) goto L8f
+            r0.close()     // Catch: java.io.IOException -> L4e
+            goto L8f
+        L4e:
+            r0 = move-exception
+            java.lang.String r0 = r0.toString()
+            r5.a(r0)
+            goto L8f
+        L57:
+            r2 = move-exception
+            r1 = r0
+            goto L93
+        L5a:
+            r2 = move-exception
+            r1 = r0
+        L5c:
+            java.lang.String r2 = r2.getMessage()     // Catch: java.lang.Throwable -> L35
+            r5.a(r2)     // Catch: java.lang.Throwable -> L35
+            if (r0 == 0) goto L71
+            r0.close()     // Catch: java.io.IOException -> L69
+            goto L71
+        L69:
+            r0 = move-exception
+            java.lang.String r0 = r0.toString()
+            r5.a(r0)
+        L71:
+            if (r1 == 0) goto L92
+            goto L8f
+        L74:
+            r1 = r0
+        L75:
+            r2 = -46
+            r5.a(r2)     // Catch: java.lang.Throwable -> L35
+            java.lang.String r2 = "BaseRequest: Error timeout"
+            r5.a(r2)     // Catch: java.lang.Throwable -> L35
+            if (r0 == 0) goto L8d
+            r0.close()     // Catch: java.io.IOException -> L85
+            goto L8d
+        L85:
+            r0 = move-exception
+            java.lang.String r0 = r0.toString()
+            r5.a(r0)
+        L8d:
+            if (r1 == 0) goto L92
+        L8f:
+            r1.disconnect()
+        L92:
+            return
+        L93:
+            if (r0 == 0) goto La1
+            r0.close()     // Catch: java.io.IOException -> L99
+            goto La1
+        L99:
+            r0 = move-exception
+            java.lang.String r0 = r0.toString()
+            r5.a(r0)
+        La1:
+            if (r1 == 0) goto La6
+            r1.disconnect()
+        La6:
+            throw r2
+        La7:
+            r0 = -45
+            r5.a(r0)
+            java.lang.String r0 = "BaseRequest: Error no Connection Available"
+            r5.a(r0)
+            return
+        */
+        throw new UnsupportedOperationException("Method not decompiled: com.medallia.digital.mobilesdk.f0.j():void");
+    }
+
+    @Override // java.lang.Runnable
+    public void run() throws Throwable {
+        j();
+    }
+
+    f0(d dVar, String str, HashMap<String, String> map, JSONObject jSONObject, String str2, int i10, o6.a aVar) {
+        this.f91940a = dVar;
+        this.f91941b = str;
+        this.f91942c = aVar;
+        this.f91944e = jSONObject;
+        this.f91943d = a(map);
+        this.f91946g = i10;
+        this.f91947h = str2;
+    }
+
+    private String a(InputStream inputStream) {
+        try {
+            return x8.a(inputStream).toString("UTF-8");
+        } catch (Exception unused) {
+            a(f91933m);
+            return null;
+        }
+    }
+
+    private byte[] b() {
+        try {
+            JSONObject jSONObject = this.f91944e;
+            if (jSONObject == null) {
+                return null;
+            }
+            return jSONObject.toString().getBytes();
+        } catch (Exception unused) {
+            return null;
+        }
+    }
+
+    public HttpURLConnection a() throws NoSuchAlgorithmException, IOException, KeyManagementException {
+        HttpURLConnection httpURLConnection = (HttpURLConnection) ((URLConnection) FirebasePerfUrlConnection.instrument(FS.urlconnection_wrapInstance(new URL(i()).openConnection())));
+        httpURLConnection.setUseCaches(false);
+        httpURLConnection.setConnectTimeout(this.f91946g);
+        httpURLConnection.setReadTimeout(this.f91946g);
+        httpURLConnection.setRequestMethod(f().name());
+        if (d() != null && !d().isEmpty()) {
+            for (String str : d().keySet()) {
+                httpURLConnection.setRequestProperty(str, d().get(str));
+            }
+        }
+        if (e() != null || (b() != null && b().length > 0)) {
+            httpURLConnection.setDoInput(true);
+            httpURLConnection.setDoOutput(true);
+            httpURLConnection.setRequestProperty(f91930j, (!f().name().equals(d.PUT.toString()) || e() == null) ? c() : " ");
+            if (e() != null) {
+                FileInputStream fileInputStreamE = null;
+                try {
+                    try {
+                        fileInputStreamE = g2.e(e());
+                        httpURLConnection.setFixedLengthStreamingMode(fileInputStreamE.available());
+                        DataOutputStream dataOutputStream = new DataOutputStream(httpURLConnection.getOutputStream());
+                        byte[] bArr = new byte[f91929i];
+                        for (int iMin = Math.min(fileInputStreamE.available(), f91929i); fileInputStreamE.read(bArr, 0, iMin) > 0; iMin = Math.min(fileInputStreamE.available(), f91929i)) {
+                            dataOutputStream.write(bArr, 0, iMin);
+                        }
+                        a4.b("LivingLens Done writing file to server - continue processing");
+                    } catch (IOException e10) {
+                        a4.c(e10.getMessage());
+                        if (fileInputStreamE != null) {
+                        }
+                    }
+                    try {
+                        fileInputStreamE.close();
+                    } catch (IOException e11) {
+                        a4.c(e11.getMessage());
+                    }
+                } catch (Throwable th2) {
+                    if (fileInputStreamE != null) {
+                        try {
+                            fileInputStreamE.close();
+                        } catch (IOException e12) {
+                            a4.c(e12.getMessage());
+                        }
+                    }
+                    throw th2;
+                }
+            } else {
+                OutputStream outputStream = httpURLConnection.getOutputStream();
+                outputStream.write(b());
+                outputStream.close();
+            }
+        }
+        httpURLConnection.connect();
+        return httpURLConnection;
+    }
+
+    private Map<String, String> a(HashMap<String, String> map) {
+        if (map == null) {
+            map = new HashMap<>();
+        }
+        map.put(c.Accept.toString(), f91932l);
+        return map;
+    }
+
+    protected void a(int i10) {
+        this.f91945f = i10;
+    }
+
+    public void a(String str) {
+        w7.b().a().execute(new a(str));
+    }
+}

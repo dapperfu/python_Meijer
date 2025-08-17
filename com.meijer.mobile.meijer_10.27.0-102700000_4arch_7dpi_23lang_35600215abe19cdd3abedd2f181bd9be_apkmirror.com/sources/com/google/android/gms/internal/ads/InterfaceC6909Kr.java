@@ -1,0 +1,7 @@
+package com.google.android.gms.internal.ads;
+
+/* renamed from: com.google.android.gms.internal.ads.Kr, reason: case insensitive filesystem */
+/* loaded from: classes6.dex */
+interface InterfaceC6909Kr {
+    void zzn();
+}

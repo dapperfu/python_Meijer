@@ -1,0 +1,16 @@
+package kotlin.reflect.jvm.internal.impl.load.java.components;
+
+import kotlin.jvm.functions.Function1;
+import kotlin.reflect.jvm.internal.impl.descriptors.ModuleDescriptor;
+
+/* loaded from: classes13.dex */
+class b implements Function1 {
+
+    /* renamed from: a, reason: collision with root package name */
+    public static final b f144353a = new b();
+
+    @Override // kotlin.jvm.functions.Function1
+    public Object invoke(Object obj) {
+        return JavaAnnotationTargetMapper.e((ModuleDescriptor) obj);
+    }
+}

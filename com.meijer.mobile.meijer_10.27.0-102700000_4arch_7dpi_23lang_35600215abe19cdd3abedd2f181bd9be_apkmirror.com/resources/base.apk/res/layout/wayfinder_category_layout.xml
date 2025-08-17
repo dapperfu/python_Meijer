@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.AppCompatButton xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:textSize="@dimen/text_size_large_sp"
+    android:textColor="@color/wayfinder_category_text_colour"
+    android:ellipsize="end"
+    android:gravity="start|center_vertical"
+    android:layout_gravity="end"
+    android:background="@drawable/wayfinder_category_background"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:maxWidth="200dp"
+    android:maxLines="1"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    app:fontFamily="?attr/sfml_font_family"/>

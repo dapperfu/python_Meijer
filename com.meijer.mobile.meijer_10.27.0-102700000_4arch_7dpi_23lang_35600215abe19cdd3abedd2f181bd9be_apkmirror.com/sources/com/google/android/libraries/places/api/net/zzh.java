@@ -1,0 +1,89 @@
+package com.google.android.libraries.places.api.net;
+
+import Td.AbstractC5223a;
+import com.google.android.libraries.places.api.model.PhotoMetadata;
+
+/* loaded from: classes6.dex */
+final class zzh extends FetchResolvedPhotoUriRequest {
+    private final Integer zza;
+    private final Integer zzb;
+    private final PhotoMetadata zzc;
+    private final AbstractC5223a zzd;
+
+    public final boolean equals(Object obj) {
+        AbstractC5223a abstractC5223a;
+        if (obj == this) {
+            return true;
+        }
+        if (obj instanceof FetchResolvedPhotoUriRequest) {
+            FetchResolvedPhotoUriRequest fetchResolvedPhotoUriRequest = (FetchResolvedPhotoUriRequest) obj;
+            Integer num = this.zza;
+            if (num != null ? num.equals(fetchResolvedPhotoUriRequest.getMaxWidth()) : fetchResolvedPhotoUriRequest.getMaxWidth() == null) {
+                Integer num2 = this.zzb;
+                if (num2 != null ? num2.equals(fetchResolvedPhotoUriRequest.getMaxHeight()) : fetchResolvedPhotoUriRequest.getMaxHeight() == null) {
+                    if (this.zzc.equals(fetchResolvedPhotoUriRequest.getPhotoMetadata()) && ((abstractC5223a = this.zzd) != null ? abstractC5223a.equals(fetchResolvedPhotoUriRequest.getCancellationToken()) : fetchResolvedPhotoUriRequest.getCancellationToken() == null)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override // com.google.android.libraries.places.api.net.FetchResolvedPhotoUriRequest
+    public final Integer getMaxHeight() {
+        return this.zzb;
+    }
+
+    @Override // com.google.android.libraries.places.api.net.FetchResolvedPhotoUriRequest
+    public final Integer getMaxWidth() {
+        return this.zza;
+    }
+
+    @Override // com.google.android.libraries.places.api.net.FetchResolvedPhotoUriRequest
+    public final PhotoMetadata getPhotoMetadata() {
+        return this.zzc;
+    }
+
+    @Override // com.google.android.libraries.places.api.net.FetchResolvedPhotoUriRequest, com.google.android.libraries.places.internal.zzmg
+    public final AbstractC5223a getCancellationToken() {
+        return this.zzd;
+    }
+
+    public final int hashCode() {
+        Integer num = this.zza;
+        int iHashCode = num == null ? 0 : num.hashCode();
+        Integer num2 = this.zzb;
+        int iHashCode2 = ((((iHashCode ^ 1000003) * 1000003) ^ (num2 == null ? 0 : num2.hashCode())) * 1000003) ^ this.zzc.hashCode();
+        AbstractC5223a abstractC5223a = this.zzd;
+        return (iHashCode2 * 1000003) ^ (abstractC5223a != null ? abstractC5223a.hashCode() : 0);
+    }
+
+    public final String toString() {
+        AbstractC5223a abstractC5223a = this.zzd;
+        String string = this.zzc.toString();
+        String strValueOf = String.valueOf(abstractC5223a);
+        Integer num = this.zza;
+        int length = String.valueOf(num).length();
+        Integer num2 = this.zzb;
+        int length2 = String.valueOf(num2).length();
+        StringBuilder sb2 = new StringBuilder(length + 50 + length2 + 16 + string.length() + 20 + strValueOf.length() + 1);
+        sb2.append("FetchResolvedPhotoUriRequest{maxWidth=");
+        sb2.append(num);
+        sb2.append(", maxHeight=");
+        sb2.append(num2);
+        sb2.append(", photoMetadata=");
+        sb2.append(string);
+        sb2.append(", cancellationToken=");
+        sb2.append(strValueOf);
+        sb2.append("}");
+        return sb2.toString();
+    }
+
+    /* synthetic */ zzh(Integer num, Integer num2, PhotoMetadata photoMetadata, AbstractC5223a abstractC5223a, byte[] bArr) {
+        this.zza = num;
+        this.zzb = num2;
+        this.zzc = photoMetadata;
+        this.zzd = abstractC5223a;
+    }
+}

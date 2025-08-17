@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">Siirry eteenpäin %d sekunti</item>
+        <item quantity="other">Siirry eteenpäin %d sekuntia</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">Siirry taaksepäin %d sekunti</item>
+        <item quantity="other">Siirry taaksepäin %d sekuntia</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d uusi ilmoitus</item>
+        <item quantity="other">%d uutta ilmoitusta</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d kuva</item>
+        <item quantity="other">%1$d kuvaa</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s tähti</item>
+        <item quantity="other">%1$s tähteä</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d arvostelu</item>
+        <item quantity="other">%1$d arvostelua</item>
+    </plurals>
+</resources>

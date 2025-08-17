@@ -1,0 +1,254 @@
+{
+  "summary": {
+    "total_flows_analyzed": 704,
+    "offers_endpoint_calls": 23,
+    "clip_endpoint_calls": 0,
+    "unclip_endpoint_calls": 0,
+    "clipped_offers_calls": 0,
+    "unique_offer_ids": 0,
+    "unique_fields_discovered": 11
+  },
+  "request_patterns": {
+    "methods": {
+      "POST": 20,
+      "GET": 3
+    },
+    "content_types": {
+      "application/vnd.meijer.digitalmperks.offers-v1.0+json": 15,
+      "application/vnd.meijer.digitalmperks.categories-v1.0+json": 3,
+      "application/vnd.meijer.digitalmperks.clip-v1.0+json": 5
+    }
+  },
+  "response_patterns": {
+    "status_codes": {
+      "200": 23
+    },
+    "content_types": {
+      "application/vnd.meijer.digitalmperks.offers-v1.0+json; charset=utf-8": 15,
+      "application/vnd.meijer.digitalmperks.categories-v1.0+json; charset=utf-8": 3,
+      "application/vnd.meijer.digitalmperks.clip-v1.0+json; charset=utf-8": 5
+    }
+  },
+  "common_fields": {
+    "offer": 2896,
+    "isSuggested": 2896,
+    "isClipped": 2896,
+    "isAutoClipped": 2896,
+    "isHidden": 2896,
+    "isTargeted": 2896,
+    "couponInclusionGroupTag": 2896,
+    "couponExpirationGroupTag": 2896,
+    "isClippable": 2896,
+    "isSpecialOffer": 2896,
+    "redemptionDate": 2896
+  },
+  "field_data_types": {
+    "offer": "dict",
+    "isSuggested": "bool",
+    "isClipped": "bool",
+    "isAutoClipped": "bool",
+    "isHidden": "bool",
+    "isTargeted": "bool",
+    "couponInclusionGroupTag": "str",
+    "couponExpirationGroupTag": "str",
+    "isClippable": "bool",
+    "isSpecialOffer": "bool",
+    "redemptionDate": "NoneType"
+  },
+  "sample_offers": {
+    "offers": [
+      {
+        "offer": {
+          "meijerOfferId": 1116700715,
+          "title": "30% off 1                                                   ",
+          "titleColor": null,
+          "description": "Game item. Includes Board Games and Card Games. (Excludes Clearance)",
+          "departments": [
+            {
+              "categoryID": "L5-000031",
+              "categoryName": "Toys",
+              "subCategoryID": "L4-000429",
+              "subCategoryName": "Dolls & Accessories",
+              "offerCountSubCategory": 0,
+              "offerCountDepartment": 0,
+              "isCustomCategory": false
+            }
+          ],
+          "category": {
+            "segmentID": "L5-000031",
+            "segmentName": "Toys"
+          },
+          "subcategory": {
+            "segmentID": null,
+            "segmentName": null
+          },
+          "tags": [
+            ""
+          ],
+          "hatText": null,
+          "hatColor": 0,
+          "borderColor": 0,
+          "isMeijerBuck": false,
+          "showLargeImage": false,
+          "imageURL": "https://static.meijer.com/DigitalCoupon/Games.png",
+          "largeImageURL": null,
+          "termsAndConditions": "*No cash back. Limit one use per coupon. Coupons are non-transferrable. Excludes clearance and Meijer Home Delivery & Pickup Fees.",
+          "manufacturerCoupon": false,
+          "redemptionStartDate": "2025-07-21T00:00:00",
+          "redemptionEndDate": "2025-08-17T23:59:00",
+          "redeemAmount": 30.0,
+          "offerClassId": 1,
+          "logixOfferId": 7240615,
+          "modifiedTs": "0001-01-01T00:00:00",
+          "rewardProgramId": 0,
+          "isSpecialOffer": false,
+          "conditionTypeId": 0,
+          "conditionValue": 1.0,
+          "discountTypeId": 2,
+          "discountLevelId": 1,
+          "couponId": 7240615
+        },
+        "isSuggested": false,
+        "isClipped": false,
+        "isAutoClipped": false,
+        "isHidden": false,
+        "isTargeted": true,
+        "couponInclusionGroupTag": "New in Past Month",
+        "couponExpirationGroupTag": "Expiring within 7 days",
+        "isClippable": true,
+        "isSpecialOffer": false,
+        "redemptionDate": null
+      },
+      {
+        "offer": {
+          "meijerOfferId": 1216804738,
+          "title": "40% off 1                                                   ",
+          "titleColor": null,
+          "description": "Astrobrights or Southworth Paper item.",
+          "departments": [
+            {
+              "categoryID": "L5-000025",
+              "categoryName": "School & Office",
+              "subCategoryID": "L4-000930",
+              "subCategoryName": "OFFICE ESSENTIALS",
+              "offerCountSubCategory": 0,
+              "offerCountDepartment": 0,
+              "isCustomCategory": false
+            }
+          ],
+          "category": {
+            "segmentID": "L5-000025",
+            "segmentName": "School & Office"
+          },
+          "subcategory": {
+            "segmentID": null,
+            "segmentName": null
+          },
+          "tags": [
+            ""
+          ],
+          "hatText": null,
+          "hatColor": 0,
+          "borderColor": 0,
+          "isMeijerBuck": false,
+          "showLargeImage": false,
+          "imageURL": "https://static.meijer.com/DigitalCoupon/Neenah.png",
+          "largeImageURL": null,
+          "termsAndConditions": "No Cash Back. Not to be combined with any other Manufacturer Coupons. Cannot double or triple coupon. Coupons are non-transferrable. This offer can only be used once. Excludes Meijer Home Delivery & Pickup Fees",
+          "manufacturerCoupon": true,
+          "redemptionStartDate": "2025-07-21T00:00:00",
+          "redemptionEndDate": "2025-08-17T23:59:00",
+          "redeemAmount": 40.0,
+          "offerClassId": 1,
+          "logixOfferId": 7249802,
+          "modifiedTs": "0001-01-01T00:00:00",
+          "rewardProgramId": 0,
+          "isSpecialOffer": false,
+          "conditionTypeId": 0,
+          "conditionValue": 1.0,
+          "discountTypeId": 2,
+          "discountLevelId": 1,
+          "couponId": 7249802
+        },
+        "isSuggested": false,
+        "isClipped": true,
+        "isAutoClipped": false,
+        "isHidden": false,
+        "isTargeted": true,
+        "couponInclusionGroupTag": "New in Past Month",
+        "couponExpirationGroupTag": "Expiring within 7 days",
+        "isClippable": false,
+        "isSpecialOffer": false,
+        "redemptionDate": null
+      },
+      {
+        "offer": {
+          "meijerOfferId": 1116700717,
+          "title": "25% off 1                                                   ",
+          "titleColor": null,
+          "description": "Grand Gourmet Cookware item. (Excludes Clearance).",
+          "departments": [
+            {
+              "categoryID": "L5-000054",
+              "categoryName": "Home",
+              "subCategoryID": "L4-000446",
+              "subCategoryName": "Cookware Gadgets",
+              "offerCountSubCategory": 0,
+              "offerCountDepartment": 0,
+              "isCustomCategory": false
+            }
+          ],
+          "category": {
+            "segmentID": "L5-000054",
+            "segmentName": "Home"
+          },
+          "subcategory": {
+            "segmentID": null,
+            "segmentName": null
+          },
+          "tags": [
+            ""
+          ],
+          "hatText": null,
+          "hatColor": 0,
+          "borderColor": 0,
+          "isMeijerBuck": false,
+          "showLargeImage": false,
+          "imageURL": "https://static.meijer.com/DigitalCoupon/Grandgourmet.png",
+          "largeImageURL": null,
+          "termsAndConditions": "*No cash back. Limit one use per coupon. Coupons are non-transferrable. Excludes clearance and Meijer Home Delivery & Pickup Fees.",
+          "manufacturerCoupon": false,
+          "redemptionStartDate": "2025-07-21T00:00:00",
+          "redemptionEndDate": "2025-08-17T23:59:00",
+          "redeemAmount": 25.0,
+          "offerClassId": 1,
+          "logixOfferId": 7240620,
+          "modifiedTs": "0001-01-01T00:00:00",
+          "rewardProgramId": 0,
+          "isSpecialOffer": false,
+          "conditionTypeId": 0,
+          "conditionValue": 1.0,
+          "discountTypeId": 2,
+          "discountLevelId": 1,
+          "couponId": 7240620
+        },
+        "isSuggested": false,
+        "isClipped": true,
+        "isAutoClipped": false,
+        "isHidden": false,
+        "isTargeted": true,
+        "couponInclusionGroupTag": "New in Past Month",
+        "couponExpirationGroupTag": "Expiring within 7 days",
+        "isClippable": false,
+        "isSpecialOffer": false,
+        "redemptionDate": null
+      }
+    ]
+  },
+  "endpoint_analysis": {
+    "offers_calls": 23,
+    "clip_calls": 0,
+    "unclip_calls": 0,
+    "clipped_offers_calls": 0
+  }
+}

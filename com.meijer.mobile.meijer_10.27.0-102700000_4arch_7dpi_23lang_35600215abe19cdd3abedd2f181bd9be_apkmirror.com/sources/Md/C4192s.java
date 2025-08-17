@@ -1,0 +1,142 @@
+package Md;
+
+import android.os.RemoteException;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.RuntimeRemoteException;
+import java.util.List;
+
+/* renamed from: Md.s, reason: case insensitive filesystem */
+/* loaded from: classes6.dex */
+public final class C4192s {
+
+    /* renamed from: a, reason: collision with root package name */
+    private final Bd.h f19475a;
+
+    public void a() {
+        try {
+            this.f19475a.zzo();
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void b(boolean z10) {
+        try {
+            this.f19475a.w(z10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void c(int i10) {
+        try {
+            this.f19475a.z0(i10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void d(boolean z10) {
+        try {
+            this.f19475a.G0(z10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void e(List<? extends List<LatLng>> list) {
+        try {
+            this.f19475a.h0(list);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public boolean equals(Object obj) {
+        if (!(obj instanceof C4192s)) {
+            return false;
+        }
+        try {
+            return this.f19475a.S1(((C4192s) obj).f19475a);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void f(List<LatLng> list) {
+        try {
+            com.google.android.gms.common.internal.r.m(list, "points must not be null.");
+            this.f19475a.a0(list);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void g(int i10) {
+        try {
+            this.f19475a.zzu(i10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void h(int i10) {
+        try {
+            this.f19475a.j1(i10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public int hashCode() {
+        try {
+            return this.f19475a.zzi();
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void i(List<C4190p> list) {
+        try {
+            this.f19475a.zzw(list);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void j(float f10) {
+        try {
+            this.f19475a.F(f10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void k(Object obj) {
+        try {
+            this.f19475a.p6(com.google.android.gms.dynamic.d.F2(obj));
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void l(boolean z10) {
+        try {
+            this.f19475a.b0(z10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public void m(float f10) {
+        try {
+            this.f19475a.G2(f10);
+        } catch (RemoteException e10) {
+            throw new RuntimeRemoteException(e10);
+        }
+    }
+
+    public C4192s(Bd.h hVar) {
+        this.f19475a = (Bd.h) com.google.android.gms.common.internal.r.l(hVar);
+    }
+}

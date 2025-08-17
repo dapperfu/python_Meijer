@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/autocomplete_google_maps_attribution_image_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:id="@+id/autocomplete_google_maps_attribution_image"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:src="@drawable/google_maps_attribution_image"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/google_maps_attribution_image_description"/>
+            <ImageButton
+                android:id="@+id/autocomplete_disclosure_icon"
+                android:background="@android:color/transparent"
+                android:padding="@dimen/icon_padding_for_min_touch_target_18dp_icon"
+                android:layout_width="@dimen/gmp_sys_measurement_tap_target"
+                android:layout_height="@dimen/gmp_sys_measurement_tap_target"
+                android:src="@drawable/gs_info_vd_24"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/place_widgets_legal_disclosures_icon_a11y_label"/>
+        </LinearLayout>
+        <View
+            android:id="@+id/autocomplete_google_maps_attribution_image_separator"
+            android:background="?attr/placesColorOutlineDecorative"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/place_widget_border_width"/>
+    </LinearLayout>
+</merge>

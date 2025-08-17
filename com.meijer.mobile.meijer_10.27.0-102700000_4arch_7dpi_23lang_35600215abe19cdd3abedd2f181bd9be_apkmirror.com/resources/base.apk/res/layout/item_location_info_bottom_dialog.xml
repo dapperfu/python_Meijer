@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.compose.ui.platform.ComposeView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ilc_info_bottom_sheet"
+    android:tag="layout/item_location_info_bottom_dialog_0"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>

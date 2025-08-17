@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.meijer.mobile.core.design.widget.calloutview.ListCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_information_card"
+    android:tag="layout/checkout_item_card_info_0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:actionButtonText="@string/edit_checkout_requirement"
+    app:icon="@drawable/ic_dds_credit_card"
+    app:title="@string/order_summary_label_card_information">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/card_info_number"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="?attr/textViewStyleBody1"/>
+        <TextView
+            android:id="@+id/card_info_expiry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="?attr/textViewStyleBody1"/>
+        <TextView
+            android:id="@+id/card_info_error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="?attr/textViewStyleError"/>
+    </LinearLayout>
+</com.meijer.mobile.core.design.widget.calloutview.ListCardView>

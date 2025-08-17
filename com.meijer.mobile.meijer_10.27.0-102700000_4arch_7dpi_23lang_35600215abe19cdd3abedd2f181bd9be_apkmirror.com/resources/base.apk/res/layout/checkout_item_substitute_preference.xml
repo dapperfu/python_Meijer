@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.meijer.mobile.core.design.widget.calloutview.ListCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/substitute_preference_card"
+    android:tag="layout/checkout_item_substitute_preference_0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:actionButtonText="@string/edit_checkout_requirement"
+    app:icon="@drawable/ic_dds_transfer_prescriptions"
+    app:title="@string/order_summary_label_substitute_prefs">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/sub_prefs_selection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="?attr/textViewStyleBody1"/>
+    </LinearLayout>
+</com.meijer.mobile.core.design.widget.calloutview.ListCardView>

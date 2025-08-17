@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">%d saniye ileri sar</item>
+        <item quantity="other">%d saniye ileri sar</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">%d saniye geri sar</item>
+        <item quantity="other">%d saniye geri sar</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d yeni bildirim</item>
+        <item quantity="other">%d yeni bildirim</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d fotoğraf</item>
+        <item quantity="other">%1$d fotoğraf</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s yıldız</item>
+        <item quantity="other">%1$s yıldız</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d yorum</item>
+        <item quantity="other">%1$d yorum</item>
+    </plurals>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:enabled="false"
+    android:textColor="@color/legacy_gray_medium_1"
+    android:id="@+id/item_description"
+    android:paddingLeft="@dimen/shopping_list_favorite_padding_horizontal"
+    android:paddingTop="@dimen/shopping_list_favorite_already_in_padding_vertical"
+    android:paddingRight="@dimen/shopping_list_favorite_padding_horizontal"
+    android:paddingBottom="@dimen/shopping_list_favorite_already_in_padding_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Meijer.Widget.TextView.ShoppingList.ItemDescription"/>

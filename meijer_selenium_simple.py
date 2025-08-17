@@ -37,14 +37,7 @@ class MeijerSeleniumAuth:
     """
     
     def __init__(self, username: str, password: str, headless: bool = False):
-        """
-        Initialize the Selenium authentication handler.
-        
-        Args:
-            username: Meijer account username/email
-            password: Meijer account password
-            headless: Run browser in headless mode
-        """
+        """Initialize the Selenium authentication client."""
         self.username = username
         self.password = password
         self.headless = headless
@@ -53,15 +46,30 @@ class MeijerSeleniumAuth:
         # Setup logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+        
+        # Initialize the driver
+        self.driver = self._setup_driver()
     
     def _setup_driver(self) -> webdriver.Firefox:
-        """Setup Firefox WebDriver with automatic driver management and stealth measures."""
+        """Setup Firefox WebDriver with automatic driver management, stealth measures, and mitmproxy integration."""
         try:
             # Firefox options
             firefox_options = Options()
             
             if self.headless:
                 firefox_options.add_argument("--headless")
+            
+            # Configure proxy to use mitmproxy for debugging OAuth flow
+            firefox_options.set_preference("network.proxy.type", 1)  # Manual proxy configuration
+            firefox_options.set_preference("network.proxy.http", "127.0.0.1")
+            firefox_options.set_preference("network.proxy.http_port", 8080)
+            firefox_options.set_preference("network.proxy.ssl", "127.0.0.1")
+            firefox_options.set_preference("network.proxy.ssl_port", 8080)
+            firefox_options.set_preference("network.proxy.no_proxies_on", "localhost,127.0.0.1")
+            
+            # Trust mitmproxy certificates
+            firefox_options.set_preference("security.enterprise_roots.enabled", True)
+            firefox_options.set_preference("security.cert_pinning.enforcement_level", 0)
             
             # Use actual mobile app user agents from mitmproxy log analysis
             mobile_user_agents = [
@@ -225,11 +233,13 @@ class MeijerSeleniumAuth:
             self.driver.execute_script("document.documentElement.style.pointerEvents = 'auto';")
             
             self.logger.info(f"✅ Firefox WebDriver initialized with stealth measures")
-            self.logger.info(f"📱 Using User-Agent: {selected_ua[:80]}...")
+            self.logger.info(f"📱 Using User-Agent: {selected_ua}")
+            self.logger.info("🔒 Configured to use mitmproxy on 127.0.0.1:8080")
+            
             return self.driver
             
         except Exception as e:
-            self.logger.error(f"❌ Failed to initialize WebDriver: {e}")
+            self.logger.error(f"❌ Failed to setup Firefox WebDriver: {e}")
             raise
     
     def _wait_for_element(self, by: By, value: str, timeout: int = 30):
@@ -383,17 +393,17 @@ class MeijerSeleniumAuth:
             # Human-like delay before clicking Next
             self._human_like_delay(1.0, 2.5)
             
-            # Look for Next button to proceed to password field
+            # Find and click Next button using the specific selector
             next_selectors = [
-                "button[data-se='save']",                 # Specific selector from user (Next button)
+                "button[data-se='save']",                 # Specific selector from user
+                "button:contains('Next')",                # Button containing Next text
                 "button[type='submit']",                  # Type selector
+                "button.MuiButton-root",                  # Material-UI button class
+                "button.MuiButton-primary",               # Primary button class
+                "button[class*='MuiButton']",             # Any button with MuiButton class
                 "input[type='submit']",
-                "button:contains('Next')",
-                "input[value*='Next' i]",
-                "input[value*='Continue' i]",
                 "button:contains('Continue')",
-                "input[data-se='identifier-submit']",
-                "button[data-se='identifier-submit']"
+                "button:contains('Submit')"
             ]
             
             next_button = None
@@ -401,23 +411,135 @@ class MeijerSeleniumAuth:
                 try:
                     next_button = self.driver.find_element(By.CSS_SELECTOR, selector)
                     if next_button:
-                        self.logger.info(f"✅ Found Next button: {selector}")
-                        break
+                        # Verify this is actually the Next button by checking text
+                        button_text = next_button.text.strip().lower()
+                        if 'next' in button_text or 'continue' in button_text:
+                            self.logger.info(f"✅ Found Next button: {selector} (text: '{next_button.text}')")
+                            break
+                        else:
+                            self.logger.info(f"ℹ️  Found button with selector {selector} but text is '{next_button.text}', continuing search...")
+                            next_button = None
+                            continue
                 except:
                     continue
             
             if next_button:
                 self.logger.info("🖱️  Clicking Next button...")
-                self._human_like_click(next_button)
+                
+                # Try clicking the Next button with retry logic
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        next_button.click()  # Simple click instead of human-like
+                        self.logger.info(f"✅ Next button clicked (attempt {attempt + 1})")
+                        break
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  Next button click attempt {attempt + 1} failed: {e}")
+                        if attempt < max_retries - 1:
+                            self.logger.info("🔄 Retrying Next button click...")
+                            time.sleep(1)
+                        else:
+                            self.logger.error("❌ All Next button click attempts failed")
                 
                 # Wait for page transition with human-like timing
                 self._human_like_delay(2.0, 4.0)
                 
                 # Check if we're still on the same page (Next button might have failed)
                 current_url = self.driver.current_url
+                self.logger.info(f"🔍 Current URL after Next click: {current_url}")
+                
+                # Check for specific error messages
+                try:
+                    error_elements = self.driver.find_elements(By.CSS_SELECTOR, "[data-se='callout']")
+                    if error_elements:
+                        for error in error_elements:
+                            error_text = error.text.lower()
+                            if 'unexpected internal error' in error_text or 'internal error' in error_text:
+                                self.logger.error("❌ OAuth server returned 'unexpected internal error'")
+                                self.logger.error("🔍 This usually means the OAuth configuration is incorrect")
+                                self.logger.error("📋 Checking OAuth parameters...")
+                                
+                                # Log the current OAuth parameters for debugging
+                                try:
+                                    page_source = self.driver.page_source
+                                    if 'client_id=0oa1o8g9njWsUvwsx697' in page_source:
+                                        self.logger.info("✅ Client ID is correct")
+                                    else:
+                                        self.logger.warning("⚠️  Client ID may be incorrect")
+                                        
+                                    if 'redirect_uri=com.meijer.mobile.meijer:/login' in page_source:
+                                        self.logger.info("✅ Redirect URI is correct")
+                                    else:
+                                        self.logger.warning("⚠️  Redirect URI may be incorrect")
+                                        
+                                    if 'code_challenge_method=S256' in page_source:
+                                        self.logger.info("✅ PKCE method is correct")
+                                    else:
+                                        self.logger.warning("⚠️  PKCE method may be incorrect")
+                                        
+                                    # Check for any other error details in the page
+                                    if 'error_description' in page_source:
+                                        self.logger.info("📄 Error description found in page source")
+                                        # Try to extract the error description
+                                        import re
+                                        error_match = re.search(r'error_description=([^&]+)', page_source)
+                                        if error_match:
+                                            error_desc = error_match.group(1)
+                                            self.logger.error(f"🔍 OAuth error description: {error_desc}")
+                                            
+                                    # Check browser console for any JavaScript errors
+                                    try:
+                                        console_logs = self.driver.get_log('browser')
+                                        if console_logs:
+                                            self.logger.info("📱 Browser console logs:")
+                                            for log in console_logs[:5]:  # Show first 5 logs
+                                                self.logger.info(f"   {log['level']}: {log['message']}")
+                                    except:
+                                        self.logger.info("❌ Could not retrieve browser console logs")
+                                        
+                                except:
+                                    self.logger.info("❌ Could not analyze OAuth parameters")
+                                
+                                return None
+                            else:
+                                self.logger.warning(f"⚠️  Other error message found: {error.text}")
+                except:
+                    pass
+                
                 if 'authorize' in current_url:
                     self.logger.warning("⚠️  Still on authorization page, Next button may have failed")
                     self.logger.info("🔄 Trying alternative approach - looking for password field directly")
+                    
+                    # Let's also check if there are any error messages
+                    try:
+                        error_elements = self.driver.find_elements(By.CLASS_NAME, "error")
+                        if error_elements:
+                            for error in error_elements:
+                                self.logger.warning(f"⚠️  Error message found: {error.text}")
+                    except:
+                        pass
+                        
+                    # Check if the form changed or if we need to wait longer
+                    self.logger.info("⏳ Waiting a bit longer for page transition...")
+                    time.sleep(3)
+                    
+                    # Check URL again
+                    current_url = self.driver.current_url
+                    self.logger.info(f"🔍 URL after additional wait: {current_url}")
+                    
+                    if 'authorize' in current_url:
+                        self.logger.warning("⚠️  Still on authorization page after additional wait")
+                        # Let's try to see what's on the page
+                        try:
+                            page_source = self.driver.page_source
+                            if 'credentials.passcode' in page_source:
+                                self.logger.info("✅ Password field found in page source, proceeding...")
+                            elif 'error' in page_source.lower():
+                                self.logger.error("❌ Error detected in page source")
+                            else:
+                                self.logger.info("📄 Page appears to be in transition state")
+                        except:
+                            self.logger.info("❌ Could not analyze page source")
                 else:
                     self.logger.info("✅ Successfully navigated to next step")
             else:
@@ -439,9 +561,10 @@ class MeijerSeleniumAuth:
             
             # Wait for password field to appear with shorter timeout
             password_field = None
-            max_wait = 8  # Reduced timeout for password field
+            max_wait = 15  # Increased timeout for password field
             start_time = time.time()
             
+            self.logger.info("🔍 Looking for password field...")
             while time.time() - start_time < max_wait and not password_field:
                 for selector in password_selectors:
                     password_field = self._find_element_safe(By.CSS_SELECTOR, selector)
@@ -449,7 +572,22 @@ class MeijerSeleniumAuth:
                         self.logger.info(f"✅ Found password field: {selector}")
                         break
                 if not password_field:
-                    time.sleep(0.3)  # Check every 300ms for faster response
+                    # Check if we're still on the authorization page but the form has changed
+                    try:
+                        current_url = self.driver.current_url
+                        if 'authorize' in current_url:
+                            # Check if password field exists in page source even if not visible yet
+                            page_source = self.driver.page_source
+                            if 'credentials.passcode' in page_source:
+                                self.logger.info("📄 Password field detected in page source, waiting for it to become visible...")
+                            elif 'error' in page_source.lower():
+                                self.logger.warning("⚠️  Error detected in page source, may need to retry")
+                        else:
+                            self.logger.info(f"🔄 Page URL changed to: {current_url}")
+                    except:
+                        pass
+                    
+                    time.sleep(0.5)  # Check every 500ms for faster response
             
             if not password_field:
                 self.logger.error("❌ Password field not found within timeout")
@@ -498,9 +636,9 @@ class MeijerSeleniumAuth:
                 self.logger.error("❌ Submit button not found")
                 return None
             
-            # Click submit button with human-like behavior
+            # Click submit button with simple click
             self.logger.info("🖱️  Clicking submit button...")
-            self._human_like_click(submit_button)
+            submit_button.click()
             
             # Wait for login to process and check for 2FA
             time.sleep(5)
@@ -524,7 +662,7 @@ class MeijerSeleniumAuth:
             
             if mfa_email_button:
                 self.logger.info("📧 2FA email option detected, clicking to send code...")
-                mfa_email_button.click()
+                mfa_email_button.click()  # Simple click instead of human-like
                 
                 # Wait for email to be sent
                 time.sleep(3)
@@ -574,6 +712,19 @@ class MeijerSeleniumAuth:
                         self.logger.error(f"❌ Login error: {error_text}")
                         return None
                 
+                # Check for OAuth-specific error messages
+                try:
+                    oauth_errors = self.driver.find_elements(By.CSS_SELECTOR, "[data-se='callout']")
+                    if oauth_errors:
+                        for error in oauth_errors:
+                            error_text = error.text.lower()
+                            if 'unexpected internal error' in error_text or 'internal error' in error_text:
+                                self.logger.error("❌ OAuth server error detected during authentication")
+                                self.logger.error("🔍 This suggests the OAuth configuration may be invalid")
+                                return None
+                except:
+                    pass
+                
                 time.sleep(2)
             
             self.logger.error("❌ Timeout waiting for authorization code")
@@ -611,13 +762,45 @@ class MeijerSeleniumClient(MeijerComprehensiveClient):
             True if successful, False otherwise
         """
         try:
-            self.logger.info("🤖 Starting Selenium-based login")
-            
-            # Configure Selenium
-            self.selenium_auth.headless = headless
+            self.logger.info(f"🤖 Starting Selenium-based login")
             
             # Get authorization URL
             auth_url, state, code_verifier = self.get_authorization_url(use_mobile_uri=True)
+            self.logger.info(f"   State: {state}")
+            self.logger.info(f"   Code Verifier: {code_verifier[:20]}...")
+
+            self.logger.info(f"🌐 Opening: {auth_url}")
+            self.selenium_auth.driver.get(auth_url)
+            
+            # Add essential cookies that the working OAuth flow includes
+            self.logger.info("🍪 Setting essential OAuth cookies...")
+            try:
+                # These cookies are found in the working OAuth flow from the log analysis
+                self.selenium_auth.driver.add_cookie({
+                    'name': 'JSESSIONID',
+                    'value': 'WORKING_SESSION_ID',  # Will be set by the server
+                    'domain': '.meijer.com',
+                    'path': '/'
+                })
+                
+                # Set other essential cookies
+                self.selenium_auth.driver.add_cookie({
+                    'name': 'bm_sz',
+                    'value': 'WORKING_BM_SZ',  # Will be set by the server
+                    'domain': '.meijer.com',
+                    'path': '/'
+                })
+                
+                self.logger.info("✅ Essential cookies set")
+            except Exception as e:
+                self.logger.warning(f"⚠️  Could not set cookies: {e}")
+                self.logger.info("ℹ️  Cookies will be set by the server")
+            
+            # Wait for page to load
+            time.sleep(3)
+            
+            # Configure Selenium
+            self.selenium_auth.headless = headless
             
             # Perform authentication
             auth_code = self.selenium_auth.authenticate(auth_url)

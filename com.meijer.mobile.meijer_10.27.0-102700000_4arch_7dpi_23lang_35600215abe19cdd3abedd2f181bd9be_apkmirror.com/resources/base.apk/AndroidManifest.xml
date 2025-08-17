@@ -1,0 +1,2075 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:versionCode="102700000"
+    android:versionName="10.27.0"
+    android:installLocation="auto"
+    android:compileSdkVersion="35"
+    android:compileSdkVersionCodename="15"
+    android:requiredSplitTypes="base__abi,base__density"
+    android:splitTypes=""
+    package="com.meijer.mobile.meijer"
+    platformBuildVersionCode="35"
+    platformBuildVersionName="15">
+    <uses-sdk
+        android:minSdkVersion="24"
+        android:targetSdkVersion="35"/>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="geo"/>
+            <category android:name="android.intent.category.DEFAULT"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="http"/>
+        </intent>
+        <package android:name="com.google.android.apps.tv.launcherx"/>
+        <package android:name="com.google.android.tvlauncher"/>
+        <package android:name="com.google.android.tvrecommendations"/>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService"/>
+        </intent>
+        <package android:name="com.google.android.apps.maps"/>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.INSERT"/>
+            <data android:mimeType="vnd.android.cursor.dir/event"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="sms"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:path="tel:"/>
+        </intent>
+        <package android:name="androidx.test.orchestrator"/>
+        <package android:name="androidx.test.services"/>
+        <package android:name="com.google.android.apps.common.testing.services"/>
+    </queries>
+    <supports-screens
+        android:smallScreens="false"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true"/>
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false"/>
+    <uses-feature android:name="android.hardware.location"/>
+    <uses-feature android:name="android.hardware.screen.portrait"/>
+    <uses-feature android:name="android.hardware.camera"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30"/>
+    <uses-feature android:name="android.hardware.location.gps"/>
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false"/>
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID"/>
+    <uses-permission android:name="android.permission.AD_SERVICES_CONFIG"/>
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
+    <uses-feature
+        android:glEsVersion="0x20000"
+        android:required="true"/>
+    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS"/>
+    <uses-permission android:name="android.permission.REORDER_TASKS"/>
+    <permission
+        android:name="com.meijer.mobile.meijer.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:protectionLevel="signature"/>
+    <uses-permission android:name="com.meijer.mobile.meijer.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
+    <uses-feature
+        android:name="android.hardware.camera.front"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.camera.flash"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.screen.landscape"
+        android:required="false"/>
+    <application
+        android:theme="@style/Theme.Material"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:name="com.meijer.mobile.meijer.Meijer"
+        android:allowBackup="false"
+        android:logo="0x7f08052d"
+        android:largeHeap="true"
+        android:supportsRtl="true"
+        android:extractNativeLibs="false"
+        android:fullBackupContent="@xml/mma_full_backup_content"
+        android:resizeableActivity="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+        android:dataExtractionRules="@xml/mma_data_extraction_rules">
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.singlepagecheckout.wic.AddWicActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.meijer.mobile.singlepagecheckout.wic.addwicactivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.singlepagecheckout.SinglePageCheckoutActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.singlepagecheckout"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.enrollment.storeLocation.StoreListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.enrollment.StoreActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.enrollment.PhoneEnrollmentActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.enrollment.profile.ProfileEnrollmentActivity"/>
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_api_key"/>
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false"/>
+        <meta-data
+            android:name="com.google.android.gms.vision.DEPENDENCIES"
+            android:value="barcode"/>
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version"/>
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3007886002121316~2887320853"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.Starting"
+            android:name="com.meijer.mobile.meijer.activity.home.RoutingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:noHistory="true"/>
+        <activity-alias
+            android:icon="@mipmap/ic_launcher_winter"
+            android:name="com.meijer.mobile.meijer.launcher.WinterHolidays"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.meijer.mobile.meijer.activity.home.RoutingActivity"
+            android:roundIcon="@mipmap/ic_launcher_winter_round">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+        </activity-alias>
+        <activity-alias
+            android:name="com.meijer.mobile.meijer.launcher.Default"
+            android:exported="true"
+            android:targetActivity="com.meijer.mobile.meijer.activity.home.RoutingActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+        </activity-alias>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.home.HomeActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.home"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.substitution.FindSubstitutionActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.meijer.activity.substitution"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.White"
+            android:name="com.meijer.mobile.meijer.activity.enrollment.profile.ProfileEnrollmentActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.enrollment"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.SharedElementDetailActivity"
+            android:label="@string/product_detail"
+            android:name="com.meijer.mobile.meijer.activity.find.productdetail.ProductDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.product_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/product_detail"
+            android:name="com.meijer.mobile.meijer.activity.find.productdetail.ProductDetailComposeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.product_detail_compose"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/filter_and_sort"
+            android:name="com.meijer.mobile.meijer.activity.find.filter.FilterActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/shop_departments_heading"
+            android:name="com.meijer.mobile.meijer.activity.find.viewmodel.TierDepartmentsActivity"
+            android:exported="false"
+            android:launchMode="standard"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.find.SearchProductActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.tier_departments"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/shop_departments_heading"
+            android:name="com.meijer.mobile.meijer.activity.find.FilteredProductsActivity"
+            android:exported="false"
+            android:launchMode="standard"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.filtered_products"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/product_images"
+            android:name="com.meijer.mobile.meijer.activity.find.ImageDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.find.productdetail.ProductDetailActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/find"
+            android:name="com.meijer.mobile.meijer.activity.find.FindActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.find"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/shopping_list_title"
+            android:name="com.meijer.mobile.meijer.activity.shoppinglist.LegacyShoppingListActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:noHistory="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.shoppinglist.legacy_activity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/shopping_list_view_favorites"
+            android:name="com.meijer.mobile.meijer.activity.shoppinglist.ShoppingListFavoritesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.shoppinglist.LegacyShoppingListActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.shoppinglist.favorites"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/scan_barcode"
+            android:name="com.meijer.mobile.meijer.activity.scan.ScanActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.scan"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.find.SearchProductActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.search_product"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.search.SearchProductActivityCompose"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.search_product_compose"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/coupons_title"
+            android:name="com.meijer.mobile.meijer.activity.coupons.CouponActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.coupons.CouponsFeatureActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.coupons_feature"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/filter"
+            android:name="com.meijer.mobile.meijer.activity.coupons.CouponFilterActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.coupons.CouponActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.filter"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/special_offers_title"
+            android:name="com.meijer.mobile.meijer.activity.coupons.SpecialOffersActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.home.HomeActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.special_offers"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/related_coupons"
+            android:name="com.meijer.mobile.meijer.activity.coupons.RelatedCouponsViaShoppingListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.related_shopping_list"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/mcc_sign_up"
+            android:name="com.meijer.mobile.meijer.activity.rewards.AvailableMccDetailsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.rewards.available_mcc_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/meijer_credit_card_title"
+            android:name="com.meijer.mobile.meijer.activity.rewards.InProgressMccDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.rewards.inprogress_mcc_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/mcc_opt_out_title"
+            android:name="com.meijer.mobile.meijer.activity.rewards.MccOptOutActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.rewards.mcc_opt_out"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.Material"
+            android:name="com.meijer.mobile.meijer.activity.ShortcutRedirectActivity"
+            android:exported="false"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.UniversalLinkBypassActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.webview.bypass.universallink"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.UniversalDeepLinkRedirectActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true">
+            <intent-filter android:autoVerify="true">
+                <action android:name="action.com.meijer.mobile.universaldeeplinkredirect"/>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="http"/>
+                <data android:host="*.meijer.com"/>
+                <data android:pathPrefix="/mperks/UL"/>
+                <data android:host="www.meijer.com"/>
+                <data android:pathPrefix="/mperks/ul"/>
+                <data android:scheme="https"/>
+                <data android:pathPrefix="/mperks/DASHBOARD"/>
+                <data android:pathPrefix="/mperks/dashboard"/>
+                <data android:pathPrefix="/mperks"/>
+                <data android:pathPrefix="/mperks"/>
+                <data android:pathPrefix="/mperks/REWARDS"/>
+                <data android:pathPrefix="/mperks/rewards"/>
+                <data android:pathPrefix="/mperks/Reward/Index"/>
+                <data android:pathPrefix="/mperks/reward/index"/>
+                <data android:pathPrefix="/mperks/COUPONS"/>
+                <data android:pathPrefix="/mperks/coupons"/>
+                <data android:pathPrefix="/mperks/Coupon"/>
+                <data android:pathPrefix="/mperks/coupon"/>
+                <data android:pathPrefix="/mperks/ADDRESS"/>
+                <data android:pathPrefix="/mperks/address"/>
+                <data android:pathPrefix="/mperks/SPECIALOFFERS"/>
+                <data android:pathPrefix="/mperks/specialoffers"/>
+                <data android:pathPrefix="/mperks/RECEIPTS"/>
+                <data android:pathPrefix="/mperks/receipts"/>
+                <data android:pathPrefix="/shopping/mPerks"/>
+                <data android:pathPrefix="/shopping/mperks"/>
+                <data android:pathPrefix="/shopping/accounts"/>
+                <data android:pathPrefix="/shopping/ACCOUNTS"/>
+                <data android:pathPrefix="/shopping/orders"/>
+                <data android:pathPrefix="/SHOPPING/ORDERS"/>
+                <data android:pathPrefix="/shopping/order-history"/>
+                <data android:pathPrefix="/SHOPPING/ORDER-HISTORY"/>
+                <data android:pathPrefix="/favorites-on-sale"/>
+                <data android:pathPrefix="/shopping/coupons"/>
+                <data android:pathPrefix="/shop/en/my-account/ORDER/"/>
+                <data android:pathPrefix="/shop/en/my-account/order/"/>
+                <data android:pathPrefix="/shop/en/my-account/ORDERS"/>
+                <data android:pathPrefix="/shop/en/my-account/orders"/>
+                <data android:pathPrefix="/SERVICES/MORE-WAYS-TO-MEIJER"/>
+                <data android:pathPrefix="/services/more-ways-to-meijer"/>
+                <data android:pathPrefix="/shop/en/CART"/>
+                <data android:pathPrefix="/shop/en/cart"/>
+                <data android:pathPrefix="/shop/en/SEARCH"/>
+                <data android:pathPrefix="/shop/en/search"/>
+                <data android:pathPrefix="/shop/en/P"/>
+                <data android:pathPrefix="/shop/en/p"/>
+                <data android:pathPrefix="/shopping/product/"/>
+                <data android:pathPrefix="/shopping/PRODUCT/"/>
+                <data android:pathPrefix="/shopping/search.html"/>
+                <data android:pathPrefix="/shopping/SEARCH.html"/>
+                <data android:pathPrefix="/CONTENT/MEIJER-TRACKER/EN/home.html"/>
+                <data android:pathPrefix="/content/meijer-tracker/en/home.html"/>
+                <data android:pathPrefix="/C/"/>
+                <data android:pathPrefix="/c/"/>
+                <data android:pathPrefix="/FAVORITES-ON-SALE"/>
+                <data android:pathPrefix="/favorites-on-sale"/>
+                <data android:pathPrefix="/buy-again"/>
+                <data android:pathPrefix="/BUY-AGAIN"/>
+                <data android:pathPrefix="/shopping/c/"/>
+                <data android:pathPrefix="/SHOPPING/c/"/>
+                <data android:pathPrefix="/products/"/>
+                <data android:pathPrefix="/PRODUCTS/"/>
+                <data android:pathPrefix="/shopping/departments/"/>
+                <data android:pathPrefix="/shopping/DEPARTMENTS/"/>
+                <data android:pathPrefix="/weeklyad"/>
+                <data android:pathPrefix="/WEEKLYAD"/>
+                <data android:pathPrefix="/shopping/school-supply-list.html"/>
+                <data android:pathPrefix="/SHOPPING/SCHOOL-SUPPLY-LIST.html"/>
+                <data android:pathPrefix="/accounts"/>
+                <data android:pathPrefix="/ACCOUNTS"/>
+                <data android:pathPrefix="/mperks/new-mperks/new-mperks-faq.html"/>
+                <data android:pathPrefix="/mperks/NEW-MPERKS/NEW-MPERKS-FAQ.html"/>
+                <data android:pathPrefix="/services/shop-and-scan"/>
+                <data android:pathPrefix="/SERVICES/SHOP-AND-SCAN"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/store_details_title"
+            android:name="com.meijer.mobile.meijer.activity.store.StoreDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.store_details_compose"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/help_title"
+            android:name="com.meijer.mobile.meijer.activity.settings.HelpActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.settings.help"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/help_mperks_walkthroughs"
+            android:name="com.meijer.mobile.meijer.activity.settings.SectionWalkthroughActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.settings.walkthrough"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/receipts_and_savings_title"
+            android:name="com.meijer.mobile.meijer.activity.digitalreceipts.ReceiptsAndSavingsActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.receipts.receipts_savings"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/receipts_and_savings_title"
+            android:name="com.meijer.mobile.meijer.activity.digitalreceipts.ReceiptDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.receipts.receipt_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/receipts_and_savings_title"
+            android:name="com.meijer.mobile.meijer.activity.digitalreceipts.SavingsDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.receipts.savings_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.White"
+            android:label="@string/help"
+            android:name="com.meijer.mobile.meijer.activity.digitalreceipts.RemediationHelpActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.receipts.remediation_help"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/remediation_title"
+            android:name="com.meijer.mobile.meijer.activity.digitalreceipts.SelfRemediationHostActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.receipts.self_remediation_host"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/remediation_title"
+            android:name="com.meijer.mobile.meijer.activity.digitalreceipts.AddReceiptActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.receipts.add_receipt"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/fuel_receipt_title"
+            android:name="com.meijer.mobile.meijer.activity.digitalreceipts.fuelReceipt.FuelReceiptFormActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.receipts.add_fuel_receipt_form"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/personalized_shopping_list_title"
+            android:name="com.meijer.mobile.meijer.activity.personalized.modals.PersonalizedShoppingListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.personalized_shoppinglist"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.widget.BarCodeActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.barcode"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.gas_station.GasStationDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.store_info.gas_station_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.core.design.ThemeCatalogActivity"
+            android:enabled="@bool/is_dev_mode"
+            android:exported="false"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.home.HomeActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.theme_catalog"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.androidacres.showcase.ShowcaseActivity"
+            android:enabled="@bool/is_dev_mode"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.androidacres.showcase"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.settings.debug.DebugOptionsActivity"
+            android:enabled="@bool/is_dev_mode"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.debug_options"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.settings.addresses.SearchDeliveryAddressActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateAlwaysVisible"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.settings.addresses.AddressSearchActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateAlwaysVisible"
+            android:parentActivityName="com.meijer.mobile.accounts.ux.addresses.AddressesScreenActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.settings.addresses.AddressDetailsActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.meijer.mobile.accounts.ux.addresses.AddressesScreenActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.settings.billing.AddCardAurusActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.meijer.mobile.accounts.ux.basescreen.YourAccountActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.add_aurus_card"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.cart.CartActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.cart"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.cart.EditCartActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.editcart"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.cart.entrynote.EntryNoteActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/change_fulfillment_preview_heading"
+            android:name="com.meijer.mobile.meijer.activity.cart.ChangeFulfillmentPreviewActivity"
+            android:exported="false"
+            android:launchMode="standard"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.cart.CartActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.fulfillmentslots.FulfillmentSlotsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.cart.UnavailableForDeliveryActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.confirmation.OrderConfirmationActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.cart.CartActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.enrollment.StoreActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.enrollment.PhoneEnrollmentActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.payment.CheckoutPaymentOptionsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.payment.CheckoutPaymentUpdateCardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.payment.CheckoutPaymentOptionsActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.payment.CheckoutPaymentHostActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.pickupperson.PickupPersonFormActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.outofstock.OutOfStockActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/orders"
+            android:name="com.meijer.mobile.meijer.activity.orders.OrdersActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.orders"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/orders"
+            android:name="com.meijer.mobile.meijer.activity.orders.OrderDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.order_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/items_in_order"
+            android:name="com.meijer.mobile.meijer.activity.orders.OrderSummaryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.orders.OrderDetailActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.order_summary"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/edit_phone_number"
+            android:name="com.meijer.mobile.meijer.activity.orders.EditPhoneNumberActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.orders.OrderDetailActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.White"
+            android:name="com.meijer.mobile.meijer.activity.orders.FlyBuyActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.orders.OrderDetailActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/order_substitution_number"
+            android:name="com.meijer.mobile.meijer.activity.orders.OrderSubstitutionsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.order_substitutions"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.substitutionpreference.SubstitutionPreferenceFormActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.substitutionpreferenceform"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.contactinformation.DeliveryContactInformationFormActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.orderoptions.OrderOptionsActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.order_options"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.orderoptions.fulfillmentslots.OrderOptionsFulfillmentSlotsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.orderoptions.OrderOptionsActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.termsandconditions.TermsAndConditionsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.contactinformation.DeliveryContactInformationFormActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.highvaluepromoselections.MperksInCartActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.meijer.activity.checkout.payment.ebt.EbtPinPadActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.meijer.mobile.meijer.activity.checkout.review.CheckoutActivity"/>
+        <service
+            android:label="@string/app_name"
+            android:name="com.meijer.mobile.meijer.service.GeoFenceTransitionsIntentService"
+            android:exported="false"/>
+        <service
+            android:name="com.meijer.mobile.meijer.service.MeijerFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false"/>
+        <meta-data
+            android:name="com.emarsys.mobileengage.small_notification_icon"
+            android:resource="0x7f080584"/>
+        <receiver
+            android:name="com.meijer.mobile.legacy.notifications.broadcastreceiver.NotificationDismissedReceiver"
+            android:exported="false"/>
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:exported="false"
+            android:authorities="com.meijer.mobile.meijer.androidx-startup">
+            <meta-data
+                android:name="androidx.view.ProcessLifecycleInitializer"
+                android:value="androidx.startup"/>
+            <meta-data
+                android:name="com.emarsys.EmarsysSdkInitializer"
+                android:value="androidx.startup"/>
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                android:value="androidx.startup"/>
+            <meta-data
+                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+                android:value="androidx.startup"/>
+            <meta-data
+                android:name="okhttp3.internal.platform.PlatformInitializer"
+                android:value="androidx.startup"/>
+        </provider>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:exported="false"
+            android:authorities="com.meijer.mobile.meijer.activity.find.rateandreview.fileprovider"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+        <service
+            android:name="com.google.android.gms.metadata.ModuleDependencies"
+            android:enabled="false"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES"/>
+            </intent-filter>
+            <meta-data
+                android:name="photopicker_activity:0:required"
+                android:value=""/>
+        </service>
+        <property
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/gma_ad_services_config"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.home.ux.HomeComposeActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.home.compose"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.accounts.ux.basescreen.AccountOverviewActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.accounts.overview"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_your_account"
+            android:name="com.meijer.mobile.accounts.ux.basescreen.YourAccountActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.accounts.main"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_profile_screen"
+            android:name="com.meijer.mobile.accounts.ux.profile.ProfileScreenActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.accounts.profile"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_addresses_screen"
+            android:name="com.meijer.mobile.accounts.ux.addresses.AddressesScreenActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.accounts.addresses"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_preference_screen"
+            android:name="com.meijer.mobile.accounts.ux.preferences.PreferenceScreenActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.accounts.preferences"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_payments_screen"
+            android:name="com.meijer.mobile.accounts.ux.payments.PaymentsScreenActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.accounts.payments"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/create_account"
+            android:name="com.meijer.mobile.accounts.ux.createaccount.CreateAccountActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.accounts.create"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.Translucent"
+            android:name="com.meijer.mobile.accounts.ux.unauthenticated.UnauthenticatedBottomSheetActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.unauthenticated_bottomsheet"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.Translucent"
+            android:name="com.meijer.mobile.authentication.okta.ux.OktaLoginActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.authentication.okta.login"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS.Translucent"
+            android:name="com.meijer.mobile.authentication.okta.ux.OktaLogoutActivity"
+            android:exported="false"
+            android:launchMode="singleInstance">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.authentication.okta.logout"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_how_subscription_works"
+            android:name="com.meijer.mobile.subscription.ux.howItWorks.HowSubscriptionsWorksActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.subscription.ux.subscription.how_subscriptions_works"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_subscribed_item"
+            android:name="com.meijer.mobile.subscription.ux.subscribedItems.SubscribedItemActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.subscription.ux.subscription.subscribed_item"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_subscription"
+            android:name="com.meijer.mobile.subscription.ux.subscription.SubscriptionActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.subscription.activity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.wic.ux.WicLoginActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.wic.main"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.meijer.mobile.coupon.di.CouponFeatureActivity"
+            android:exported="false"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/coupon_list"
+            android:name="com.meijer.mobile.coupon.list.CouponListTabsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.tabs.list"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/coupon_list_title"
+            android:name="com.meijer.mobile.coupon.dashboard.CouponDashboardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.dashboard"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/coupon_list"
+            android:name="com.meijer.mobile.coupon.list.CouponListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.list"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/coupon_detail"
+            android:name="com.meijer.mobile.coupon.detail.CouponDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.coupon.detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.shoppinglist.teacherlists.ux.TeacherListsActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.meijer.teacherlists.activity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.mperks.ux.transactionHistory.TransactionHistoryActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorPortrait"
+            android:parentActivityName="com.meijer.mobile.mperks.ux.MperksDashBoardActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.mperks.ux.rewards.ViewAllRewardsActivity"
+            android:exported="false"
+            android:screenOrientation="sensorPortrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.mperks.ux.view_all_rewards"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.meijer.mobile.mperks.ux.MperksFeatureActivity"
+            android:exported="false"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/mperks_title"
+            android:name="com.meijer.mobile.mperks.ux.MperksDashBoardActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorPortrait">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.mperks.ux"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/auto_claim_title"
+            android:name="com.meijer.mobile.mperks.ux.claim.autoClaim.AutoClaimDetailsActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorPortrait"
+            android:windowSoftInputMode="adjustResize|stateHidden"
+            android:noHistory="true"
+            android:parentActivityName="com.meijer.mobile.mperks.ux.MperksDashBoardActivity"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/redeemed_rewards_title"
+            android:name="com.meijer.mobile.mperks.ux.rewardDetail.RewardsDetailsActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorPortrait"
+            android:windowSoftInputMode="adjustResize|stateHidden"
+            android:parentActivityName="com.meijer.mobile.mperks.ux.MperksDashBoardActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.mperks.ux.reward_details"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/learn_to_earn"
+            android:name="com.meijer.mobile.mperks.ux.learnToEarn.LearnToEarnActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorPortrait"
+            android:noHistory="true"
+            android:parentActivityName="com.meijer.mobile.mperks.ux.MperksDashBoardActivity">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.mperks.ux.learn_to_earn"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/weekly_ad_title"
+            android:name="com.meijer.mobile.weeklyad.WeeklyAdDetailActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.weeklyad.detailview"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/weekly_ad_title"
+            android:name="com.meijer.mobile.weeklyad.WeeklyAdSelectionActivity"
+            android:exported="false"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.weeklyad.selection"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="string/weekly_ad_title"
+            android:name="com.meijer.mobile.weeklyad.WeeklyAdViewActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.weeklyad.printview"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_shopping_list"
+            android:name="com.meijer.mobile.shoppinglist.activity.ShoppingListActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="sensorPortrait"
+            android:noHistory="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.shoppinglist.activity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.meijer.mobile.shoppinglist.di.ShoppingListFeatureActivity"
+            android:exported="false"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/title_activity_chat_bot"
+            android:name="com.meijer.mobile.chatbot.ux.ChatBotActivity"
+            android:exported="false"
+            android:launchMode="singleInstance">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.chatbot"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.shopandscan.ShopAndScanActivity"
+            android:exported="false"
+            android:screenOrientation="sensorPortrait"
+            android:configChanges="uiMode|screenLayout"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.shopandscan"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.rateandtip.ux.RateAndTipActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="com.meijer.mobile.rate_and_tip"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/product_reviews_title"
+            android:name="com.meijer.mobile.reviews.ux.productreview.ReviewListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="com.meijer.mobile.review_list"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/review_title"
+            android:name="com.meijer.mobile.reviews.ux.productreview.FullReviewActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="com.meijer.mobile.review_detail"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.reviews.ux.productreview.ReviewGalleryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="com.meijer.mobile.review_gallery"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.reviews.ux.productreview.FilterAndSortActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/rate_and_review_screen_title"
+            android:name="com.meijer.mobile.reviews.ux.rateandreview.ProductRateAndReviewActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.meijer.mobile.review_submit"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:label="@string/rate_terms_and_conditions_title"
+            android:name="com.meijer.mobile.reviews.ux.rateandreview.RateTermsAndConditionsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.scanner.ux.activity.ProductScanActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.scanner.productscanactivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.scanner.ux.activity.ReceiptScanActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.scanner.receiptscanactivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode"/>
+        <activity
+            android:theme="@style/Theme.MeijerDDS"
+            android:name="com.meijer.mobile.scanner.ux.activity.ScannerDemoActivity"
+            android:exported="false"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="action.com.meijer.mobile.scanner.demo"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <service
+            android:name="com.meijer.mobile.featurenavigation.content.DailyAlarmService"
+            android:exported="false"/>
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts"/>
+        <service android:name="io.constructor.service.OnSelectService"/>
+        <service android:name="io.constructor.service.OnSearchService"/>
+        <service
+            android:name="com.google.firebase.components.ComponentDiscoveryService"
+            android:exported="false"
+            android:directBootAware="true">
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.perf.FirebasePerfKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.perf.FirebasePerfRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.crashlytics.CrashlyticsRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.sessions.FirebaseSessionsRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.remoteconfig.FirebaseRemoteConfigKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.remoteconfig.RemoteConfigRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.abt.component.AbtRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+        </service>
+        <activity
+            android:theme="@style/PlacesAutocompleteOverlay"
+            android:label="@string/places_autocomplete_label"
+            android:name="com.google.android.libraries.places.widget.AutocompleteActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
+            android:theme="@style/AutocompleteFullscreen"
+            android:name="com.google.android.libraries.places.widget.BasicPlaceAutocompleteActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
+            android:theme="@style/AutocompleteFullscreen"
+            android:name="com.google.android.libraries.places.widget.PlaceAutocompleteActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
+            android:name="com.google.android.libraries.places.widget.internal.photoviewer.PlacesLightboxActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+        <receiver
+            android:name="com.google.firebase.iid.FirebaseInstanceIdReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
+            </intent-filter>
+            <meta-data
+                android:name="com.google.android.gms.cloudmessaging.FINISHED_AFTER_HANDLED"
+                android:value="true"/>
+        </receiver>
+        <service
+            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+            android:exported="false"
+            android:directBootAware="true">
+            <intent-filter android:priority="-500">
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.google.mlkit.common.internal.MlKitComponentDiscoveryService"
+            android:exported="false"
+            android:directBootAware="true">
+            <meta-data
+                android:name="com.google.firebase.components:com.google.mlkit.vision.barcode.internal.BarcodeRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.mlkit.vision.common.internal.VisionCommonRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+            <meta-data
+                android:name="com.google.firebase.components:com.google.mlkit.common.internal.CommonComponentRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar"/>
+        </service>
+        <provider
+            android:name="com.google.mlkit.common.internal.MlKitInitProvider"
+            android:exported="false"
+            android:authorities="com.meijer.mobile.meijer.mlkitinitprovider"
+            android:initOrder="99"/>
+        <meta-data
+            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
+            android:value="true"/>
+        <activity
+            android:theme="@style/Theme.AppCompat.NoActionBar.Translucent"
+            android:name="com.google.android.tv.ads.controls.FallbackImageActivity"
+            android:exported="false"/>
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            android:exported="false">
+            <meta-data
+                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+                android:value="cct"/>
+        </service>
+        <service
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"/>
+        <receiver
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+            android:exported="false"/>
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:exported="false"
+            android:authorities="com.meijer.mobile.meijer.firebaseinitprovider"
+            android:initOrder="100"
+            android:directBootAware="true"/>
+        <activity
+            android:theme="@style/NoAnimationTheme"
+            android:name="com.okta.webauthenticationui.ForegroundActivity"
+            android:launchMode="singleTop"
+            android:configChanges="smallestScreenSize|screenSize|screenLayout|orientation|keyboardHidden|keyboard"
+            android:autoRemoveFromRecents="true"/>
+        <activity
+            android:theme="@style/NoAnimationTheme"
+            android:name="com.okta.webauthenticationui.RedirectActivity"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:autoRemoveFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="com.meijer.mobile.meijer"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/Theme.AppCompat.Transparent"
+            android:name="com.okta.authfoundation.BiometricDecryptionActivity"
+            android:exported="false"/>
+        <activity
+            android:theme="@style/MedalliaSDKTheme"
+            android:name="com.medallia.digital.mobilesdk.MedalliaFullFormActivity"
+            android:exported="false"
+            android:configChanges="screenSize|uiMode|orientation|keyboardHidden"/>
+        <activity
+            android:theme="@style/MedalliaSDKTheme"
+            android:name="com.medallia.digital.mobilesdk.MedalliaModalFormActivity"
+            android:exported="false"
+            android:configChanges="screenSize|uiMode|orientation|keyboardHidden"/>
+        <service
+            android:name="com.adobe.marketing.mobile.ExtensionDiscoveryService"
+            android:exported="false">
+            <meta-data
+                android:name="com.adobe.marketing.mobile.signal.internal.SignalExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.campaign.CampaignExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.userprofile.UserProfileExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.analytics.internal.AnalyticsExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.assurance.internal.AssuranceExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.lifecycle.LifecycleExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.target.TargetExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.audience.AudienceExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.identity.IdentityExtension"
+                android:value="Extension"/>
+            <meta-data
+                android:name="com.adobe.marketing.mobile.internal.configuration.ConfigurationExtension"
+                android:value="Extension"/>
+        </service>
+        <activity
+            android:theme="@style/AssuranceAppThemeDark"
+            android:name="com.adobe.marketing.mobile.assurance.internal.ui.AssuranceActivity"
+            android:exported="false"/>
+        <service
+            android:name="com.radiusnetworks.flybuy.sdk.pickup.service.LocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location">
+            <meta-data
+                android:name="com.google.android.gms.version"
+                android:value="@integer/google_play_services_version"/>
+        </service>
+        <receiver
+            android:name="com.radiusnetworks.flybuy.sdk.sync.SyncBootReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+        <meta-data
+            android:name="com.bugsnag.android.API_KEY"
+            android:value="ed6a718795aaab448ebc19ad3e400f98"/>
+        <receiver
+            android:name="com.bazaarvoice.bvandroidsdk.StoreNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bazaarvoice.bvandroidsdk.action.GEOFENCE_VISIT"/>
+                <action android:name="com.bazaarvoice.bvandroidsdk.action.NOTIFICATION_BUTTON_TAPPED"/>
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="com.bazaarvoice.bvandroidsdk.StoreNotificationService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bazaarvoice.bvandroidsdk.action.GEOFENCE_VISIT"/>
+                <action android:name="com.bazaarvoice.bvandroidsdk.action.NOTIFICATION_BUTTON_TAPPED"/>
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.gimbal.internal.service.GimbalService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bazaarvoice.bvandroidsdk.service.GIMBAL_SERVICE"/>
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.gimbal.internal.service.GimbalServiceStartStopReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_SHUTDOWN"/>
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="androidx.camera.core.impl.MetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
+                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider"/>
+        </service>
+        <receiver
+            android:name="com.emarsys.geofence.RegisterGeofencesOnBootCompletedReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.emarsys.mobileengage.geofence.GeofenceBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.emarsys.sdk.GEOFENCE_ACTION"/>
+            </intent-filter>
+        </receiver>
+        <activity
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:name="com.emarsys.NotificationOpenedActivity"
+            android:exported="false"/>
+        <service
+            android:name="com.bazaarvoice.bvandroidsdk.BVNotificationService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bazaarvoice.bvandroidsdk.action.SHOW_NOTIF"/>
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.bazaarvoice.bvandroidsdk.BVNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bazaarvoice.bvandroidsdk.action.NOTIFICATION_BUTTON_TAPPED"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+        <service
+            android:name="com.google.android.gms.measurement.AppMeasurementService"
+            android:enabled="true"
+            android:exported="false"/>
+        <service
+            android:name="com.google.android.gms.measurement.AppMeasurementJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:enabled="true"
+            android:exported="false"/>
+        <activity
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+            android:exported="false"/>
+        <activity
+            android:theme="@android:style/Theme.Translucent"
+            android:name="com.google.android.gms.ads.AdActivity"
+            android:exported="false"
+            android:configChanges="smallestScreenSize|screenSize|uiMode|screenLayout|orientation|keyboardHidden|keyboard"/>
+        <provider
+            android:name="com.google.android.gms.ads.MobileAdsInitProvider"
+            android:exported="false"
+            android:authorities="com.meijer.mobile.meijer.mobileadsinitprovider"
+            android:initOrder="100"/>
+        <service
+            android:name="com.google.android.gms.ads.AdService"
+            android:enabled="true"
+            android:exported="false"/>
+        <activity
+            android:name="com.google.android.gms.ads.OutOfContextTestingActivity"
+            android:exported="false"
+            android:configChanges="smallestScreenSize|screenSize|uiMode|screenLayout|orientation|keyboardHidden|keyboard"/>
+        <activity
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:name="com.google.android.gms.ads.NotificationHandlerActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"/>
+        <service
+            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+            android:enabled="@bool/enable_system_alarm_service_default"
+            android:exported="false"
+            android:directBootAware="false"/>
+        <service
+            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:enabled="@bool/enable_system_job_service_default"
+            android:exported="true"
+            android:directBootAware="false"/>
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:enabled="@bool/enable_system_foreground_service_default"
+            android:exported="false"
+            android:directBootAware="false"/>
+        <receiver
+            android:name="androidx.work.impl.utils.ForceStopRunnable.BroadcastReceiver"
+            android:enabled="true"
+            android:exported="false"
+            android:directBootAware="false"/>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy.BatteryChargingProxy"
+            android:enabled="false"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED"/>
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy.BatteryNotLowProxy"
+            android:enabled="false"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BATTERY_OKAY"/>
+                <action android:name="android.intent.action.BATTERY_LOW"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy.StorageNotLowProxy"
+            android:enabled="false"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DEVICE_STORAGE_LOW"/>
+                <action android:name="android.intent.action.DEVICE_STORAGE_OK"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy.NetworkStateProxy"
+            android:enabled="false"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+            android:enabled="false"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+            android:enabled="@bool/enable_system_alarm_service_default"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+            android:permission="android.permission.DUMP"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS"/>
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="androidx.room.MultiInstanceInvalidationService"
+            android:exported="false"
+            android:directBootAware="true"/>
+        <uses-library
+            android:name="android.ext.adservices"
+            android:required="false"/>
+        <activity
+            android:theme="@style/WhiteBackgroundTheme"
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker.BootstrapActivity"
+            android:exported="true">
+            <intent-filter android:priority="-100">
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/WhiteBackgroundTheme"
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker.EmptyActivity"
+            android:exported="true">
+            <intent-filter android:priority="-100">
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/WhiteBackgroundDialogTheme"
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker.EmptyFloatingActivity"
+            android:exported="true">
+            <intent-filter android:priority="-100">
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            android:permission="android.permission.DUMP"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SKIP_FILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION"/>
+            </intent-filter>
+        </receiver>
+        <activity
+            android:theme="@android:style/Theme.Material.Light.NoActionBar"
+            android:name="androidx.view.ComponentActivity"
+            android:exported="true"/>
+        <provider
+            android:name="com.scandit.datacapture.core.internal.sdk.init.CoreLibraryLoaderContentProvider"
+            android:exported="false"
+            android:authorities="com.meijer.mobile.meijer.corelibraryloadercontentprovider"
+            android:initOrder="11"/>
+        <provider
+            android:name="com.scandit.datacapture.barcode.internal.sdk.init.BarcodeLibraryLoaderContentProvider"
+            android:exported="false"
+            android:authorities="com.meijer.mobile.meijer.barcodelibraryloadercontentprovider"
+            android:initOrder="10"/>
+        <activity
+            android:theme="@style/DialogActivity"
+            android:name="com.cyberfend.cyfsecurity.CCADialogActivity"
+            android:excludeFromRecents="true"/>
+        <activity
+            android:theme="@style/zxing_CaptureTheme"
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:clearTaskOnLaunch="true"
+            android:stateNotNeeded="true"
+            android:screenOrientation="sensorLandscape"
+            android:windowSoftInputMode="stateAlwaysHidden"/>
+        <activity
+            android:theme="@style/Theme.PlayCore.Transparent"
+            android:name="com.google.android.play.core.common.PlayCoreDialogWrapperActivity"
+            android:exported="false"
+            android:stateNotNeeded="true"/>
+        <meta-data
+            android:name="com.android.vending.splits.required"
+            android:value="true"/>
+        <meta-data
+            android:name="com.android.stamp.source"
+            android:value="https://play.google.com/store"/>
+        <meta-data
+            android:name="com.android.stamp.type"
+            android:value="STAMP_TYPE_DISTRIBUTION_APK"/>
+        <meta-data
+            android:name="com.android.vending.splits"
+            android:resource="@xml/splits0"/>
+        <meta-data
+            android:name="com.android.vending.derived.apk.id"
+            android:value="4"/>
+    </application>
+</manifest>

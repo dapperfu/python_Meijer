@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assurance_title">Assurance</string>
+    <string name="error_desc_connection_limit">Vous avez atteint le nombre maximal d’appareils connectés autorisé pour une session.</string>
+    <string name="error_desc_event_limit">Vous avez atteint le nombre maximal d’événements pouvant être envoyés par minute.</string>
+    <string name="error_desc_incorrect_pin_or_network">La connexion peut échouer en raison d’un problème réseau ou d’un code confidentiel incorrect. Vérifiez la connexion Internet ou le code confidentiel, puis réessayez.</string>
+    <string name="error_desc_invalid_org_id">L’identifiant d’organisation Experience Cloud n’est pas disponible. Assurez-vous que la configuration du SDK est correctement effectuée. Voir la documentation pour plus de détails.</string>
+    <string name="error_desc_invalid_pin">Impossible d’autoriser la connexion Assurance. Vérifiez le code confidentiel et réessayez.</string>
+    <string name="error_desc_invalid_registration_request">Il se peut que la connexion ne fonctionne pas en raison d’une requête de réseau non valide.</string>
+    <string name="error_desc_invalid_registration_response">La connexion a échoué en raison d’une réponse non valide.</string>
+    <string name="error_desc_invalid_url">Une demande réseau avec une URL non valide a été tentée.</string>
+    <string name="error_desc_registration_error">Erreur lors de l’enregistrement de l’appareil ou de la vérification du statut.</string>
+    <string name="error_desc_retry_limit_reached">Le nombre maximal de tentatives autorisées pour récupérer les détails de la session a été atteint.</string>
+    <string name="error_desc_session_deleted">Vous avez tenté de vous connecter à une session supprimée.</string>
+    <string name="error_desc_unauthorized_access">L’identifiant d’organisation Experience Cloud ne correspond pas à celui de la session Assurance. Assurez-vous que l’organisation Experience Cloud appropriée est utilisée. Voir la documentation pour plus de détails.</string>
+    <string name="error_desc_unexpected_error">Ce client a été déconnecté en raison d’une erreur inattendue.</string>
+    <string name="error_screen_button_dismiss">Ignorer</string>
+    <string name="error_title_connection_limit">Limite de connexions atteinte</string>
+    <string name="error_title_event_limit">Limite d’événements atteinte</string>
+    <string name="error_title_incorrect_pin_or_network">Erreur de connexion</string>
+    <string name="error_title_invalid_org_id">Configuration SDK mobile non valide</string>
+    <string name="error_title_invalid_pin">Erreur d’autorisation</string>
+    <string name="error_title_invalid_registration_request">Erreur de connexion</string>
+    <string name="error_title_invalid_registration_response">Données de réponse non valides</string>
+    <string name="error_title_invalid_url">URL non valide</string>
+    <string name="error_title_registration_error">Erreur de connexion</string>
+    <string name="error_title_retry_limit_reached">Limite de tentatives atteinte</string>
+    <string name="error_title_session_deleted">Session supprimée</string>
+    <string name="error_title_unauthorized_access">Accès non autorisé</string>
+    <string name="error_title_unexpected_error">Client déconnecté</string>
+    <string name="pin_screen_button_cancel">Annuler</string>
+    <string name="pin_screen_button_connect">Se connecter</string>
+    <string name="pin_screen_button_retry">Réessayer</string>
+    <string name="pin_screen_connecting">Connexion...</string>
+    <string name="pin_screen_header">Saisissez le code confidentiel à 4 chiffres pour continuer</string>
+    <string name="quick_connect_screen_button_cancel">Annuler</string>
+    <string name="quick_connect_screen_button_connect">Se connecter</string>
+    <string name="quick_connect_screen_button_retry">Réessayer</string>
+    <string name="quick_connect_screen_button_waiting">En attente...</string>
+    <string name="quick_connect_screen_header">Confirmez la connexion en consultant l’écran des détails de la connexion de votre session.</string>
+    <string name="status_screen_button_cancel">Annuler</string>
+    <string name="status_screen_button_clear">Effacer le journal</string>
+    <string name="status_screen_button_disconnect">Se déconnecter</string>
+    <string name="status_screen_header">Logs</string>
+</resources>

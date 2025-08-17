@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude
+        domain="sharedpref"
+        path="com.radiusnetworks.flybuy.core.FLYBUY_CORE_TRANSIENT_PREFS.xml"/>
+</full-backup-content>

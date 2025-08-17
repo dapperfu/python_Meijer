@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">Avancer rapidement de %d seconde</item>
+        <item quantity="other">Avancer rapidement de %d secondes</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">Reculer de %d seconde</item>
+        <item quantity="other">Reculer de %d secondes</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d nouvelle notification</item>
+        <item quantity="other">%d nouvelles notifications</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s étoile</item>
+        <item quantity="other">%1$s étoiles</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d avis</item>
+        <item quantity="other">%1$d avis</item>
+    </plurals>
+</resources>

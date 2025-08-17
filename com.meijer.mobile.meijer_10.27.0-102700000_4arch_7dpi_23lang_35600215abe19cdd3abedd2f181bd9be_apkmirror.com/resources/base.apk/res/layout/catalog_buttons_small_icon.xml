@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.meijer.mobile.core.design.widget.cards.ExpandableCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/circleIconButtons"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:title="Small Icon Buttons">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:paddingBottom="12dp"
+        android:clipToPadding="false"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/enabler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Enabled"
+            app:layout_constraintBottom_toTopOf="@+id/buttonFlow"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/primary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Add to Shopping List"
+            app:icon="@drawable/ic_dds_list_add"
+            style="?attr/materialButtonStyleCircle"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Add to List"
+            app:icon="@drawable/ic_dds_list_add"
+            style="?attr/materialButtonSecondaryStyleCircle"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Navigate"
+            app:icon="@drawable/ic_dds_location"
+            style="?attr/materialButtonOutlinedStyleCircle"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/textButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Location"
+            app:icon="@drawable/ic_dds_location"
+            style="?attr/borderlessButtonStyleCircle"/>
+        <androidx.constraintlayout.helper.widget.Flow
+            android:id="@+id/buttonFlow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="primary,secondary,outlined,textButton"
+            app:flow_wrapMode="chain"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_chainStyle="spread_inside"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/enabler"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.meijer.mobile.core.design.widget.cards.ExpandableCardView>

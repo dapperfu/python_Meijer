@@ -1,0 +1,33 @@
+package com.google.android.gms.internal.vision;
+
+import java.util.Iterator;
+
+/* loaded from: classes6.dex */
+final class m2 implements Iterator<String> {
+
+    /* renamed from: a, reason: collision with root package name */
+    private Iterator<String> f84593a;
+
+    /* renamed from: b, reason: collision with root package name */
+    private final /* synthetic */ j2 f84594b;
+
+    m2(j2 j2Var) {
+        this.f84594b = j2Var;
+        this.f84593a = j2Var.f84563a.iterator();
+    }
+
+    @Override // java.util.Iterator
+    public final boolean hasNext() {
+        return this.f84593a.hasNext();
+    }
+
+    @Override // java.util.Iterator
+    public final /* synthetic */ String next() {
+        return this.f84593a.next();
+    }
+
+    @Override // java.util.Iterator
+    public final void remove() {
+        throw new UnsupportedOperationException();
+    }
+}

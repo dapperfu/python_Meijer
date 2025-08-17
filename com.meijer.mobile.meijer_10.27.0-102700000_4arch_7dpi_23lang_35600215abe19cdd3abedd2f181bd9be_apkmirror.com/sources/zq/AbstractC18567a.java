@@ -1,0 +1,65 @@
+package zq;
+
+import kotlin.Metadata;
+import kotlin.jvm.internal.DefaultConstructorMarker;
+
+@Metadata(d1 = {"\u0000\u0016\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0004\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\b1\u0018\u00002\u00020\u0001:\u0002\u0004\u0005B\t\b\u0004¢\u0006\u0004\b\u0002\u0010\u0003\u0082\u0001\u0002\u0006\u0007¨\u0006\b"}, d2 = {"Lzq/a;", "", "<init>", "()V", "b", "a", "Lzq/a$a;", "Lzq/a$b;", "shopandscan_playstoreRelease"}, k = 1, mv = {2, 1, 0}, xi = 48)
+/* renamed from: zq.a, reason: case insensitive filesystem */
+/* loaded from: classes11.dex */
+public abstract class AbstractC18567a {
+
+    @Metadata(d1 = {"\u0000*\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000b\n\u0002\b\u0003\bÇ\n\u0018\u00002\u00020\u0001B\t\b\u0002¢\u0006\u0004\b\u0002\u0010\u0003J\u0010\u0010\u0005\u001a\u00020\u0004HÖ\u0001¢\u0006\u0004\b\u0005\u0010\u0006J\u0010\u0010\b\u001a\u00020\u0007HÖ\u0001¢\u0006\u0004\b\b\u0010\tJ\u001a\u0010\r\u001a\u00020\f2\b\u0010\u000b\u001a\u0004\u0018\u00010\nHÖ\u0003¢\u0006\u0004\b\r\u0010\u000e¨\u0006\u000f"}, d2 = {"Lzq/a$a;", "Lzq/a;", "<init>", "()V", "", "toString", "()Ljava/lang/String;", "", "hashCode", "()I", "", "other", "", "equals", "(Ljava/lang/Object;)Z", "shopandscan_playstoreRelease"}, k = 1, mv = {2, 1, 0}, xi = 48)
+    /* renamed from: zq.a$a, reason: collision with other inner class name */
+    public static final /* data */ class C2801a extends AbstractC18567a {
+
+        /* renamed from: a, reason: collision with root package name */
+        public static final C2801a f173205a = new C2801a();
+
+        private C2801a() {
+            super(null);
+        }
+
+        public boolean equals(Object other) {
+            return this == other || (other instanceof C2801a);
+        }
+
+        public String toString() {
+            return "FRONT";
+        }
+
+        public int hashCode() {
+            return 148595960;
+        }
+    }
+
+    @Metadata(d1 = {"\u0000*\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000b\n\u0002\b\u0003\bÇ\n\u0018\u00002\u00020\u0001B\t\b\u0002¢\u0006\u0004\b\u0002\u0010\u0003J\u0010\u0010\u0005\u001a\u00020\u0004HÖ\u0001¢\u0006\u0004\b\u0005\u0010\u0006J\u0010\u0010\b\u001a\u00020\u0007HÖ\u0001¢\u0006\u0004\b\b\u0010\tJ\u001a\u0010\r\u001a\u00020\f2\b\u0010\u000b\u001a\u0004\u0018\u00010\nHÖ\u0003¢\u0006\u0004\b\r\u0010\u000e¨\u0006\u000f"}, d2 = {"Lzq/a$b;", "Lzq/a;", "<init>", "()V", "", "toString", "()Ljava/lang/String;", "", "hashCode", "()I", "", "other", "", "equals", "(Ljava/lang/Object;)Z", "shopandscan_playstoreRelease"}, k = 1, mv = {2, 1, 0}, xi = 48)
+    /* renamed from: zq.a$b */
+    public static final /* data */ class b extends AbstractC18567a {
+
+        /* renamed from: a, reason: collision with root package name */
+        public static final b f173206a = new b();
+
+        private b() {
+            super(null);
+        }
+
+        public boolean equals(Object other) {
+            return this == other || (other instanceof b);
+        }
+
+        public String toString() {
+            return "REAR";
+        }
+
+        public int hashCode() {
+            return 697874645;
+        }
+    }
+
+    public /* synthetic */ AbstractC18567a(DefaultConstructorMarker defaultConstructorMarker) {
+        this();
+    }
+
+    private AbstractC18567a() {
+    }
+}

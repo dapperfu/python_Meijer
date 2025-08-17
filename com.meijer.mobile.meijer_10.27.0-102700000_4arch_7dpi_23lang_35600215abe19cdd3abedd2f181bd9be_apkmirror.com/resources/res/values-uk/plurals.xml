@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">Перемотати вперед на %d секунду</item>
+        <item quantity="few">Перемотати вперед на %d секунди</item>
+        <item quantity="many">Перемотати вперед на %d секунд</item>
+        <item quantity="other">Перемотати вперед на %d секунди</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">Перемотати назад на %d секунду</item>
+        <item quantity="few">Перемотати назад на %d секунди</item>
+        <item quantity="many">Перемотати назад на %d секунд</item>
+        <item quantity="other">Перемотати назад на %d секунди</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d нове сповіщення</item>
+        <item quantity="few">%d нові сповіщення</item>
+        <item quantity="many">%d нових сповіщень</item>
+        <item quantity="other">%d нового сповіщення</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d фотографія</item>
+        <item quantity="few">%1$d фотографії</item>
+        <item quantity="many">%1$d фотографій</item>
+        <item quantity="other">%1$d фотографії</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s зірочка</item>
+        <item quantity="few">%1$s зірочки</item>
+        <item quantity="many">%1$s зірочок</item>
+        <item quantity="other">%1$s зірочки</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d відгук</item>
+        <item quantity="few">%1$d відгуки</item>
+        <item quantity="many">%1$d відгуків</item>
+        <item quantity="other">%1$d відгуку</item>
+    </plurals>
+</resources>

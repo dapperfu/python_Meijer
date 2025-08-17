@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:id="@+id/special_offers_banner"
+    android:tag="layout/list_item_special_offer_banner_0"
+    android:background="@color/white"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <ImageView
+        android:id="@+id/special_offers_banner_image"
+        android:tag="binding_1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+        android:minHeight="@dimen/special_offer_image_min_height"
+        android:importantForAccessibility="no"
+        android:transitionName="@string/transition_special_offer_image_transition"
+        app:layout_constraintBottom_toTopOf="@+id/special_offers_banner_view_my_offers"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.MeijerDDS.Body1"
+        android:textColor="?attr/colorControlPrimary"
+        android:gravity="center"
+        android:id="@+id/special_offers_banner_view_my_offers"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:text="@string/view_offers"
+        android:textAllCaps="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/special_offers_banner_image"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

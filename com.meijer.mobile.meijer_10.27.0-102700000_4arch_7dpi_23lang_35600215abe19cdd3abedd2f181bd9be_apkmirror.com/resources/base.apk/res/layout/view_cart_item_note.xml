@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:tag="layout/view_cart_item_note_0"
+    android:background="@drawable/bg_cart_item_note"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/note_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/activity_padding_horizontal"
+        android:layout_marginBottom="@dimen/activity_padding_horizontal"
+        android:layout_marginStart="@dimen/activity_padding_horizontal"
+        android:labelFor="@+id/edit_note_button"
+        android:layout_marginVertical="@dimen/activity_padding_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/edit_note_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="?attr/textViewStyleBody1"/>
+    <com.google.android.material.button.MaterialButton
+        android:textSize="14sp"
+        android:id="@+id/edit_note_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/edit_checkout_requirement"
+        app:layout_constraintBaseline_toBaselineOf="@+id/note_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/note_text"
+        style="?attr/borderlessButtonStyle"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

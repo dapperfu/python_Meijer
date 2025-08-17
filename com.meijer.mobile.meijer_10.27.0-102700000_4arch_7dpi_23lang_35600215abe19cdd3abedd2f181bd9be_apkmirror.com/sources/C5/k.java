@@ -1,0 +1,125 @@
+package C5;
+
+import C5.g;
+import androidx.compose.runtime.InterfaceC5730l0;
+import androidx.compose.runtime.t1;
+import androidx.compose.runtime.z1;
+import androidx.view.c0;
+import com.adobe.marketing.mobile.assurance.internal.C6423e;
+import com.adobe.marketing.mobile.assurance.internal.E;
+import com.adobe.marketing.mobile.assurance.internal.EnumC6425g;
+import com.adobe.marketing.mobile.assurance.internal.EnumC6426h;
+import com.adobe.marketing.mobile.assurance.internal.N;
+import com.adobe.marketing.mobile.assurance.internal.V;
+import com.adobe.marketing.mobile.assurance.internal.X;
+import com.adobe.marketing.mobile.assurance.internal.Y;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import kotlin.Metadata;
+import kotlin.jvm.internal.Intrinsics;
+import v5.AbstractC17511c;
+
+@Metadata(d1 = {"\u0000H\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u0002\n\u0002\b\t\n\u0002\u0018\u0002\n\u0002\b\u0003\b\u0000\u0018\u00002\u00020\u0001B\u0019\b\u0010\u0012\u0006\u0010\u0003\u001a\u00020\u0002\u0012\u0006\u0010\u0005\u001a\u00020\u0004¢\u0006\u0004\b\u0006\u0010\u0007B'\b\u0012\u0012\f\u0010\n\u001a\b\u0012\u0004\u0012\u00020\t0\b\u0012\u0006\u0010\u0003\u001a\u00020\u0002\u0012\u0006\u0010\u0005\u001a\u00020\u0004¢\u0006\u0004\b\u0006\u0010\u000bB/\b\u0011\u0012\f\u0010\n\u001a\b\u0012\u0004\u0012\u00020\t0\b\u0012\u0006\u0010\r\u001a\u00020\f\u0012\u0006\u0010\u0003\u001a\u00020\u0002\u0012\u0006\u0010\u0005\u001a\u00020\u0004¢\u0006\u0004\b\u0006\u0010\u000eB'\b\u0011\u0012\f\u0010\n\u001a\b\u0012\u0004\u0012\u00020\t0\b\u0012\u0006\u0010\u0010\u001a\u00020\u000f\u0012\u0006\u0010\u0005\u001a\u00020\u0004¢\u0006\u0004\b\u0006\u0010\u0011J\u0017\u0010\u0015\u001a\u00020\u00142\u0006\u0010\u0013\u001a\u00020\u0012H\u0000¢\u0006\u0004\b\u0015\u0010\u0016R\u0014\u0010\u0010\u001a\u00020\u000f8\u0002X\u0082\u0004¢\u0006\u0006\n\u0004\b\u0017\u0010\u0018R\u0014\u0010\u0005\u001a\u00020\u00048\u0002X\u0082\u0004¢\u0006\u0006\n\u0004\b\u0019\u0010\u001aR\u001a\u0010\u001d\u001a\b\u0012\u0004\u0012\u00020\t0\b8\u0002X\u0082\u0004¢\u0006\u0006\n\u0004\b\u001b\u0010\u001cR\u001a\u0010\n\u001a\b\u0012\u0004\u0012\u00020\t0\u001e8@X\u0080\u0004¢\u0006\u0006\u001a\u0004\b\u001f\u0010 ¨\u0006!"}, d2 = {"LC5/k;", "Landroidx/lifecycle/c0;", "Lcom/adobe/marketing/mobile/assurance/internal/E;", "assuranceStateManager", "Lcom/adobe/marketing/mobile/assurance/internal/h;", "environment", "<init>", "(Lcom/adobe/marketing/mobile/assurance/internal/E;Lcom/adobe/marketing/mobile/assurance/internal/h;)V", "Landroidx/compose/runtime/l0;", "Lv5/c;", "state", "(Landroidx/compose/runtime/l0;Lcom/adobe/marketing/mobile/assurance/internal/E;Lcom/adobe/marketing/mobile/assurance/internal/h;)V", "LC5/b;", "assuranceStatusListenerWrapper", "(Landroidx/compose/runtime/l0;LC5/b;Lcom/adobe/marketing/mobile/assurance/internal/E;Lcom/adobe/marketing/mobile/assurance/internal/h;)V", "Lcom/adobe/marketing/mobile/assurance/internal/V;", "quickConnectManager", "(Landroidx/compose/runtime/l0;Lcom/adobe/marketing/mobile/assurance/internal/V;Lcom/adobe/marketing/mobile/assurance/internal/h;)V", "LC5/g;", "quickConnectScreenAction", "", "n", "(LC5/g;)V", "a", "Lcom/adobe/marketing/mobile/assurance/internal/V;", "b", "Lcom/adobe/marketing/mobile/assurance/internal/h;", "c", "Landroidx/compose/runtime/l0;", "_state", "Landroidx/compose/runtime/z1;", "m", "()Landroidx/compose/runtime/z1;", "assurance_phoneRelease"}, k = 1, mv = {1, 5, 1}, xi = 48)
+/* loaded from: classes4.dex */
+public final class k extends c0 {
+
+    /* renamed from: a, reason: collision with root package name and from kotlin metadata */
+    private final V quickConnectManager;
+
+    /* renamed from: b, reason: collision with root package name and from kotlin metadata */
+    private final EnumC6426h environment;
+
+    /* renamed from: c, reason: collision with root package name and from kotlin metadata */
+    private final InterfaceC5730l0<AbstractC17511c> _state;
+
+    @Metadata(d1 = {"\u0000\u001f\n\u0000\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u0002\n\u0002\b\u0002\n\u0002\u0010\u000e\n\u0002\b\u0005*\u0001\u0000\b\n\u0018\u00002\u00020\u0001J\u0017\u0010\u0005\u001a\u00020\u00042\u0006\u0010\u0003\u001a\u00020\u0002H\u0016¢\u0006\u0004\b\u0005\u0010\u0006J\u001f\u0010\n\u001a\u00020\u00042\u0006\u0010\b\u001a\u00020\u00072\u0006\u0010\t\u001a\u00020\u0007H\u0016¢\u0006\u0004\b\n\u0010\u000b¨\u0006\f"}, d2 = {"C5/k$a", "Lcom/adobe/marketing/mobile/assurance/internal/N;", "Lcom/adobe/marketing/mobile/assurance/internal/g;", "error", "", "b", "(Lcom/adobe/marketing/mobile/assurance/internal/g;)V", "", "sessionUUID", "token", "a", "(Ljava/lang/String;Ljava/lang/String;)V", "assurance_phoneRelease"}, k = 1, mv = {1, 5, 1}, xi = 48)
+    public static final class a implements N {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ InterfaceC5730l0<AbstractC17511c> f3666a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ EnumC6426h f3667b;
+
+        /* renamed from: c, reason: collision with root package name */
+        final /* synthetic */ b f3668c;
+
+        a(InterfaceC5730l0<AbstractC17511c> interfaceC5730l0, EnumC6426h enumC6426h, b bVar) {
+            this.f3666a = interfaceC5730l0;
+            this.f3667b = enumC6426h;
+            this.f3668c = bVar;
+        }
+
+        @Override // com.adobe.marketing.mobile.assurance.internal.N
+        public void a(String sessionUUID, String token) {
+            Intrinsics.j(sessionUUID, "sessionUUID");
+            Intrinsics.j(token, "token");
+            Y yB = C6423e.f62233a.b();
+            if (yB != null) {
+                yB.b(sessionUUID, token, this.f3667b, this.f3668c, X.QUICK_CONNECT);
+            }
+        }
+
+        @Override // com.adobe.marketing.mobile.assurance.internal.N
+        public void b(EnumC6425g error) {
+            Intrinsics.j(error, "error");
+            this.f3666a.setValue(new AbstractC17511c.Disconnected(error));
+        }
+    }
+
+    /* JADX WARN: 'this' call moved to the top of the method (can break code semantics) */
+    public k(E assuranceStateManager, EnumC6426h environment) {
+        this((InterfaceC5730l0<AbstractC17511c>) t1.e(new AbstractC17511c.Disconnected(null), null, 2, null), assuranceStateManager, environment);
+        Intrinsics.j(assuranceStateManager, "assuranceStateManager");
+        Intrinsics.j(environment, "environment");
+    }
+
+    public final z1<AbstractC17511c> m() {
+        return this._state;
+    }
+
+    public final void n(g quickConnectScreenAction) {
+        Intrinsics.j(quickConnectScreenAction, "quickConnectScreenAction");
+        if (quickConnectScreenAction instanceof g.a) {
+            this._state.setValue(new AbstractC17511c.Disconnected(null));
+            this.quickConnectManager.c();
+            Y yB = C6423e.f62233a.b();
+            if (yB != null) {
+                yB.a();
+                return;
+            }
+            return;
+        }
+        if (quickConnectScreenAction instanceof g.c) {
+            this._state.setValue(AbstractC17511c.b.f164558a);
+            this.quickConnectManager.i();
+        } else if (quickConnectScreenAction instanceof g.b) {
+            this._state.setValue(AbstractC17511c.b.f164558a);
+            this.quickConnectManager.i();
+        }
+    }
+
+    private k(InterfaceC5730l0<AbstractC17511c> interfaceC5730l0, E e10, EnumC6426h enumC6426h) {
+        this(interfaceC5730l0, new b(interfaceC5730l0), e10, enumC6426h);
+    }
+
+    /* JADX WARN: Illegal instructions before constructor call */
+    public k(InterfaceC5730l0<AbstractC17511c> state, b assuranceStatusListenerWrapper, E assuranceStateManager, EnumC6426h environment) {
+        Intrinsics.j(state, "state");
+        Intrinsics.j(assuranceStatusListenerWrapper, "assuranceStatusListenerWrapper");
+        Intrinsics.j(assuranceStateManager, "assuranceStateManager");
+        Intrinsics.j(environment, "environment");
+        ScheduledExecutorService scheduledExecutorServiceNewSingleThreadScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+        Intrinsics.i(scheduledExecutorServiceNewSingleThreadScheduledExecutor, "newSingleThreadScheduledExecutor()");
+        this(state, new V(assuranceStateManager, scheduledExecutorServiceNewSingleThreadScheduledExecutor, new a(state, environment, assuranceStatusListenerWrapper)), EnumC6426h.PROD);
+    }
+
+    public k(InterfaceC5730l0<AbstractC17511c> state, V quickConnectManager, EnumC6426h environment) {
+        Intrinsics.j(state, "state");
+        Intrinsics.j(quickConnectManager, "quickConnectManager");
+        Intrinsics.j(environment, "environment");
+        this._state = state;
+        this.quickConnectManager = quickConnectManager;
+        this.environment = environment;
+    }
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cyan_600"/>
+            <corners android:radius="4dp"/>
+        </shape>
+    </item>
+    <item android:drawable="@drawable/bg_dds_banner_pattern_dark"/>
+    <item android:drawable="@drawable/bg_dds_banner_overlay_dark"/>
+</layer-list>

@@ -1,0 +1,43 @@
+package Ed;
+
+import Bf.b;
+import java.io.IOException;
+
+/* loaded from: classes6.dex */
+final class H0 implements Bf.c {
+
+    /* renamed from: a, reason: collision with root package name */
+    static final H0 f8137a = new H0();
+
+    /* renamed from: b, reason: collision with root package name */
+    private static final Bf.b f8138b;
+
+    /* renamed from: c, reason: collision with root package name */
+    private static final Bf.b f8139c;
+
+    /* renamed from: d, reason: collision with root package name */
+    private static final Bf.b f8140d;
+
+    static {
+        b.C0047b c0047bA = Bf.b.a("inferenceCommonLogEvent");
+        C3459f c3459f = new C3459f();
+        c3459f.a(1);
+        f8138b = c0047bA.b(c3459f.b()).a();
+        b.C0047b c0047bA2 = Bf.b.a("options");
+        C3459f c3459f2 = new C3459f();
+        c3459f2.a(2);
+        f8139c = c0047bA2.b(c3459f2.b()).a();
+        b.C0047b c0047bA3 = Bf.b.a("imageInfo");
+        C3459f c3459f3 = new C3459f();
+        c3459f3.a(3);
+        f8140d = c0047bA3.b(c3459f3.b()).a();
+    }
+
+    @Override // Bf.c
+    public final /* bridge */ /* synthetic */ void a(Object obj, Object obj2) throws IOException {
+        throw null;
+    }
+
+    private H0() {
+    }
+}

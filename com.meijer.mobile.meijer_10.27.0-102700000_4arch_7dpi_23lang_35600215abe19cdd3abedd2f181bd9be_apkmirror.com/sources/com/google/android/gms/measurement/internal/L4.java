@@ -1,0 +1,20 @@
+package com.google.android.gms.measurement.internal;
+
+import java.util.Objects;
+
+/* loaded from: classes6.dex */
+final class L4 implements Runnable {
+
+    /* renamed from: a, reason: collision with root package name */
+    final /* synthetic */ M4 f85101a;
+
+    @Override // java.lang.Runnable
+    public final void run() {
+        this.f85101a.C(null);
+    }
+
+    L4(M4 m42) {
+        Objects.requireNonNull(m42);
+        this.f85101a = m42;
+    }
+}

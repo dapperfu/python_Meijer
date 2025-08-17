@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">वीडियो को %d सेकंड आगे बढ़ाएं</item>
+        <item quantity="other">वीडियो को %d सेकंड आगे बढ़ाएं</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">वीडियो को %d सेकंड पीछे ले जाएं</item>
+        <item quantity="other">वीडियो को %d सेकंड पीछे ले जाएं</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d नई सूचनाएं</item>
+        <item quantity="other">%d नई सूचनाएं</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d फ़ोटो</item>
+        <item quantity="other">%1$d फ़ोटो</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s स्टार</item>
+        <item quantity="other">%1$s स्टार</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d समीक्षा</item>
+        <item quantity="other">%1$d समीक्षाएं</item>
+    </plurals>
+</resources>

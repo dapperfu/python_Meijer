@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">Keri %d sekund edasi</item>
+        <item quantity="other">Keri %d sekundit edasi</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">Keri %d sekund tagasi</item>
+        <item quantity="other">Keri %d sekundit tagasi</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d uus märguanne</item>
+        <item quantity="other">%d uut märguannet</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d foto</item>
+        <item quantity="other">%1$d fotot</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s tärn</item>
+        <item quantity="other">%1$s tärni</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d arvustus</item>
+        <item quantity="other">%1$d arvustust</item>
+    </plurals>
+</resources>

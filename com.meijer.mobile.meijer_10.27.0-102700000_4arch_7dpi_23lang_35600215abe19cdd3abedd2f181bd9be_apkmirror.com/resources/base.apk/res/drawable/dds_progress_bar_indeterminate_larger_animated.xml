@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android" android:drawable="@drawable/dds_progress_bar_indeterminate_larger">
+    <target
+        android:name="rotation_group"
+        android:animation="@animator/progress_bar_indeterminate_animation"/>
+</animated-vector>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView
+        android:layout_gravity="center"
+        android:id="@+id/places_autocomplete_sad_cloud"
+        android:layout_width="192dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="48dp"
+        app:srcCompat="@drawable/quantum_ic_cloud_off_vd_theme_24"/>
+    <TextView
+        android:textAppearance="@style/PlacesAutocompleteErrorMessageText"
+        android:layout_gravity="center"
+        android:id="@+id/places_autocomplete_error_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="38dp"
+        android:includeFontPadding="false"/>
+    <FrameLayout
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <Button
+            android:textAppearance="@style/PlacesAutocompleteErrorButtonText"
+            android:id="@+id/places_autocomplete_try_again"
+            android:background="@null"
+            android:paddingTop="20dp"
+            android:paddingBottom="30dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/places_try_again"
+            android:includeFontPadding="false"/>
+        <ProgressBar
+            android:id="@+id/places_autocomplete_try_again_progress"
+            android:padding="3dp"
+            android:layout_width="@dimen/places_autocomplete_progress_size"
+            android:layout_height="@dimen/places_autocomplete_progress_size"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="30dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/places_autocomplete_progress_tint"
+            android:indeterminateTintMode="src_atop"
+            style="@style/Widget.AppCompat.ProgressBar"/>
+    </FrameLayout>
+</merge>

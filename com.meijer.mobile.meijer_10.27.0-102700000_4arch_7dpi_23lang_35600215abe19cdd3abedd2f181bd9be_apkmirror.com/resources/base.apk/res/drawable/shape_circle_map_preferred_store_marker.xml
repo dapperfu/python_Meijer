@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#80575a5d"/>
+        </shape>
+    </item>
+    <item android:bottom="1dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/green_600"/>
+            <stroke
+                android:width="2dp"
+                android:color="@color/white"/>
+            <size
+                android:height="@dimen/store_circle_marker_size"
+                android:width="@dimen/store_circle_marker_size"/>
+        </shape>
+    </item>
+</layer-list>

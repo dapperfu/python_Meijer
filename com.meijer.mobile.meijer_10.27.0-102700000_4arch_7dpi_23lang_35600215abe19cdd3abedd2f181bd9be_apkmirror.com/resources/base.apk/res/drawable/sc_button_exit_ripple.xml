@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="?android:attr/colorControlHighlight">
+    <item android:id="@android:id/mask">
+        <shape android:shape="oval">
+            <solid android:color="@android:color/black"/>
+        </shape>
+    </item>
+    <item android:id="@android:id/background">
+        <level-list>
+            <item
+                android:drawable="@drawable/sc_ic_exit"
+                android:maxLevel="0"/>
+            <item
+                android:drawable="@drawable/sc_ic_exit_light"
+                android:maxLevel="1"/>
+        </level-list>
+    </item>
+</ripple>

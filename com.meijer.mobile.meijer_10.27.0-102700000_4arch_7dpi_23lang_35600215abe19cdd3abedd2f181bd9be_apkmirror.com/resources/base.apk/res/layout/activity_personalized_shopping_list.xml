@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:tag="layout/activity_personalized_shopping_list_0"
+    android:background="?android:attr/colorBackground"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:menu="@menu/search_cart_menu"
+            app:navigationContentDescription="@string/close"
+            app:navigationIcon="?attr/actionModeCloseDrawable"/>
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/header_fulfillment_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </com.google.android.material.appbar.AppBarLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/shopping_list"
+        android:scrollbars="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+    <com.meijer.mobile.ui.legacy.progressview.ProgressView
+        android:id="@+id/progress_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:view_to_dim="@+id/shopping_list"/>
+    <androidx.compose.ui.platform.ComposeView
+        android:layout_gravity="bottom"
+        android:id="@+id/compose_toast_view"
+        android:padding="16dp"
+        android:paddingBottom="8dp"
+        android:visibility="visible"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="8dp"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

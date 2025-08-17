@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">Tua nhanh %d giây</item>
+        <item quantity="other">Tua nhanh %d giây</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">Tua lại %d giây</item>
+        <item quantity="other">Tua lại %d giây</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d thông báo mới</item>
+        <item quantity="other">%d thông báo mới</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d ảnh</item>
+        <item quantity="other">%1$d ảnh</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s sao</item>
+        <item quantity="other">%1$s sao</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d bài đánh giá</item>
+        <item quantity="other">%1$d bài đánh giá</item>
+    </plurals>
+</resources>

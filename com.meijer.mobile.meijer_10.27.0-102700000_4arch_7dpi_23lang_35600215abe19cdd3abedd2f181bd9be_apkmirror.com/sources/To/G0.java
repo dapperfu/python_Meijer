@@ -1,0 +1,99 @@
+package To;
+
+import So.ProductSearchQuery;
+import java.io.IOException;
+import java.util.List;
+import kotlin.KotlinNothingValueException;
+import kotlin.Metadata;
+import kotlin.collections.CollectionsKt;
+import kotlin.jvm.internal.Intrinsics;
+import y6.C18174b;
+import y6.C18178f;
+import y6.InterfaceC18173a;
+
+@Metadata(d1 = {"\u0000:\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0010\u0002\n\u0002\b\u0002\n\u0002\u0010 \n\u0002\u0010\u000e\n\u0002\b\u0006\bÆ\u0002\u0018\u00002\b\u0012\u0004\u0012\u00020\u00020\u0001B\t\b\u0002¢\u0006\u0004\b\u0003\u0010\u0004J\u001f\u0010\t\u001a\u00020\u00022\u0006\u0010\u0006\u001a\u00020\u00052\u0006\u0010\b\u001a\u00020\u0007H\u0016¢\u0006\u0004\b\t\u0010\nJ'\u0010\u000f\u001a\u00020\u000e2\u0006\u0010\f\u001a\u00020\u000b2\u0006\u0010\b\u001a\u00020\u00072\u0006\u0010\r\u001a\u00020\u0002H\u0016¢\u0006\u0004\b\u000f\u0010\u0010R\u001d\u0010\u0017\u001a\b\u0012\u0004\u0012\u00020\u00120\u00118\u0006¢\u0006\f\n\u0004\b\u0013\u0010\u0014\u001a\u0004\b\u0015\u0010\u0016¨\u0006\u0018"}, d2 = {"LTo/G0;", "Ly6/a;", "LSo/g$l;", "<init>", "()V", "LC6/f;", "reader", "Ly6/p;", "customScalarAdapters", "c", "(LC6/f;Ly6/p;)LSo/g$l;", "LC6/g;", "writer", "value", "", "d", "(LC6/g;Ly6/p;LSo/g$l;)V", "", "", "b", "Ljava/util/List;", "getRESPONSE_NAMES", "()Ljava/util/List;", "RESPONSE_NAMES", "apollo_release"}, k = 1, mv = {2, 1, 0}, xi = 48)
+/* loaded from: classes11.dex */
+public final class G0 implements InterfaceC18173a<ProductSearchQuery.OnSearchProductDisplayResult> {
+
+    /* renamed from: a, reason: collision with root package name */
+    public static final G0 f35131a = new G0();
+
+    /* renamed from: b, reason: collision with root package name and from kotlin metadata */
+    private static final List<String> RESPONSE_NAMES = CollectionsKt.p("itemConnection", "attribution", "filterOptions", "groupFilterOptions", "sortOptions", "resultCounts");
+
+    @Override // y6.InterfaceC18173a
+    /* renamed from: c, reason: merged with bridge method [inline-methods] */
+    public ProductSearchQuery.OnSearchProductDisplayResult b(C6.f reader, y6.p customScalarAdapters) throws IOException {
+        Intrinsics.j(reader, "reader");
+        Intrinsics.j(customScalarAdapters, "customScalarAdapters");
+        ProductSearchQuery.ItemConnection itemConnection = null;
+        ProductSearchQuery.Attribution1 attribution1 = null;
+        List listB = null;
+        List listB2 = null;
+        List listB3 = null;
+        ProductSearchQuery.ResultCounts resultCounts = null;
+        while (true) {
+            int iR3 = reader.r3(RESPONSE_NAMES);
+            if (iR3 == 0) {
+                itemConnection = (ProductSearchQuery.ItemConnection) C18174b.d(E0.f35123a, false, 1, null).b(reader, customScalarAdapters);
+            } else if (iR3 == 1) {
+                attribution1 = (ProductSearchQuery.Attribution1) C18174b.b(C18174b.d(w0.f35274a, false, 1, null)).b(reader, customScalarAdapters);
+            } else if (iR3 == 2) {
+                listB = C18174b.a(C18174b.d(B0.f35111a, false, 1, null)).b(reader, customScalarAdapters);
+            } else if (iR3 == 3) {
+                listB2 = C18174b.a(C18174b.d(C0.f35115a, false, 1, null)).b(reader, customScalarAdapters);
+            } else if (iR3 == 4) {
+                listB3 = C18174b.a(C18174b.d(M0.f35154a, false, 1, null)).b(reader, customScalarAdapters);
+            } else {
+                if (iR3 != 5) {
+                    break;
+                }
+                resultCounts = (ProductSearchQuery.ResultCounts) C18174b.d(K0.f35146a, false, 1, null).b(reader, customScalarAdapters);
+            }
+        }
+        if (itemConnection == null) {
+            C18178f.a(reader, "itemConnection");
+            throw new KotlinNothingValueException();
+        }
+        if (listB == null) {
+            C18178f.a(reader, "filterOptions");
+            throw new KotlinNothingValueException();
+        }
+        if (listB2 == null) {
+            C18178f.a(reader, "groupFilterOptions");
+            throw new KotlinNothingValueException();
+        }
+        if (listB3 == null) {
+            C18178f.a(reader, "sortOptions");
+            throw new KotlinNothingValueException();
+        }
+        if (resultCounts != null) {
+            return new ProductSearchQuery.OnSearchProductDisplayResult(itemConnection, attribution1, listB, listB2, listB3, resultCounts);
+        }
+        C18178f.a(reader, "resultCounts");
+        throw new KotlinNothingValueException();
+    }
+
+    @Override // y6.InterfaceC18173a
+    /* renamed from: d, reason: merged with bridge method [inline-methods] */
+    public void a(C6.g writer, y6.p customScalarAdapters, ProductSearchQuery.OnSearchProductDisplayResult value) throws IOException {
+        Intrinsics.j(writer, "writer");
+        Intrinsics.j(customScalarAdapters, "customScalarAdapters");
+        Intrinsics.j(value, "value");
+        writer.x1("itemConnection");
+        C18174b.d(E0.f35123a, false, 1, null).a(writer, customScalarAdapters, value.getItemConnection());
+        writer.x1("attribution");
+        C18174b.b(C18174b.d(w0.f35274a, false, 1, null)).a(writer, customScalarAdapters, value.getAttribution());
+        writer.x1("filterOptions");
+        C18174b.a(C18174b.d(B0.f35111a, false, 1, null)).a(writer, customScalarAdapters, value.b());
+        writer.x1("groupFilterOptions");
+        C18174b.a(C18174b.d(C0.f35115a, false, 1, null)).a(writer, customScalarAdapters, value.c());
+        writer.x1("sortOptions");
+        C18174b.a(C18174b.d(M0.f35154a, false, 1, null)).a(writer, customScalarAdapters, value.f());
+        writer.x1("resultCounts");
+        C18174b.d(K0.f35146a, false, 1, null).a(writer, customScalarAdapters, value.getResultCounts());
+    }
+
+    private G0() {
+    }
+}

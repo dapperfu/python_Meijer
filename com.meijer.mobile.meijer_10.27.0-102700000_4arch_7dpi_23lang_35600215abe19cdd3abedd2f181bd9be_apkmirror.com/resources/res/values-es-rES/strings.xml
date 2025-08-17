@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assurance_title">Assurance</string>
+    <string name="error_desc_connection_limit">Ha alcanzado el número máximo de dispositivos conectados permitidos para una sesión.</string>
+    <string name="error_desc_event_limit">Ha alcanzado el número máximo de eventos que se pueden enviar por minuto.</string>
+    <string name="error_desc_incorrect_pin_or_network">Es posible que la conexión esté fallando debido a un problema de red o a un PIN incorrecto. Compruebe la conectividad a Internet o el PIN e inténtelo de nuevo.</string>
+    <string name="error_desc_invalid_org_id">El identificador de organización de Experience Cloud no está disponible. Asegúrese de que la configuración del SDK se haya configurado correctamente. Consulte la documentación para obtener más información.</string>
+    <string name="error_desc_invalid_pin">No se puede autorizar la conexión de Assurance. Compruebe el PIN e inténtelo de nuevo.</string>
+    <string name="error_desc_invalid_registration_request">La conexión puede estar fallando debido a una solicitud de red no válida.</string>
+    <string name="error_desc_invalid_registration_response">Error de conexión debido a una respuesta no válida.</string>
+    <string name="error_desc_invalid_url">Se intentó una solicitud de red con una dirección URL no válida.</string>
+    <string name="error_desc_registration_error">Se produjo un error durante el registro del dispositivo o la comprobación de estado.</string>
+    <string name="error_desc_retry_limit_reached">Se alcanzaron los reintentos máximos permitidos para recuperar los detalles de la sesión.</string>
+    <string name="error_desc_session_deleted">Intentó conectarse a una sesión eliminada.</string>
+    <string name="error_desc_unauthorized_access">El identificador de organización de Experience Cloud no coincide con el de la sesión de Assurance. Asegúrese de que se utiliza la organización de Experience Cloud correcta. Consulte la documentación para obtener más información.</string>
+    <string name="error_desc_unexpected_error">Se ha desconectado este cliente debido a un error inesperado.</string>
+    <string name="error_screen_button_dismiss">Descartar</string>
+    <string name="error_title_connection_limit">Límite de conexión alcanzado</string>
+    <string name="error_title_event_limit">Se alcanzó el límite de eventos</string>
+    <string name="error_title_incorrect_pin_or_network">Error de conexión</string>
+    <string name="error_title_invalid_org_id">Configuración del SDK móvil no válida</string>
+    <string name="error_title_invalid_pin">Error de autorización</string>
+    <string name="error_title_invalid_registration_request">Error de conexión</string>
+    <string name="error_title_invalid_registration_response">Datos de respuesta no válidos</string>
+    <string name="error_title_invalid_url">URL no válida</string>
+    <string name="error_title_registration_error">Error de conexión</string>
+    <string name="error_title_retry_limit_reached">Límite de reintentos alcanzado</string>
+    <string name="error_title_session_deleted">Sesión eliminada</string>
+    <string name="error_title_unauthorized_access">Acceso no autorizado</string>
+    <string name="error_title_unexpected_error">Cliente desconectado</string>
+    <string name="pin_screen_button_cancel">Cancelar</string>
+    <string name="pin_screen_button_connect">Conectar</string>
+    <string name="pin_screen_button_retry">Reintentar</string>
+    <string name="pin_screen_connecting">Conectando...</string>
+    <string name="pin_screen_header">Introduzca el PIN de 4 dígitos para continuar</string>
+    <string name="quick_connect_screen_button_cancel">Cancelar</string>
+    <string name="quick_connect_screen_button_connect">Conectar</string>
+    <string name="quick_connect_screen_button_retry">Reintentar</string>
+    <string name="quick_connect_screen_button_waiting">Esperando...</string>
+    <string name="quick_connect_screen_header">Para confirmar la conexión, visite la pantalla de detalles de conexión de la sesión</string>
+    <string name="status_screen_button_cancel">Cancelar</string>
+    <string name="status_screen_button_clear">Borrar registro</string>
+    <string name="status_screen_button_disconnect">Desconectar</string>
+    <string name="status_screen_header">Registros</string>
+</resources>

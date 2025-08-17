@@ -1,0 +1,5 @@
+package com.google.android.gms.internal.vision;
+
+/* loaded from: classes6.dex */
+public interface I1<MessageType> {
+}

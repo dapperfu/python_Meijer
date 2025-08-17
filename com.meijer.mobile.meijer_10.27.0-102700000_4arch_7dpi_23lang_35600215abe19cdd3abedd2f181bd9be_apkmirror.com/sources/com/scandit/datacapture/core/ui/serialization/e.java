@@ -1,0 +1,24 @@
+package com.scandit.datacapture.core.ui.serialization;
+
+import com.scandit.datacapture.core.internal.sdk.CoreNativeTypeFactory;
+import com.scandit.datacapture.core.internal.sdk.json.NativeJsonValue;
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.internal.Lambda;
+
+/* loaded from: classes11.dex */
+public final class e extends Lambda implements Function0 {
+
+    /* renamed from: a, reason: collision with root package name */
+    public final /* synthetic */ NativeJsonValue f126163a;
+
+    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+    public e(NativeJsonValue nativeJsonValue) {
+        super(0);
+        this.f126163a = nativeJsonValue;
+    }
+
+    @Override // kotlin.jvm.functions.Function0
+    public final Object invoke() {
+        return CoreNativeTypeFactory.INSTANCE.convert(this.f126163a);
+    }
+}

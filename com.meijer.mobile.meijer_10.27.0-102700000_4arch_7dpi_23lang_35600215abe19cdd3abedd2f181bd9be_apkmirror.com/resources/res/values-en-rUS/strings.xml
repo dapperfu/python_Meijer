@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assurance_title">Assurance</string>
+    <string name="error_desc_connection_limit">You have reached the maximum number of connected device allowed to a session.</string>
+    <string name="error_desc_event_limit">You have reached the maximum number of events that can be sent per minute.</string>
+    <string name="error_desc_incorrect_pin_or_network">The connection may be failing due to a network issue or an incorrect PIN. Please verify internet connectivity or the PIN and try again.</string>
+    <string name="error_desc_invalid_org_id">The Experience Cloud organization identifier is unavailable. Ensure SDK configuration is setup correctly. See documentation for more detail.</string>
+    <string name="error_desc_invalid_pin">Unable to authorize Assurance connection. Please verify the PIN and try again.</string>
+    <string name="error_desc_invalid_registration_request">The connection may be failing due to an invalid network request.</string>
+    <string name="error_desc_invalid_registration_response">Connection failed due to an invalid response.</string>
+    <string name="error_desc_invalid_url">Attempted a network request with an invalid url.</string>
+    <string name="error_desc_registration_error">Error occurred during device registration or status check.</string>
+    <string name="error_desc_retry_limit_reached">The maximum allowed retries for fetching the session details were reached.</string>
+    <string name="error_desc_session_deleted">You attempted to connect to a deleted session.</string>
+    <string name="error_desc_unauthorized_access">The Experience Cloud organization identifier does not match with that of the Assurance session. Ensure the right Experience Cloud organization is being used. See documentation for more detail.</string>
+    <string name="error_desc_unexpected_error">This client has been disconnected due to an unexpected error.</string>
+    <string name="error_screen_button_dismiss">Dismiss</string>
+    <string name="error_title_connection_limit">Connection Limit Reached</string>
+    <string name="error_title_event_limit">Event Limit Reached</string>
+    <string name="error_title_incorrect_pin_or_network">Connection Error</string>
+    <string name="error_title_invalid_org_id">Invalid Mobile SDK Configuration</string>
+    <string name="error_title_invalid_pin">Authorization Error</string>
+    <string name="error_title_invalid_registration_request">Connection Error</string>
+    <string name="error_title_invalid_registration_response">Invalid Response data</string>
+    <string name="error_title_invalid_url">Invalid URL</string>
+    <string name="error_title_registration_error">Connection Error</string>
+    <string name="error_title_retry_limit_reached">Retry Limit Reached</string>
+    <string name="error_title_session_deleted">Session Deleted</string>
+    <string name="error_title_unauthorized_access">Unauthorized Access</string>
+    <string name="error_title_unexpected_error">Client Disconnected</string>
+    <string name="pin_screen_button_cancel">Cancel</string>
+    <string name="pin_screen_button_connect">Connect</string>
+    <string name="pin_screen_button_retry">Retry</string>
+    <string name="pin_screen_connecting">Connecting...</string>
+    <string name="pin_screen_header">Enter the 4 digit PIN to continue</string>
+    <string name="quick_connect_screen_button_cancel">Cancel</string>
+    <string name="quick_connect_screen_button_connect">Connect</string>
+    <string name="quick_connect_screen_button_retry">Retry</string>
+    <string name="quick_connect_screen_button_waiting">Waiting..</string>
+    <string name="quick_connect_screen_header">Confirm connection by visiting your session\'s connection detail screen</string>
+    <string name="status_screen_button_cancel">Cancel</string>
+    <string name="status_screen_button_clear">Clear Log</string>
+    <string name="status_screen_button_disconnect">Disconnect</string>
+    <string name="status_screen_header">Logs</string>
+</resources>

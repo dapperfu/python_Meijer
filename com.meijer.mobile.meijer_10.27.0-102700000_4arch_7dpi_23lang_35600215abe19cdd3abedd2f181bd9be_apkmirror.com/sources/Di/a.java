@@ -1,0 +1,89 @@
+package Di;
+
+import androidx.compose.runtime.Composer;
+import androidx.compose.runtime.ComposerKt;
+import androidx.compose.runtime.internal.ComposableLambdaKt;
+import kotlin.Metadata;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function2;
+
+@Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+/* loaded from: classes7.dex */
+public final class a {
+
+    /* renamed from: a, reason: collision with root package name */
+    public static final a f6620a = new a();
+
+    /* renamed from: b, reason: collision with root package name */
+    private static Function2<Composer, Integer, Unit> f6621b = ComposableLambdaKt.composableLambdaInstance(1126809423, false, C0098a.f6623a);
+
+    /* renamed from: c, reason: collision with root package name */
+    private static Function2<Composer, Integer, Unit> f6622c = ComposableLambdaKt.composableLambdaInstance(1921252405, false, b.f6624a);
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    /* renamed from: Di.a$a, reason: collision with other inner class name */
+    static final class C0098a implements Function2<Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        public static final C0098a f6623a = new C0098a();
+
+        public final void a(Composer composer, int i10) {
+            if ((i10 & 3) == 2 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(1126809423, i10, -1, "com.meijer.mobile.android_acres_library.composables.progress_indicator.ComposableSingletons$ProgressIndicatorKt.lambda$1126809423.<anonymous> (ProgressIndicator.kt:89)");
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function2
+        public /* bridge */ /* synthetic */ Unit invoke(Composer composer, Integer num) {
+            a(composer, num.intValue());
+            return Unit.f142422a;
+        }
+
+        C0098a() {
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    static final class b implements Function2<Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        public static final b f6624a = new b();
+
+        public final void a(Composer composer, int i10) {
+            if ((i10 & 3) == 2 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(1921252405, i10, -1, "com.meijer.mobile.android_acres_library.composables.progress_indicator.ComposableSingletons$ProgressIndicatorKt.lambda$1921252405.<anonymous> (ProgressIndicator.kt:125)");
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function2
+        public /* bridge */ /* synthetic */ Unit invoke(Composer composer, Integer num) {
+            a(composer, num.intValue());
+            return Unit.f142422a;
+        }
+
+        b() {
+        }
+    }
+
+    public final Function2<Composer, Integer, Unit> a() {
+        return f6621b;
+    }
+
+    public final Function2<Composer, Integer, Unit> b() {
+        return f6622c;
+    }
+}

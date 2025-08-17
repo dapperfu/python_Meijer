@@ -1,0 +1,93 @@
+<!--
+  ~ Copyright 2022 Adobe. All rights reserved.
+  ~ This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License. You may obtain a copy
+  ~ of the License at http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software distributed under
+  ~ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  ~ OF ANY KIND, either express or implied. See the License for the specific language
+  ~ governing permissions and limitations under the License.
+  -->
+
+<html>
+<head>
+<script type="text/javascript">
+var _socket;
+var _pingInterval;
+var PING_INTERVAL_IN_MS = 30000;
+var _verbose = false;
+
+var _queue = [];
+
+function connect(url) {
+    nativeCode.log("Socket is connecting to: " + url);
+    _socket = new WebSocket(url);
+
+    if (_pingInterval != null) {
+        clearInterval(_pingInterval);
+    }
+
+    _pingInterval = setInterval(doPing, PING_INTERVAL_IN_MS);
+    _socket.onmessage = function(messageEvent) {
+        if(messageEvent.data === "__pong__") {
+            nativeCode.log("Network -- PONG");
+        } else {
+            nativeCode.log("Socket onmessage() called");
+            nativeCode.onMessageReceived(messageEvent.data);
+        }
+    };
+    _socket.onclose = function(closeEvent) {
+        nativeCode.log("Socket onclose() called");
+        nativeCode.onSocketClosed(closeEvent.reason, closeEvent.code, closeEvent.wasClean);
+    };
+    _socket.onerror = function() {
+        nativeCode.log("Socket onerror() called");
+        nativeCode.onSocketError();
+    };
+    _socket.onopen = function() {
+        nativeCode.log("Socket onopen() called");
+        // Send events which are in the queue.
+        sendDataFromQueue();
+        nativeCode.onSocketOpened();
+    };
+}
+
+function doPing() {
+    if (_socket.readyState == 1) {
+      nativeCode.log("Network -- PING");
+      _socket.send("__ping__");
+    }
+}
+
+function sendDataFromQueue() {
+    while (_socket.readyState == 1 && _queue.length > 0) {
+        var data = _queue.shift();
+        if (data) {
+            _socket.send(data);
+            nativeCode.log("Socket sending data from queue with payload of (" + data.length + " bytes)");
+        }
+    }
+}
+
+function disconnect() {
+    if (_pingInterval != null) {
+        clearInterval(_pingInterval);
+    }
+
+    nativeCode.log("Socket closed");
+    _socket.close();
+}
+
+function sendData(data) {
+    nativeCode.log("Socket sendData() called with payload of (" + data.length + " bytes), socket state is " + _socket.readyState + ".");
+    if (_socket.readyState != 1) {
+        nativeCode.log("Socket closed when trying to send. Data will be sent when socket is reconnected.");
+    }
+    // First push data to the queue
+    // Then send the data form the queue
+    _queue.push(data);
+    sendDataFromQueue();
+}
+</script>
+</head>
+</html>

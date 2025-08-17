@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/placesColorSurface"/>
+    <corners android:radius="@dimen/gmp_sys_shape_corner_extra_large_corner_size"/>
+</shape>

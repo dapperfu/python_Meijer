@@ -1,0 +1,53 @@
+Signature-Version: 1.0
+Created-By: 1.0 (Android)
+SHA1-Digest-Manifest: 5vjrEtN7TMSk2gm3OaOkbu73JvA=
+X-Android-APK-Signed: 2, 3
+
+Name: AndroidManifest.xml
+SHA1-Digest: oxaJOGq6+vXb1ayXMggImdTPHqk=
+
+Name: lib/armeabi-v7a/libakamaibmp.so
+SHA1-Digest: 1POysjC4OqZSgsKtI8wvffI9zP8=
+
+Name: lib/armeabi-v7a/libandroidx.graphics.path.so
+SHA1-Digest: RrvXw4mmaeCrYGmQqxr5ya9DbXE=
+
+Name: lib/armeabi-v7a/libbar.so
+SHA1-Digest: h0ix1khV59YmyyP0nVxnw4iCCxs=
+
+Name: lib/armeabi-v7a/libbugsnag-ndk.so
+SHA1-Digest: /Uu0xyer2wmzmZUAZYHhX0+LqW0=
+
+Name: lib/armeabi-v7a/libbugsnag-plugin-android-anr.so
+SHA1-Digest: uhI1Amtadue4FhA7uWPQIMioYRM=
+
+Name: lib/armeabi-v7a/libbugsnag-root-detection.so
+SHA1-Digest: iI1DGmC7Nkz6pEbp+aDfkSuHPoQ=
+
+Name: lib/armeabi-v7a/libdatastore_shared_counter.so
+SHA1-Digest: Tev4gFTj640tNghI6BuW+48Ro18=
+
+Name: lib/armeabi-v7a/libfs-native.so
+SHA1-Digest: iZnRS67KePQLghWz2Ak/moTPGbM=
+
+Name: lib/armeabi-v7a/libimage_processing_util_jni.so
+SHA1-Digest: 3sJmTIif6mAYUIuUVYFTj6ynZHI=
+
+Name: lib/armeabi-v7a/libscanditsdk.so
+SHA1-Digest: m0fYEVp3yVOwbLr6rsJ8HFgrVGc=
+
+Name: lib/armeabi-v7a/libsdc-barcode.so
+SHA1-Digest: Ux46eusTkQYF5cE5g9/sGv5mcbc=
+
+Name: lib/armeabi-v7a/libsdc-core.so
+SHA1-Digest: VBX1fABPMI+TNG6nFpb892d4Mqg=
+
+Name: lib/armeabi-v7a/libsqlcipher.so
+SHA1-Digest: uwB0OGkuHluaWJ9tcNrvetnyuyM=
+
+Name: lib/armeabi-v7a/libsurface_util_jni.so
+SHA1-Digest: ZuvXgZPzYbuIvT6fA6/TxatcaP0=
+
+Name: stamp-cert-sha256
+SHA1-Digest: Bs40BvDZ1xrbgQrPTD2x5w/NfHQ=
+

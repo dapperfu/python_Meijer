@@ -1,0 +1,431 @@
+package com.medallia.digital.mobilesdk;
+
+import com.medallia.digital.mobilesdk.u1;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.regex.Pattern;
+
+/* loaded from: classes7.dex */
+abstract class e8<T> implements x0 {
+
+    /* renamed from: d, reason: collision with root package name */
+    private static final String f91916d = "mdCParamNull";
+
+    /* renamed from: e, reason: collision with root package name */
+    private static final int f91917e = 3;
+
+    /* renamed from: f, reason: collision with root package name */
+    private static final int f91918f = 2;
+
+    /* renamed from: g, reason: collision with root package name */
+    private static final int f91919g = 1;
+
+    /* renamed from: a, reason: collision with root package name */
+    private ArrayList<c0> f91920a;
+
+    /* renamed from: b, reason: collision with root package name */
+    private ArrayList<c0> f91921b;
+
+    /* renamed from: c, reason: collision with root package name */
+    private ArrayList<g6> f91922c;
+
+    static /* synthetic */ class a {
+
+        /* renamed from: a, reason: collision with root package name */
+        static final /* synthetic */ int[] f91923a;
+
+        /* renamed from: b, reason: collision with root package name */
+        static final /* synthetic */ int[] f91924b;
+
+        /* renamed from: c, reason: collision with root package name */
+        static final /* synthetic */ int[] f91925c;
+
+        /* renamed from: d, reason: collision with root package name */
+        static final /* synthetic */ int[] f91926d;
+
+        /* renamed from: e, reason: collision with root package name */
+        static final /* synthetic */ int[] f91927e;
+
+        /* renamed from: f, reason: collision with root package name */
+        static final /* synthetic */ int[] f91928f;
+
+        static {
+            int[] iArr = new int[u1.i.values().length];
+            f91928f = iArr;
+            try {
+                iArr[u1.i.VALUE.ordinal()] = 1;
+            } catch (NoSuchFieldError unused) {
+            }
+            try {
+                f91928f[u1.i.TIMESTAMP.ordinal()] = 2;
+            } catch (NoSuchFieldError unused2) {
+            }
+            int[] iArr2 = new int[u1.h.values().length];
+            f91927e = iArr2;
+            try {
+                iArr2[u1.h.TIME_NOW.ordinal()] = 1;
+            } catch (NoSuchFieldError unused3) {
+            }
+            int[] iArr3 = new int[u1.j.values().length];
+            f91926d = iArr3;
+            try {
+                iArr3[u1.j.OS.ordinal()] = 1;
+            } catch (NoSuchFieldError unused4) {
+            }
+            try {
+                f91926d[u1.j.CUSTOM_PARAM.ordinal()] = 2;
+            } catch (NoSuchFieldError unused5) {
+            }
+            try {
+                f91926d[u1.j.USER_JOURNEY.ordinal()] = 3;
+            } catch (NoSuchFieldError unused6) {
+            }
+            try {
+                f91926d[u1.j.OCQ_RULE.ordinal()] = 4;
+            } catch (NoSuchFieldError unused7) {
+            }
+            int[] iArr4 = new int[u1.g.values().length];
+            f91925c = iArr4;
+            try {
+                iArr4[u1.g.ADD.ordinal()] = 1;
+            } catch (NoSuchFieldError unused8) {
+            }
+            try {
+                f91925c[u1.g.MULT.ordinal()] = 2;
+            } catch (NoSuchFieldError unused9) {
+            }
+            try {
+                f91925c[u1.g.DIVIDE.ordinal()] = 3;
+            } catch (NoSuchFieldError unused10) {
+            }
+            try {
+                f91925c[u1.g.SUBSTRACT.ordinal()] = 4;
+            } catch (NoSuchFieldError unused11) {
+            }
+            try {
+                f91925c[u1.g.LOWER_CASE.ordinal()] = 5;
+            } catch (NoSuchFieldError unused12) {
+            }
+            try {
+                f91925c[u1.g.UPPER_CASE.ordinal()] = 6;
+            } catch (NoSuchFieldError unused13) {
+            }
+            try {
+                f91925c[u1.g.ABS.ordinal()] = 7;
+            } catch (NoSuchFieldError unused14) {
+            }
+            int[] iArr5 = new int[u1.e.values().length];
+            f91924b = iArr5;
+            try {
+                iArr5[u1.e.MATCH.ordinal()] = 1;
+            } catch (NoSuchFieldError unused15) {
+            }
+            try {
+                f91924b[u1.e.EQUALS.ordinal()] = 2;
+            } catch (NoSuchFieldError unused16) {
+            }
+            try {
+                f91924b[u1.e.DOES_NOT_EQUAL.ordinal()] = 3;
+            } catch (NoSuchFieldError unused17) {
+            }
+            try {
+                f91924b[u1.e.CONTAINS.ordinal()] = 4;
+            } catch (NoSuchFieldError unused18) {
+            }
+            try {
+                f91924b[u1.e.ENDS_WITH.ordinal()] = 5;
+            } catch (NoSuchFieldError unused19) {
+            }
+            try {
+                f91924b[u1.e.HAS_VALUE.ordinal()] = 6;
+            } catch (NoSuchFieldError unused20) {
+            }
+            try {
+                f91924b[u1.e.STARTS_WITH.ordinal()] = 7;
+            } catch (NoSuchFieldError unused21) {
+            }
+            try {
+                f91924b[u1.e.GREATER_THAN.ordinal()] = 8;
+            } catch (NoSuchFieldError unused22) {
+            }
+            try {
+                f91924b[u1.e.DOES_NOT_CONTAIN.ordinal()] = 9;
+            } catch (NoSuchFieldError unused23) {
+            }
+            try {
+                f91924b[u1.e.SMALLER_THAN.ordinal()] = 10;
+            } catch (NoSuchFieldError unused24) {
+            }
+            try {
+                f91924b[u1.e.DIFF.ordinal()] = 11;
+            } catch (NoSuchFieldError unused25) {
+            }
+            int[] iArr6 = new int[u1.k.values().length];
+            f91923a = iArr6;
+            try {
+                iArr6[u1.k.BOOLEAN.ordinal()] = 1;
+            } catch (NoSuchFieldError unused26) {
+            }
+            try {
+                f91923a[u1.k.STRING.ordinal()] = 2;
+            } catch (NoSuchFieldError unused27) {
+            }
+            try {
+                f91923a[u1.k.INTEGER.ordinal()] = 3;
+            } catch (NoSuchFieldError unused28) {
+            }
+            try {
+                f91923a[u1.k.DOUBLE.ordinal()] = 4;
+            } catch (NoSuchFieldError unused29) {
+            }
+        }
+    }
+
+    e8() {
+    }
+
+    private c0 a(String str) {
+        if (this.f91920a != null && str != null) {
+            a4.b("TREV2 getEvent uj: " + this.f91920a);
+            Iterator<c0> it = this.f91920a.iterator();
+            while (it.hasNext()) {
+                c0 next = it.next();
+                if (next.getName().equals(str)) {
+                    a4.b("TREV2 getEvent event name, value: " + next.getName() + " , " + next.i());
+                    return next;
+                }
+            }
+        }
+        return null;
+    }
+
+    private String b(String str) {
+        ArrayList<g6> arrayList;
+        if (str != null && (arrayList = this.f91922c) != null) {
+            Iterator<g6> it = arrayList.iterator();
+            while (it.hasNext()) {
+                g6 next = it.next();
+                if (str.equals(next.f92102a)) {
+                    return String.valueOf(next.f92104c);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String c(String str) {
+        u1.h hVarA;
+        if (str == null || (hVarA = u1.h.a(str)) == null || a.f91927e[hVarA.ordinal()] != 1) {
+            return null;
+        }
+        return String.valueOf(System.currentTimeMillis());
+    }
+
+    @Override // com.medallia.digital.mobilesdk.x0
+    public String toJsonString() {
+        return null;
+    }
+
+    private String b(String str, u1.k kVar) {
+        if (this.f91921b != null && str != null && kVar != null) {
+            Pattern patternCompile = Pattern.compile("Name:\\s(.*)\\sValue:\\s(.*)");
+            Iterator<c0> it = this.f91921b.iterator();
+            while (it.hasNext()) {
+                c0 next = it.next();
+                if (next.i() != null && patternCompile.matcher(next.i().toString()).matches() && next.i().toString().replaceAll("Name:\\s", "").replaceAll("\\sValue:\\s(.*)", "").equals(str)) {
+                    u1.k kVarA = u1.k.a(next.j());
+                    if (kVarA == null) {
+                        return f91916d;
+                    }
+                    u1.k kVar2 = u1.k.STRING;
+                    if (kVar == kVar2 && kVarA != kVar2) {
+                        return f91916d;
+                    }
+                    u1.k kVar3 = u1.k.BOOLEAN;
+                    if (kVar == kVar3 && kVarA != kVar3) {
+                        return f91916d;
+                    }
+                    u1.k kVar4 = u1.k.DOUBLE;
+                    return (kVar != kVar4 || kVarA == kVar4 || kVarA == u1.k.INTEGER) ? next.i().toString().replaceAll("Name:\\s(.*)\\sValue:\\s", "") : f91916d;
+                }
+            }
+        }
+        return f91916d;
+    }
+
+    protected <K> K a(Object obj, Class<K> cls) {
+        try {
+            return cls.cast(obj);
+        } catch (Exception unused) {
+            return null;
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* JADX WARN: Removed duplicated region for block: B:48:0x007a A[PHI: r7
+      0x007a: PHI (r7v11 ??) = (r7v9 ??), (r7v76 ??), (r7v78 ??), (r7v82 ??), (r7v82 ??), (r7v88 ??), (r7v88 ??) binds: [B:73:0x00bb, B:55:0x008c, B:47:0x0073, B:44:0x006b, B:42:0x0068, B:25:0x003f, B:23:0x003b] A[DONT_GENERATE, DONT_INLINE]] */
+    /* JADX WARN: Removed duplicated region for block: B:67:0x00a5  */
+    /* JADX WARN: Removed duplicated region for block: B:81:0x00ca  */
+    /* JADX WARN: Type inference failed for: r7v0, types: [java.lang.String] */
+    /* JADX WARN: Type inference failed for: r7v10 */
+    /* JADX WARN: Type inference failed for: r7v11 */
+    /* JADX WARN: Type inference failed for: r7v12, types: [java.lang.Object] */
+    /* JADX WARN: Type inference failed for: r7v5 */
+    /* JADX WARN: Type inference failed for: r7v76 */
+    /* JADX WARN: Type inference failed for: r7v77 */
+    /* JADX WARN: Type inference failed for: r7v78 */
+    /* JADX WARN: Type inference failed for: r7v82 */
+    /* JADX WARN: Type inference failed for: r7v83 */
+    /* JADX WARN: Type inference failed for: r7v84 */
+    /* JADX WARN: Type inference failed for: r7v88 */
+    /* JADX WARN: Type inference failed for: r7v89 */
+    /* JADX WARN: Type inference failed for: r7v9 */
+    /* JADX WARN: Type inference failed for: r7v90 */
+    /* JADX WARN: Type inference failed for: r7v91 */
+    /* JADX WARN: Type inference failed for: r7v92 */
+    /* JADX WARN: Type inference failed for: r7v93 */
+    /* JADX WARN: Type inference failed for: r7v94 */
+    /* JADX WARN: Type inference failed for: r7v95 */
+    /* JADX WARN: Type inference failed for: r7v96 */
+    /* JADX WARN: Type inference failed for: r7v97 */
+    /* JADX WARN: Type inference failed for: r8v0, types: [java.lang.String] */
+    /* JADX WARN: Type inference failed for: r8v10, types: [java.lang.Object] */
+    /* JADX WARN: Type inference failed for: r8v26 */
+    /* JADX WARN: Type inference failed for: r8v28 */
+    /* JADX WARN: Type inference failed for: r8v29 */
+    /* JADX WARN: Type inference failed for: r8v30 */
+    /* JADX WARN: Type inference failed for: r8v5 */
+    /* JADX WARN: Type inference failed for: r8v7, types: [java.lang.Boolean] */
+    /* JADX WARN: Type inference failed for: r8v9 */
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+        To view partially-correct add '--show-bad-code' argument
+    */
+    protected java.lang.Object a(java.lang.String r7, java.lang.String r8, com.medallia.digital.mobilesdk.u1.k r9, com.medallia.digital.mobilesdk.u1.e r10) throws java.lang.NumberFormatException {
+        /*
+            Method dump skipped, instructions count: 686
+            To view this dump add '--comments-level debug' option
+        */
+        throw new UnsupportedOperationException("Method not decompiled: com.medallia.digital.mobilesdk.e8.a(java.lang.String, java.lang.String, com.medallia.digital.mobilesdk.u1$k, com.medallia.digital.mobilesdk.u1$e):java.lang.Object");
+    }
+
+    protected T a(ArrayList<c0> arrayList, ArrayList<c0> arrayList2, ArrayList<g6> arrayList3) {
+        this.f91920a = arrayList;
+        this.f91921b = arrayList2;
+        this.f91922c = arrayList3;
+        return null;
+    }
+
+    private String a(c0 c0Var, String str) {
+        u1.i iVarA;
+        if (str == null || c0Var == null || (iVarA = u1.i.a(str)) == null) {
+            return null;
+        }
+        int i10 = a.f91928f[iVarA.ordinal()];
+        if (i10 == 1) {
+            return c0Var.i().toString();
+        }
+        if (i10 != 2) {
+            return null;
+        }
+        return String.valueOf(c0Var.h());
+    }
+
+    private String a(u1.g gVar, String str, String str2) {
+        long jAbs;
+        if (gVar != null) {
+            switch (a.f91925c[gVar.ordinal()]) {
+                case 1:
+                    if (str != null && str2 != null) {
+                        jAbs = Long.parseLong(str) + Long.parseLong(str2);
+                        return String.valueOf(jAbs);
+                    }
+                    break;
+                case 2:
+                    if (str != null && str2 != null) {
+                        jAbs = Long.parseLong(str) * Long.parseLong(str2);
+                        return String.valueOf(jAbs);
+                    }
+                    break;
+                case 3:
+                    if (str != null && str2 != null) {
+                        jAbs = Long.parseLong(str) / Long.parseLong(str2);
+                        return String.valueOf(jAbs);
+                    }
+                    break;
+                case 4:
+                    if (str != null && str2 != null) {
+                        jAbs = Long.parseLong(str) - Long.parseLong(str2);
+                        return String.valueOf(jAbs);
+                    }
+                    break;
+                case 5:
+                    if (str != null) {
+                        return str.toLowerCase();
+                    }
+                    break;
+                case 6:
+                    if (str != null) {
+                        return str.toUpperCase();
+                    }
+                    break;
+                case 7:
+                    if (str != null) {
+                        jAbs = Math.abs(Long.parseLong(str));
+                        return String.valueOf(jAbs);
+                    }
+                    break;
+                default:
+                    return null;
+            }
+        }
+        return str;
+    }
+
+    protected String a(String str, u1.k kVar) {
+        String str2;
+        u1.j jVarA;
+        if (str == null) {
+            return null;
+        }
+        if (!str.startsWith("$")) {
+            return str;
+        }
+        String[] strArrSplit = (str.startsWith("$CUSTOM_PARAM.") || str.startsWith("$OCQ_RULE.")) ? str.replace("$", "").split("\\.", 2) : str.replace("$", "").split("\\.");
+        if (strArrSplit.length == 0 || (str2 = strArrSplit[0]) == null || strArrSplit[1] == null || (jVarA = u1.j.a(str2)) == null) {
+            return null;
+        }
+        int i10 = a.f91926d[jVarA.ordinal()];
+        if (i10 == 1) {
+            return c(strArrSplit[1]);
+        }
+        if (i10 == 2) {
+            return b(strArrSplit[1], kVar);
+        }
+        if (i10 != 3) {
+            if (i10 != 4) {
+                return null;
+            }
+            return b(strArrSplit[1]);
+        }
+        if (strArrSplit.length != 3) {
+            return null;
+        }
+        String str3 = strArrSplit[1];
+        String str4 = strArrSplit[2];
+        c0 c0VarA = a(str3);
+        a4.b("TREV2 getValueFrom: " + a(c0VarA, str4));
+        return a(c0VarA, str4);
+    }
+
+    protected String a(ArrayList<p6> arrayList, String str, u1.k kVar) {
+        if (arrayList != null && str != null) {
+            Iterator<p6> it = arrayList.iterator();
+            while (it.hasNext()) {
+                p6 next = it.next();
+                str = a(next.a(), str, a(next.b(), kVar));
+            }
+        }
+        return str;
+    }
+}

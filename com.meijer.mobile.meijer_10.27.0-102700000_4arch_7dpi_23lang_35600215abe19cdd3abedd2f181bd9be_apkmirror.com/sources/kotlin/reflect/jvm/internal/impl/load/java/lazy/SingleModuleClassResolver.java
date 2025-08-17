@@ -1,0 +1,33 @@
+package kotlin.reflect.jvm.internal.impl.load.java.lazy;
+
+import kotlin.jvm.internal.Intrinsics;
+import kotlin.reflect.jvm.internal.impl.descriptors.ClassDescriptor;
+import kotlin.reflect.jvm.internal.impl.load.java.structure.JavaClass;
+import kotlin.reflect.jvm.internal.impl.resolve.jvm.JavaDescriptorResolver;
+
+/* loaded from: classes13.dex */
+public final class SingleModuleClassResolver implements ModuleClassResolver {
+
+    /* renamed from: a, reason: collision with root package name */
+    public JavaDescriptorResolver f144425a;
+
+    @Override // kotlin.reflect.jvm.internal.impl.load.java.lazy.ModuleClassResolver
+    public ClassDescriptor a(JavaClass javaClass) {
+        Intrinsics.j(javaClass, "javaClass");
+        return b().b(javaClass);
+    }
+
+    public final JavaDescriptorResolver b() {
+        JavaDescriptorResolver javaDescriptorResolver = this.f144425a;
+        if (javaDescriptorResolver != null) {
+            return javaDescriptorResolver;
+        }
+        Intrinsics.y("resolver");
+        return null;
+    }
+
+    public final void c(JavaDescriptorResolver javaDescriptorResolver) {
+        Intrinsics.j(javaDescriptorResolver, "<set-?>");
+        this.f144425a = javaDescriptorResolver;
+    }
+}

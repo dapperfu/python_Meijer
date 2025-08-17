@@ -1,0 +1,50 @@
+Manifest-Version: 1.0
+
+Name: AndroidManifest.xml
+SHA1-Digest: Ffdqj3J5WpDyjSyNhkhLEI2Sv7A=
+
+Name: lib/x86_64/libakamaibmp.so
+SHA1-Digest: +c2AMK/3UltPATsl2ObfU7znEWI=
+
+Name: lib/x86_64/libandroidx.graphics.path.so
+SHA1-Digest: uRsC9Bjgqw/xfTenMFWBedbM11w=
+
+Name: lib/x86_64/libbar.so
+SHA1-Digest: JcqoYiwVJDfa4ZCAL2GVb5FVeSQ=
+
+Name: lib/x86_64/libbugsnag-ndk.so
+SHA1-Digest: Z/0glzFdoMYSmkjkvA0PvMzRRSQ=
+
+Name: lib/x86_64/libbugsnag-plugin-android-anr.so
+SHA1-Digest: v+GeEPF1UPkN7IMSJ9gjnYjPEx8=
+
+Name: lib/x86_64/libbugsnag-root-detection.so
+SHA1-Digest: 9Xppl1ijvo6SJh8aa+JRFzKNEss=
+
+Name: lib/x86_64/libdatastore_shared_counter.so
+SHA1-Digest: bo1GwiORylwXxfDZ9t5O2Mo8W+Y=
+
+Name: lib/x86_64/libfs-native.so
+SHA1-Digest: 7RcGjta6xVeHcmudujRlu/UcQps=
+
+Name: lib/x86_64/libimage_processing_util_jni.so
+SHA1-Digest: o5UOI0j6+B5qKRVZNCQe9gzYBQ4=
+
+Name: lib/x86_64/libscanditsdk.so
+SHA1-Digest: XkA2YBN+etWpQWiHOlBiKzC61dQ=
+
+Name: lib/x86_64/libsdc-barcode.so
+SHA1-Digest: CTGO5HnVbPOBWfMNLyHV68KQ2Ic=
+
+Name: lib/x86_64/libsdc-core.so
+SHA1-Digest: q0comyFgmRpGJMleh/vzbNY8SaE=
+
+Name: lib/x86_64/libsqlcipher.so
+SHA1-Digest: NCO6F6i5aefK0mseZLhs1kBeYJI=
+
+Name: lib/x86_64/libsurface_util_jni.so
+SHA1-Digest: xVoc8zF58Y7DgMRq0qZO9NEYZDY=
+
+Name: stamp-cert-sha256
+SHA1-Digest: 5vTkm69vqAbusD/fho7oWwc7j+I=
+

@@ -1,0 +1,66 @@
+package com.google.android.gms.internal.pal;
+
+/* loaded from: classes6.dex */
+public final class Ec extends B0 implements InterfaceC10706h1 {
+    private static final Ec zzb;
+    private int zze;
+    private Hc zzf;
+    private AbstractC10605b0 zzg = AbstractC10605b0.f83055b;
+
+    public final int t() {
+        return this.zze;
+    }
+
+    public final AbstractC10605b0 z() {
+        return this.zzg;
+    }
+
+    static {
+        Ec ec2 = new Ec();
+        zzb = ec2;
+        B0.j(Ec.class, ec2);
+    }
+
+    public static Dc u() {
+        return (Dc) zzb.l();
+    }
+
+    public static Ec w(AbstractC10605b0 abstractC10605b0, C10833p0 c10833p0) throws zzadi {
+        return (Ec) B0.n(zzb, abstractC10605b0, c10833p0);
+    }
+
+    @Override // com.google.android.gms.internal.pal.B0
+    protected final Object r(int i10, Object obj, Object obj2) {
+        int i11 = i10 - 1;
+        if (i11 == 0) {
+            return (byte) 1;
+        }
+        if (i11 == 2) {
+            return B0.h(zzb, "\u0000\u0003\u0000\u0000\u0001\u0003\u0003\u0000\u0000\u0000\u0001\u000b\u0002\t\u0003\n", new Object[]{"zze", "zzf", "zzg"});
+        }
+        if (i11 == 3) {
+            return new Ec();
+        }
+        Cc cc2 = null;
+        if (i11 == 4) {
+            return new Dc(cc2);
+        }
+        if (i11 != 5) {
+            return null;
+        }
+        return zzb;
+    }
+
+    public final Hc y() {
+        Hc hc2 = this.zzf;
+        return hc2 == null ? Hc.y() : hc2;
+    }
+
+    private Ec() {
+    }
+
+    static /* synthetic */ void E(Ec ec2, Hc hc2) {
+        hc2.getClass();
+        ec2.zzf = hc2;
+    }
+}

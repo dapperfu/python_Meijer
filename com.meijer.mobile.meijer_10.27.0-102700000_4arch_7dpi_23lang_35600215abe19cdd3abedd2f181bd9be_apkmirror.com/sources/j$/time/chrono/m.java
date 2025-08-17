@@ -1,0 +1,67 @@
+package j$.time.chrono;
+
+import j$.time.temporal.ChronoField;
+
+/* loaded from: classes3.dex */
+public abstract /* synthetic */ class m {
+
+    /* renamed from: a, reason: collision with root package name */
+    public static final /* synthetic */ int[] f138769a;
+
+    static {
+        int[] iArr = new int[ChronoField.values().length];
+        f138769a = iArr;
+        try {
+            iArr[ChronoField.DAY_OF_MONTH.ordinal()] = 1;
+        } catch (NoSuchFieldError unused) {
+        }
+        try {
+            f138769a[ChronoField.DAY_OF_YEAR.ordinal()] = 2;
+        } catch (NoSuchFieldError unused2) {
+        }
+        try {
+            f138769a[ChronoField.ALIGNED_WEEK_OF_MONTH.ordinal()] = 3;
+        } catch (NoSuchFieldError unused3) {
+        }
+        try {
+            f138769a[ChronoField.DAY_OF_WEEK.ordinal()] = 4;
+        } catch (NoSuchFieldError unused4) {
+        }
+        try {
+            f138769a[ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH.ordinal()] = 5;
+        } catch (NoSuchFieldError unused5) {
+        }
+        try {
+            f138769a[ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR.ordinal()] = 6;
+        } catch (NoSuchFieldError unused6) {
+        }
+        try {
+            f138769a[ChronoField.EPOCH_DAY.ordinal()] = 7;
+        } catch (NoSuchFieldError unused7) {
+        }
+        try {
+            f138769a[ChronoField.ALIGNED_WEEK_OF_YEAR.ordinal()] = 8;
+        } catch (NoSuchFieldError unused8) {
+        }
+        try {
+            f138769a[ChronoField.MONTH_OF_YEAR.ordinal()] = 9;
+        } catch (NoSuchFieldError unused9) {
+        }
+        try {
+            f138769a[ChronoField.PROLEPTIC_MONTH.ordinal()] = 10;
+        } catch (NoSuchFieldError unused10) {
+        }
+        try {
+            f138769a[ChronoField.YEAR_OF_ERA.ordinal()] = 11;
+        } catch (NoSuchFieldError unused11) {
+        }
+        try {
+            f138769a[ChronoField.YEAR.ordinal()] = 12;
+        } catch (NoSuchFieldError unused12) {
+        }
+        try {
+            f138769a[ChronoField.ERA.ordinal()] = 13;
+        } catch (NoSuchFieldError unused13) {
+        }
+    }
+}

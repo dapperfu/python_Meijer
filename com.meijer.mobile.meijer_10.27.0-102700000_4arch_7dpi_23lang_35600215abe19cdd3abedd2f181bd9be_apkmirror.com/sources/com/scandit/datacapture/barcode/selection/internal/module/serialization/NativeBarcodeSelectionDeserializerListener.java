@@ -1,0 +1,23 @@
+package com.scandit.datacapture.barcode.selection.internal.module.serialization;
+
+import com.scandit.datacapture.barcode.selection.internal.module.capture.NativeBarcodeSelection;
+import com.scandit.datacapture.barcode.selection.internal.module.capture.NativeBarcodeSelectionSettings;
+import com.scandit.datacapture.barcode.selection.internal.module.ui.overlay.NativeBarcodeSelectionBasicOverlay;
+import com.scandit.datacapture.core.internal.sdk.json.NativeJsonValue;
+import com.scandit.datacapture.internal.sdk.annotations.DjinniGenerated;
+
+@DjinniGenerated
+/* loaded from: classes11.dex */
+public abstract class NativeBarcodeSelectionDeserializerListener {
+    public abstract void onBasicOverlayDeserializationFinished(NativeBarcodeSelectionDeserializer nativeBarcodeSelectionDeserializer, NativeBarcodeSelectionBasicOverlay nativeBarcodeSelectionBasicOverlay, NativeJsonValue nativeJsonValue);
+
+    public abstract void onBasicOverlayDeserializationStarted(NativeBarcodeSelectionDeserializer nativeBarcodeSelectionDeserializer, NativeBarcodeSelectionBasicOverlay nativeBarcodeSelectionBasicOverlay, NativeJsonValue nativeJsonValue);
+
+    public abstract void onModeDeserializationFinished(NativeBarcodeSelectionDeserializer nativeBarcodeSelectionDeserializer, NativeBarcodeSelection nativeBarcodeSelection, NativeJsonValue nativeJsonValue);
+
+    public abstract void onModeDeserializationStarted(NativeBarcodeSelectionDeserializer nativeBarcodeSelectionDeserializer, NativeBarcodeSelection nativeBarcodeSelection, NativeJsonValue nativeJsonValue);
+
+    public abstract void onSettingsDeserializationFinished(NativeBarcodeSelectionDeserializer nativeBarcodeSelectionDeserializer, NativeBarcodeSelectionSettings nativeBarcodeSelectionSettings, NativeJsonValue nativeJsonValue);
+
+    public abstract void onSettingsDeserializationStarted(NativeBarcodeSelectionDeserializer nativeBarcodeSelectionDeserializer, NativeBarcodeSelectionSettings nativeBarcodeSelectionSettings, NativeJsonValue nativeJsonValue);
+}

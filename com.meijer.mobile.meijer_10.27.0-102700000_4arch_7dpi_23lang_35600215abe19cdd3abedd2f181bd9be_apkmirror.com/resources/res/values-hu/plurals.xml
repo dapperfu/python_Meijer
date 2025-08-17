@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="one">Előretekerés %d másodperccel</item>
+        <item quantity="other">Előretekerés %d másodperccel</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="one">Visszatekerés %d másodperccel</item>
+        <item quantity="other">Visszatekerés %d másodperccel</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d új értesítés</item>
+        <item quantity="other">%d új értesítés</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="one">%1$d fotó</item>
+        <item quantity="other">%1$d fotó</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="one">%1$s csillag</item>
+        <item quantity="other">%1$s csillag</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="one">%1$d vélemény</item>
+        <item quantity="other">%1$d vélemény</item>
+    </plurals>
+</resources>

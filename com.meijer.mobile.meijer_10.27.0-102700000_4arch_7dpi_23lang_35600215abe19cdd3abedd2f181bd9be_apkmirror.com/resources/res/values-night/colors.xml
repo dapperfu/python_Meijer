@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="akamaiCCAcolorDialogBackground">#313030</color>
+    <color name="akamaiCCAcolorDialogMessage">#99ffffff</color>
+    <color name="akamaiCCAcolorDialogTitle">#deffffff</color>
+    <color name="akamaiCCAcolorPrimary">#ffffff</color>
+    <color name="akamaiCCAcolorProgressBackground">#424242</color>
+    <color name="places_color_neutral_container">@color/gmp_sys_color_dark_neutral_container</color>
+    <color name="places_color_on_neutral_container">@color/gmp_sys_color_dark_on_neutral_container</color>
+    <color name="places_color_on_positive_container">@color/gmp_sys_color_dark_on_positive_container</color>
+    <color name="places_color_on_secondary_container">@color/gmp_sys_color_dark_on_secondary_container</color>
+    <color name="places_color_on_surface">@color/gmp_sys_color_dark_on_surface</color>
+    <color name="places_color_on_surface_variant">@color/gmp_sys_color_dark_on_surface_variant</color>
+    <color name="places_color_outline_decorative">@color/gmp_sys_color_dark_outline_decorative</color>
+    <color name="places_color_positive_container">@color/gmp_sys_color_dark_positive_container</color>
+    <color name="places_color_primary">@color/gmp_sys_color_dark_primary</color>
+    <color name="places_color_secondary_container">@color/gmp_sys_color_dark_secondary_container</color>
+    <color name="places_color_surface_container_lowest">@color/gmp_sys_color_dark_surface_container_lowest</color>
+    <color name="places_negative_color">@color/gmp_sys_color_dark_negative</color>
+    <color name="places_positive_color">@color/gmp_sys_color_dark_positive</color>
+    <color name="places_rating_empty_star_color">@color/gmp_sys_color_dark_disabled_surface</color>
+    <color name="places_rating_full_star_color">@color/gmp_sys_color_dark_star_rating</color>
+    <color name="places_rating_info_color">@color/gmp_sys_color_dark_info</color>
+</resources>

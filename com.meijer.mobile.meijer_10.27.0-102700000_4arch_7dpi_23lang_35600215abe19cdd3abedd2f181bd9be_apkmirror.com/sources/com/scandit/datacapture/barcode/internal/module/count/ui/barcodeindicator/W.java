@@ -1,0 +1,63 @@
+package com.scandit.datacapture.barcode.internal.module.count.ui.barcodeindicator;
+
+import kotlin.enums.EnumEntriesKt;
+
+/* JADX WARN: Failed to restore enum class, 'enum' modifier and super class removed */
+/* JADX WARN: Unknown enum class pattern. Please report as an issue! */
+/* loaded from: classes11.dex */
+public final class W {
+
+    /* renamed from: b, reason: collision with root package name */
+    public static final W f121416b;
+
+    /* renamed from: c, reason: collision with root package name */
+    public static final W f121417c;
+
+    /* renamed from: d, reason: collision with root package name */
+    public static final W f121418d;
+
+    /* renamed from: e, reason: collision with root package name */
+    public static final W f121419e;
+
+    /* renamed from: f, reason: collision with root package name */
+    public static final W f121420f;
+
+    /* renamed from: g, reason: collision with root package name */
+    public static final W f121421g;
+
+    /* renamed from: h, reason: collision with root package name */
+    public static final /* synthetic */ W[] f121422h;
+
+    /* renamed from: a, reason: collision with root package name */
+    public final int f121423a;
+
+    public static W valueOf(String str) {
+        return (W) Enum.valueOf(W.class, str);
+    }
+
+    public static W[] values() {
+        return (W[]) f121422h.clone();
+    }
+
+    static {
+        W w10 = new W("Recognized", 0, 0);
+        f121416b = w10;
+        W w11 = new W("Accepted", 1, 1);
+        f121417c = w11;
+        W w12 = new W("Rejected", 2, 2);
+        f121418d = w12;
+        W w13 = new W("NotInList", 3, 3);
+        f121419e = w13;
+        W w14 = new W("UnScanned", 4, 4);
+        f121420f = w14;
+        W w15 = new W("FilteredOut", 5, 5);
+        f121421g = w15;
+        W[] wArr = {w10, w11, w12, w13, w14, w15};
+        f121422h = wArr;
+        EnumEntriesKt.a(wArr);
+    }
+
+    public W(String str, int i10, int i11) {
+        this.f121423a = i11;
+    }
+}

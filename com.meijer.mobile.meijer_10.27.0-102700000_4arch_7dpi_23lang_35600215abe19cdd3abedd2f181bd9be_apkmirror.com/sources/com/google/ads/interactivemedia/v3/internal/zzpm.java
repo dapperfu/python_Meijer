@@ -1,0 +1,19 @@
+package com.google.ads.interactivemedia.v3.internal;
+
+import android.os.IInterface;
+import android.os.RemoteException;
+
+/* loaded from: classes4.dex */
+public interface zzpm extends IInterface {
+    void zze(com.google.android.gms.dynamic.b bVar, String str, String str2) throws RemoteException;
+
+    void zzf() throws RemoteException;
+
+    void zzg(int i10) throws RemoteException;
+
+    void zzh(int[] iArr) throws RemoteException;
+
+    void zzi(int i10) throws RemoteException;
+
+    void zzj(byte[] bArr) throws RemoteException;
+}

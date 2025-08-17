@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+        <item quantity="zero">تقديم سريع للفيديو بمقدار %d ثانية</item>
+        <item quantity="one">تقديم سريع للفيديو بمقدار ثانية واحدة (%d)</item>
+        <item quantity="two">تقديم سريع للفيديو بمقدار ثانيتَين (%d)</item>
+        <item quantity="few">تقديم سريع للفيديو بمقدار %d ثوانٍ</item>
+        <item quantity="many">تقديم سريع للفيديو بمقدار %d ثانية</item>
+        <item quantity="other">تقديم سريع للفيديو بمقدار %d ثانية</item>
+    </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+        <item quantity="zero">ترجيع الفيديو بمقدار %d ثانية</item>
+        <item quantity="one">ترجيع الفيديو بمقدار ثانية واحدة (%d)</item>
+        <item quantity="two">ترجيع الفيديو بمقدار ثانيتَين (%d)</item>
+        <item quantity="few">ترجيع الفيديو بمقدار %d ثوانٍ</item>
+        <item quantity="many">ترجيع الفيديو بمقدار %d ثانية</item>
+        <item quantity="other">ترجيع الفيديو بمقدار %d ثانية</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="zero">%d إشعار جديد</item>
+        <item quantity="one">إشعار جديد واحد (%d)</item>
+        <item quantity="two">إشعاران جديدان (%d)</item>
+        <item quantity="few">%d إشعارات جديدة</item>
+        <item quantity="many">%d إشعارًا جديدًا</item>
+        <item quantity="other">%d إشعار جديد</item>
+    </plurals>
+    <plurals name="place_details_photo_count">
+        <item quantity="zero">‫%1$d صورة</item>
+        <item quantity="one">صورة واحدة (%1$d)</item>
+        <item quantity="two">صورتان (%1$d)</item>
+        <item quantity="few">‫%1$d صور</item>
+        <item quantity="many">‫%1$d صورة</item>
+        <item quantity="other">‫%1$d صورة</item>
+    </plurals>
+    <plurals name="place_details_ratings_content_description">
+        <item quantity="zero">‫%1$s نجمة</item>
+        <item quantity="one">نجمة واحدة (%1$s)</item>
+        <item quantity="two">نجمتان (%1$s)</item>
+        <item quantity="few">‫%1$s نجوم</item>
+        <item quantity="many">‫%1$s نجمة</item>
+        <item quantity="other">‫%1$s نجمة</item>
+    </plurals>
+    <plurals name="place_details_review_count_a11y_label">
+        <item quantity="zero">‫%1$d مراجعة</item>
+        <item quantity="one">مراجعة واحدة (%1$d)</item>
+        <item quantity="two">مراجعتان (%1$d)</item>
+        <item quantity="few">‫%1$d مراجعات</item>
+        <item quantity="many">‫%1$d مراجعة</item>
+        <item quantity="other">‫%1$d مراجعة</item>
+    </plurals>
+</resources>
