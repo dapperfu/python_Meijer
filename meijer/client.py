@@ -521,6 +521,40 @@ class Meijer:
             )
             return None
 
+    def lookup_barcode_price(self, barcode: str, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Look up price and product information for any barcode.
+        
+        This uses the Shop & Scan API to get real-time pricing without requiring
+        an active shopping session.
+        
+        Args:
+            barcode: UPC/barcode to look up
+            store_id: Optional store ID for location-specific pricing
+            
+        Returns:
+            Dict containing product info and pricing, or None if not found
+            
+        Example:
+            >>> client = Meijer()
+            >>> product = client.lookup_barcode_price("123456789012")
+            >>> print(f"{product['title']}: ${product['unitPrice']:.2f}")
+        """
+        return self.shop_scan.lookup_barcode_price(barcode, store_id)
+
+    def bulk_lookup_barcodes(self, barcodes: List[str], store_id: Optional[str] = None) -> Dict[str, Optional[Dict[str, Any]]]:
+        """
+        Look up multiple barcodes efficiently.
+        
+        Args:
+            barcodes: List of UPC/barcodes to look up
+            store_id: Optional store ID for location-specific pricing
+            
+        Returns:
+            Dict mapping barcode -> product info (or None if not found)
+        """
+        return self.shop_scan.bulk_lookup_barcodes(barcodes, store_id)
+
     def get_autocomplete(self, query: str, num_results: int = 10) -> List[str]:
         """
         Get autocomplete suggestions.

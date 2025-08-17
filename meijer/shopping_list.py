@@ -5,7 +5,7 @@ Meijer Shopping List Management
 Shopping list functionality for the Meijer API client.
 """
 
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 from urllib.parse import urljoin
 
 from .models import ListItem
@@ -79,6 +79,21 @@ class MeijerList:
 
     def add_item(self, upc: str, quantity: int = 1) -> bool:
         """Add item to shopping list by UPC using real APK-discovered endpoint."""
+        return self.add_item_with_details(
+            upc=upc, 
+            quantity=quantity, 
+            description=f"Product {upc}"
+        )
+
+    def add_item_with_details(
+        self, 
+        upc: str, 
+        quantity: int = 1, 
+        description: Optional[str] = None,
+        notes: Optional[str] = None,
+        display_order: int = 1
+    ) -> bool:
+        """Add item to shopping list with custom description and notes."""
         try:
             if not self.meijer._ensure_authenticated():
                 raise MeijerAuthenticationError("Authentication required")
@@ -97,13 +112,13 @@ class MeijerList:
                 "listItems": [
                     {
                         "listItemId": 0,  # New item
-                        "itemDescription": f"Product {upc}",
+                        "itemDescription": description or f"Product {upc}",
                         "quantity": quantity,
                         "itemPartNumber": upc,  # UPC goes here
                         "listItemTypeId": 1,  # Standard item type
-                        "itemDisplayOrder": 1,
+                        "itemDisplayOrder": display_order,
                         "storeId": None,
-                        "notes": None,
+                        "notes": notes,
                         "isComplete": False,
                         "isFavorite": False,
                         "listingId": None,
@@ -119,7 +134,7 @@ class MeijerList:
             )
 
             if response.status_code in [200, 201]:
-                self.logger.info(f"Added item {upc} to shopping list")
+                self.logger.info(f"Added item {description or upc} to shopping list")
                 return True
             else:
                 self.logger.error(f"Failed to add item: {response.status_code} - {response.text}")
@@ -332,6 +347,154 @@ class MeijerList:
 
         except Exception as e:
             self.logger.error(f"Error removing item from favorites: {e}")
+            return False
+
+    def defrag(self, store_id: Optional[str] = None) -> bool:
+        """
+        Defragment shopping list by organizing items by aisle number.
+        
+        This function:
+        1. Gets all current shopping list items
+        2. Searches for each item to find its store location (aisle, section)
+        3. Deletes all items from the list
+        4. Re-adds items sorted by aisle number with location info in notes
+        
+        Args:
+            store_id: Store ID to use for location lookup (optional)
+            
+        Returns:
+            bool: True if defrag was successful, False otherwise
+        """
+        try:
+            self.logger.info("🔧 Starting shopping list defrag...")
+            
+            # Step 1: Get current shopping list items
+            current_items = self.get()
+            if not current_items:
+                self.logger.info("📝 Shopping list is empty, nothing to defrag")
+                return True
+                
+            self.logger.info(f"📋 Found {len(current_items)} items to defrag")
+            
+            # Step 2: Search for each item to get location information
+            items_with_locations = []
+            search_client = None
+            
+            try:
+                from .search import MeijerSearch
+                search_client = MeijerSearch(self.meijer)
+            except ImportError:
+                self.logger.error("❌ Search functionality not available for defrag")
+                return False
+            
+            for item in current_items:
+                self.logger.info(f"🔍 Searching for: {item.name}")
+                
+                # Search for the item
+                search_results = search_client.search(
+                    query=item.name,
+                    results_per_page=5,  # Just get first few results
+                    store_id=store_id
+                )
+                
+                # Find the first matching result
+                location_info = None
+                if search_results and search_results.items:
+                    first_result = search_results.items[0]
+                    if first_result.aisle or first_result.section:
+                        location_info = {
+                            'aisle': first_result.aisle,
+                            'section': first_result.section,
+                            'zone': first_result.zone,
+                            'zone_code': first_result.zone_code
+                        }
+                        self.logger.info(f"📍 Found location: Aisle {first_result.aisle}, Section {first_result.section}")
+                    else:
+                        self.logger.warning(f"⚠️  No location data found for {item.name}")
+                else:
+                    self.logger.warning(f"⚠️  No search results found for {item.name}")
+                
+                items_with_locations.append({
+                    'item': item,
+                    'location': location_info
+                })
+            
+            # Step 3: Sort items by aisle number (handle non-numeric aisles gracefully)
+            def get_aisle_sort_key(item_data):
+                location = item_data.get('location')
+                if not location or not location.get('aisle'):
+                    return (999, 0)  # Put items without aisle at the end
+                
+                aisle = location['aisle']
+                try:
+                    # Try to extract numeric part for sorting
+                    numeric_part = int(''.join(filter(str.isdigit, aisle)))
+                    return (0, numeric_part)
+                except (ValueError, TypeError):
+                    # If no numeric part, sort alphabetically
+                    return (1, aisle)
+            
+            sorted_items = sorted(items_with_locations, key=get_aisle_sort_key)
+            
+            # Step 4: Delete all current items
+            self.logger.info("🗑️  Clearing current shopping list...")
+            deleted_count = 0
+            for item in current_items:
+                if self.delete_item(str(item.listItemId)):
+                    deleted_count += 1
+                else:
+                    self.logger.warning(f"⚠️  Failed to delete item: {item.name}")
+            
+            self.logger.info(f"✅ Deleted {deleted_count} items")
+            
+            # Step 5: Re-add items in sorted order with location notes
+            self.logger.info("📝 Re-adding items in aisle order...")
+            added_count = 0
+            
+            for idx, item_data in enumerate(sorted_items, 1):
+                item = item_data['item']
+                location = item_data['location']
+                
+                # Create notes with location information
+                notes_parts = []
+                if location:
+                    if location.get('aisle'):
+                        notes_parts.append(f"Aisle: {location['aisle']}")
+                    if location.get('section'):
+                        notes_parts.append(f"Section: {location['section']}")
+                    if location.get('zone'):
+                        notes_parts.append(f"Zone: {location['zone']}")
+                
+                # Preserve original notes if they exist
+                if item.notes:
+                    notes_parts.append(f"Notes: {item.notes}")
+                
+                location_notes = " | ".join(notes_parts) if notes_parts else None
+                
+                # Re-add the item with location information
+                success = self.add_item_with_details(
+                    upc=item.itemPartNumber or f"ITEM_{item.listItemId}",
+                    quantity=item.quantity,
+                    description=item.itemDescription,
+                    notes=location_notes,
+                    display_order=idx
+                )
+                
+                if success:
+                    added_count += 1
+                    aisle_info = location.get('aisle', 'Unknown') if location else 'Unknown'
+                    self.logger.info(f"✅ Added: {item.name} (Aisle: {aisle_info})")
+                else:
+                    self.logger.warning(f"⚠️  Failed to re-add item: {item.name}")
+            
+            # Summary
+            self.logger.info(f"🎉 Defrag complete! Reorganized {added_count} items by aisle")
+            self.logger.info(f"📊 Summary: {deleted_count} deleted, {added_count} re-added")
+            
+            return added_count > 0
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error during shopping list defrag: {e}")
             return False
 
 

@@ -51,6 +51,12 @@ class MeijerItem:
     weight: Optional[str] = None
     department: Optional[str] = None
 
+    # Location information for store navigation
+    aisle: Optional[str] = None
+    section: Optional[str] = None
+    zone: Optional[str] = None
+    zone_code: Optional[str] = None
+
     @classmethod
     def from_constructor_data(cls, data: Dict[str, Any]) -> "MeijerItem":
         """Create MeijerItem from Constructor.io response data."""
@@ -67,6 +73,11 @@ class MeijerItem:
             rating=data.get("data", {}).get("rating"),
             review_count=data.get("data", {}).get("review_count", 0),
             in_stock=data.get("data", {}).get("in_stock", True),
+            # Extract location data if available
+            aisle=data.get("data", {}).get("aisle"),
+            section=data.get("data", {}).get("section"),
+            zone=data.get("data", {}).get("zone"),
+            zone_code=data.get("data", {}).get("zone_code"),
         )
 
 

@@ -19,6 +19,7 @@ import math
 
 if TYPE_CHECKING:
     from meijer_comprehensive import MeijerComprehensiveClient
+    from meijer_gas import MeijerGas
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +190,7 @@ class MeijerStore:
         default=None, repr=False
     )
     _raw_data: Optional[Dict[str, Any]] = field(default=None, repr=False)
+    _gas_station: Optional["MeijerGas"] = field(default=None, repr=False)
 
     @classmethod
     def from_store_info_response(
@@ -412,7 +414,18 @@ class MeijerStore:
                 # Only include optional fields if they have values
                 filtered_kwargs[k] = v
 
-        return cls(**filtered_kwargs)
+        store = cls(**filtered_kwargs)
+        
+        # Create gas station if store has fuel services
+        if store_data.get("MfuelFlag", False):
+            try:
+                from meijer_gas import MeijerGas
+                gas_station = MeijerGas.from_store_data(store_data, store)
+                store._gas_station = gas_station
+            except ImportError:
+                logger.warning("MeijerGas class not available, skipping gas station creation")
+
+        return store
 
     @staticmethod
     def _convert_bool(value: Any) -> Optional[bool]:
@@ -477,6 +490,11 @@ class MeijerStore:
     def has_gas_station(self) -> bool:
         """Check if store has a gas station."""
         return bool(self.mfuel_flag)
+    
+    def get_gas_station(self) -> Optional["MeijerGas"]:
+        """Get gas station information if available."""
+        return self._gas_station
+        return self._gas_station
 
     def has_curbside_pickup(self) -> bool:
         """Check if store offers curbside pickup."""
