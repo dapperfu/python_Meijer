@@ -58,6 +58,9 @@ class Meijer:
         self.shop_scan = ShopNScan(self)
         self.mperks = MPerksEarnedRewards(self)
         
+        # Add alias for CLI compatibility
+        self.list = self.shopping_list
+        
         # Authentication state
         self._access_token = None
         self._refresh_token = None
@@ -659,6 +662,20 @@ class Meijer:
     def is_authenticated(self) -> bool:
         """Check if client is authenticated."""
         return self._access_token is not None
+    
+    @property
+    def auth_status(self):
+        """Get current authentication status."""
+        from .enums import AuthenticationStatus
+        
+        if not self._access_token:
+            return AuthenticationStatus.UNAUTHENTICATED
+        
+        # Check if token is expired
+        if self._token_expires_at and datetime.now() > self._token_expires_at:
+            return AuthenticationStatus.EXPIRED
+        
+        return AuthenticationStatus.AUTHENTICATED
     
     # mPerks convenience methods
     def get_earned_rewards(self, **kwargs) -> List[EarnedReward]:

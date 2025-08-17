@@ -23,8 +23,11 @@ A comprehensive command-line interface for managing Meijer shopping lists.
 
 import sys
 import os
+import json
+import re
 from typing import List, Optional, TextIO
 from pathlib import Path
+from datetime import datetime
 
 import click
 
@@ -45,7 +48,7 @@ except ImportError:
 
 def get_meijer_client() -> Meijer:
     """
-    Get an authenticated Meijer client.
+    Get an authenticated Meijer client instance.
     
     Returns:
         Meijer: Authenticated client instance
@@ -54,7 +57,13 @@ def get_meijer_client() -> Meijer:
         click.ClickException: If authentication fails
     """
     try:
-        client = Meijer()
+        # First try to load from local auth.txt file
+        local_auth_path = "auth.txt"
+        if os.path.exists(local_auth_path):
+            client = Meijer(auth=local_auth_path)
+        else:
+            # Fall back to default behavior
+            client = Meijer()
         
         if client.auth_status.name != "AUTHENTICATED":
             raise click.ClickException(
@@ -595,6 +604,112 @@ def list_interactive():
         click.echo("   meijer list show")
         click.echo("   meijer list add <item>")
         click.echo("   meijer list defrag")
+
+
+@cli.command()
+@click.argument("log_file", type=click.Path(exists=True))
+def auth(log_file: str):
+    """Extract Bearer token from mitmproxy log and save to ~/.config/meijer.txt."""
+    try:
+        click.echo(f"🔍 Analyzing mitmproxy log: {log_file}")
+        click.echo("⏳ This may take a moment for large log files...")
+        
+        # Parse the log file to find Meijer requests
+        meijer_requests = []
+        
+        with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                
+                # Look for Meijer API requests
+                if any(domain in line.lower() for domain in ['meijer.com', 'id.meijer.com']):
+                    # Try to extract timestamp and request info
+                    try:
+                        # Look for timestamp patterns (common in mitmproxy logs)
+                        
+                        # Common timestamp patterns
+                        timestamp_patterns = [
+                            r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})',  # YYYY-MM-DD HH:MM:SS
+                            r'(\d{2}:\d{2}:\d{2})',  # HH:MM:SS
+                            r'(\d{10,13})',  # Unix timestamp
+                        ]
+                        
+                        timestamp = None
+                        for pattern in timestamp_patterns:
+                            match = re.search(pattern, line)
+                            if match:
+                                timestamp_str = match.group(1)
+                                try:
+                                    if len(timestamp_str) >= 10:  # Unix timestamp
+                                        timestamp = int(timestamp_str)
+                                        # Handle 13-digit timestamps (milliseconds)
+                                        if timestamp > 9999999999:  # After year 2286
+                                            timestamp = timestamp / 1000
+                                        break
+                                    else:
+                                        # Try to parse as datetime
+                                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S').timestamp()
+                                        break
+                                except (ValueError, TypeError):
+                                    continue
+                        
+                        # Look for Bearer token
+                        bearer_match = re.search(r'Bearer\s+([A-Za-z0-9\-._~+/]+=*)', line)
+                        if bearer_match:
+                            bearer_token = bearer_match.group(1)
+                            
+                            meijer_requests.append({
+                                'line': line_num,
+                                'timestamp': timestamp or 0,
+                                'token': bearer_token,
+                                'content': line[:200] + '...' if len(line) > 200 else line
+                            })
+                            
+                    except Exception as e:
+                        # Skip lines that can't be parsed
+                        continue
+        
+        if not meijer_requests:
+            raise click.ClickException("❌ No Meijer requests found in log file")
+        
+        click.echo(f"📊 Found {len(meijer_requests)} Meijer requests")
+        
+        # Sort by timestamp (reverse chronological order)
+        meijer_requests.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        # Get the most recent Bearer token
+        latest_request = meijer_requests[0]
+        bearer_token = latest_request['token']
+        
+        click.echo(f"🔑 Latest Bearer token found at line {latest_request['line']}")
+        click.echo(f"⏰ Timestamp: {latest_request['timestamp']}")
+        
+        # Save to ~/.config/meijer.txt
+        config_path = os.path.expanduser("~/.config/meijer.txt")
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        
+        config = {
+            "access_token": bearer_token,
+            "updated_at": datetime.now().isoformat(),
+            "source": f"Extracted from {log_file}",
+            "extracted_at": datetime.now().isoformat()
+        }
+        
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        click.echo(f"💾 Token saved to {config_path}")
+        click.echo("✅ Authentication file updated successfully!")
+        
+        # Show a few recent requests for context
+        click.echo("\n📋 Recent Meijer requests:")
+        for i, req in enumerate(meijer_requests[:5]):
+            time_str = datetime.fromtimestamp(req['timestamp']).strftime('%Y-%m-%d %H:%M:%S') if req['timestamp'] > 0 else 'Unknown'
+            click.echo(f"  {i+1}. Line {req['line']} - {time_str}")
+            click.echo(f"     {req['content'][:100]}...")
+        
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to extract authentication: {e}")
 
 
 @cli.command()
