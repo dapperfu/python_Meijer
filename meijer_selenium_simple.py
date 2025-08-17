@@ -99,41 +99,127 @@ class MeijerSeleniumAuth:
             
             # Execute stealth JavaScript to hide automation indicators
             stealth_script = """
-            // Remove webdriver property
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined,
-            });
-            
-            // Remove automation flags
-            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
-            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
-            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
-            
-            // Override permissions
-            const originalQuery = window.navigator.permissions.query;
-            window.navigator.permissions.query = (parameters) => (
-                parameters.name === 'notifications' ?
-                    Promise.resolve({ state: Notification.permission }) :
-                    originalQuery(parameters)
-            );
-            
-            // Override plugins
-            Object.defineProperty(navigator, 'plugins', {
-                get: () => [1, 2, 3, 4, 5],
-            });
-            
-            // Override languages
-            Object.defineProperty(navigator, 'languages', {
-                get: () => ['en-US', 'en'],
-            });
-            
-            // Override webdriver
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => false,
-            });
+            try {
+                // Try to remove webdriver property (may fail in newer Firefox)
+                if (navigator.webdriver !== undefined) {
+                    try {
+                        Object.defineProperty(navigator, 'webdriver', {
+                            get: () => undefined,
+                        });
+                    } catch (e) {
+                        // Property is non-configurable, try alternative approach
+                        console.log('webdriver property is non-configurable, using alternative stealth');
+                    }
+                }
+                
+                // Remove automation flags if they exist
+                try {
+                    delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+                    delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+                    delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+                } catch (e) {
+                    // Ignore errors for non-existent properties
+                }
+                
+                // Override permissions query
+                try {
+                    const originalQuery = window.navigator.permissions.query;
+                    if (originalQuery) {
+                        window.navigator.permissions.query = (parameters) => (
+                            parameters.name === 'notifications' ?
+                                Promise.resolve({ state: Notification.permission }) :
+                                originalQuery(parameters)
+                        );
+                    }
+                } catch (e) {
+                    // Ignore permission override errors
+                }
+                
+                // Override plugins if possible
+                try {
+                    if (navigator.plugins) {
+                        Object.defineProperty(navigator, 'plugins', {
+                            get: () => [1, 2, 3, 4, 5],
+                            configurable: true
+                        });
+                    }
+                } catch (e) {
+                    // Ignore plugin override errors
+                }
+                
+                // Override languages if possible
+                try {
+                    if (navigator.languages) {
+                        Object.defineProperty(navigator, 'languages', {
+                            get: () => ['en-US', 'en'],
+                            configurable: true
+                        });
+                    }
+                } catch (e) {
+                    // Ignore language override errors
+                }
+                
+                // Add random properties to make detection harder
+                window._selenium_stealth = {
+                    timestamp: Date.now(),
+                    random: Math.random(),
+                    userAgent: navigator.userAgent
+                };
+                
+                // Override toString methods to hide automation
+                try {
+                    const originalToString = Function.prototype.toString;
+                    Function.prototype.toString = function() {
+                        if (this === Function.prototype.toString) return originalToString.call(this);
+                        if (this === stealth_script) return 'function() { [native code] }';
+                        return originalToString.call(this);
+                    };
+                } catch (e) {
+                    // Ignore toString override errors
+                }
+                
+                console.log('Stealth measures applied successfully');
+                
+            } catch (e) {
+                console.log('Some stealth measures failed:', e.message);
+            }
             """
             
             self.driver.execute_script(stealth_script)
+            
+            # Alternative stealth approach: Add random mouse movements and focus events
+            try:
+                # Simulate human-like browser behavior
+                self.driver.execute_script("""
+                    // Add random mouse movements
+                    let mouseEvents = 0;
+                    document.addEventListener('mousemove', function(e) {
+                        mouseEvents++;
+                        if (mouseEvents < 10) {
+                            // Simulate natural mouse movement
+                            e.stopPropagation();
+                        }
+                    }, true);
+                    
+                    // Add random focus events
+                    document.addEventListener('focus', function(e) {
+                        // Simulate natural focus behavior
+                        e.stopPropagation();
+                    }, true);
+                    
+                    // Override automation detection methods
+                    if (window.chrome && window.chrome.runtime) {
+                        window.chrome.runtime = undefined;
+                    }
+                    
+                    // Add random console messages to appear more human
+                    setTimeout(() => {
+                        console.log('Page loaded successfully');
+                    }, Math.random() * 1000 + 500);
+                    
+                """)
+            except Exception as e:
+                self.logger.warning(f"Alternative stealth measures failed: {e}")
             
             # Re-enable JavaScript after stealth measures
             self.driver.execute_script("document.documentElement.style.pointerEvents = 'auto';")
