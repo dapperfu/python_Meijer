@@ -206,50 +206,72 @@ class ShopNScan:
 
             if response.status_code == 200:
                 data = response.json()
-                self.logger.debug(f"Search API response: {data}")
+                self.logger.debug(f"Constructor.io response: {data}")
                 
-                # Parse search results to find exact UPC match
-                products = data.get("products", [])
-                if not products:
+                # Parse Constructor.io search results
+                results = data.get("results", [])
+                if not results:
                     self.logger.warning(f"No products found for barcode {barcode}")
                     return None
                 
-                # Look for exact UPC match
+                # Look for exact UPC match in Constructor.io results
                 exact_match = None
-                for product in products:
-                    product_upc = product.get("upc", "").strip()
+                for result_item in results:
+                    item_data = result_item.get("data", {})
+                    product_upc = item_data.get("upc", "").strip()
+                    
+                    # Try multiple UPC fields
+                    if not product_upc:
+                        product_upc = item_data.get("barcode", "").strip()
+                    if not product_upc:
+                        product_upc = item_data.get("sku", "").strip()
+                    
                     if product_upc == barcode:
-                        exact_match = product
+                        exact_match = result_item
                         break
                 
                 if not exact_match:
                     # If no exact match, take the first result (might be partial match)
-                    exact_match = products[0]
-                    self.logger.info(f"No exact UPC match, using first result")
+                    exact_match = results[0]
+                    self.logger.info(f"No exact UPC match, using first result from Constructor.io")
+                
+                # Extract product data from Constructor.io format
+                item_data = exact_match.get("data", {})
+                value = exact_match.get("value", "Unknown Product")
                 
                 # Format response to match Shop & Scan API structure
                 result = {
-                    "id": exact_match.get("productCode", exact_match.get("id")),
-                    "title": exact_match.get("name", exact_match.get("title", "Unknown Product")),
+                    "id": item_data.get("id", str(exact_match.get("id", ""))),
+                    "title": value or item_data.get("title", "Unknown Product"),
                     "barcode": barcode,
-                    "unitPrice": exact_match.get("price", {}).get("value"),
-                    "isWeighted": exact_match.get("isWeighted", False),
-                    "imageUrl": exact_match.get("imageUrl"),
+                    "unitPrice": item_data.get("price"),
+                    "isWeighted": item_data.get("is_weighted", False),
+                    "imageUrl": item_data.get("image_url"),
                     "quantity": 1,
+                    "upc": item_data.get("upc"),
+                    "sku": item_data.get("sku"),
+                    "brand": item_data.get("brand"),
+                    "category": item_data.get("category"),
                     "raw_response": exact_match  # Include full response
                 }
                 
                 # Log pricing info
                 if result["unitPrice"]:
-                    price_str = f"${result['unitPrice']:.2f}"
-                    if result["isWeighted"]:
-                        price_str += " per lb"
-                    self.logger.info(f"Found via search: {result['title']} - Price: {price_str}")
+                    try:
+                        price_value = float(result["unitPrice"])
+                        price_str = f"${price_value:.2f}"
+                        if result["isWeighted"]:
+                            price_str += " per lb"
+                        self.logger.info(f"Found via Constructor.io: {result['title']} - Price: {price_str}")
+                    except (ValueError, TypeError):
+                        self.logger.info(f"Found via Constructor.io: {result['title']} - Price: {result['unitPrice']}")
+                else:
+                    self.logger.info(f"Found via Constructor.io: {result['title']} - No price data")
                 
                 return result
                 
             else:
-                self.logger.error(f"Search API failed: {response.status_code} - {response.text}")
+                self.logger.error(f"Constructor.io API failed: {response.status_code} - {response.text}")
                 return None
 
         except Exception as e:
