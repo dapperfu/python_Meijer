@@ -16,12 +16,19 @@ notebook:
 
 .PHONY: log
 log:
-	@echo "🚀 Starting mitmdump in wireguard mode..."
+	@echo "🚀 Starting mitmweb with multiple listeners..."
 	@echo "📱 Use the Meijer app while this is running"
+	@echo "🌐 Web interface available at http://localhost:8081"
+	@echo "🔌 SOCKS5 proxy available on 0.0.0.0:1080"
+	@echo "🌍 HTTP proxy available on 0.0.0.0:8080"
 	@echo "⏹️  Press Ctrl+C when done to extract auth and cleanup"
 	@echo ""
-	@mitmdump \
+	@mitmweb \
 		--mode wireguard \
+		--listen-host 0.0.0.0 \
+		--listen-port 8080 \
+		--socks5-listen-port 1080 \
+		--socks5-listen-host 0.0.0.0 \
 		-w meijer_mitm.log \
 		-s shop_n_scan_faker.py \
 		--set block_global=false || \
