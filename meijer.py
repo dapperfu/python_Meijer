@@ -1272,7 +1272,7 @@ class Meijer:
             with open(self.bearer_auth_file, 'r') as f:
                 for line in f:
                     line = line.strip()
-                    if line.startswith('bearer_token='):
+                    if line.startswith('bearer_token=') or line.startswith('bearer='):
                         bearer_token = line.split('=', 1)[1]
                     elif line.startswith('user_agent='):
                         user_agent = line.split('=', 1)[1]
@@ -1286,6 +1286,49 @@ class Meijer:
                 
         except Exception as e:
             self.logger.error(f"Error loading bearer auth: {e}")
+            return None
+    
+    def _extract_from_mitmproxy_logs(self) -> Optional[Tuple[str, str, datetime]]:
+        """
+        Try to extract bearer token from various mitmproxy log files.
+        
+        Looks for log files in common locations and extracts the latest bearer token.
+        
+        Returns:
+            Tuple of (bearer_token, user_agent, timestamp) if found, None otherwise
+        """
+        try:
+            # Common mitmproxy log file names
+            possible_log_files = [
+                "meijer.log",
+                "meijer2.log", 
+                "mitmproxy.log",
+                "mitmdump.log",
+                "flows.log"
+            ]
+            
+            # Also check for any .mitm files
+            try:
+                for file_path in Path('.').glob('*.mitm'):
+                    possible_log_files.append(str(file_path))
+            except:
+                pass
+            
+            # Try each possible log file
+            for log_file in possible_log_files:
+                if os.path.exists(log_file):
+                    self.logger.debug(f"🔍 Checking mitmproxy log: {log_file}")
+                    result = extract_bearer_token_from_mitmproxy(log_file)
+                    if result:
+                        bearer_token, user_agent, timestamp = result
+                        self.logger.info(f"✅ Found bearer token in {log_file} from {timestamp}")
+                        return result
+            
+            self.logger.debug("No mitmproxy log files with bearer tokens found")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting from mitmproxy logs: {e}")
             return None
     
     def _restore_authentication(self) -> bool:
@@ -1368,33 +1411,55 @@ class Meijer:
         """
         Unified login method that tries all available authentication methods.
         
-        Priority order:
-        1. Restore from stored tokens
-        2. Bearer token authentication
-        3. OAuth with stored credentials
-        4. Interactive OAuth
+        Authentication methods (in priority order):
+        1. Username/Password (Selenium) - from auth.txt or specified file
+        2. Bearer token - from auth.txt or specified file  
+        3. Config file - ~/.config/meijer.txt bearer token
+        4. Mitmproxy log - extract latest bearer token from log file
+        5. Persistent tokens - restore from saved tokens (automatic)
+        6. Interactive OAuth - manual browser authentication (fallback)
         """
-        # First, try to restore from stored tokens
+        # First, try persistent tokens (if available)
         if self._restore_authentication():
             return True
         
-        # Try bearer token authentication
+        # Method 1: Username/Password authentication (Selenium)
+        if self.credentials:
+            username = self.credentials.get('username') or self.credentials.get('user')
+            password = self.credentials.get('password') or self.credentials.get('pass')
+            if username and password:
+                self.logger.info("🔐 Attempting username/password authentication (Selenium)")
+                if self.authenticate_with_credentials(username, password):
+                    return True
+                else:
+                    self.logger.warning("⚠️ Username/password authentication failed (OKTA issues)")
+        
+        # Method 2: Bearer token from auth file
         bearer_auth = self._load_bearer_auth()
         if bearer_auth:
             bearer_token, user_agent = bearer_auth
+            self.logger.info("🎫 Attempting bearer token authentication from auth file")
             if self.authenticate_with_bearer_token(bearer_token, user_agent):
                 return True
         
-        # Try OAuth with stored credentials
-        if self.credentials:
-            username = self.credentials.get('username')
-            password = self.credentials.get('password')
-            if username and password:
-                if self.authenticate_with_credentials(username, password):
-                    return True
+        # Method 3: Bearer token from ~/.config/meijer.txt
+        config_auth = load_auth_from_config_file()
+        if config_auth:
+            bearer_token, user_agent = config_auth
+            self.logger.info("🎫 Attempting bearer token authentication from config file")
+            if self.authenticate_with_bearer_token(bearer_token, user_agent):
+                return True
         
-        # Fall back to interactive authentication
-        self.logger.info("No stored credentials, falling back to interactive authentication")
+        # Method 4: Extract bearer token from mitmproxy log
+        mitmproxy_auth = self._extract_from_mitmproxy_logs()
+        if mitmproxy_auth:
+            bearer_token, user_agent, timestamp = mitmproxy_auth
+            self.logger.info(f"🎫 Attempting bearer token authentication from mitmproxy log (from {timestamp})")
+            if self.authenticate_with_bearer_token(bearer_token, user_agent):
+                return True
+        
+        # Fallback: Interactive authentication
+        self.logger.info("🌐 No automatic authentication methods available, falling back to interactive OAuth")
         return self.authenticate_interactive()
     
     def authenticate_with_bearer_token(self, bearer_token: str, user_agent: str = None) -> bool:
