@@ -280,24 +280,55 @@ class MeijerSeleniumAuth:
             self.logger.info("🖱️  Clicking submit button...")
             submit_button.click()
             
-            # Wait for login to process
+            # Wait for login to process and check for 2FA
             time.sleep(5)
             
-            # Check for MFA
+            # Check for 2FA email selection button
+            mfa_email_selectors = [
+                "button[data-se='authenticator-button']",  # Specific selector from user
+                "button[aria-label*='Email']",             # Aria label containing Email
+                "button[aria-describedby*='okta_email']",  # Aria describedby containing okta_email
+                "button:contains('Send Email')",           # Button text containing Send Email
+                "button[data-se*='okta_email']",           # Data-se containing okta_email
+                "button.MuiBox-root"                       # Material-UI button class
+            ]
+            
+            mfa_email_button = None
+            for selector in mfa_email_selectors:
+                mfa_email_button = self._find_element_safe(By.CSS_SELECTOR, selector)
+                if mfa_email_button:
+                    self.logger.info(f"✅ Found 2FA email button: {selector}")
+                    break
+            
+            if mfa_email_button:
+                self.logger.info("📧 2FA email option detected, clicking to send code...")
+                mfa_email_button.click()
+                
+                # Wait for email to be sent
+                time.sleep(3)
+                
+                self.logger.info("📬 Email verification code sent")
+                self.logger.info("📱 Please check your email and enter the code manually")
+                input("Press Enter after entering the email verification code...")
+            else:
+                self.logger.info("ℹ️  No 2FA email button found, proceeding...")
+            
+            # Check for MFA code input field
             mfa_selectors = [
-                "#input-4",           # Common Okta MFA field
-                "input[placeholder*='code' i]",
-                "input[placeholder*='verification' i]",
-                "input[name*='code']",
-                "input[name*='verification']",
-                "input[data-se='passcode']"
+                "input[data-se='passcode']",               # Data-se passcode
+                "input[placeholder*='code' i]",            # Placeholder containing code
+                "input[placeholder*='verification' i]",    # Placeholder containing verification
+                "input[name*='code']",                     # Name containing code
+                "input[name*='verification']",             # Name containing verification
+                "input[data-se='credentials.passcode']",   # Credentials passcode
+                "#input-4"                                 # Common Okta MFA field
             ]
             
             mfa_required = False
             for selector in mfa_selectors:
                 if self._find_element_safe(By.CSS_SELECTOR, selector):
                     mfa_required = True
-                    self.logger.warning("⚠️  MFA detected - manual intervention required")
+                    self.logger.warning("⚠️  MFA code input field detected")
                     self.logger.info("📱 Please enter MFA code manually in the browser")
                     input("Press Enter after entering MFA code...")
                     break
