@@ -4,7 +4,7 @@ Demo script for Meijer Bearer Token Authentication
 Uses pre-extracted Bearer token from mitmproxy logs as a temporary authentication bypass.
 """
 
-from meijer_comprehensive import MeijerComprehensiveClient, read_bearer_auth_file
+from meijer import Meijer, read_bearer_auth_file
 
 def main():
     """Demo Bearer token authentication."""
@@ -18,7 +18,7 @@ def main():
         print(f"🤖 User-Agent: {user_agent}")
         
         # Create client (we can use dummy credentials since we're bypassing OAuth)
-        client = MeijerComprehensiveClient("dummy", "dummy")
+        client = Meijer("dummy", "dummy")
         
         # Authenticate with Bearer token
         print(f"\n🚀 Attempting Bearer token authentication...")

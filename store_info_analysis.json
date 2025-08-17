@@ -1,0 +1,1864 @@
+{
+  "summary": {
+    "total_flows_analyzed": 2313,
+    "store_info_proximity_calls": 53,
+    "store_info_specific_calls": 52,
+    "unique_store_fields": 190,
+    "total_stores_analyzed": 634,
+    "unique_store_ids": 1,
+    "unique_search_locations": 53
+  },
+  "api_endpoints": {
+    "proximity": 53,
+    "specific_store": 52
+  },
+  "discovered_store_ids": [
+    "217"
+  ],
+  "search_locations": [
+    {
+      "latitude": 43.2705756,
+      "longitude": -86.3131002,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 50.0,
+      "numToReturn": 10,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 43.2705778,
+      "longitude": -86.313083,
+      "miles": 50.0,
+      "numToReturn": 2,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 3000.0,
+      "numToReturn": 20,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 43.2705768,
+      "longitude": -86.3130879,
+      "miles": 3000.0,
+      "numToReturn": 20,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 43.2883524,
+      "longitude": -86.2767995,
+      "miles": 3000.0,
+      "numToReturn": 20,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 43.2883524,
+      "longitude": -86.2767995,
+      "miles": 3000.0,
+      "numToReturn": 20,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 42.82893,
+      "longitude": -86.09048,
+      "miles": 3000.0,
+      "numToReturn": 20,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 43.2883524,
+      "longitude": -86.2767995,
+      "miles": 3000.0,
+      "numToReturn": 20,
+      "dataVariant": 2
+    },
+    {
+      "latitude": 43.2883524,
+      "longitude": -86.2767995,
+      "miles": 3000.0,
+      "numToReturn": 20,
+      "dataVariant": 2
+    }
+  ],
+  "api_parameters": {
+    "latitude": {
+      "42.82893": 46,
+      "43.2883524": 4,
+      "43.2705756": 1,
+      "43.2705778": 1,
+      "43.2705768": 1
+    },
+    "longitude": {
+      "-86.09048": 46,
+      "-86.2767995": 4,
+      "-86.3131002": 1,
+      "-86.313083": 1,
+      "-86.3130879": 1
+    },
+    "miles": {
+      "50": 46,
+      "3000": 7
+    },
+    "numToReturn": {
+      "10": 45,
+      "20": 7,
+      "2": 1
+    },
+    "dataVariant": {
+      "2": 53
+    }
+  },
+  "store_field_analysis": {
+    "most_common_fields": {
+      "IsAlcoholPickupable": 634,
+      "IsAlcoholDeliverable": 634,
+      "AreAlcoholSalesRestricted": 634,
+      "AlcoholSaleRestrictedSunStart": 634,
+      "AlcoholSaleRestrictedSunEnd": 634,
+      "AlcoholSaleRestrictedMonStart": 634,
+      "AlcoholSaleRestrictedMonEnd": 634,
+      "AlcoholSaleRestrictedTueStart": 634,
+      "AlcoholSaleRestrictedTueEnd": 634,
+      "AlcoholSaleRestrictedWedStart": 634,
+      "AlcoholSaleRestrictedWedEnd": 634,
+      "AlcoholSaleRestrictedThuStart": 634,
+      "AlcoholSaleRestrictedThuEnd": 634,
+      "AlcoholSaleRestrictedFriStart": 634,
+      "AlcoholSaleRestrictedFriEnd": 634,
+      "AlcoholSaleRestrictedSatStart": 634,
+      "AlcoholSaleRestrictedSatEnd": 634,
+      "AlcoholBannedZipCodes": 634,
+      "MfuelFlag": 634,
+      "MfcPhoneNumber": 634,
+      "CommentInfo": 634,
+      "HolidayInfo": 634,
+      "DlvryOrderWeekdayOpen": 634,
+      "DlvryOrderWeekdayClose": 634,
+      "DlvryOrderSatOpen": 634,
+      "DlvryOrderSatClose": 634,
+      "DlvryOrderSunOpen": 634,
+      "DlvryOrderSunClose": 634,
+      "DlvryOrderHolidayOpen": 634,
+      "DlvryOrderHolidayClose": 634
+    },
+    "field_data_types": {
+      "IsAlcoholPickupable": "Union[NoneType, bool]",
+      "IsAlcoholDeliverable": "Union[NoneType, bool]",
+      "AreAlcoholSalesRestricted": "bool",
+      "AlcoholSaleRestrictedSunStart": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedSunEnd": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedMonStart": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedMonEnd": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedTueStart": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedTueEnd": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedWedStart": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedWedEnd": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedThuStart": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedThuEnd": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedFriStart": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedFriEnd": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedSatStart": "Union[NoneType, str]",
+      "AlcoholSaleRestrictedSatEnd": "Union[NoneType, str]",
+      "AlcoholBannedZipCodes": "NoneType",
+      "MfuelFlag": "bool",
+      "MfcPhoneNumber": "Union[NoneType, str]",
+      "CommentInfo": "NoneType",
+      "HolidayInfo": "NoneType",
+      "DlvryOrderWeekdayOpen": "str",
+      "DlvryOrderWeekdayClose": "str",
+      "DlvryOrderSatOpen": "str",
+      "DlvryOrderSatClose": "str",
+      "DlvryOrderSunOpen": "str",
+      "DlvryOrderSunClose": "str",
+      "DlvryOrderHolidayOpen": "str",
+      "DlvryOrderHolidayClose": "str",
+      "DlvryOrderServiceAllow": "Union[NoneType, str]",
+      "DlvryOrderPhone": "Union[NoneType, str]",
+      "DlvryDescription": "Union[NoneType, str]",
+      "DlvryOrderServiceAllowStg": "Union[NoneType, str]",
+      "PharmDriveThruWeekdayOpen": "Union[NoneType, str]",
+      "PharmDriveThruWeekdayClose": "Union[NoneType, str]",
+      "PharmDriveThruSatOpen": "Union[NoneType, str]",
+      "PharmDriveThruSatClose": "Union[NoneType, str]",
+      "PharmDriveThruSunOpen": "Union[NoneType, str]",
+      "PharmDriveThruSunClose": "Union[NoneType, str]",
+      "PharmDriveThruHolidayOpen": "Union[NoneType, str]",
+      "PharmDriveThruHolidayClose": "Union[NoneType, str]",
+      "Store24HrsFlag": "Union[NoneType, str]",
+      "StoreWeekdayOpen": "Union[NoneType, str]",
+      "StoreWeekdayClose": "Union[NoneType, str]",
+      "StoreSatOpen": "Union[NoneType, str]",
+      "StoreSatClose": "Union[NoneType, str]",
+      "StoreSunOpen": "Union[NoneType, str]",
+      "StoreSunClose": "Union[NoneType, str]",
+      "FulfillmentInfo_item_UnitId": "int",
+      "FulfillmentInfo_item_FulfillmentTypeName": "str",
+      "FulfillmentInfo_item_FulfillmentTypeId": "int",
+      "FulfillmentInfo_item_FulfillmentPartnerName": "str",
+      "FulfillmentInfo_item_FulfillmentPartnerId": "int",
+      "FulfillmentInfo_item_IsEnabled": "bool",
+      "FulfillmentInfo_item_EffectiveDate": "str",
+      "MfcUnitId": "Union[NoneType, str]",
+      "AuxUnitInfo_AuxUnitId": "int",
+      "AuxUnitInfo_UnitId": "int",
+      "AuxUnitInfo_Address": "str",
+      "AuxUnitInfo_AddressLine2": "str",
+      "AuxUnitInfo_LongName": "str",
+      "AuxUnitInfo_ShortName": "str",
+      "AuxUnitInfo_PhoneNumber": "str",
+      "AuxUnitInfo_City": "str",
+      "AuxUnitInfo_State": "str",
+      "AuxUnitInfo_ZipCode": "str",
+      "AuxUnitInfo_OpenDate": "str",
+      "AuxUnitInfo_CloseDate": "str",
+      "AuxUnitInfo_UpdatedTimestamp": "str",
+      "AuxUnitInfo_Latitude": "float",
+      "AuxUnitInfo_Longitude": "float",
+      "AuxUnitInfo_ImageURL": "str",
+      "AuxUnitInfo_ImageSize": "int",
+      "AuxUnitInfo_ImageFormat": "str",
+      "AuxUnitInfo_TimeZone": "str",
+      "AuxUnitInfo_DaylightSavings": "str",
+      "AuxUnitInfo_AuxUnitTypeId": "int",
+      "AuxUnitInfo_AuxUnitType": "NoneType",
+      "GasStationAmenities_item_UnitId": "int",
+      "GasStationAmenities_item_AuxiliaryUnitId": "int",
+      "GasStationAmenities_item_AmentityType": "str",
+      "GasStationAmenities_item_AmentityGroupType": "str",
+      "GasStationHours_item_DayOfTheWeek": "str",
+      "GasStationHours_item_OpenTime": "str",
+      "GasStationHours_item_CloseTime": "str",
+      "FuelPrices_item_FuelType": "str",
+      "FuelPrices_item_FuelPrice": "float",
+      "FuelPrices_item_PriceEffectiveDate": "str",
+      "StoreFlag": "str",
+      "IsMobileShoppingEnabled": "str",
+      "IsMobilePaymentEnabled": "str",
+      "UnitId": "int",
+      "MilesFrom": "float",
+      "Address": "str",
+      "City": "str",
+      "State": "str",
+      "Zip": "str",
+      "UnitType": "str",
+      "OpenDate": "str",
+      "PhoneNumber": "str",
+      "Name": "str",
+      "DriveThru": "bool",
+      "Clinic": "bool",
+      "PharmDailyOpen": "str",
+      "PharmDailyClose": "str",
+      "PharmSatOpen": "str",
+      "PharmSatClose": "str",
+      "PharmSunOpen": "str",
+      "PharmSunClose": "str",
+      "PharmHolidayOpen": "str",
+      "PharmHolidayClose": "str",
+      "PharmTimezone": "str",
+      "PharmAddress": "str",
+      "PharmPhone": "str",
+      "StoreDirName": "Union[str, NoneType]",
+      "StoreDirEmpId": "Union[str, NoneType]",
+      "Latitude": "float",
+      "Longitude": "float",
+      "StoreHours": "str",
+      "PreOrderServiceAllow": "str",
+      "PreOrderPhone": "str",
+      "PreOrderDriveThru": "str",
+      "CurbsideAllow": "str",
+      "CurbsidePhone": "str",
+      "CurbsideDriveThru": "str",
+      "CurbsideWeekdayOpen": "str",
+      "CurbsideWeekdayClose": "str",
+      "CurbsideSatOpen": "str",
+      "CurbsideSatClose": "str",
+      "CurbsideSunOpen": "str",
+      "CurbsideSunClose": "str",
+      "CurbsideHolidayOpen": "str",
+      "CurbsideHolidayClose": "str",
+      "CurbsideInstoreAllow": "str",
+      "PreOrderInstoreAllow": "str",
+      "PreOrderWeekdayOpen": "str",
+      "PreOrderWeekdayClose": "str",
+      "PreOrderSatOpen": "str",
+      "PreOrderSatClose": "str",
+      "PreOrderSunOpen": "str",
+      "PreOrderSunClose": "str",
+      "PreOrderHolidayOpen": "str",
+      "PreOrderHolidayClose": "str",
+      "Tenants_item_Name": "str",
+      "Tenants_item_Phone": "str",
+      "Tenants_item_Logo": "str",
+      "Tenants_item_Sort": "str",
+      "Tenants_item_Message": "str",
+      "Tenants_item_Link": "str",
+      "TimeZone": "str",
+      "DaylightSavings": "str",
+      "Vpos": "str",
+      "VisibleDate": "str",
+      "CNCPickupDescription": "str",
+      "SPOPickupDescription": "str",
+      "Latitude_Rad": "float",
+      "Longitude_Rad": "float",
+      "MarketAndRegion": "NoneType",
+      "AurusMerchantId": "Union[NoneType, str]",
+      "AurusTerminalId": "Union[NoneType, str]",
+      "DeliOrderWeekdayOpen": "str",
+      "DeliOrderWeekdayClose": "str",
+      "DeliOrderSatOpen": "str",
+      "DeliOrderSatClose": "str",
+      "DeliOrderSunOpen": "str",
+      "DeliOrderSunClose": "str",
+      "DeliOrderHolidayOpen": "str",
+      "DeliOrderHolidayClose": "str",
+      "DeliOrderServiceAllow": "Union[NoneType, str]",
+      "DeliOrderPhone": "Union[NoneType, str]",
+      "DeliDescription": "Union[NoneType, str]",
+      "DeliOrderServiceAllowStg": "Union[NoneType, str]",
+      "PharmDriveThroughDailyOpen": "NoneType",
+      "PharmDriveThroughDailyClose": "NoneType",
+      "PharmDriveThroughSatOpen": "NoneType",
+      "PharmDriveThroughSatClose": "NoneType",
+      "PharmDriveThroughSunOpen": "NoneType",
+      "PharmDriveThroughSunClose": "NoneType",
+      "PharmDriveThroughHolidayOpen": "NoneType",
+      "PharmDriveThroughHolidayClose": "NoneType",
+      "GasStationAmenities": "NoneType",
+      "AuxUnitInfo": "NoneType",
+      "Tenants": "list",
+      "MarketAndRegion_MarketId": "int",
+      "MarketAndRegion_RegionId": "int",
+      "MarketAndRegion_MarketDescription": "str",
+      "MarketAndRegion_RegionDescription": "str",
+      "GasStationHours": "NoneType",
+      "FuelPrices": "NoneType"
+    }
+  },
+  "sample_stores": [
+    {
+      "IsAlcoholPickupable": null,
+      "IsAlcoholDeliverable": null,
+      "AreAlcoholSalesRestricted": false,
+      "AlcoholSaleRestrictedSunStart": null,
+      "AlcoholSaleRestrictedSunEnd": null,
+      "AlcoholSaleRestrictedMonStart": null,
+      "AlcoholSaleRestrictedMonEnd": null,
+      "AlcoholSaleRestrictedTueStart": null,
+      "AlcoholSaleRestrictedTueEnd": null,
+      "AlcoholSaleRestrictedWedStart": null,
+      "AlcoholSaleRestrictedWedEnd": null,
+      "AlcoholSaleRestrictedThuStart": null,
+      "AlcoholSaleRestrictedThuEnd": null,
+      "AlcoholSaleRestrictedFriStart": null,
+      "AlcoholSaleRestrictedFriEnd": null,
+      "AlcoholSaleRestrictedSatStart": null,
+      "AlcoholSaleRestrictedSatEnd": null,
+      "AlcoholBannedZipCodes": null,
+      "MfuelFlag": false,
+      "MfcPhoneNumber": null,
+      "CommentInfo": null,
+      "HolidayInfo": null,
+      "DlvryOrderWeekdayOpen": "0001-01-01T00:00:00",
+      "DlvryOrderWeekdayClose": "0001-01-01T00:00:00",
+      "DlvryOrderSatOpen": "0001-01-01T00:00:00",
+      "DlvryOrderSatClose": "0001-01-01T00:00:00",
+      "DlvryOrderSunOpen": "0001-01-01T00:00:00",
+      "DlvryOrderSunClose": "0001-01-01T00:00:00",
+      "DlvryOrderHolidayOpen": "0001-01-01T00:00:00",
+      "DlvryOrderHolidayClose": "0001-01-01T00:00:00",
+      "DlvryOrderServiceAllow": null,
+      "DlvryOrderPhone": null,
+      "DlvryDescription": null,
+      "DlvryOrderServiceAllowStg": null,
+      "PharmDriveThruWeekdayOpen": null,
+      "PharmDriveThruWeekdayClose": null,
+      "PharmDriveThruSatOpen": null,
+      "PharmDriveThruSatClose": null,
+      "PharmDriveThruSunOpen": null,
+      "PharmDriveThruSunClose": null,
+      "PharmDriveThruHolidayOpen": null,
+      "PharmDriveThruHolidayClose": null,
+      "Store24HrsFlag": null,
+      "StoreWeekdayOpen": null,
+      "StoreWeekdayClose": null,
+      "StoreSatOpen": null,
+      "StoreSatClose": null,
+      "StoreSunOpen": null,
+      "StoreSunClose": null,
+      "FulfillmentInfo": [
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MEIJER",
+          "FulfillmentPartnerId": 1,
+          "IsEnabled": false,
+          "EffectiveDate": "2020-08-15T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "SHIPT",
+          "FulfillmentPartnerId": 2,
+          "IsEnabled": false,
+          "EffectiveDate": "2019-10-15T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MFC",
+          "FulfillmentPartnerId": 3,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MI9",
+          "FulfillmentPartnerId": 4,
+          "IsEnabled": true,
+          "EffectiveDate": "2020-08-16T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "BOPAS",
+          "FulfillmentPartnerId": 5,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "Instacart",
+          "FulfillmentPartnerId": 6,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "DoorDash",
+          "FulfillmentPartnerId": 7,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MEIJER",
+          "FulfillmentPartnerId": 1,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "SHIPT",
+          "FulfillmentPartnerId": 2,
+          "IsEnabled": true,
+          "EffectiveDate": "2019-10-15T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MFC",
+          "FulfillmentPartnerId": 3,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MI9",
+          "FulfillmentPartnerId": 4,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "BOPAS",
+          "FulfillmentPartnerId": 5,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "Instacart",
+          "FulfillmentPartnerId": 6,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 71,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "DoorDash",
+          "FulfillmentPartnerId": 7,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        }
+      ],
+      "MfcUnitId": null,
+      "AuxUnitInfo": {
+        "AuxUnitId": 3071,
+        "UnitId": 71,
+        "Address": "1800 Holton Rd",
+        "AddressLine2": "",
+        "LongName": "Holton Road - North Muskegon",
+        "ShortName": "GS-3071",
+        "PhoneNumber": "231744-7629",
+        "City": "North Muskegon",
+        "State": "MI",
+        "ZipCode": "494451532",
+        "OpenDate": "1990-11-13T00:00:00",
+        "CloseDate": "1901-01-01T00:00:00",
+        "UpdatedTimestamp": "0001-01-01T00:00:00",
+        "Latitude": 43.28586,
+        "Longitude": -86.22109,
+        "ImageURL": "http://us411.co/liberty_tax/images/Meijer_Logo2.jpg",
+        "ImageSize": 720,
+        "ImageFormat": "jpg",
+        "TimeZone": "E",
+        "DaylightSavings": "1",
+        "AuxUnitTypeId": 0,
+        "AuxUnitType": null
+      },
+      "GasStationAmenities": [
+        {
+          "UnitId": 71,
+          "AuxiliaryUnitId": 3071,
+          "AmentityType": "Beer",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 71,
+          "AuxiliaryUnitId": 3071,
+          "AmentityType": "Atm",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 71,
+          "AuxiliaryUnitId": 3071,
+          "AmentityType": "Lotto",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 71,
+          "AuxiliaryUnitId": 3071,
+          "AmentityType": "RestRoom",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 71,
+          "AuxiliaryUnitId": 3071,
+          "AmentityType": "Gift Cards",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 71,
+          "AuxiliaryUnitId": 3071,
+          "AmentityType": "Tobacco",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 71,
+          "AuxiliaryUnitId": 3071,
+          "AmentityType": "Propane",
+          "AmentityGroupType": "Station"
+        }
+      ],
+      "GasStationHours": [
+        {
+          "DayOfTheWeek": "Thursday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Friday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Saturday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Wednesday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Tuesday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Sunday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Monday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        }
+      ],
+      "FuelPrices": [
+        {
+          "FuelType": "UNL-Regular Unleaded",
+          "FuelPrice": 3.049,
+          "PriceEffectiveDate": "2025-08-15T16:31:41.803"
+        },
+        {
+          "FuelType": "MID-Medium Unleaded",
+          "FuelPrice": 3.549,
+          "PriceEffectiveDate": "2025-08-15T16:31:41.803"
+        },
+        {
+          "FuelType": "PREM-Premium Unleaded",
+          "FuelPrice": 4.049,
+          "PriceEffectiveDate": "2025-08-15T16:31:41.803"
+        },
+        {
+          "FuelType": "DSL-Diesel",
+          "FuelPrice": 3.729,
+          "PriceEffectiveDate": "2025-08-15T16:31:41.803"
+        },
+        {
+          "FuelType": "REC-Ethanol free rec fuel",
+          "FuelPrice": 4.349,
+          "PriceEffectiveDate": "2025-08-15T16:31:41.803"
+        }
+      ],
+      "StoreFlag": "Y",
+      "IsMobileShoppingEnabled": "Y",
+      "IsMobilePaymentEnabled": "N",
+      "UnitId": 71,
+      "MilesFrom": 4.76684165361392,
+      "Address": "1800 Holton Rd",
+      "City": "North Muskegon",
+      "State": "MI",
+      "Zip": "49445",
+      "UnitType": "MS",
+      "OpenDate": "1990-11-13T00:00:00",
+      "PhoneNumber": "2317447441",
+      "Name": "Holton Rd",
+      "DriveThru": true,
+      "Clinic": false,
+      "PharmDailyOpen": "1900-01-01T09:00:00",
+      "PharmDailyClose": "1900-01-01T20:00:00",
+      "PharmSatOpen": "1900-01-01T10:00:00",
+      "PharmSatClose": "1900-01-01T18:00:00",
+      "PharmSunOpen": "1900-01-01T10:00:00",
+      "PharmSunClose": "1900-01-01T18:00:00",
+      "PharmHolidayOpen": "1900-01-01T00:00:00",
+      "PharmHolidayClose": "1900-01-01T00:00:00",
+      "PharmTimezone": "E",
+      "PharmAddress": "1800 Holton Rd.",
+      "PharmPhone": "2317447610",
+      "StoreDirName": "Shawn McNeilly",
+      "StoreDirEmpId": "1636690",
+      "Latitude": 43.28345,
+      "Longitude": -86.22025,
+      "StoreHours": "6am-12am, daily",
+      "PreOrderServiceAllow": "Y",
+      "PreOrderPhone": "2317447653",
+      "PreOrderDriveThru": "N",
+      "CurbsideAllow": "Y",
+      "CurbsidePhone": "2317447631",
+      "CurbsideDriveThru": "N",
+      "CurbsideWeekdayOpen": "1900-01-01T08:00:00",
+      "CurbsideWeekdayClose": "1900-01-01T21:00:00",
+      "CurbsideSatOpen": "1900-01-01T08:00:00",
+      "CurbsideSatClose": "1900-01-01T21:00:00",
+      "CurbsideSunOpen": "1900-01-01T08:00:00",
+      "CurbsideSunClose": "1900-01-01T21:00:00",
+      "CurbsideHolidayOpen": "1900-01-01T08:00:00",
+      "CurbsideHolidayClose": "1900-01-01T21:00:00",
+      "CurbsideInstoreAllow": "N",
+      "PreOrderInstoreAllow": "Y",
+      "PreOrderWeekdayOpen": "1900-01-01T07:00:00",
+      "PreOrderWeekdayClose": "1900-01-01T20:00:00",
+      "PreOrderSatOpen": "1900-01-01T07:00:00",
+      "PreOrderSatClose": "1900-01-01T20:00:00",
+      "PreOrderSunOpen": "1900-01-01T07:00:00",
+      "PreOrderSunClose": "1900-01-01T20:00:00",
+      "PreOrderHolidayOpen": "1900-01-01T07:00:00",
+      "PreOrderHolidayClose": "1900-01-01T20:00:00",
+      "Tenants": [
+        {
+          "Name": "Cash Depot ATM",
+          "Phone": "000000000",
+          "Logo": "",
+          "Sort": "",
+          "Message": "",
+          "Link": ""
+        }
+      ],
+      "TimeZone": "E",
+      "DaylightSavings": "Y",
+      "Vpos": "UE158",
+      "VisibleDate": "2000-01-01T00:00:00",
+      "CNCPickupDescription": "Grocery end of the store. 3 rows towards the end. 8 designated spots.",
+      "SPOPickupDescription": "Cake / Deli orders can be picked up inside the store at either the bakery or deli counter.",
+      "Latitude_Rad": 0.755439,
+      "Longitude_Rad": 0.755439,
+      "MarketAndRegion": null,
+      "AurusMerchantId": null,
+      "AurusTerminalId": null,
+      "DeliOrderWeekdayOpen": "0001-01-01T00:00:00",
+      "DeliOrderWeekdayClose": "0001-01-01T00:00:00",
+      "DeliOrderSatOpen": "0001-01-01T00:00:00",
+      "DeliOrderSatClose": "0001-01-01T00:00:00",
+      "DeliOrderSunOpen": "0001-01-01T00:00:00",
+      "DeliOrderSunClose": "0001-01-01T00:00:00",
+      "DeliOrderHolidayOpen": "0001-01-01T00:00:00",
+      "DeliOrderHolidayClose": "0001-01-01T00:00:00",
+      "DeliOrderServiceAllow": null,
+      "DeliOrderPhone": null,
+      "DeliDescription": null,
+      "DeliOrderServiceAllowStg": null,
+      "PharmDriveThroughDailyOpen": null,
+      "PharmDriveThroughDailyClose": null,
+      "PharmDriveThroughSatOpen": null,
+      "PharmDriveThroughSatClose": null,
+      "PharmDriveThroughSunOpen": null,
+      "PharmDriveThroughSunClose": null,
+      "PharmDriveThroughHolidayOpen": null,
+      "PharmDriveThroughHolidayClose": null
+    },
+    {
+      "IsAlcoholPickupable": null,
+      "IsAlcoholDeliverable": null,
+      "AreAlcoholSalesRestricted": false,
+      "AlcoholSaleRestrictedSunStart": null,
+      "AlcoholSaleRestrictedSunEnd": null,
+      "AlcoholSaleRestrictedMonStart": null,
+      "AlcoholSaleRestrictedMonEnd": null,
+      "AlcoholSaleRestrictedTueStart": null,
+      "AlcoholSaleRestrictedTueEnd": null,
+      "AlcoholSaleRestrictedWedStart": null,
+      "AlcoholSaleRestrictedWedEnd": null,
+      "AlcoholSaleRestrictedThuStart": null,
+      "AlcoholSaleRestrictedThuEnd": null,
+      "AlcoholSaleRestrictedFriStart": null,
+      "AlcoholSaleRestrictedFriEnd": null,
+      "AlcoholSaleRestrictedSatStart": null,
+      "AlcoholSaleRestrictedSatEnd": null,
+      "AlcoholBannedZipCodes": null,
+      "MfuelFlag": false,
+      "MfcPhoneNumber": null,
+      "CommentInfo": null,
+      "HolidayInfo": null,
+      "DlvryOrderWeekdayOpen": "0001-01-01T00:00:00",
+      "DlvryOrderWeekdayClose": "0001-01-01T00:00:00",
+      "DlvryOrderSatOpen": "0001-01-01T00:00:00",
+      "DlvryOrderSatClose": "0001-01-01T00:00:00",
+      "DlvryOrderSunOpen": "0001-01-01T00:00:00",
+      "DlvryOrderSunClose": "0001-01-01T00:00:00",
+      "DlvryOrderHolidayOpen": "0001-01-01T00:00:00",
+      "DlvryOrderHolidayClose": "0001-01-01T00:00:00",
+      "DlvryOrderServiceAllow": null,
+      "DlvryOrderPhone": null,
+      "DlvryDescription": null,
+      "DlvryOrderServiceAllowStg": null,
+      "PharmDriveThruWeekdayOpen": null,
+      "PharmDriveThruWeekdayClose": null,
+      "PharmDriveThruSatOpen": null,
+      "PharmDriveThruSatClose": null,
+      "PharmDriveThruSunOpen": null,
+      "PharmDriveThruSunClose": null,
+      "PharmDriveThruHolidayOpen": null,
+      "PharmDriveThruHolidayClose": null,
+      "Store24HrsFlag": null,
+      "StoreWeekdayOpen": null,
+      "StoreWeekdayClose": null,
+      "StoreSatOpen": null,
+      "StoreSatClose": null,
+      "StoreSunOpen": null,
+      "StoreSunClose": null,
+      "FulfillmentInfo": [
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MEIJER",
+          "FulfillmentPartnerId": 1,
+          "IsEnabled": false,
+          "EffectiveDate": "2020-08-15T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "SHIPT",
+          "FulfillmentPartnerId": 2,
+          "IsEnabled": false,
+          "EffectiveDate": "2019-10-15T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MFC",
+          "FulfillmentPartnerId": 3,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MI9",
+          "FulfillmentPartnerId": 4,
+          "IsEnabled": true,
+          "EffectiveDate": "2020-08-16T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "BOPAS",
+          "FulfillmentPartnerId": 5,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "Instacart",
+          "FulfillmentPartnerId": 6,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "DoorDash",
+          "FulfillmentPartnerId": 7,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MEIJER",
+          "FulfillmentPartnerId": 1,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "SHIPT",
+          "FulfillmentPartnerId": 2,
+          "IsEnabled": true,
+          "EffectiveDate": "2019-10-15T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MFC",
+          "FulfillmentPartnerId": 3,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MI9",
+          "FulfillmentPartnerId": 4,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "BOPAS",
+          "FulfillmentPartnerId": 5,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "Instacart",
+          "FulfillmentPartnerId": 6,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 19,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "DoorDash",
+          "FulfillmentPartnerId": 7,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        }
+      ],
+      "MfcUnitId": null,
+      "AuxUnitInfo": {
+        "AuxUnitId": 3019,
+        "UnitId": 19,
+        "Address": "650 W Norton Ave",
+        "AddressLine2": "",
+        "LongName": "Norton Shores",
+        "ShortName": "GS-3019",
+        "PhoneNumber": "",
+        "City": "Muskegon",
+        "State": "MI",
+        "ZipCode": "494410000",
+        "OpenDate": "2009-06-30T00:00:00",
+        "CloseDate": "1901-01-01T00:00:00",
+        "UpdatedTimestamp": "0001-01-01T00:00:00",
+        "Latitude": 43.19129,
+        "Longitude": -86.26104,
+        "ImageURL": "http://us411.co/liberty_tax/images/Meijer_Logo2.jpg",
+        "ImageSize": 720,
+        "ImageFormat": "jpg",
+        "TimeZone": "E",
+        "DaylightSavings": "1",
+        "AuxUnitTypeId": 0,
+        "AuxUnitType": null
+      },
+      "GasStationAmenities": [
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "Beer",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "Open 24 Hrs",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "Atm",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "Lotto",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "RestRoom",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "Gift Cards",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "Tobacco",
+          "AmentityGroupType": "Station"
+        },
+        {
+          "UnitId": 19,
+          "AuxiliaryUnitId": 3019,
+          "AmentityType": "Propane",
+          "AmentityGroupType": "Station"
+        }
+      ],
+      "GasStationHours": [
+        {
+          "DayOfTheWeek": "Sunday",
+          "OpenTime": "00:00:00",
+          "CloseTime": "00:00:00"
+        },
+        {
+          "DayOfTheWeek": "Monday",
+          "OpenTime": "00:00:00",
+          "CloseTime": "00:00:00"
+        },
+        {
+          "DayOfTheWeek": "Tuesday",
+          "OpenTime": "00:00:00",
+          "CloseTime": "00:00:00"
+        },
+        {
+          "DayOfTheWeek": "Wednesday",
+          "OpenTime": "00:00:00",
+          "CloseTime": "00:00:00"
+        },
+        {
+          "DayOfTheWeek": "Thursday",
+          "OpenTime": "00:00:00",
+          "CloseTime": "00:00:00"
+        },
+        {
+          "DayOfTheWeek": "Friday",
+          "OpenTime": "00:00:00",
+          "CloseTime": "00:00:00"
+        },
+        {
+          "DayOfTheWeek": "Saturday",
+          "OpenTime": "00:00:00",
+          "CloseTime": "00:00:00"
+        }
+      ],
+      "FuelPrices": [
+        {
+          "FuelType": "UNL-Regular Unleaded",
+          "FuelPrice": 3.049,
+          "PriceEffectiveDate": "2025-08-15T16:30:49.987"
+        },
+        {
+          "FuelType": "MID-Medium Unleaded",
+          "FuelPrice": 3.549,
+          "PriceEffectiveDate": "2025-08-15T16:30:49.987"
+        },
+        {
+          "FuelType": "PREM-Premium Unleaded",
+          "FuelPrice": 4.049,
+          "PriceEffectiveDate": "2025-08-15T16:30:49.987"
+        },
+        {
+          "FuelType": "DSL-Diesel",
+          "FuelPrice": 3.599,
+          "PriceEffectiveDate": "2025-08-15T16:30:49.987"
+        },
+        {
+          "FuelType": "E85-Premium Unleaded",
+          "FuelPrice": 2.549,
+          "PriceEffectiveDate": "2025-08-15T16:30:49.987"
+        }
+      ],
+      "StoreFlag": "Y",
+      "IsMobileShoppingEnabled": "Y",
+      "IsMobilePaymentEnabled": "N",
+      "UnitId": 19,
+      "MilesFrom": 5.95669731131864,
+      "Address": "700 W Norton Ave",
+      "City": "Muskegon",
+      "State": "MI",
+      "Zip": "49441",
+      "UnitType": "MS",
+      "OpenDate": "1962-10-01T23:00:00",
+      "PhoneNumber": "2317399381",
+      "Name": "Norton Shores",
+      "DriveThru": true,
+      "Clinic": false,
+      "PharmDailyOpen": "1900-01-01T09:00:00",
+      "PharmDailyClose": "1900-01-01T20:00:00",
+      "PharmSatOpen": "1900-01-01T10:00:00",
+      "PharmSatClose": "1900-01-01T18:00:00",
+      "PharmSunOpen": "1900-01-01T10:00:00",
+      "PharmSunClose": "1900-01-01T18:00:00",
+      "PharmHolidayOpen": "1900-01-01T00:00:00",
+      "PharmHolidayClose": "1900-01-01T00:00:00",
+      "PharmTimezone": "E",
+      "PharmAddress": "700 W. Norton Ave.",
+      "PharmPhone": "2317335710",
+      "StoreDirName": null,
+      "StoreDirEmpId": null,
+      "Latitude": 43.19307,
+      "Longitude": -86.26123,
+      "StoreHours": "6am-12am, daily",
+      "PreOrderServiceAllow": "Y",
+      "PreOrderPhone": "2317335753",
+      "PreOrderDriveThru": "N",
+      "CurbsideAllow": "N",
+      "CurbsidePhone": "2317335731",
+      "CurbsideDriveThru": "N",
+      "CurbsideWeekdayOpen": "1900-01-01T08:00:00",
+      "CurbsideWeekdayClose": "1900-01-01T21:00:00",
+      "CurbsideSatOpen": "1900-01-01T08:00:00",
+      "CurbsideSatClose": "1900-01-01T21:00:00",
+      "CurbsideSunOpen": "1900-01-01T08:00:00",
+      "CurbsideSunClose": "1900-01-01T21:00:00",
+      "CurbsideHolidayOpen": "1900-01-01T12:09:00",
+      "CurbsideHolidayClose": "1900-01-01T12:09:00",
+      "CurbsideInstoreAllow": "N",
+      "PreOrderInstoreAllow": "Y",
+      "PreOrderWeekdayOpen": "1900-01-01T07:00:00",
+      "PreOrderWeekdayClose": "1900-01-01T20:00:00",
+      "PreOrderSatOpen": "1900-01-01T07:00:00",
+      "PreOrderSatClose": "1900-01-01T20:00:00",
+      "PreOrderSunOpen": "1900-01-01T07:00:00",
+      "PreOrderSunClose": "1900-01-01T20:00:00",
+      "PreOrderHolidayOpen": "1900-01-01T12:09:00",
+      "PreOrderHolidayClose": "1900-01-01T12:09:00",
+      "Tenants": [
+        {
+          "Name": "Michigan First Credit Union",
+          "Phone": "800.664.3828 ext. 54",
+          "Logo": "",
+          "Sort": "",
+          "Message": "",
+          "Link": ""
+        },
+        {
+          "Name": "Cash Depot ATM",
+          "Phone": "000000000",
+          "Logo": "cdlogo.jpg",
+          "Sort": "All major networks",
+          "Message": "24-hour machine",
+          "Link": "www.cdlatm.com"
+        }
+      ],
+      "TimeZone": "E",
+      "DaylightSavings": "Y",
+      "Vpos": "UE158",
+      "VisibleDate": "2000-01-01T00:00:00",
+      "CNCPickupDescription": "North side of the store. Around the corner near the grocery entrance.",
+      "SPOPickupDescription": "Cake / Deli orders can be picked up inside the store at either the bakery or deli counter.",
+      "Latitude_Rad": 0.753861,
+      "Longitude_Rad": 0.753861,
+      "MarketAndRegion": null,
+      "AurusMerchantId": null,
+      "AurusTerminalId": null,
+      "DeliOrderWeekdayOpen": "0001-01-01T00:00:00",
+      "DeliOrderWeekdayClose": "0001-01-01T00:00:00",
+      "DeliOrderSatOpen": "0001-01-01T00:00:00",
+      "DeliOrderSatClose": "0001-01-01T00:00:00",
+      "DeliOrderSunOpen": "0001-01-01T00:00:00",
+      "DeliOrderSunClose": "0001-01-01T00:00:00",
+      "DeliOrderHolidayOpen": "0001-01-01T00:00:00",
+      "DeliOrderHolidayClose": "0001-01-01T00:00:00",
+      "DeliOrderServiceAllow": null,
+      "DeliOrderPhone": null,
+      "DeliDescription": null,
+      "DeliOrderServiceAllowStg": null,
+      "PharmDriveThroughDailyOpen": null,
+      "PharmDriveThroughDailyClose": null,
+      "PharmDriveThroughSatOpen": null,
+      "PharmDriveThroughSatClose": null,
+      "PharmDriveThroughSunOpen": null,
+      "PharmDriveThroughSunClose": null,
+      "PharmDriveThroughHolidayOpen": null,
+      "PharmDriveThroughHolidayClose": null
+    },
+    {
+      "IsAlcoholPickupable": null,
+      "IsAlcoholDeliverable": null,
+      "AreAlcoholSalesRestricted": false,
+      "AlcoholSaleRestrictedSunStart": null,
+      "AlcoholSaleRestrictedSunEnd": null,
+      "AlcoholSaleRestrictedMonStart": null,
+      "AlcoholSaleRestrictedMonEnd": null,
+      "AlcoholSaleRestrictedTueStart": null,
+      "AlcoholSaleRestrictedTueEnd": null,
+      "AlcoholSaleRestrictedWedStart": null,
+      "AlcoholSaleRestrictedWedEnd": null,
+      "AlcoholSaleRestrictedThuStart": null,
+      "AlcoholSaleRestrictedThuEnd": null,
+      "AlcoholSaleRestrictedFriStart": null,
+      "AlcoholSaleRestrictedFriEnd": null,
+      "AlcoholSaleRestrictedSatStart": null,
+      "AlcoholSaleRestrictedSatEnd": null,
+      "AlcoholBannedZipCodes": null,
+      "MfuelFlag": false,
+      "MfcPhoneNumber": null,
+      "CommentInfo": null,
+      "HolidayInfo": null,
+      "DlvryOrderWeekdayOpen": "0001-01-01T00:00:00",
+      "DlvryOrderWeekdayClose": "0001-01-01T00:00:00",
+      "DlvryOrderSatOpen": "0001-01-01T00:00:00",
+      "DlvryOrderSatClose": "0001-01-01T00:00:00",
+      "DlvryOrderSunOpen": "0001-01-01T00:00:00",
+      "DlvryOrderSunClose": "0001-01-01T00:00:00",
+      "DlvryOrderHolidayOpen": "0001-01-01T00:00:00",
+      "DlvryOrderHolidayClose": "0001-01-01T00:00:00",
+      "DlvryOrderServiceAllow": null,
+      "DlvryOrderPhone": null,
+      "DlvryDescription": null,
+      "DlvryOrderServiceAllowStg": null,
+      "PharmDriveThruWeekdayOpen": null,
+      "PharmDriveThruWeekdayClose": null,
+      "PharmDriveThruSatOpen": null,
+      "PharmDriveThruSatClose": null,
+      "PharmDriveThruSunOpen": null,
+      "PharmDriveThruSunClose": null,
+      "PharmDriveThruHolidayOpen": null,
+      "PharmDriveThruHolidayClose": null,
+      "Store24HrsFlag": null,
+      "StoreWeekdayOpen": null,
+      "StoreWeekdayClose": null,
+      "StoreSatOpen": null,
+      "StoreSatClose": null,
+      "StoreSunOpen": null,
+      "StoreSunClose": null,
+      "FulfillmentInfo": [
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MEIJER",
+          "FulfillmentPartnerId": 1,
+          "IsEnabled": false,
+          "EffectiveDate": "2020-08-16T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "SHIPT",
+          "FulfillmentPartnerId": 2,
+          "IsEnabled": false,
+          "EffectiveDate": "2019-10-15T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MFC",
+          "FulfillmentPartnerId": 3,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "MI9",
+          "FulfillmentPartnerId": 4,
+          "IsEnabled": true,
+          "EffectiveDate": "2020-08-17T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "BOPAS",
+          "FulfillmentPartnerId": 5,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "Instacart",
+          "FulfillmentPartnerId": 6,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "PICKUP",
+          "FulfillmentTypeId": 1,
+          "FulfillmentPartnerName": "DoorDash",
+          "FulfillmentPartnerId": 7,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MEIJER",
+          "FulfillmentPartnerId": 1,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "SHIPT",
+          "FulfillmentPartnerId": 2,
+          "IsEnabled": true,
+          "EffectiveDate": "2019-10-15T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MFC",
+          "FulfillmentPartnerId": 3,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "MI9",
+          "FulfillmentPartnerId": 4,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "BOPAS",
+          "FulfillmentPartnerId": 5,
+          "IsEnabled": false,
+          "EffectiveDate": "1900-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "Instacart",
+          "FulfillmentPartnerId": 6,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        },
+        {
+          "UnitId": 232,
+          "FulfillmentTypeName": "DELIVERY",
+          "FulfillmentTypeId": 2,
+          "FulfillmentPartnerName": "DoorDash",
+          "FulfillmentPartnerId": 7,
+          "IsEnabled": false,
+          "EffectiveDate": "1934-01-01T00:00:00"
+        }
+      ],
+      "MfcUnitId": null,
+      "AuxUnitInfo": {
+        "AuxUnitId": 3232,
+        "UnitId": 232,
+        "Address": "5326 S Harvey St",
+        "AddressLine2": "",
+        "LongName": "S Harvey St",
+        "ShortName": "GS-3232",
+        "PhoneNumber": "",
+        "City": "Muskegon",
+        "State": "MI",
+        "ZipCode": "494449767",
+        "OpenDate": "2004-12-14T00:00:00",
+        "CloseDate": "1901-01-01T00:00:00",
+        "UpdatedTimestamp": "0001-01-01T00:00:00",
+        "Latitude": 43.15561,
+        "Longitude": -86.205,
+        "ImageURL": "http://us411.co/liberty_tax/images/Meijer_Logo2.jpg",
+        "ImageSize": 720,
+        "ImageFormat": "jpg",
+        "TimeZone": "E",
+        "DaylightSavings": "1",
+        "AuxUnitTypeId": 0,
+        "AuxUnitType": null
+      },
+      "GasStationAmenities": [
+        {
+          "UnitId": 232,
+          "AuxiliaryUnitId": 3232,
+          "AmentityType": "Beer",
+          "AmentityGroupType": "Station"
+        }
+      ],
+      "GasStationHours": [
+        {
+          "DayOfTheWeek": "Thursday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Saturday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Friday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Wednesday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Tuesday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Sunday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        },
+        {
+          "DayOfTheWeek": "Monday",
+          "OpenTime": "06:00:00",
+          "CloseTime": "22:00:00"
+        }
+      ],
+      "FuelPrices": [
+        {
+          "FuelType": "UNL-Regular Unleaded",
+          "FuelPrice": 3.099,
+          "PriceEffectiveDate": "2025-08-16T08:49:35.33"
+        },
+        {
+          "FuelType": "MID-Medium Unleaded",
+          "FuelPrice": 3.599,
+          "PriceEffectiveDate": "2025-08-16T08:49:35.33"
+        },
+        {
+          "FuelType": "PREM-Premium Unleaded",
+          "FuelPrice": 4.099,
+          "PriceEffectiveDate": "2025-08-16T08:49:35.33"
+        },
+        {
+          "FuelType": "DSL-Diesel",
+          "FuelPrice": 3.679,
+          "PriceEffectiveDate": "2025-08-16T08:49:35.33"
+        }
+      ],
+      "StoreFlag": "Y",
+      "IsMobileShoppingEnabled": "Y",
+      "IsMobilePaymentEnabled": "N",
+      "UnitId": 232,
+      "MilesFrom": 9.66150551923299,
+      "Address": "5300 S Harvey St",
+      "City": "Muskegon",
+      "State": "MI",
+      "Zip": "49444",
+      "UnitType": "MS",
+      "OpenDate": "2006-04-14T00:00:00",
+      "PhoneNumber": "2317996900",
+      "Name": "S Harvey St",
+      "DriveThru": true,
+      "Clinic": false,
+      "PharmDailyOpen": "1900-01-01T09:00:00",
+      "PharmDailyClose": "1900-01-01T20:00:00",
+      "PharmSatOpen": "1900-01-01T10:00:00",
+      "PharmSatClose": "1900-01-01T18:00:00",
+      "PharmSunOpen": "1900-01-01T10:00:00",
+      "PharmSunClose": "1900-01-01T18:00:00",
+      "PharmHolidayOpen": "1900-01-01T00:00:00",
+      "PharmHolidayClose": "1900-01-01T00:00:00",
+      "PharmTimezone": "E",
+      "PharmAddress": "5300 S Harvey St",
+      "PharmPhone": "2317996910",
+      "StoreDirName": "Jonathan Koehler",
+      "StoreDirEmpId": "2169286",
+      "Latitude": 43.15671,
+      "Longitude": -86.20184,
+      "StoreHours": "6am-12am, daily",
+      "PreOrderServiceAllow": "Y",
+      "PreOrderPhone": "2317996953",
+      "PreOrderDriveThru": "N",
+      "CurbsideAllow": "N",
+      "CurbsidePhone": "2317996931",
+      "CurbsideDriveThru": "N",
+      "CurbsideWeekdayOpen": "1900-01-01T08:00:00",
+      "CurbsideWeekdayClose": "1900-01-01T21:00:00",
+      "CurbsideSatOpen": "1900-01-01T08:00:00",
+      "CurbsideSatClose": "1900-01-01T21:00:00",
+      "CurbsideSunOpen": "1900-01-01T08:00:00",
+      "CurbsideSunClose": "1900-01-01T21:00:00",
+      "CurbsideHolidayOpen": "1900-01-01T20:54:00",
+      "CurbsideHolidayClose": "1900-01-01T20:54:00",
+      "CurbsideInstoreAllow": "N",
+      "PreOrderInstoreAllow": "Y",
+      "PreOrderWeekdayOpen": "1900-01-01T07:00:00",
+      "PreOrderWeekdayClose": "1900-01-01T20:00:00",
+      "PreOrderSatOpen": "1900-01-01T07:00:00",
+      "PreOrderSatClose": "1900-01-01T20:00:00",
+      "PreOrderSunOpen": "1900-01-01T07:00:00",
+      "PreOrderSunClose": "1900-01-01T20:00:00",
+      "PreOrderHolidayOpen": "1900-01-01T20:54:00",
+      "PreOrderHolidayClose": "1900-01-01T20:54:00",
+      "Tenants": [
+        {
+          "Name": "",
+          "Phone": "000000000",
+          "Logo": "",
+          "Sort": "",
+          "Message": "",
+          "Link": ""
+        },
+        {
+          "Name": "Cash Depot ATM",
+          "Phone": "000000000",
+          "Logo": "",
+          "Sort": "",
+          "Message": "",
+          "Link": ""
+        },
+        {
+          "Name": "Meijer Optical",
+          "Phone": "231-798-0212",
+          "Logo": "m-op-logo.jpg",
+          "Sort": "",
+          "Message": "",
+          "Link": "https://www.meijeroptical.com/"
+        }
+      ],
+      "TimeZone": "E",
+      "DaylightSavings": "Y",
+      "Vpos": "UE158",
+      "VisibleDate": "2000-01-01T00:00:00",
+      "CNCPickupDescription": "On the side of the building on the grocery side of the store.",
+      "SPOPickupDescription": "Cake / Deli orders can be picked up inside the store at either the bakery or deli counter.",
+      "Latitude_Rad": 0.753227,
+      "Longitude_Rad": 0.753227,
+      "MarketAndRegion": null,
+      "AurusMerchantId": null,
+      "AurusTerminalId": null,
+      "DeliOrderWeekdayOpen": "0001-01-01T00:00:00",
+      "DeliOrderWeekdayClose": "0001-01-01T00:00:00",
+      "DeliOrderSatOpen": "0001-01-01T00:00:00",
+      "DeliOrderSatClose": "0001-01-01T00:00:00",
+      "DeliOrderSunOpen": "0001-01-01T00:00:00",
+      "DeliOrderSunClose": "0001-01-01T00:00:00",
+      "DeliOrderHolidayOpen": "0001-01-01T00:00:00",
+      "DeliOrderHolidayClose": "0001-01-01T00:00:00",
+      "DeliOrderServiceAllow": null,
+      "DeliOrderPhone": null,
+      "DeliDescription": null,
+      "DeliOrderServiceAllowStg": null,
+      "PharmDriveThroughDailyOpen": null,
+      "PharmDriveThroughDailyClose": null,
+      "PharmDriveThroughSatOpen": null,
+      "PharmDriveThroughSatClose": null,
+      "PharmDriveThroughSunOpen": null,
+      "PharmDriveThroughSunClose": null,
+      "PharmDriveThroughHolidayOpen": null,
+      "PharmDriveThroughHolidayClose": null
+    }
+  ],
+  "endpoint_patterns": {
+    "proximity_search": "/digital/storeInfo/v2/stores/proximity",
+    "specific_store": "/digital/storeInfo/stores/{storeId}"
+  }
+}

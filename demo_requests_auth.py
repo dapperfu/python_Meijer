@@ -7,7 +7,7 @@ for OAuth authentication without Selenium.
 """
 
 import json
-from meijer_comprehensive import MeijerComprehensiveClient, read_auth_file
+from meijer import Meijer, read_auth_file
 
 
 def demo_requests_auth():
@@ -24,7 +24,7 @@ def demo_requests_auth():
         print()
         
         # Create client
-        client = MeijerComprehensiveClient(username, password)
+        client = Meijer(username, password)
         
         # Show OAuth configuration
         print("🔧 OAuth Configuration:")

@@ -306,11 +306,12 @@ class MeijerComprehensiveClient:
             
             self.logger.info("🔄 Refreshing access token...")
             
+            # Try different refresh approaches based on PKCE OAuth
+            # For PKCE public clients, client_id is usually required but no client_secret
             data = {
                 'grant_type': 'refresh_token',
                 'refresh_token': self.auth_tokens.refresh_token,
-                'client_id': '0oa1o8g9njWsUvwsx697',  # From analysis
-                'scope': 'openid offline_access profile'
+                'client_id': '0oa1o8g9njWsUvwsx697'
             }
             
             # Use the correct token endpoint from the analysis

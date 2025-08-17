@@ -7,7 +7,7 @@ Shows how to use different authentication methods and API endpoints.
 
 import json
 import time
-from meijer_comprehensive import MeijerComprehensiveClient
+from meijer import Meijer
 
 
 def demo_basic_usage():
@@ -16,7 +16,7 @@ def demo_basic_usage():
     print("=" * 50)
     
     # Initialize client
-    client = MeijerComprehensiveClient()
+    client = Meijer()
     
     # Show initial state
     print(f"Initial auth status: {client.auth_status.value}")
@@ -34,7 +34,7 @@ def demo_oauth_flow():
     print("🔐 OAuth Authorization Flow Demo")
     print("=" * 50)
     
-    client = MeijerComprehensiveClient()
+    client = Meijer()
     
     # Generate authorization URL
     auth_url, state, code_verifier = client.get_authorization_url()
@@ -59,7 +59,7 @@ def demo_api_endpoints():
     print("🌐 API Endpoints Demo")
     print("=" * 50)
     
-    client = MeijerComprehensiveClient()
+    client = Meijer()
     
     print("📋 Available API endpoints:")
     print("   • get_offers() - Get available offers/coupons")
@@ -80,7 +80,7 @@ def demo_error_handling():
     print("⚠️  Error Handling & Session Management Demo")
     print("=" * 50)
     
-    client = MeijerComprehensiveClient()
+    client = Meijer()
     
     print("🔍 Testing unauthenticated API calls:")
     
@@ -113,7 +113,7 @@ def demo_context_manager():
     
     print("📝 Using client as context manager:")
     
-    with MeijerComprehensiveClient() as client:
+    with Meijer() as client:
         print(f"   Inside context: {client.auth_status.value}")
         print(f"   Client ID: {id(client)}")
         
@@ -132,7 +132,7 @@ def demo_advanced_features():
     print("🚀 Advanced Features Demo")
     print("=" * 50)
     
-    client = MeijerComprehensiveClient()
+    client = Meijer()
     
     print("🔧 Advanced features:")
     print("   • PKCE (Proof Key for Code Exchange) support")

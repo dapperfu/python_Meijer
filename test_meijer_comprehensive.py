@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive test suite for MeijerComprehensiveClient.
+Comprehensive test suite for Meijer.
 
 Tests OAuth flows, API endpoints, error handling, and session management.
 """
@@ -11,8 +11,8 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
 
 # Import the client
-from meijer_comprehensive import (
-    MeijerComprehensiveClient,
+from meijer import (
+    Meijer,
     OAuthConfig,
     AuthTokens,
     UserInfo,
@@ -169,12 +169,12 @@ class TestMeijerAuth(unittest.TestCase):
         self.assertEqual(request.headers['Authorization'], 'Bearer test_token')
 
 
-class TestMeijerComprehensiveClient(unittest.TestCase):
+class TestMeijer(unittest.TestCase):
     """Test the main Meijer client."""
     
     def setUp(self):
         """Set up test fixtures."""
-        self.client = MeijerComprehensiveClient()
+        self.client = Meijer()
     
     def test_client_initialization(self):
         """Test client initialization."""

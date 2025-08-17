@@ -7,7 +7,7 @@ Test the automatic token refresh functionality by simulating
 token expiration and demonstrating refresh behavior.
 """
 
-from meijer_comprehensive import MeijerComprehensiveClient
+from old.meijer_comprehensive import Meijer
 from datetime import datetime, timedelta
 import time
 
@@ -17,7 +17,7 @@ def main():
     print("=" * 35)
     
     # Create client and authenticate
-    client = MeijerComprehensiveClient("", "")
+    client = Meijer("", "")
     
     # Login with OAuth tokens
     print("🚀 Authenticating with OAuth tokens...")

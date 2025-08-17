@@ -4,7 +4,7 @@ Demo script for Meijer Config-Based Authentication
 Tests the new ~/.config/meijer.txt token storage and automatic loading.
 """
 
-from meijer_comprehensive import MeijerComprehensiveClient, read_bearer_auth_file
+from meijer import Meijer, read_bearer_auth_file
 
 def main():
     """Demo config-based authentication."""
@@ -12,7 +12,7 @@ def main():
     print("=" * 50)
     
     # Create client (we can use dummy credentials since we're bypassing OAuth)
-    client = MeijerComprehensiveClient("dummy", "dummy")
+    client = Meijer("dummy", "dummy")
     
     print(f"📁 Config file location: {client.config_file}")
     

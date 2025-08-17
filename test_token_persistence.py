@@ -8,7 +8,7 @@ authentication from stored tokens, avoiding 2FA prompts on subsequent logins.
 
 import logging
 import time
-from meijer_v2 import Meijer
+from meijer import Meijer
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

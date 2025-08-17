@@ -6,7 +6,7 @@ This script tests all authentication methods and core functionality.
 """
 
 import logging
-from meijer_v2 import Meijer
+from meijer import Meijer
 
 def test_unified_client():
     """Test the unified Meijer client."""
@@ -180,7 +180,7 @@ def test_authentication_methods():
     print("\n3. Testing Credential Authentication...")
     if meijer.credentials:
         try:
-            from meijer_v2 import SELENIUM_AVAILABLE
+            from meijer import SELENIUM_AVAILABLE
             if SELENIUM_AVAILABLE:
                 print("   📋 Credentials available, Selenium available")
                 print("   ⚠️ Skipping automated test (requires user interaction)")

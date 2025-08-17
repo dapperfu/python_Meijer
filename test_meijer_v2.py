@@ -11,7 +11,7 @@ import json
 import logging
 import time
 from typing import Dict, Any
-from meijer_v2 import Meijer, MeijerError, MeijerAuthenticationError
+from meijer import Meijer, MeijerError, MeijerAuthenticationError
 
 
 def setup_logging() -> None:

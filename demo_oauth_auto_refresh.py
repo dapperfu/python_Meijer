@@ -7,7 +7,7 @@ Demonstrates the new OAuth authentication system with automatic token refresh.
 Uses tokens from auth.txt which includes both access and refresh tokens.
 """
 
-from meijer_comprehensive import MeijerComprehensiveClient
+from meijer import Meijer
 import time
 
 def main():
@@ -16,7 +16,7 @@ def main():
     print("=" * 55)
     
     # Create client
-    client = MeijerComprehensiveClient("", "")
+    client = Meijer("", "")
     
     print(f"📁 Config location: {client.config_file}")
     
@@ -93,7 +93,7 @@ def main():
     
     # Test seamless re-authentication
     print(f"\n✨ Testing seamless re-authentication...")
-    client2 = MeijerComprehensiveClient("", "")
+    client2 = Meijer("", "")
     
     if client2.auth_status.value == "authenticated":
         print("🎉 Second client automatically authenticated from config!")
