@@ -217,6 +217,16 @@ def create_meijer_coupons_from_response(
                 
                 # Get actual offer data
                 actual_offer = offer_data["offer"]
+                
+                # Also check inside the offer object for status flags
+                if not is_clipped:
+                    is_clipped = actual_offer.get("isClipped", False)
+                if not is_suggested:
+                    is_suggested = actual_offer.get("isSuggested", False)
+                if not is_targeted:
+                    is_targeted = actual_offer.get("isTargeted", False)
+                if not is_hidden:
+                    is_hidden = actual_offer.get("isHidden", False)
             else:
                 # Direct offer structure
                 is_clipped = offer_data.get("isClipped", False)
@@ -225,11 +235,21 @@ def create_meijer_coupons_from_response(
                 is_hidden = offer_data.get("isHidden", False)
                 actual_offer = offer_data
 
+            # Validate that we have the minimum required fields
+            if not isinstance(actual_offer, dict):
+                continue
+                
+            meijer_offer_id = actual_offer.get("meijerOfferId", actual_offer.get("id"))
+            if not meijer_offer_id or not isinstance(meijer_offer_id, (int, str)):
+                continue
+                
+            title = actual_offer.get("title", actual_offer.get("name"))
+            if not title or not isinstance(title, str):
+                continue
+
             # Extract core fields from actual offer data
-            meijer_offer_id = int(
-                actual_offer.get("meijerOfferId", actual_offer.get("id", 0))
-            )
-            title = actual_offer.get("title", actual_offer.get("name", "Unknown Offer"))
+            meijer_offer_id = int(meijer_offer_id)
+            title = str(title)
             description = actual_offer.get("description", actual_offer.get("desc", ""))
 
             # Parse dates from actual offer data

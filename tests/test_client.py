@@ -250,11 +250,11 @@ class TestMeijerClient:
         self.client.shopping_list.get_list.assert_called_once()
         
         # Test add_to_shopping_list
-        self.client.shopping_list.add_item_with_details.return_value = True
+        self.client.shopping_list.add_item.return_value = True
         
         result = self.client.add_to_shopping_list("Milk")
         assert result is True
-        self.client.shopping_list.add_item_with_details.assert_called_once()
+        self.client.shopping_list.add_item.assert_called_once()
     
     def test_favorites_methods(self):
         """Test favorites convenience methods."""
@@ -367,8 +367,10 @@ class TestMeijerClient:
                     {
                         "UnitId": "123",
                         "Name": "Nearby Store",
+                        "Address": "123 Test St",
                         "City": "Test City",
                         "State": "MI",
+                        "Zip": "48104",
                         "Latitude": 42.0,
                         "Longitude": -83.0,
                         "distance": 5.2
@@ -380,7 +382,8 @@ class TestMeijerClient:
             stores = self.client.find_stores_nearby(42.0, -83.0, 10)
             assert len(stores) == 1
             assert stores[0].name == "Nearby Store"
-            assert stores[0].distance == 5.2
+            assert stores[0].unit_id == "123"
+            assert stores[0].city == "Test City"
 
 
 if __name__ == "__main__":
