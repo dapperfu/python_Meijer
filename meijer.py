@@ -1139,26 +1139,26 @@ class Meijer:
     
     def __init__(
         self,
-        auth_file: str = "auth.txt",
-        bearer_auth_file: str = "bearer_auth.txt",
+        auth: str = None,
         debug: bool = False,
         max_retries: int = 3,
-        timeout: int = 30,
-        token_storage_file: str = "meijer_tokens.pkl"
+        timeout: int = 30
     ):
         """
         Initialize the unified Meijer client.
         
         Args:
-            auth_file: Path to credentials file (username and password)
-            bearer_auth_file: Path to bearer token file (extracted tokens)
+            auth: Path to auth file (auto-detects bearer= or user=/password=) or None for auto-discovery
             debug: Enable debug logging
             max_retries: Maximum number of retry attempts
             timeout: Request timeout in seconds
-            token_storage_file: Path to token storage file
+            
+        Authentication Priority:
+            1. auth file (if specified) - intelligently parses bearer= or user=/password=
+            2. ~/.config/meijer.txt - automatic JSON config loading
+            3. mitmproxy log files - automatic token extraction
         """
-        self.auth_file = auth_file
-        self.bearer_auth_file = bearer_auth_file
+        self.auth_file = auth
         self.debug = debug
         self.max_retries = max_retries
         self.timeout = timeout
@@ -1180,7 +1180,7 @@ class Meijer:
         self.user_info: Optional[UserInfo] = None
         
         # Token storage
-        self.token_storage = TokenStorage(token_storage_file)
+        self.token_storage = TokenStorage("meijer_tokens.pkl")
         
         # Session management
         self.session = self._create_session()
@@ -1245,7 +1245,11 @@ class Meijer:
         return session
     
     def _load_credentials(self) -> Optional[Dict[str, str]]:
-        """Load credentials from auth file."""
+        """Load username/password credentials from auth file (intelligently detects user=/password=)."""
+        if not self.auth_file:
+            self.logger.info("No auth file specified")
+            return None
+            
         try:
             if not os.path.exists(self.auth_file):
                 self.logger.info(f"No credentials file found: {self.auth_file}")
@@ -1259,27 +1263,38 @@ class Meijer:
                         key, value = line.split('=', 1)
                         credentials[key.strip()] = value.strip()
             
-            if 'username' in credentials and 'password' in credentials:
-                self.logger.info("Loaded credentials from file")
-                return credentials
+            # Check for various username/password formats
+            username = (credentials.get('username') or 
+                       credentials.get('user') or 
+                       credentials.get('email'))
+            password = (credentials.get('password') or 
+                       credentials.get('pass') or 
+                       credentials.get('pwd'))
+            
+            if username and password:
+                self.logger.info("Loaded username/password credentials from auth file")
+                return {'username': username, 'password': password}
             else:
-                self.logger.warning("Invalid credentials file format")
+                # File exists but doesn't have credentials (might have bearer token instead)
                 return None
                 
         except Exception as e:
-            self.logger.error(f"Error loading credentials: {e}")
+            self.logger.error(f"Error loading credentials from {self.auth_file}: {e}")
             return None
     
     def _load_bearer_auth(self) -> Optional[Tuple[str, str]]:
-        """Load bearer token from file."""
+        """Load bearer token from auth file (intelligently detects bearer= in auth file)."""
+        if not self.auth_file:
+            return None
+            
         try:
-            if not os.path.exists(self.bearer_auth_file):
+            if not os.path.exists(self.auth_file):
                 return None
             
             bearer_token = None
             user_agent = None
             
-            with open(self.bearer_auth_file, 'r') as f:
+            with open(self.auth_file, 'r') as f:
                 for line in f:
                     line = line.strip()
                     if line.startswith('bearer_token=') or line.startswith('bearer='):
@@ -1295,7 +1310,7 @@ class Meijer:
             return None
                 
         except Exception as e:
-            self.logger.error(f"Error loading bearer auth: {e}")
+            self.logger.error(f"Error loading bearer auth from {self.auth_file}: {e}")
             return None
     
     def _extract_from_mitmproxy_logs(self) -> Optional[Tuple[str, str, datetime]]:
@@ -1419,15 +1434,13 @@ class Meijer:
     
     def login(self) -> bool:
         """
-        Unified login method that tries all available authentication methods.
+        Unified login method that intelligently tries all available authentication methods.
         
         Authentication methods (in priority order):
-        1. Username/Password (Selenium) - from auth.txt or specified file
-        2. Bearer token - from auth.txt or specified file  
-        3. Config file - ~/.config/meijer.txt bearer token
-        4. Mitmproxy log - extract latest bearer token from log file
-        5. Persistent tokens - restore from saved tokens (automatic)
-        6. Interactive OAuth - manual browser authentication (fallback)
+        1. Auth file (if specified) - intelligently detects bearer= or user=/password=
+        2. Config file - ~/.config/meijer.txt automatic JSON config loading  
+        3. Mitmproxy logs - automatic bearer token extraction from log files
+        4. Interactive OAuth - manual browser authentication (fallback)
         """
         # First, try persistent tokens (if available)
         if self._restore_authentication():

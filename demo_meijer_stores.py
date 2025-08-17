@@ -15,7 +15,7 @@ def demo_store_search():
     print("=" * 25)
     
     # Initialize client
-    client = Meijer("", "")
+    client = Meijer()
     
     try:
         # Search for stores by ZIP code
@@ -51,7 +51,7 @@ def demo_wide_area_search():
     print("\n🗺️  Wide Area Store Search")
     print("=" * 30)
     
-    client = Meijer("", "")
+    client = Meijer()
     
     try:
         # Search larger radius
@@ -80,7 +80,7 @@ def demo_store_services():
     print("\n🛠️  Store Services Information")
     print("=" * 32)
     
-    client = Meijer("", "")
+    client = Meijer()
     
     try:
         stores = client.get_stores(zip_code="49456", radius=15)

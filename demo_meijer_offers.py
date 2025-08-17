@@ -15,7 +15,7 @@ def demo_offers():
     print("=" * 22)
     
     # Initialize client
-    client = Meijer("", "")
+    client = Meijer()
     
     try:
         # Get available offers
@@ -67,7 +67,7 @@ def demo_user_info():
     print("\n👤 User Information")
     print("=" * 20)
     
-    client = Meijer("", "")
+    client = Meijer()
     
     try:
         user_info = client.get_user_info()
@@ -89,7 +89,7 @@ def demo_session_info():
     print("\n🔐 Session Information")
     print("=" * 23)
     
-    client = Meijer("", "")
+    client = Meijer()
     
     try:
         session = client.get_session_info()
