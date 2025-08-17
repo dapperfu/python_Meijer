@@ -1,0 +1,22 @@
+#!/bin/bash
+# Meijer Authentication Handler
+# Silently updates authentication tokens from mitmproxy log
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Default log file if none provided
+LOG_FILE="${1:-meijer_mitm.log}"
+
+# Check if log file exists
+if [ ! -f "$LOG_FILE" ]; then
+    echo "Error: Log file '$LOG_FILE' not found" >&2
+    exit 1
+fi
+
+# Call the Python script silently
+if python3 "$SCRIPT_DIR/meijer_auth.py" "$LOG_FILE" >/dev/null 2>&1; then
+    exit 0
+else
+    exit 1
+fi 
