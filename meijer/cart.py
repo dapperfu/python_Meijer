@@ -433,3 +433,39 @@ class MeijerCart:
         self._store_id = value
         self._cart_data = None
         self._last_updated = None 
+
+    def get_order_history(self, current_page: int = 0, page_size: int = 10, fields: str = "FULL") -> List[Dict[str, Any]]:
+        """
+        Get order history for the authenticated user.
+        
+        Args:
+            current_page: Page number for pagination (0-based)
+            page_size: Number of orders per page
+            fields: Fields to include in response (FULL, BASIC, etc.)
+            
+        Returns:
+            List of order information dictionaries
+        """
+        try:
+            params = {
+                "currentPage": current_page,
+                "pageSize": page_size,
+                "fields": fields
+            }
+            
+            response = self.api_client._make_request(
+                "GET",
+                f"{self.api_client.api_base_url}/digital/occ/v3/orders",
+                params=params
+            )
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                return data.get("orders", [])
+            else:
+                self.logger.warning(f"Failed to get order history: {response.status_code if response else 'No response'}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error getting order history: {e}")
+            return [] 

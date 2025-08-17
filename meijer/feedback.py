@@ -421,6 +421,207 @@ class MeijerFeedback:
         
         return self.submit_feedback(form_data, device_data)
     
+    def submit_store_feedback(
+        self,
+        device_data: MobileDeviceData,
+        store_name: str,
+        store_comment: str,
+        rating: Optional[int] = None,
+        contact_name: str = "",
+        phone: str = "",
+        email: str = "",
+        additional_comments: str = "",
+        contact_method: str = "B"
+    ) -> Dict[str, Any]:
+        """
+        Submit feedback specifically for store-related issues or compliments.
+        
+        Parameters
+        ----------
+        device_data : MobileDeviceData
+            Mobile device information
+        store_name : str
+            Name of the store being reviewed
+        store_comment : str
+            The main feedback text about the store
+        rating : Optional[int], default None
+            Overall satisfaction rating (1-10)
+        contact_name : str, default ""
+            Contact name if user wants follow-up
+        phone : str, default ""
+            Phone number for contact
+        email : str, default ""
+            Email for contact
+        additional_comments : str, default ""
+            Additional comments in OPEN_CMT field
+        contact_method : str, default "B"
+            Contact method preference
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the feedback API
+        """
+        # Create components based on actual API structure for store feedback
+        components = [
+            FeedbackComponent(196946, "radio", "FEEDBACK_TOPICAPP", "B", False),  # Store feedback
+            FeedbackComponent(305822, "grading0to10", "q_bp_digital_osat_scale11", rating, False),
+            FeedbackComponent(196950, "select", "NEW_VISIT_REASONAPP", None, False),
+            FeedbackComponent(196965, "grading0to10", "EASE_OF_TASK_11", None, False),
+            FeedbackComponent(255342, "textArea", "OPEN_CMT", additional_comments, False),
+            FeedbackComponent(197003, "radio", "STORE_FEED", "A", False),  # Store feedback enabled
+            FeedbackComponent(197004, "textInput", "STORE_NAME", store_name, False),
+            FeedbackComponent(197005, "textArea", "STORE_CMT", store_comment, False),  # Main store feedback
+            FeedbackComponent(197006, "radio", "NEW_CONTACT_METHOD", contact_method, False),
+            FeedbackComponent(197007, "textInput", "Fullname", contact_name, False, "contactName"),
+            FeedbackComponent(197008, "textInput", "Phone", phone, False),
+            FeedbackComponent(197009, "textInput", "EMAIL", email, False),
+            FeedbackComponent(361058, "grading0to10", "OSAT_11", None, False),
+            FeedbackComponent(361059, "checkbox", "S&S_PROBLEMSS", None, False),
+            FeedbackComponent(357091, "textArea", "S&S_APP_FEEDBACK", "", False),  # Empty for store feedback
+            FeedbackComponent(255347, "label", "PRIVACY_POLICY", None, False)
+        ]
+        
+        # Create custom parameters
+        custom_params = [
+            FeedbackCustomParam("HOME_STORE_NAME", store_name),
+            FeedbackCustomParam("APP_ENVIRONMENT", "playstore")
+        ]
+        
+        # Create dynamic data
+        dynamic_data = FeedbackDynamicData(
+            custom_params=custom_params,
+            pages=[FeedbackPage(components=components)]
+        )
+        
+        # Create form data
+        form_data = FeedbackFormData(
+            form_id=9234,  # Based on actual API call
+            trigger_type="live",
+            form_language="en",
+            dynamic_data=dynamic_data,
+            appearance_mode="light"
+        )
+        
+        return self.submit_feedback(form_data, device_data)
+
+    def submit_feedback_generic(
+        self,
+        feedback_type: str,
+        device_data: MobileDeviceData,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Generic feedback submission method that abstracts all feedback types.
+        
+        Parameters
+        ----------
+        feedback_type : str
+            Type of feedback: "app", "shop_scan", "store", or "general"
+        device_data : MobileDeviceData
+            Mobile device information
+        **kwargs : Dict[str, Any]
+            Additional parameters specific to the feedback type:
+            
+            For "app":
+                - feedback_text: str - Main feedback text
+                - rating: Optional[int] - Overall rating (1-10)
+                - visit_reason: str - Visit reason (default "F")
+                - ease_rating: Optional[int] - Ease rating (1-10)
+                - additional_comments: str - Additional comments
+                - contact_name: str - Contact name
+                - phone: str - Phone number
+                - email: str - Email address
+                
+            For "shop_scan":
+                - feedback_text: str - Shop & Scan feedback
+                - rating: Optional[int] - Overall rating (1-10)
+                - store_name: str - Store name
+                - store_comment: str - Store-specific comments
+                - additional_comments: str - Additional comments
+                - contact_name: str - Contact name
+                - phone: str - Phone number
+                - email: str - Email address
+                
+            For "store":
+                - store_name: str - Store name being reviewed
+                - store_comment: str - Store feedback text
+                - rating: Optional[int] - Overall rating (1-10)
+                - additional_comments: str - Additional comments
+                - contact_name: str - Contact name
+                - phone: str - Phone number
+                - email: str - Email address
+                - contact_method: str - Contact method (default "B")
+                
+            For "general":
+                - feedback_text: str - General feedback text
+                - rating: Optional[int] - Overall rating (1-10)
+                - additional_comments: str - Additional comments
+                - contact_name: str - Contact name
+                - phone: str - Phone number
+                - email: str - Email address
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the feedback API
+            
+        Raises
+        ------
+        ValueError
+            If feedback_type is not recognized
+        """
+        feedback_type = feedback_type.lower()
+        
+        if feedback_type == "app":
+            return self.submit_app_feedback(
+                device_data=device_data,
+                feedback_text=kwargs.get("feedback_text", ""),
+                rating=kwargs.get("rating"),
+                visit_reason=kwargs.get("visit_reason", "F"),
+                ease_rating=kwargs.get("ease_rating"),
+                additional_comments=kwargs.get("additional_comments", ""),
+                contact_name=kwargs.get("contact_name", ""),
+                phone=kwargs.get("phone", ""),
+                email=kwargs.get("email", "")
+            )
+        elif feedback_type == "shop_scan":
+            return self.submit_shop_scan_feedback(
+                device_data=device_data,
+                feedback_text=kwargs.get("feedback_text", ""),
+                rating=kwargs.get("rating"),
+                store_name=kwargs.get("store_name", ""),
+                store_comment=kwargs.get("store_comment", ""),
+                additional_comments=kwargs.get("additional_comments", ""),
+                contact_name=kwargs.get("contact_name", ""),
+                phone=kwargs.get("phone", ""),
+                email=kwargs.get("email", "")
+            )
+        elif feedback_type == "store":
+            return self.submit_store_feedback(
+                device_data=device_data,
+                store_name=kwargs.get("store_name", ""),
+                store_comment=kwargs.get("store_comment", ""),
+                rating=kwargs.get("rating"),
+                additional_comments=kwargs.get("additional_comments", ""),
+                contact_name=kwargs.get("contact_name", ""),
+                phone=kwargs.get("phone", ""),
+                email=kwargs.get("email", ""),
+                contact_method=kwargs.get("contact_method", "B")
+            )
+        elif feedback_type == "general":
+            return self.submit_general_feedback(
+                device_data=device_data,
+                feedback_text=kwargs.get("feedback_text", ""),
+                rating=kwargs.get("rating"),
+                additional_comments=kwargs.get("additional_comments", ""),
+                contact_name=kwargs.get("contact_name", ""),
+                phone=kwargs.get("phone", ""),
+                email=kwargs.get("email", "")
+            )
+        else:
+            raise ValueError(f"Unknown feedback type: {feedback_type}. Must be one of: app, shop_scan, store, general")
+    
     def create_default_device_data(
         self,
         device_id: Optional[str] = None,

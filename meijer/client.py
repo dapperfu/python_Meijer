@@ -226,6 +226,42 @@ class Meijer:
             self.logger.error(f"Request failed: {e}")
             raise MeijerAPIError(f"Request failed: {e}")
     
+    def get_order_history(self, current_page: int = 0, page_size: int = 10, fields: str = "FULL") -> List[Dict[str, Any]]:
+        """
+        Get order history for the authenticated user.
+        
+        Args:
+            current_page: Page number for pagination (0-based)
+            page_size: Number of orders per page
+            fields: Fields to include in response (FULL, BASIC, etc.)
+            
+        Returns:
+            List of order information dictionaries
+        """
+        try:
+            params = {
+                "currentPage": current_page,
+                "pageSize": page_size,
+                "fields": fields
+            }
+            
+            response = self._make_request(
+                "GET",
+                f"{self.api_base_url}/digital/occ/v3/orders",
+                params=params
+            )
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                return data.get("orders", [])
+            else:
+                self.logger.warning(f"Failed to get order history: {response.status_code if response else 'No response'}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error getting order history: {e}")
+            return []
+
     def get_stores(self, zip_code: Optional[str] = None, latitude: Optional[float] = None, longitude: Optional[float] = None, radius: Optional[int] = None) -> List[MeijerStore]:
         """
         Get list of Meijer stores with enhanced proximity search support.
@@ -727,3 +763,46 @@ class Meijer:
             List of category names
         """
         return self.mperks.get_reward_categories(clip_filter, **kwargs)
+
+    def feedback(
+        self,
+        feedback_type: str,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Convenience method for submitting feedback of any type.
+        
+        This method provides a simple interface to submit feedback without needing
+        to manually create device data or call specific feedback methods.
+        
+        Parameters
+        ----------
+        feedback_type : str
+            Type of feedback: "app", "shop_scan", "store", or "general"
+        **kwargs : Dict[str, Any]
+            Feedback parameters. See MeijerFeedback.submit_feedback_generic() for details.
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the feedback API
+            
+        Examples
+        --------
+        # Submit app feedback
+        result = meijer.feedback("app", feedback_text="Great app!", rating=9)
+        
+        # Submit store feedback
+        result = meijer.feedback("store", store_name="North Muskegon", 
+                                store_comment="Best store ever!", rating=10)
+        
+        # Submit shop & scan feedback
+        result = meijer.feedback("shop_scan", feedback_text="Worked perfectly", 
+                                store_name="Grand Rapids", rating=8)
+        """
+        # Create default device data if not provided
+        if "device_data" not in kwargs:
+            kwargs["device_data"] = self.feedback.create_default_device_data()
+        
+        # Submit feedback using the generic method
+        return self.feedback.submit_feedback_generic(feedback_type, **kwargs)

@@ -26,7 +26,7 @@ def test_token_persistence():
 
     # Test 1: First login (will require authentication)
     print("\n1. First Login - Creating new session...")
-    meijer1 = Meijer(debug=True)
+    meijer1 = Meijer()
 
     # Check if we have stored tokens
     session_info = meijer1.get_session_info()
@@ -63,7 +63,7 @@ def test_token_persistence():
     print("\n2. Second Login - Should restore from stored tokens...")
     time.sleep(2)  # Small delay to simulate time passing
 
-    meijer2 = Meijer(debug=True)
+    meijer2 = Meijer()
 
     # Check if we can restore authentication
     session_info = meijer2.get_session_info()
@@ -99,7 +99,7 @@ def test_token_persistence():
 
     # Test 3: Verify tokens are cleared
     print("\n3. Verifying token cleanup...")
-    meijer3 = Meijer(debug=True)
+    meijer3 = Meijer()
     session_info = meijer3.get_session_info()
     print(f"Third session info (should show no stored tokens): {session_info}")
 
@@ -118,7 +118,7 @@ def test_token_refresh():
     print("Testing Token Refresh Functionality")
     print("=" * 60)
 
-    meijer = Meijer(debug=True)
+    meijer = Meijer()
 
     if not meijer.credentials:
         print("No credentials available for token refresh test")

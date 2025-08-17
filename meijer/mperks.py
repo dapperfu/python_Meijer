@@ -265,6 +265,76 @@ class MPerksEarnedRewards:
             self.logger.error(f"Error getting reward categories: {e}")
             return []  # Return empty list on failure instead of raising exception
     
+    def get_cms_content(self, content_type: str = "home") -> Optional[Dict[str, Any]]:
+        """
+        Get CMS content for mPerks (banners, promotions, etc.).
+        
+        Args:
+            content_type: Type of content to retrieve (home, specialoffers, etc.)
+            
+        Returns:
+            CMS content data or None if failed
+        """
+        try:
+            endpoint = f"/loyalty/mPerks/api/cms/{content_type}/content"
+            response = self.meijer._make_request("GET", f"{self.meijer.api_base_url}{endpoint}")
+            
+            if response and response.status_code == 200:
+                return response.json()
+            else:
+                self.logger.warning(f"Failed to get CMS content: {response.status_code if response else 'No response'}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error getting CMS content: {e}")
+            return None
+
+    def get_special_offers_image(self, image_path: str) -> Optional[str]:
+        """
+        Get special offers image URL.
+        
+        Args:
+            image_path: Path to the image
+            
+        Returns:
+            Full image URL or None if failed
+        """
+        try:
+            endpoint = f"/loyalty/mPerks/api/cms/specialoffers/image"
+            response = self.meijer._make_request("GET", f"{self.meijer.api_base_url}{endpoint}")
+            
+            if response and response.status_code == 200:
+                return response.json().get("imageUrl")
+            else:
+                self.logger.warning(f"Failed to get special offers image: {response.status_code if response else 'No response'}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error getting special offers image: {e}")
+            return None
+
+    def get_email_verification_spiffs(self) -> List[Dict[str, Any]]:
+        """
+        Get email verification special offers.
+        
+        Returns:
+            List of email verification offers
+        """
+        try:
+            endpoint = "/loyalty/mPerks/api/customer/EmailVerificationSpiffs"
+            response = self.meijer._make_request("GET", f"{self.meijer.api_base_url}{endpoint}")
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                return data.get("offers", [])
+            else:
+                self.logger.warning(f"Failed to get email verification spiffs: {response.status_code if response else 'No response'}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error getting email verification spiffs: {e}")
+            return []
+    
     def _parse_earned_rewards_response(self, data: Dict[str, Any]) -> List[EarnedReward]:
         """Parse earned rewards response from API."""
         rewards = []

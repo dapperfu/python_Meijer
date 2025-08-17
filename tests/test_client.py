@@ -92,8 +92,14 @@ class TestMeijerClient:
     def test_get_api_headers(self):
         """Test API headers generation."""
         headers = self.client._get_api_headers()
-        assert "ocp-apim-subscription-key" in headers
-        assert headers["ocp-apim-subscription-key"] == "a10bc58ac484478d9b3958b1742c3a03"
+        # When authenticated, should use Bearer token instead of subscription key
+        if self.client._access_token:
+            assert "Authorization" in headers
+            assert headers["Authorization"].startswith("Bearer ")
+        else:
+            # Fallback to subscription key when no token available
+            assert "ocp-apim-subscription-key" in headers
+            assert headers["ocp-apim-subscription-key"] == "a10bc58ac484478d9b3958b1742c3a03"
     
     def test_get_api_headers_with_auth(self):
         """Test API headers with authentication."""
