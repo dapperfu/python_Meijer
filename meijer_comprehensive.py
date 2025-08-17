@@ -309,11 +309,22 @@ class MeijerComprehensiveClient:
             data = {
                 'grant_type': 'refresh_token',
                 'refresh_token': self.auth_tokens.refresh_token,
-                'client_id': self.oauth_config.client_id,
-                'scope': self.oauth_config.scope
+                'client_id': '0oa1o8g9njWsUvwsx697',  # From analysis
+                'scope': 'openid offline_access profile'
             }
             
-            response = self.session.post(self.oauth_config.token_url, data=data)
+            # Use the correct token endpoint from the analysis
+            token_url = "https://id.meijer.com/oauth2/default/v1/token"
+            
+            # Set headers for refresh request
+            headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)',
+                'Accept-Encoding': 'gzip'
+            }
+            
+            response = self.session.post(token_url, data=data, headers=headers)
             
             if response.status_code == 200:
                 token_data = response.json()
@@ -810,6 +821,169 @@ class MeijerComprehensiveClient:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.logout()
+
+    def authenticate_with_oauth_tokens(self, access_token: str, refresh_token: str = None, 
+                                      user_agent: str = None, expires_in: int = None, 
+                                      scope: str = None) -> bool:
+        """
+        Authenticate using OAuth tokens (access + optional refresh).
+        
+        Args:
+            access_token: The OAuth access token
+            refresh_token: The OAuth refresh token (optional)
+            user_agent: User agent string (optional)
+            expires_in: Token lifetime in seconds (optional)
+            scope: Token scope (optional)
+            
+        Returns:
+            bool: True if authentication successful
+        """
+        try:
+            self.logger.info(f"🎫 Authenticating with OAuth tokens")
+            
+            # Set up AuthTokens object
+            expires_at = None
+            if expires_in:
+                expires_at = datetime.now() + timedelta(seconds=expires_in)
+            
+            self.auth_tokens = AuthTokens(
+                access_token=access_token,
+                refresh_token=refresh_token or "",
+                expires_in=expires_in or 3600,
+                expires_at=expires_at
+            )
+            
+            # Set the User-Agent if provided
+            if user_agent:
+                self.session.headers['User-Agent'] = user_agent
+            
+            # Set up authentication headers
+            self.session.headers.update({
+                'Authorization': f'Bearer {access_token}',
+                'ocp-apim-subscription-key': self.subscription_key,
+                'Accept-Encoding': 'gzip',
+                'Accept': 'application/meijer.shoppingList.ShoppingList-v1.0+json'
+            })
+            
+            # Test the token by making a simple API call
+            test_url = "https://api.meijer.com/loyalty/shoppinglist/GetList"
+            self.logger.info(f"🧪 Testing OAuth tokens with: {test_url}")
+            
+            response = self.session.get(test_url)
+            
+            if response.status_code == 200:
+                self.logger.info(f"✅ OAuth token authentication successful!")
+                self.auth_status = AuthenticationStatus.AUTHENTICATED
+                
+                # Save tokens to config for future use
+                self._save_tokens_to_config()
+                
+                return True
+            elif response.status_code == 401:
+                self.logger.error(f"❌ OAuth tokens are expired or invalid (401)")
+                
+                # Try to refresh if we have a refresh token
+                if refresh_token:
+                    self.logger.info(f"🔄 Attempting to refresh tokens...")
+                    return self._refresh_tokens()
+                
+                self.auth_status = AuthenticationStatus.UNAUTHENTICATED
+                return False
+            else:
+                self.logger.warning(f"⚠️  Unexpected response: {response.status_code}")
+                self.logger.info(f"Response: {response.text[:200]}...")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"❌ OAuth token authentication failed: {e}")
+            self.auth_status = AuthenticationStatus.UNAUTHENTICATED
+            return False
+
+    def login_with_oauth_tokens(self, access_token: str = None, refresh_token: str = None, 
+                               user_agent: str = None, expires_in: int = None, scope: str = None) -> bool:
+        """
+        Convenient login method using OAuth tokens from auth.txt or parameters.
+        
+        Args:
+            access_token: Access token (if None, reads from auth.txt)
+            refresh_token: Refresh token (if None, reads from auth.txt)
+            user_agent: User agent (if None, reads from auth.txt)
+            expires_in: Token expiry (if None, reads from auth.txt)
+            scope: Token scope (if None, reads from auth.txt)
+            
+        Returns:
+            bool: True if login successful
+        """
+        try:
+            # If no tokens provided, read from auth.txt
+            if access_token is None:
+                access_token, refresh_token, user_agent, expires_in, scope = read_oauth_auth_file()
+                self.logger.info(f"📋 Loaded OAuth tokens from auth.txt")
+            
+            return self.authenticate_with_oauth_tokens(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                user_agent=user_agent,
+                expires_in=expires_in,
+                scope=scope
+            )
+            
+        except Exception as e:
+            self.logger.error(f"❌ OAuth login failed: {e}")
+            return False
+
+    def _check_and_refresh_tokens(self) -> bool:
+        """
+        Check if tokens are about to expire and refresh them if needed.
+        
+        Returns:
+            bool: True if tokens are valid (either still valid or successfully refreshed)
+        """
+        if not self.auth_tokens:
+            return False
+        
+        # Check if token expires within the next 5 minutes (300 seconds)
+        if self.auth_tokens.is_expired(buffer_seconds=300):
+            if self.auth_tokens.refresh_token:
+                self.logger.info(f"🔄 Token expires soon, attempting refresh...")
+                return self._refresh_tokens()
+            else:
+                self.logger.warning(f"⚠️  Token expires soon but no refresh token available")
+                return False
+        
+        return True
+
+    def make_authenticated_request(self, method: str, url: str, **kwargs) -> requests.Response:
+        """
+        Make an authenticated request with automatic token refresh.
+        
+        Args:
+            method: HTTP method (GET, POST, etc.)
+            url: Request URL
+            **kwargs: Additional arguments for requests
+            
+        Returns:
+            requests.Response: The response object
+            
+        Raises:
+            AuthenticationError: If authentication fails
+        """
+        # Check and refresh tokens if needed
+        if not self._check_and_refresh_tokens():
+            self.logger.error(f"❌ Authentication invalid and refresh failed")
+            raise Exception("Authentication required")
+        
+        # Make the request
+        response = self.session.request(method, url, **kwargs)
+        
+        # If we get a 401, try to refresh once
+        if response.status_code == 401 and self.auth_tokens and self.auth_tokens.refresh_token:
+            self.logger.info(f"🔄 Got 401, attempting token refresh...")
+            if self._refresh_tokens():
+                # Retry the request with new token
+                response = self.session.request(method, url, **kwargs)
+        
+        return response
 
     def authenticate_with_bearer_token(self, bearer_token: str, user_agent: str = None) -> bool:
         """

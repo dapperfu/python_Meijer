@@ -656,7 +656,7 @@ class ShopNScan:
             return False
 
 
-class Meijer:
+class MeijerUnified:
     """
     Unified Meijer API client with all authentication methods and functionality.
     
@@ -1237,7 +1237,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     
     # Create unified Meijer client
-    with Meijer(debug=True) as meijer:
+    with MeijerUnified(debug=True) as meijer:
         try:
             # Login using any available method
             print("🔐 Attempting login...")
