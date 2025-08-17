@@ -37,20 +37,43 @@ venv.bak/
 .env.local
 .env.*.local
 
-# Logs
+# Logs and network captures - NEVER COMMIT THESE!
 *.log
+*.log2
+*.log3
 logs/
+*_mitm.log
+*_mitm.log2
+*_mitm.log3
+*.pcap
+*.pcapng
+*.cap
 
 # Sensitive data files
 *_analysis_report.json
-*_mitm.log
-*.pcap
-*.pcapng
+*_analysis_report.json2
+*_analysis_report.json3
+*.json.bak
+*.json.backup
 
-# APK and decompiled files
+# APK and decompiled files - NEVER COMMIT THESE!
 *.apk
+*.dex
+*.so
+*.bin
+*.obj
 *apkmirror.com/
 *_decompiled/
+*_decompiled2/
+*_decompiled3/
+
+# Binary and compiled files
+*.exe
+*.dll
+*.dylib
+*.a
+*.o
+*.class
 
 # IDE
 .vscode/
@@ -88,3 +111,7 @@ site/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Git
+.git/
+.gitignore.bak

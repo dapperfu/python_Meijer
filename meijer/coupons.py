@@ -177,14 +177,17 @@ def create_meijer_coupons_from_response(
 ) -> List[MeijerCoupon]:
     """
     Create MeijerCoupon objects from API response data.
-
+    
     Args:
         response_data: Raw API response data
         meijer_client: Meijer client instance for coupon operations
-
+    
     Returns:
         List of MeijerCoupon objects
     """
+    if response_data is None:
+        return []
+        
     coupons = []
 
     # Try different possible field names for offers/coupons based on API response
@@ -276,19 +279,22 @@ def create_meijer_coupons_from_response(
             coupon = MeijerCoupon(
                 meijer_offer_id=meijer_offer_id,
                 title=title,
-                description=description,
+                description=description or "",
+                image_url=actual_offer.get("imageURL"),
+                large_image_url=actual_offer.get("largeImageURL"),
+                terms_and_conditions=actual_offer.get("termsAndConditions", ""),
+                manufacturer_coupon=actual_offer.get("manufacturerCoupon", False),
+                redemption_start_date=redemption_start or datetime.now().date(),
+                redemption_end_date=redemption_end or datetime.now().date(),
+                redeem_amount=actual_offer.get("redeemAmount", 0.0),
+                offer_class_id=actual_offer.get("offerClassId", 0),
+                logix_offer_id=actual_offer.get("logixOfferId", 0),
                 is_clipped=is_clipped,
                 is_suggested=is_suggested,
                 is_targeted=is_targeted,
                 is_hidden=is_hidden,
-                image_url=actual_offer.get("imageURL"),
-                disclaimer=actual_offer.get("disclaimer"),
-                redemption_start_date=redemption_start,
-                redemption_end_date=redemption_end,
-                redeem_amount=actual_offer.get("redeemAmount"),
-                condition_value=actual_offer.get("conditionValue"),
-                discount_type_id=actual_offer.get("discountTypeId", 0),
-                condition_type_id=actual_offer.get("conditionTypeId", 0),
+                hat_color=actual_offer.get("hatColor", 0),
+                border_color=actual_offer.get("borderColor", 0),
                 _meijer_client=meijer_client,
             )
 
