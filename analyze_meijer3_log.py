@@ -121,79 +121,130 @@ class Meijer3LogAnalyzer:
     def _is_meijer_flow(self, flow_data) -> bool:
         """Check if a flow is Meijer-related."""
         try:
-            # Check URL
-            if hasattr(flow_data, 'request') and hasattr(flow_data.request, 'url'):
-                url = flow_data.request.url.lower()
-                if 'meijer' in url or 'api.meijer.com' in url:
-                    return True
-            
-            # Check headers
-            if hasattr(flow_data, 'request') and hasattr(flow_data.request, 'headers'):
-                headers = flow_data.request.headers
-                for header_name, header_value in headers.items():
-                    if 'meijer' in header_name.lower() or 'meijer' in header_value.lower():
-                        return True
+            # Check if this is a dictionary flow
+            if isinstance(flow_data, dict):
+                # Check request URL
+                if 'request' in flow_data and isinstance(flow_data['request'], dict):
+                    request = flow_data['request']
+                    if 'host' in request:
+                        host = request['host'].lower()
+                        if 'meijer' in host or 'api.meijer.com' in host:
+                            return True
+                    
+                    if 'path' in request:
+                        path = request['path'].lower()
+                        if 'meijer' in path or 'mperks' in path or 'loyalty' in path:
+                            return True
+                
+                # Check response headers for Meijer content types
+                if 'response' in flow_data and isinstance(flow_data['response'], dict):
+                    response = flow_data['response']
+                    if 'headers' in response:
+                        headers = response['headers']
+                        for header in headers:
+                            if len(header) >= 2:
+                                header_name, header_value = header[0], header[1]
+                                if b'content-type' in header_name.lower():
+                                    content_type = header_value.decode('utf-8', errors='ignore').lower()
+                                    if 'meijer' in content_type or 'mperks' in content_type:
+                                        return True
             
             return False
-        except:
+        except Exception as e:
+            print(f"Error in _is_meijer_flow: {e}")
             return False
     
     def _is_mperks_flow(self, flow_data) -> bool:
         """Check if a flow is mPerks-related."""
         try:
-            if hasattr(flow_data, 'request') and hasattr(flow_data.request, 'url'):
-                url = flow_data.request.url.lower()
-                if 'mperks' in url or 'loyalty' in url:
-                    return True
-            
-            if hasattr(flow_data, 'request') and hasattr(flow_data.request, 'headers'):
-                headers = flow_data.request.headers
-                for header_name, header_value in headers.items():
-                    if 'mperks' in header_name.lower() or 'mperks' in header_value.lower():
-                        return True
+            if isinstance(flow_data, dict):
+                # Check request path/host
+                if 'request' in flow_data and isinstance(flow_data['request'], dict):
+                    request = flow_data['request']
+                    if 'path' in request:
+                        path = request['path'].lower()
+                        if 'mperks' in path or 'loyalty' in path:
+                            return True
+                    
+                    if 'host' in request:
+                        host = request['host'].lower()
+                        if 'mperks' in host:
+                            return True
+                
+                # Check response headers for mPerks content types
+                if 'response' in flow_data and isinstance(flow_data['response'], dict):
+                    response = flow_data['response']
+                    if 'headers' in response:
+                        headers = response['headers']
+                        for header in headers:
+                            if len(header) >= 2:
+                                header_name, header_value = header[0], header[1]
+                                if b'content-type' in header_name.lower():
+                                    content_type = header_value.decode('utf-8', errors='ignore').lower()
+                                    if 'mperks' in content_type:
+                                        return True
             
             return False
-        except:
+        except Exception as e:
+            print(f"Error in _is_mperks_flow: {e}")
             return False
     
     def _is_earned_rewards_flow(self, flow_data) -> bool:
         """Check if a flow is related to earned rewards."""
         try:
-            if hasattr(flow_data, 'request') and hasattr(flow_data.request, 'url'):
-                url = flow_data.request.url.lower()
-                if 'earned' in url or 'rewards' in url or 'digitalmperks' in url:
-                    return True
-            
-            if hasattr(flow_data, 'response') and hasattr(flow_data.response, 'headers'):
-                headers = flow_data.response.headers
-                content_type = headers.get('content-type', '')
-                if 'application/vnd.meijer.digitalmperks.earnedrewards' in content_type:
-                    return True
+            if isinstance(flow_data, dict):
+                # Check request path
+                if 'request' in flow_data and isinstance(flow_data['request'], dict):
+                    request = flow_data['request']
+                    if 'path' in request:
+                        path = request['path'].lower()
+                        if 'earned' in path or 'rewards' in path or 'digitalmperks' in path:
+                            return True
+                
+                # Check response headers for earned rewards content type
+                if 'response' in flow_data and isinstance(flow_data['response'], dict):
+                    response = flow_data['response']
+                    if 'headers' in response:
+                        headers = response['headers']
+                        for header in headers:
+                            if len(header) >= 2:
+                                header_name, header_value = header[0], header[1]
+                                if b'content-type' in header_name.lower():
+                                    content_type = header_value.decode('utf-8', errors='ignore').lower()
+                                    if 'application/vnd.meijer.digitalmperks.earnedrewards' in content_type:
+                                        return True
             
             return False
-        except:
+        except Exception as e:
+            print(f"Error in _is_earned_rewards_flow: {e}")
             return False
     
     def _extract_endpoint_info(self, flow_data):
         """Extract API endpoint information."""
         try:
-            if hasattr(flow_data, 'request'):
-                method = flow_data.request.method
-                url = flow_data.request.url
-                status = getattr(flow_data.response, 'status_code', 'unknown') if hasattr(flow_data, 'response') else 'unknown'
+            if isinstance(flow_data, dict) and 'request' in flow_data:
+                request = flow_data['request']
+                method = request.get('method', 'unknown')
+                host = request.get('host', 'unknown')
+                path = request.get('path', 'unknown')
                 
-                # Extract domain and path
-                if url.startswith('http'):
-                    from urllib.parse import urlparse
-                    parsed = urlparse(url)
-                    domain = parsed.netloc
-                    path = parsed.path
-                    
-                    endpoint_key = f"{domain}{path}"
+                # Get status from response
+                status = 'unknown'
+                if 'response' in flow_data and isinstance(flow_data['response'], dict):
+                    response = flow_data['response']
+                    # Look for status in headers or other response fields
+                    if 'http_version' in response:
+                        # This might be a response object
+                        pass
+                
+                # Construct endpoint key
+                if host and path:
+                    endpoint_key = f"{host}{path}"
                     self.api_endpoints[endpoint_key].append({
                         'method': method,
                         'status': status,
-                        'url': url
+                        'host': host,
+                        'path': path
                     })
         except Exception as e:
             print(f"Error extracting endpoint info: {e}")
@@ -201,29 +252,54 @@ class Meijer3LogAnalyzer:
     def _extract_content_type_info(self, flow_data):
         """Extract content type information."""
         try:
-            if hasattr(flow_data, 'response') and hasattr(flow_data.response, 'headers'):
-                headers = flow_data.response.headers
-                content_type = headers.get('content-type', '')
-                if content_type:
-                    self.content_types[content_type].append({
-                        'url': getattr(flow_data.request, 'url', 'unknown'),
-                        'method': getattr(flow_data.request, 'method', 'unknown')
-                    })
+            if isinstance(flow_data, dict) and 'response' in flow_data:
+                response = flow_data['response']
+                if 'headers' in response:
+                    headers = response['headers']
+                    for header in headers:
+                        if len(header) >= 2:
+                            header_name, header_value = header[0], header[1]
+                            if b'content-type' in header_name.lower():
+                                try:
+                                    content_type = header_value.decode('utf-8', errors='ignore')
+                                    if content_type:
+                                        # Get request info for context
+                                        request_info = {}
+                                        if 'request' in flow_data:
+                                            req = flow_data['request']
+                                            request_info['host'] = req.get('host', 'unknown')
+                                            request_info['path'] = req.get('path', 'unknown')
+                                            request_info['method'] = req.get('method', 'unknown')
+                                        
+                                        self.content_types[content_type].append(request_info)
+                                except Exception as e:
+                                    print(f"Error decoding content type: {e}")
         except Exception as e:
             print(f"Error extracting content type info: {e}")
     
     def _extract_auth_info(self, flow_data):
         """Extract authentication information."""
         try:
-            if hasattr(flow_data, 'request') and hasattr(flow_data.request, 'headers'):
-                headers = flow_data.request.headers
-                auth_header = headers.get('authorization', '')
-                if auth_header:
-                    self.auth_headers.append({
-                        'url': getattr(flow_data.request, 'url', 'unknown'),
-                        'auth_type': auth_header.split(' ')[0] if ' ' in auth_header else 'unknown',
-                        'auth_value': auth_header[:50] + '...' if len(auth_header) > 50 else auth_header
-                    })
+            if isinstance(flow_data, dict) and 'request' in flow_data:
+                request = flow_data['request']
+                if 'headers' in request:
+                    headers = request['headers']
+                    for header in headers:
+                        if len(header) >= 2:
+                            header_name, header_value = header[0], header[1]
+                            if b'authorization' in header_name.lower():
+                                try:
+                                    auth_value = header_value.decode('utf-8', errors='ignore')
+                                    if auth_value:
+                                        request_info = {
+                                            'host': request.get('host', 'unknown'),
+                                            'path': request.get('path', 'unknown'),
+                                            'auth_type': auth_value.split(' ')[0] if ' ' in auth_value else 'unknown',
+                                            'auth_value': auth_value[:50] + '...' if len(auth_value) > 50 else auth_value
+                                        }
+                                        self.auth_headers.append(request_info)
+                                except Exception as e:
+                                    print(f"Error decoding auth header: {e}")
         except Exception as e:
             print(f"Error extracting auth info: {e}")
     
