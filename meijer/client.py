@@ -98,30 +98,40 @@ class Meijer:
         """Load authentication from plain text auth file."""
         try:
             with open(auth_file, 'r') as f:
-                content = f.read().strip()
+                lines = f.readlines()
             
-            if content.startswith('bearer='):
-                self._access_token = content[7:]  # Remove 'bearer=' prefix
+            # Look for bearer token or user/password in any line
+            bearer_token = None
+            user = None
+            password = None
+            
+            for line in lines:
+                line = line.strip()
+                # Skip empty lines and comments
+                if not line or line.startswith('#'):
+                    continue
+                
+                if line.startswith('bearer='):
+                    bearer_token = line[7:]  # Remove 'bearer=' prefix
+                elif line.startswith('user='):
+                    user = line[5:]
+                elif line.startswith('password='):
+                    password = line[9:]
+            
+            # Use bearer token if found
+            if bearer_token:
+                self._access_token = bearer_token
                 self.logger.info("Loaded bearer token from auth file")
-            elif 'user=' in content and 'password=' in content:
-                # Parse user/password format
-                lines = content.split('\n')
-                user = None
-                password = None
-                
-                for line in lines:
-                    if line.startswith('user='):
-                        user = line[5:]
-                    elif line.startswith('password='):
-                        password = line[9:]
-                
-                if user and password:
-                    self._user_credentials = (user, password)
-                    self.logger.info("Loaded user credentials from auth file")
-                else:
-                    raise ValueError("Invalid auth file format")
-            else:
-                raise ValueError("Invalid auth file format")
+                return
+            
+            # Use user/password if found
+            if user and password:
+                self._user_credentials = (user, password)
+                self.logger.info("Loaded user credentials from auth file")
+                return
+            
+            # If neither found, raise error
+            raise ValueError("No valid authentication found in auth file")
                 
         except Exception as e:
             self.logger.error(f"Failed to load auth file: {e}")
@@ -302,9 +312,8 @@ class Meijer:
                 "dataVariant": 2,  # From API analysis
             }
             
-            # Use direct request like the working store search
-            import requests
-            response = requests.get(url, params=params, timeout=30)
+            # Use the client's authenticated request method
+            response = self._make_request("GET", url, params=params)
             
             if response.status_code == 200:
                 data = response.json()
