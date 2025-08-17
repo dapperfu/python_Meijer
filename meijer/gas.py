@@ -179,11 +179,11 @@ class MeijerGas:
     
     def __post_init__(self) -> None:
         """Validate gas station data."""
-        if not self.station_id.strip():
+        if not str(self.station_id).strip():
             raise ValueError("Station ID cannot be empty")
-        if not self.store_id.strip():
+        if not str(self.store_id).strip():
             raise ValueError("Store ID cannot be empty")
-        if not self.address.strip():
+        if not str(self.address).strip():
             raise ValueError("Address cannot be empty")
     
     @classmethod
@@ -244,7 +244,7 @@ class MeijerGas:
         ]
         
         return cls(
-            station_id=str(data.get("MfcUnitId", "")),
+            station_id=str(data.get("MfcUnitId", data.get("UnitId", store_id))),
             store_id=store_id,
             address=data.get("Address", ""),
             city=data.get("City", ""),

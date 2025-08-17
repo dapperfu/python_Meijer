@@ -188,7 +188,7 @@ class ShopNScan:
             url = f"{constructor_base_url}/search/{barcode}"
             
             # API key from the actual Meijer app 
-            api_key = "key_Rf2XGUz9WKRJ6qUL"
+            api_key = "key_GdYuTcnduTUtsZd6"  # Valid key from APK analysis
             
             params = {
                 "key": api_key,

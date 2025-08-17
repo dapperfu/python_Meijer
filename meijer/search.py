@@ -151,7 +151,7 @@ class MeijerSearch:
         self.constructor_base_url = "https://ac.cnstrc.com"
         # API key needs to be extracted from actual requests or APK
         self.api_key = (
-            "key_Rf2XGUz9WKRJ6qUL"  # Placeholder - extract from real requests
+            "key_GdYuTcnduTUtsZd6"  # Valid key from APK analysis
         )
 
     def search(

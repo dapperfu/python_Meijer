@@ -139,9 +139,6 @@ class MeijerStore:
     has_bank: bool = False
     """Whether store has banking services"""
     
-    has_gas_station: bool = False
-    """Whether store has a gas station"""
-    
     has_curbside_pickup: bool = False
     """Whether store offers curbside pickup"""
     
@@ -243,7 +240,8 @@ class MeijerStore:
         
         # Extract gas station information if available
         gas_station = None
-        if data.get("MfuelFlag") and data.get("MfcUnitId"):
+        # Create gas station if gas station amenities or hours are present
+        if data.get("GasStationAmenities") or data.get("GasStationHours"):
             try:
                 from .gas import MeijerGas
                 gas_station = MeijerGas.from_api_data(
@@ -266,7 +264,6 @@ class MeijerStore:
             has_pharmacy=bool(data.get("PharmPhone")),
             has_optical=False,  # Not directly available in API
             has_bank=False,     # Not directly available in API
-            has_gas_station=bool(data.get("MfuelFlag")),
             has_curbside_pickup=data.get("CurbsideAllow", "N") == "Y",
             has_delivery=data.get("DlvryOrderPhone") is not None,
             has_self_checkout=True,  # Assume available
@@ -347,7 +344,7 @@ class MeijerStore:
             services.append("Optical")
         if self.has_bank:
             services.append("Banking")
-        if self.has_gas_station:
+        if self.has_gas_station():
             services.append("Gas Station")
         if self.has_curbside_pickup:
             services.append("Curbside Pickup")
@@ -405,7 +402,7 @@ class MeijerStore:
                 "has_pharmacy": self.has_pharmacy,
                 "has_optical": self.has_optical,
                 "has_bank": self.has_bank,
-                "has_gas_station": self.has_gas_station,
+                "has_gas_station": self.has_gas_station(),
                 "has_curbside_pickup": self.has_curbside_pickup,
                 "has_delivery": self.has_delivery,
                 "has_self_checkout": self.has_self_checkout,
