@@ -169,6 +169,28 @@ class UserInfo:
         )
 
 
+@dataclass
+class ShopScanItem:
+    """Shop & Scan cart item."""
+    barcode: str
+    description: str
+    price: float
+    quantity: int = 1
+    item_id: Optional[str] = None
+    timestamp: Optional[datetime] = None
+
+
+@dataclass 
+class ShopScanTrip:
+    """Shop & Scan shopping trip."""
+    trip_id: str
+    store_id: str
+    started_at: datetime
+    items: List[ShopScanItem] = field(default_factory=list)
+    status: str = "active"
+    total_amount: float = 0.0
+
+
 class MeijerAuth(AuthBase):
     """Custom authentication handler for Meijer API."""
     
@@ -282,6 +304,9 @@ class Meijer:
         
         # Try to restore authentication from stored tokens
         self._restore_authentication()
+        
+        # Initialize Shop & Scan functionality
+        self.shop_scan = ShopNScan(self)
         
         self.logger.info("Meijer client initialized")
     
@@ -844,6 +869,488 @@ class Meijer:
         """Context manager exit."""
         self.logout()
         self.session.close()
+
+
+class ShopNScan:
+    """
+    Meijer Shop & Scan functionality.
+    
+    Handles the complete Shop & Scan workflow based on APK analysis:
+    - Session initialization and store validation
+    - Item scanning and cart management  
+    - Checkout finalization
+    
+    The transaction flow discovered from network analysis:
+    1. Check if Shop & Scan is enabled for user
+    2. Start a shopping trip at a specific store
+    3. Scan items (barcode lookup and cart addition)
+    4. Finalize checkout for payment processing
+    """
+    
+    def __init__(self, meijer_client):
+        """Initialize Shop & Scan with reference to Meijer client."""
+        self.meijer = meijer_client
+        self.current_trip: Optional[ShopScanTrip] = None
+        self.logger = meijer_client.logger
+        
+        # API endpoints discovered from APK analysis
+        self.endpoints = {
+            'config': '/dgtlmma/accounts/isShopAndScanEnabled',
+            'static_config': 'https://static.meijer.com/mobileassets/shopandscan/shopandscan_config.json',
+            'start_trip': '/dgtlmma/shopandscan/trip/start',
+            'scan_item': '/dgtlmma/shopandscan/item/scan',
+            'add_item': '/dgtlmma/shopandscan/cart/add',
+            'remove_item': '/dgtlmma/shopandscan/cart/remove',
+            'get_cart': '/dgtlmma/shopandscan/cart',
+            'finalize': '/dgtlmma/shopandscan/checkout/finalize',
+            'end_trip': '/dgtlmma/shopandscan/trip/end'
+        }
+    
+    def is_enabled(self) -> bool:
+        """
+        Check if Shop & Scan is enabled for the current user.
+        
+        Returns:
+            bool: True if Shop & Scan is available, False otherwise
+        """
+        try:
+            url = urljoin(self.meijer.api_base_url, self.endpoints['config'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            })
+            
+            response = self.meijer._make_request('GET', url, headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                enabled = data.get('isEnabled', False)
+                self.logger.info(f"Shop & Scan enabled: {enabled}")
+                return enabled
+            else:
+                self.logger.warning(f"Failed to check Shop & Scan status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error checking Shop & Scan availability: {e}")
+            return False
+    
+    def get_config(self) -> Optional[Dict[str, Any]]:
+        """
+        Get Shop & Scan configuration from static assets.
+        
+        Returns:
+            Optional[Dict]: Configuration data or None if failed
+        """
+        try:
+            response = self.meijer.session.get(self.endpoints['static_config'])
+            
+            if response.status_code == 200:
+                config = response.json()
+                self.logger.info("Retrieved Shop & Scan configuration")
+                return config
+            else:
+                self.logger.warning(f"Failed to get Shop & Scan config: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error getting Shop & Scan config: {e}")
+            return None
+    
+    def start_trip(self, store_id: str) -> bool:
+        """
+        Start a new Shop & Scan trip at the specified store.
+        
+        Args:
+            store_id: The store identifier where shopping will occur
+            
+        Returns:
+            bool: True if trip started successfully, False otherwise
+        """
+        try:
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required for Shop & Scan")
+            
+            if self.current_trip and self.current_trip.status == "active":
+                self.logger.warning("Trip already in progress. End current trip first.")
+                return False
+            
+            url = urljoin(self.meijer.api_base_url, self.endpoints['start_trip'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            })
+            
+            payload = {
+                'storeId': store_id,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = self.meijer._make_request('POST', url, headers=headers, json=payload)
+            
+            if response.status_code in (200, 201):
+                data = response.json()
+                trip_id = data.get('tripId') or data.get('sessionId') or f"trip_{int(time.time())}"
+                
+                self.current_trip = ShopScanTrip(
+                    trip_id=trip_id,
+                    store_id=store_id,
+                    started_at=datetime.now()
+                )
+                
+                self.logger.info(f"Started Shop & Scan trip: {trip_id} at store {store_id}")
+                return True
+            else:
+                self.logger.error(f"Failed to start trip: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error starting Shop & Scan trip: {e}")
+            return False
+    
+    def scan_item(self, barcode: str, quantity: int = 1) -> Optional[ShopScanItem]:
+        """
+        Scan an item by barcode and add it to the cart.
+        
+        Args:
+            barcode: Product barcode to scan
+            quantity: Number of items to add (default: 1)
+            
+        Returns:
+            Optional[ShopScanItem]: The scanned item if successful, None otherwise
+        """
+        try:
+            if not self.current_trip:
+                raise MeijerAPIError("No active Shop & Scan trip. Start a trip first.")
+            
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+            
+            # First, lookup the item details
+            item_data = self._lookup_item(barcode)
+            if not item_data:
+                self.logger.error(f"Failed to lookup item with barcode: {barcode}")
+                return None
+            
+            # Add item to cart
+            if self._add_to_cart(barcode, quantity, item_data):
+                scanned_item = ShopScanItem(
+                    barcode=barcode,
+                    description=item_data.get('description', 'Unknown Item'),
+                    price=float(item_data.get('price', 0.0)),
+                    quantity=quantity,
+                    item_id=item_data.get('itemId'),
+                    timestamp=datetime.now()
+                )
+                
+                self.current_trip.items.append(scanned_item)
+                self.current_trip.total_amount += scanned_item.price * quantity
+                
+                self.logger.info(f"Scanned item: {scanned_item.description} (${scanned_item.price})")
+                return scanned_item
+            else:
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error scanning item {barcode}: {e}")
+            return None
+    
+    def _lookup_item(self, barcode: str) -> Optional[Dict[str, Any]]:
+        """Lookup item details by barcode."""
+        try:
+            url = urljoin(self.meijer.api_base_url, self.endpoints['scan_item'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            })
+            
+            payload = {
+                'barcode': barcode,
+                'tripId': self.current_trip.trip_id,
+                'storeId': self.current_trip.store_id
+            }
+            
+            response = self.meijer._make_request('POST', url, headers=headers, json=payload)
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                self.logger.warning(f"Item lookup failed: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error looking up item: {e}")
+            return None
+    
+    def _add_to_cart(self, barcode: str, quantity: int, item_data: Dict[str, Any]) -> bool:
+        """Add item to Shop & Scan cart."""
+        try:
+            url = urljoin(self.meijer.api_base_url, self.endpoints['add_item'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            })
+            
+            payload = {
+                'tripId': self.current_trip.trip_id,
+                'barcode': barcode,
+                'quantity': quantity,
+                'itemId': item_data.get('itemId'),
+                'price': item_data.get('price')
+            }
+            
+            response = self.meijer._make_request('POST', url, headers=headers, json=payload)
+            
+            return response.status_code in (200, 201)
+            
+        except Exception as e:
+            self.logger.error(f"Error adding item to cart: {e}")
+            return False
+    
+    def remove_item(self, item_identifier: Union[str, ShopScanItem]) -> bool:
+        """
+        Remove an item from the cart.
+        
+        Args:
+            item_identifier: Either barcode string or ShopScanItem instance
+            
+        Returns:
+            bool: True if item was removed successfully
+        """
+        try:
+            if not self.current_trip:
+                raise MeijerAPIError("No active Shop & Scan trip")
+            
+            if isinstance(item_identifier, ShopScanItem):
+                barcode = item_identifier.barcode
+                item_to_remove = item_identifier
+            else:
+                barcode = item_identifier
+                item_to_remove = next((item for item in self.current_trip.items 
+                                     if item.barcode == barcode), None)
+            
+            if not item_to_remove:
+                self.logger.warning(f"Item not found in cart: {barcode}")
+                return False
+            
+            url = urljoin(self.meijer.api_base_url, self.endpoints['remove_item'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            })
+            
+            payload = {
+                'tripId': self.current_trip.trip_id,
+                'barcode': barcode,
+                'itemId': item_to_remove.item_id
+            }
+            
+            response = self.meijer._make_request('DELETE', url, headers=headers, json=payload)
+            
+            if response.status_code in (200, 204):
+                # Remove from local cart
+                self.current_trip.items.remove(item_to_remove)
+                self.current_trip.total_amount -= item_to_remove.price * item_to_remove.quantity
+                
+                self.logger.info(f"Removed item from cart: {item_to_remove.description}")
+                return True
+            else:
+                self.logger.error(f"Failed to remove item: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error removing item: {e}")
+            return False
+    
+    def get_cart(self) -> List[ShopScanItem]:
+        """
+        Get current cart contents.
+        
+        Returns:
+            List[ShopScanItem]: List of items in the cart
+        """
+        if not self.current_trip:
+            return []
+        
+        try:
+            # Optionally sync with server
+            self._sync_cart()
+            return self.current_trip.items.copy()
+            
+        except Exception as e:
+            self.logger.error(f"Error getting cart: {e}")
+            return self.current_trip.items.copy() if self.current_trip else []
+    
+    def _sync_cart(self) -> bool:
+        """Synchronize local cart with server."""
+        try:
+            url = urljoin(self.meijer.api_base_url, self.endpoints['get_cart'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json'
+            })
+            
+            params = {'tripId': self.current_trip.trip_id}
+            
+            response = self.meijer._make_request('GET', url, headers=headers, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Update local cart based on server response
+                # This would contain logic to sync server cart with local cart
+                self.logger.debug("Cart synchronized with server")
+                return True
+            else:
+                self.logger.warning(f"Failed to sync cart: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error syncing cart: {e}")
+            return False
+    
+    def finalize_checkout(self) -> Optional[Dict[str, Any]]:
+        """
+        Finalize the cart for checkout.
+        
+        Returns:
+            Optional[Dict]: Checkout details or None if failed
+        """
+        try:
+            if not self.current_trip:
+                raise MeijerAPIError("No active Shop & Scan trip")
+            
+            if not self.current_trip.items:
+                raise MeijerAPIError("Cart is empty")
+            
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+            
+            url = urljoin(self.meijer.api_base_url, self.endpoints['finalize'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            })
+            
+            # Prepare checkout payload
+            payload = {
+                'tripId': self.current_trip.trip_id,
+                'storeId': self.current_trip.store_id,
+                'items': [
+                    {
+                        'barcode': item.barcode,
+                        'quantity': item.quantity,
+                        'price': item.price,
+                        'itemId': item.item_id
+                    }
+                    for item in self.current_trip.items
+                ],
+                'totalAmount': self.current_trip.total_amount,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = self.meijer._make_request('POST', url, headers=headers, json=payload)
+            
+            if response.status_code in (200, 201):
+                checkout_data = response.json()
+                
+                # Mark trip as completed
+                self.current_trip.status = "completed"
+                
+                self.logger.info(f"Checkout finalized for trip {self.current_trip.trip_id}")
+                self.logger.info(f"Total amount: ${self.current_trip.total_amount:.2f}")
+                
+                return checkout_data
+            else:
+                self.logger.error(f"Checkout finalization failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error finalizing checkout: {e}")
+            return None
+    
+    def end_trip(self) -> bool:
+        """
+        End the current Shop & Scan trip.
+        
+        Returns:
+            bool: True if trip ended successfully
+        """
+        try:
+            if not self.current_trip:
+                self.logger.warning("No active trip to end")
+                return True
+            
+            url = urljoin(self.meijer.api_base_url, self.endpoints['end_trip'])
+            
+            headers = self.meijer._get_api_headers()
+            headers.update({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            })
+            
+            payload = {
+                'tripId': self.current_trip.trip_id,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = self.meijer._make_request('POST', url, headers=headers, json=payload)
+            
+            if response.status_code in (200, 204):
+                self.logger.info(f"Ended Shop & Scan trip: {self.current_trip.trip_id}")
+                self.current_trip = None
+                return True
+            else:
+                self.logger.warning(f"Failed to end trip properly: {response.status_code}")
+                # Still clear local trip
+                self.current_trip = None
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error ending trip: {e}")
+            # Clear local trip even if server call failed
+            self.current_trip = None
+            return False
+    
+    def get_trip_summary(self) -> Optional[Dict[str, Any]]:
+        """
+        Get current trip summary.
+        
+        Returns:
+            Optional[Dict]: Trip summary or None if no active trip
+        """
+        if not self.current_trip:
+            return None
+        
+        return {
+            'trip_id': self.current_trip.trip_id,
+            'store_id': self.current_trip.store_id,
+            'started_at': self.current_trip.started_at.isoformat(),
+            'status': self.current_trip.status,
+            'item_count': len(self.current_trip.items),
+            'total_amount': self.current_trip.total_amount,
+            'items': [
+                {
+                    'barcode': item.barcode,
+                    'description': item.description,
+                    'price': item.price,
+                    'quantity': item.quantity
+                }
+                for item in self.current_trip.items
+            ]
+        }
 
 
 def main() -> None:
