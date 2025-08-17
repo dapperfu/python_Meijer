@@ -13,3 +13,9 @@ ${VENV}:
 .PHONY: notebook
 notebook:
 	@${VENV}/bin/jupyter-notebook
+
+.PHONY: log
+log:
+	mitmdump --mode wireguard -w meijer_mitm.log -s shop_n_scan_faker.py
+	python meijer_cli.py auth meijer_mitm.log
+	rm meijer_mitm.log
