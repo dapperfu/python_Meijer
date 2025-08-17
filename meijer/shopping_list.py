@@ -8,6 +8,13 @@ Shopping list functionality for the Meijer API client.
 from typing import List, TYPE_CHECKING, Optional
 from urllib.parse import urljoin
 
+try:
+    from tabulate import tabulate
+    TABULATE_AVAILABLE = True
+except ImportError:
+    TABULATE_AVAILABLE = False
+    # Fallback to basic formatting if tabulate not available
+
 from .models import ListItem
 from .exceptions import MeijerAuthenticationError
 
@@ -464,23 +471,46 @@ class MeijerList:
             self.logger.info("📊 Product Matching Results:")
             self.logger.info("=" * 80)
             
-            # Create a formatted table display
-            table_header = f"{'Original Item':<25} {'Closest Match':<35} {'Aisle':<8} {'Price':<10} {'Confidence':<12}"
-            self.logger.info(table_header)
-            self.logger.info("-" * 80)
-            
-            for row in matching_table_data:
-                # Truncate long names for display
-                original = row['Original Item'][:24] if len(row['Original Item']) > 24 else row['Original Item']
-                match = row['Closest Match'][:34] if len(row['Closest Match']) > 34 else row['Closest Match']
-                aisle = row['Aisle'][:7] if row['Aisle'] and len(str(row['Aisle'])) > 7 else row['Aisle'] or 'Unknown'
-                price = row['Price'][:9] if row['Price'] and len(str(row['Price'])) > 9 else row['Price'] or 'N/A'
-                confidence = row['Match Confidence'][:11] if len(row['Match Confidence']) > 11 else row['Match Confidence']
+            if TABULATE_AVAILABLE:
+                # Use tabulate for proper table formatting
+                table_headers = ["Original Item", "Closest Match", "Brand", "Price", "Aisle", "Section", "Confidence"]
+                table_rows = []
                 
-                table_row = f"{original:<25} {match:<35} {aisle:<8} {price:<10} {confidence:<12}"
-                self.logger.info(table_row)
-            
-            self.logger.info("=" * 80)
+                for row in matching_table_data:
+                    table_rows.append([
+                        row['Original Item'][:30] + "..." if len(row['Original Item']) > 30 else row['Original Item'],
+                        row['Closest Match'][:35] + "..." if len(row['Closest Match']) > 35 else row['Closest Match'],
+                        row['Brand'][:20] + "..." if row['Brand'] and len(str(row['Brand'])) > 20 else row['Brand'] or 'N/A',
+                        row['Price'] or 'N/A',
+                        row['Aisle'] or 'Unknown',
+                        row['Section'] or 'Unknown',
+                        row['Match Confidence']
+                    ])
+                
+                # Display formatted table
+                table_output = tabulate(table_rows, headers=table_headers, tablefmt="grid")
+                self.logger.info("\n" + table_output)
+            else:
+                # Fallback to basic formatting if tabulate not available
+                self.logger.info("Note: Install 'tabulate' for better table formatting: pip install tabulate")
+                
+                # Create a formatted table display
+                table_header = f"{'Original Item':<25} {'Closest Match':<35} {'Aisle':<8} {'Price':<10} {'Confidence':<12}"
+                self.logger.info(table_header)
+                self.logger.info("-" * 80)
+                
+                for row in matching_table_data:
+                    # Truncate long names for display
+                    original = row['Original Item'][:24] if len(row['Original Item']) > 24 else row['Original Item']
+                    match = row['Closest Match'][:34] if len(row['Closest Match']) > 34 else row['Closest Match']
+                    aisle = row['Aisle'][:7] if row['Aisle'] and len(str(row['Aisle'])) > 7 else row['Aisle'] or 'Unknown'
+                    price = row['Price'][:9] if row['Price'] and len(str(row['Price'])) > 9 else row['Price'] or 'N/A'
+                    confidence = row['Match Confidence'][:11] if len(row['Match Confidence']) > 11 else row['Match Confidence']
+                    
+                    table_row = f"{original:<25} {match:<35} {aisle:<8} {price:<10} {confidence:<12}"
+                    self.logger.info(table_row)
+                
+                self.logger.info("=" * 80)
             
             # Step 3: Sort items by aisle number (handle non-numeric aisles gracefully)
             def get_aisle_sort_key(item_data):

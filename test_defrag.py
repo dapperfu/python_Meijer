@@ -25,6 +25,13 @@ import logging
 import sys
 from typing import List, Optional
 
+# Try to import tabulate for better table formatting
+try:
+    from tabulate import tabulate
+    TABULATE_AVAILABLE = True
+except ImportError:
+    TABULATE_AVAILABLE = False
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -125,6 +132,20 @@ def test_defrag() -> None:
             print(f"  {i:2d}. {item.name:<25} | Aisle: {aisle_info:<8} | Qty: {item.quantity}")
             print(f"      Notes: {notes_preview}")
         
+        # Show enhanced notes examples
+        print(f"\n📝 Enhanced Notes Examples (showing first 3 items):")
+        print("-" * 60)
+        
+        for i, item in enumerate(defragged_items[:3], 1):
+            print(f"\n{i}. {item.name}")
+            if item.notes:
+                print("   Enhanced Notes:")
+                note_parts = item.notes.split(" | ")
+                for part in note_parts:
+                    print(f"      • {part}")
+            else:
+                print("   Notes: None")
+        
         # Show summary
         print(f"\n📊 Defrag Summary:")
         print(f"   Total items: {len(defragged_items)}")
@@ -140,6 +161,7 @@ def test_defrag() -> None:
         
         print(f"\n🎉 Defrag test completed successfully!")
         print(f"💡 Your shopping list is now organized for efficient store navigation!")
+        print(f"🔍 Check the enhanced notes for detailed product matching information!")
         
     except ImportError:
         print("❌ Meijer package not found!")

@@ -203,60 +203,63 @@ class MeijerGas:
         MeijerGas
             New MeijerGas instance
         """
-        # Extract fuel prices if available
-        fuel_prices = []
-        if "fuelPrices" in data:
-            for fuel_data in data["fuelPrices"]:
-                try:
-                    fuel_price = FuelPrice(
-                        fuel_type=fuel_data.get("fuelType", "Unknown"),
-                        price_per_gallon=float(fuel_data.get("price", 0.0)),
-                        last_updated=datetime.fromisoformat(
-                            fuel_data.get("lastUpdated", "")
-                        ) if fuel_data.get("lastUpdated") else None,
-                        is_available=fuel_data.get("isAvailable", True)
-                    )
-                    fuel_prices.append(fuel_price)
-                except (ValueError, TypeError) as e:
-                    logger.warning(f"Failed to parse fuel price: {e}")
-                    continue
+        # Extract gas station amenities if available
+        amenities = []
+        if "GasStationAmenities" in data:
+            for amenity_data in data["GasStationAmenities"]:
+                amenities.append(amenity_data.get("AmentityType", "Unknown"))
         
-        # Extract operating hours if available
+        # Extract gas station hours if available
         hours = None
-        if "hours" in data and data["hours"]:
+        if "GasStationHours" in data and data["GasStationHours"]:
             try:
-                hours_data = data["hours"]
+                # Find the first set of hours (assuming consistent hours across days)
+                first_hour = data["GasStationHours"][0]
+                open_time = time.fromisoformat(first_hour.get("OpenTime", "06:00:00"))
+                close_time = time.fromisoformat(first_hour.get("CloseTime", "22:00:00"))
+                
+                # Get all days that are open
+                days_open = [hour.get("DayOfTheWeek", "Unknown") for hour in data["GasStationHours"]]
+                
                 hours = GasStationHours(
-                    open_time=time.fromisoformat(hours_data.get("openTime", "06:00")),
-                    close_time=time.fromisoformat(hours_data.get("closeTime", "22:00")),
-                    is_24_hours=hours_data.get("is24Hours", False),
-                    days_open=hours_data.get("daysOpen", [
-                        "Monday", "Tuesday", "Wednesday", "Thursday", 
-                        "Friday", "Saturday", "Sunday"
-                    ])
+                    open_time=open_time,
+                    close_time=close_time,
+                    is_24_hours=False,  # Meijer gas stations are typically not 24 hours
+                    days_open=days_open
                 )
             except (ValueError, TypeError) as e:
                 logger.warning(f"Failed to parse gas station hours: {e}")
         
+        # Determine amenities based on available data
+        has_car_wash = "Car Wash" in amenities
+        has_air_pump = "Air Pump" in amenities or "Air" in amenities
+        has_vacuum = "Vacuum" in amenities
+        has_convenience_store = any(x in amenities for x in ["Beer", "Tobacco", "Gift Cards"])
+        accepts_meijer_rewards = True  # Assume yes for Meijer gas stations
+        accepts_meijer_gift_cards = "Gift Cards" in amenities
+        
+        # Payment methods (standard for Meijer gas stations)
+        payment_methods = [
+            "Credit Card", "Debit Card", "Cash", "Meijer Gift Card"
+        ]
+        
         return cls(
-            station_id=data.get("stationId", ""),
+            station_id=str(data.get("MfcUnitId", "")),
             store_id=store_id,
-            address=data.get("address", ""),
-            city=data.get("city", ""),
-            state=data.get("state", ""),
-            zip_code=data.get("zipCode", ""),
-            phone_number=data.get("phoneNumber"),
-            fuel_prices=fuel_prices,
+            address=data.get("Address", ""),
+            city=data.get("City", ""),
+            state=data.get("State", ""),
+            zip_code=data.get("Zip", ""),
+            phone_number=data.get("MfcPhoneNumber"),
+            fuel_prices=[],  # Fuel prices not available in store data
             hours=hours,
-            has_car_wash=data.get("hasCarWash", False),
-            has_air_pump=data.get("hasAirPump", True),
-            has_vacuum=data.get("hasVacuum", False),
-            has_convenience_store=data.get("hasConvenienceStore", True),
-            accepts_meijer_rewards=data.get("acceptsMeijerRewards", True),
-            accepts_meijer_gift_cards=data.get("acceptsMeijerGiftCards", True),
-            payment_methods=data.get("paymentMethods", [
-                "Credit Card", "Debit Card", "Cash", "Meijer Gift Card"
-            ]),
+            has_car_wash=has_car_wash,
+            has_air_pump=has_air_pump,
+            has_vacuum=has_vacuum,
+            has_convenience_store=has_convenience_store,
+            accepts_meijer_rewards=accepts_meijer_rewards,
+            accepts_meijer_gift_cards=accepts_meijer_gift_cards,
+            payment_methods=payment_methods,
             _raw_data=data
         )
     

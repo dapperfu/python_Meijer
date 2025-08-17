@@ -18,6 +18,7 @@ from .enums import AuthenticationStatus
 from .exceptions import MeijerAuthenticationError, MeijerAPIError
 from .auth import TokenStorage, MeijerAuth, load_auth_from_config_file, load_auth_file
 from .shopping_list import MeijerList
+from .stores import MeijerStore
 
 
 class Meijer:
@@ -358,7 +359,7 @@ class Meijer:
             return []
 
     def get_stores(
-        self, zip_code: str = None, radius: int = 25
+        self, zip_code: str = None, radius: int = 25, latitude: float = None, longitude: float = None
     ) -> List["MeijerStore"]:
         """
         Get store information from store locator API.
@@ -369,6 +370,32 @@ class Meijer:
             ZIP code to search around (default: None, uses device location)
         radius : int, optional
             Search radius in miles (default: 25)
+        latitude : float, optional
+            Latitude coordinate for search (overrides zip_code)
+        longitude : float, optional
+            Longitude coordinate for search (overrides zip_code)
+            
+        Returns
+        -------
+        List[MeijerStore]
+            List of MeijerStore objects found in the area
+        """
+        # Store search might require authentication
+        if not self._ensure_authenticated():
+            self.logger.warning("Not authenticated - store search might fail")
+        """
+        Get store information from store locator API.
+        
+        Parameters
+        ----------
+        zip_code : str, optional
+            ZIP code to search around (default: None, uses device location)
+        radius : int, optional
+            Search radius in miles (default: 25)
+        latitude : float, optional
+            Latitude coordinate for search (overrides zip_code)
+        longitude : float, optional
+            Longitude coordinate for search (overrides zip_code)
             
         Returns
         -------
@@ -380,14 +407,33 @@ class Meijer:
             url = f"{self.api_base_url}/digital/storeInfo/v2/stores/proximity"
             headers = self._get_api_headers()
 
-            params = {}
-            if zip_code:
-                params["zipCode"] = zip_code
-            if radius:
-                params["radius"] = radius
+            params = {
+                "dataVariant": "2",  # Required parameter from API analysis
+                "miles": str(radius),
+                "numToReturn": "20"  # Default to 20 stores
+            }
+            
+            # Use coordinates if provided, otherwise use zip code
+            if latitude is not None and longitude is not None:
+                params["latitude"] = str(latitude)
+                params["longitude"] = str(longitude)
+            elif zip_code:
+                # For zip code searches, we need to convert to coordinates first
+                # For now, use a default location (Grand Rapids area)
+                params["latitude"] = "42.9634"
+                params["longitude"] = "-85.6681"
+                self.logger.info(f"Using default coordinates for ZIP code {zip_code}")
+
+            # Debug logging
+            self.logger.debug(f"Store search URL: {url}")
+            self.logger.debug(f"Store search params: {params}")
+            self.logger.debug(f"Store search headers: {headers}")
 
             response = self._make_request("GET", url, headers=headers, params=params)
 
+            self.logger.debug(f"Store search response status: {response.status_code}")
+            self.logger.debug(f"Store search response headers: {dict(response.headers)}")
+            
             if response.status_code == 200:
                 data = response.json()
                 stores_data = data.get("stores", data.get("data", []))

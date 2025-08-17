@@ -217,60 +217,67 @@ class MeijerStore:
         MeijerStore
             New MeijerStore instance
         """
-        # Extract store hours if available
+        # Extract store hours if available (using the actual field names from API)
         hours = None
-        if "hours" in data and data["hours"]:
+        if "CurbsideWeekdayOpen" in data and data.get("CurbsideWeekdayOpen"):
             try:
-                hours_data = data["hours"]
+                # Parse the time format from API (e.g., "1900-01-01T08:00:00")
+                open_time_str = data.get("CurbsideWeekdayOpen", "1900-01-01T08:00:00")
+                close_time_str = data.get("CurbsideWeekdayClose", "1900-01-01T21:00:00")
+                
+                # Extract time portion (HH:MM:SS)
+                open_time = time.fromisoformat(open_time_str.split("T")[1])
+                close_time = time.fromisoformat(close_time_str.split("T")[1])
+                
                 hours = StoreHours(
-                    open_time=time.fromisoformat(hours_data.get("openTime", "06:00")),
-                    close_time=time.fromisoformat(hours_data.get("closeTime", "22:00")),
-                    is_24_hours=hours_data.get("is24Hours", False),
-                    days_open=hours_data.get("daysOpen", [
+                    open_time=open_time,
+                    close_time=close_time,
+                    is_24_hours=False,  # Meijer stores are typically not 24 hours
+                    days_open=[
                         "Monday", "Tuesday", "Wednesday", "Thursday", 
                         "Friday", "Saturday", "Sunday"
-                    ])
+                    ]
                 )
             except (ValueError, TypeError) as e:
                 logger.warning(f"Failed to parse store hours: {e}")
         
         # Extract gas station information if available
         gas_station = None
-        if data.get("hasGasStation") and "gasStation" in data:
+        if data.get("MfuelFlag") and data.get("MfcUnitId"):
             try:
                 from .gas import MeijerGas
                 gas_station = MeijerGas.from_api_data(
-                    data["gasStation"], 
-                    data.get("unitId", "")
+                    data, 
+                    data.get("UnitId", "")
                 )
             except Exception as e:
                 logger.warning(f"Failed to parse gas station data: {e}")
         
         return cls(
-            unit_id=data.get("unitId", ""),
-            name=data.get("name", ""),
-            address=data.get("address", ""),
-            city=data.get("city", ""),
-            state=data.get("state", ""),
-            zip_code=data.get("zipCode", ""),
-            phone_number=data.get("phoneNumber"),
-            latitude=data.get("latitude"),
-            longitude=data.get("longitude"),
-            has_pharmacy=data.get("hasPharmacy", False),
-            has_optical=data.get("hasOptical", False),
-            has_bank=data.get("hasBank", False),
-            has_gas_station=data.get("hasGasStation", False),
-            has_curbside_pickup=data.get("hasCurbsidePickup", False),
-            has_delivery=data.get("hasDelivery", False),
-            has_self_checkout=data.get("hasSelfCheckout", True),
-            has_coin_machine=data.get("hasCoinMachine", False),
-            has_photo_center=data.get("hasPhotoCenter", False),
-            has_garden_center=data.get("hasGardenCenter", False),
-            has_auto_center=data.get("hasAutoCenter", False),
+            unit_id=str(data.get("UnitId", "")),
+            name=data.get("Name", ""),
+            address=data.get("Address", ""),
+            city=data.get("City", ""),
+            state=data.get("State", ""),
+            zip_code=data.get("Zip", ""),
+            phone_number=data.get("PhoneNumber"),
+            latitude=data.get("Latitude"),
+            longitude=data.get("Longitude"),
+            has_pharmacy=bool(data.get("PharmPhone")),
+            has_optical=False,  # Not directly available in API
+            has_bank=False,     # Not directly available in API
+            has_gas_station=bool(data.get("MfuelFlag")),
+            has_curbside_pickup=data.get("CurbsideAllow", "N") == "Y",
+            has_delivery=data.get("DlvryOrderPhone") is not None,
+            has_self_checkout=True,  # Assume available
+            has_coin_machine=False,  # Not directly available in API
+            has_photo_center=False,  # Not directly available in API
+            has_garden_center=False, # Not directly available in API
+            has_auto_center=False,   # Not directly available in API
             hours=hours,
             gas_station=gas_station,
-            store_type=data.get("storeType", "Supercenter"),
-            store_size=data.get("storeSize"),
+            store_type="Supercenter",  # Default assumption
+            store_size=None,
             _meijer_client=meijer_client,
             _raw_data=data
         )
