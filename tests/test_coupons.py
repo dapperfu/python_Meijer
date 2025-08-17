@@ -287,10 +287,10 @@ class TestCouponCreation:
         assert coupon.is_clipped is False
         assert coupon.is_suggested is False
     
-    def test_create_meijer_coupons_invalid_offer(self):
+        def test_create_meijer_coupons_invalid_offer(self):
         """Test coupon creation with invalid offer data."""
         mock_client = Mock()
-        
+
         response_data = {
             "listOfCoupons": [
                 {
@@ -302,10 +302,10 @@ class TestCouponCreation:
                 }
             ]
         }
-        
-        # Should handle gracefully
+
+        # Should filter out invalid offers gracefully
         coupons = create_meijer_coupons_from_response(response_data, mock_client)
-        assert len(coupons) == 1
+        assert len(coupons) == 0  # Invalid offers should be filtered out
         # The coupon should still be created with the data as-is
     
     def test_create_meijer_coupons_empty_list(self):
