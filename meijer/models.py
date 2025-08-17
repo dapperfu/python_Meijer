@@ -122,20 +122,47 @@ class ShopScanTrip:
 
 @dataclass
 class ListItem:
-    """Shopping list item model."""
+    """Shopping list item model - matches API response structure."""
 
-    item_id: str
-    name: str
+    # Core fields from ShoppingListItemWireModel API response
+    listItemId: int = 0
+    itemDescription: Optional[str] = None
     quantity: int = 1
-    checked: bool = False
-    upc: Optional[str] = None
-    price: Optional[float] = None
-    category: Optional[str] = None
-    brand: Optional[str] = None
-    size: Optional[str] = None
-    image_url: Optional[str] = None
+    itemPartNumber: Optional[str] = None  # UPC
+    listItemTypeId: int = 1
+    itemDisplayOrder: int = 1
+    storeId: Optional[int] = None
     notes: Optional[str] = None
-    added_at: Optional[datetime] = None
+    isComplete: bool = False
+    isFavorite: bool = False
+    listingId: Optional[str] = None
+    promotionStart: Optional[str] = None
+    promotionEnd: Optional[str] = None
+    couponId: Optional[int] = None
+    
+    # Favorites-specific fields (FavoriteListItemWireModel)
+    isItemInActiveList: Optional[bool] = None
+    
+    # Legacy properties for backward compatibility
+    @property
+    def item_id(self) -> str:
+        """Legacy property - maps to listItemId."""
+        return str(self.listItemId)
+        
+    @property
+    def name(self) -> str:
+        """Legacy property - maps to itemDescription."""
+        return self.itemDescription or ""
+        
+    @property
+    def checked(self) -> bool:
+        """Legacy property - maps to isComplete."""
+        return self.isComplete
+        
+    @property
+    def upc(self) -> Optional[str]:
+        """Legacy property - maps to itemPartNumber."""
+        return self.itemPartNumber
 
 
 @dataclass
