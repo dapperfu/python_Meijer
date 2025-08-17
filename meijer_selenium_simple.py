@@ -218,6 +218,10 @@ class MeijerSeleniumAuth:
             
             # Look for password field
             password_selectors = [
+                "input[data-se='credentials.passcode']",  # Specific selector from user
+                "input#credentials\\.passcode",           # ID selector (escaped)
+                "input[name='credentials.passcode']",     # Name selector
+                "input[aria-labelledby='credentials.passcode-label']",  # Aria selector
                 "#input-2",           # Common Okta selector
                 "#password",          # Generic password field
                 "input[name='password']",
@@ -242,37 +246,39 @@ class MeijerSeleniumAuth:
             password_field.clear()
             password_field.send_keys(self.password)
             
-            # Find and click login button
-            login_selectors = [
+            # Find and click submit button using the specific selector
+            submit_selectors = [
+                "button[data-se='save']",                 # Specific selector from user
+                "button[type='submit']",                  # Type selector
+                "button.MuiButton-root",                  # Material-UI button class
                 "input[type='submit']",
-                "button[type='submit']",
+                "button:contains('Submit')",
+                "input[value*='Submit' i]",
                 "input[value*='Sign In' i]",
                 "input[value*='Login' i]",
-                "input[value*='Submit' i]",
                 "button:contains('Sign In')",
                 "button:contains('Login')",
-                "button:contains('Submit')",
                 "input[data-se='password-submit']",
                 "button[data-se='password-submit']"
             ]
             
-            login_button = None
-            for selector in login_selectors:
+            submit_button = None
+            for selector in submit_selectors:
                 try:
-                    login_button = self.driver.find_element(By.CSS_SELECTOR, selector)
-                    if login_button:
-                        self.logger.info(f"✅ Found login button: {selector}")
+                    submit_button = self.driver.find_element(By.CSS_SELECTOR, selector)
+                    if submit_button:
+                        self.logger.info(f"✅ Found submit button: {selector}")
                         break
                 except:
                     continue
             
-            if not login_button:
-                self.logger.error("❌ Login button not found")
+            if not submit_button:
+                self.logger.error("❌ Submit button not found")
                 return None
             
-            # Click login button
-            self.logger.info("🖱️  Clicking login button...")
-            login_button.click()
+            # Click submit button
+            self.logger.info("🖱️  Clicking submit button...")
+            submit_button.click()
             
             # Wait for login to process
             time.sleep(5)
