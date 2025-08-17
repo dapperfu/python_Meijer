@@ -380,7 +380,9 @@ def list_clearall():
 
 @list.command("defrag")
 @click.option("--store-id", help="Store ID for location lookup")
-def list_defrag(store_id: Optional[str]):
+@click.option("-r", "--reverse", is_flag=True, help="Sort items in reverse order (descending)")
+@click.option("-z", "--zig", is_flag=True, help="Alternate B aisle sorting (B1 ascending, B2 descending, etc.)")
+def list_defrag(store_id: Optional[str], reverse: bool, zig: bool):
     """Defragment shopping list by organizing items by aisle."""
     client = get_meijer_client()
     
@@ -388,7 +390,12 @@ def list_defrag(store_id: Optional[str]):
         click.echo("🔧 Starting shopping list defrag...")
         click.echo("⏳ This may take a moment to search for product locations...")
         
-        success = client.list.defrag(store_id=store_id)
+        if reverse:
+            click.echo("🔄 Using reverse sorting (descending order)")
+        if zig:
+            click.echo("🔄 Using zig-zag B aisle sorting (B1 ascending, B2 descending, etc.)")
+        
+        success = client.list.defrag(store_id=store_id, reverse=reverse, zig=zig)
         
         if success:
             click.echo("🎉 Defrag completed successfully!")
@@ -557,8 +564,17 @@ def list_interactive():
                 
             elif choice == "5":
                 if Confirm.ask("Defrag shopping list? This will reorganize by aisle."):
+                    # Ask for defrag options
+                    reverse = Confirm.ask("Use reverse sorting (descending order)?")
+                    zig = Confirm.ask("Use zig-zag B aisle sorting (B1 ascending, B2 descending, etc.)?")
+                    
                     click.echo("🔧 Starting defrag...")
-                    success = client.list.defrag()
+                    if reverse:
+                        click.echo("🔄 Using reverse sorting (descending order)")
+                    if zig:
+                        click.echo("🔄 Using zig-zag B aisle sorting (B1 ascending, B2 descending, etc.)")
+                    
+                    success = client.list.defrag(reverse=reverse, zig=zig)
                     if success:
                         console.print("✅ Defrag completed!", style="green")
                     else:
@@ -579,7 +595,7 @@ def list_interactive():
         click.echo("💡 Use individual commands for better functionality:")
         click.echo("   meijer list show")
         click.echo("   meijer list add <item>")
-        click.echo("   meijer list defrag")
+        click.echo("   meijer list defrag [--reverse] [--zig]")
 
 
 @cli.command()

@@ -305,7 +305,7 @@ def clip_coupon(client: "Meijer", coupon_id: int) -> bool:
             "cartIsActive": False  # Boolean - whether shopping cart is active
         }
         
-        response = client._make_request("POST", url, headers=headers, json=data)
+        response = client._make_request("POST", url, headers=headers, json_data=data)
 
         # Check for success based on APK-discovered response structure
         if response.status_code in [200, 201]:
@@ -346,7 +346,7 @@ def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
             "cartIsActive": False  # Boolean - whether shopping cart is active
         }
         
-        response = client._make_request("POST", url, headers=headers, json=data)
+        response = client._make_request("POST", url, headers=headers, json_data=data)
 
         # Check for success based on APK-discovered response structure
         if response.status_code in [200, 201]:

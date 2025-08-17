@@ -396,7 +396,7 @@ class Meijer:
                 "content-type": "application/vnd.meijer.digitalmperks.offers-v1.0+json"
             })
             
-            response = self._make_request("POST", url, headers=headers, json=data)
+            response = self._make_request("POST", url, headers=headers, json_data=data)
             
             if response.status_code == 200:
                 data = response.json()
@@ -457,7 +457,7 @@ class Meijer:
                         "content-type": "application/vnd.meijer.digitalmperks.offers-v1.0+json"
                     })
                     
-                    response = self._make_request("POST", url, headers=headers, json=data)
+                    response = self._make_request("POST", url, headers=headers, json_data=data)
                     
                     if response.status_code == 200:
                         page_data = response.json()

@@ -537,7 +537,63 @@ class MeijerList:
                     # If no numeric part, sort alphabetically
                     return (1, aisle)
             
-            sorted_items = sorted(items_with_locations, key=get_aisle_sort_key)
+            # Apply zig-zag sorting for B aisles if requested
+            if zig:
+                # Group items by aisle
+                aisle_groups = {}
+                for item_data in items_with_locations:
+                    location = item_data.get('location')
+                    if location and location.get('aisle'):
+                        aisle = location['aisle']
+                        if aisle not in aisle_groups:
+                            aisle_groups[aisle] = []
+                        aisle_groups[aisle].append(item_data)
+                    else:
+                        # Items without aisle info go to a special group
+                        if 'no_aisle' not in aisle_groups:
+                            aisle_groups['no_aisle'] = []
+                        aisle_groups['no_aisle'].append(item_data)
+                
+                # Sort items within each aisle group
+                for aisle, items in aisle_groups.items():
+                    if aisle == 'no_aisle':
+                        # Keep items without aisle info in original order
+                        continue
+                    
+                    # Check if this is a B aisle
+                    if aisle.startswith('B') and len(aisle) > 1:
+                        try:
+                            aisle_num = int(aisle[1:])
+                            # Even B aisles (B2, B4, B6...) get reverse sorting
+                            if aisle_num % 2 == 0:
+                                items.sort(key=lambda x: get_aisle_sort_key(x), reverse=True)
+                            else:
+                                # Odd B aisles (B1, B3, B5...) get normal sorting
+                                items.sort(key=lambda x: get_aisle_sort_key(x), reverse=False)
+                        except (ValueError, TypeError):
+                            # If aisle number parsing fails, use normal sorting
+                            items.sort(key=lambda x: get_aisle_sort_key(x), reverse=False)
+                    else:
+                        # Non-B aisles use normal sorting
+                        items.sort(key=lambda x: get_aisle_sort_key(x), reverse=False)
+                
+                # Flatten the groups back to a single list
+                sorted_items = []
+                # Sort aisles themselves
+                sorted_aisles = sorted(aisle_groups.keys(), key=lambda x: 
+                    (0, int(x[1:])) if x.startswith('B') and len(x) > 1 and x[1:].isdigit() 
+                    else (1, x) if x != 'no_aisle' 
+                    else (999, 0))
+                
+                for aisle in sorted_aisles:
+                    sorted_items.extend(aisle_groups[aisle])
+            else:
+                # Normal sorting without zig-zag
+                sorted_items = sorted(items_with_locations, key=get_aisle_sort_key)
+            
+            # Apply reverse sorting if requested
+            if reverse:
+                sorted_items = list(reversed(sorted_items))
             
             # Step 4: Delete all current items
             self.logger.info("🗑️  Clearing current shopping list...")

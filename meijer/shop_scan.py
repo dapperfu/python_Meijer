@@ -77,7 +77,7 @@ class ShopNScan:
                     if store_id:
                         data["storeId"] = store_id
                     
-                    response = self.meijer._make_request("POST", endpoint, json=data)
+                    response = self.meijer._make_request("POST", endpoint, json_data=data)
                 else:
                     # GET request
                     params = {}
@@ -315,7 +315,7 @@ class ShopNScan:
             if store_id:
                 data["storeId"] = store_id
             
-            response = self.meijer._make_request("POST", self.endpoints["add_to_cart"], json=data)
+            response = self.meijer._make_request("POST", self.endpoints["add_to_cart"], json_data=data)
             return response.status_code in [200, 201]
             
         except Exception as e:
@@ -340,7 +340,7 @@ class ShopNScan:
             if store_id:
                 data["storeId"] = store_id
             
-            response = self.meijer._make_request("POST", self.endpoints["remove_from_cart"], json=data)
+            response = self.meijer._make_request("POST", self.endpoints["remove_from_cart"], json_data=data)
             return response.status_code in [200, 204]
             
         except Exception as e:
