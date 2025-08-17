@@ -617,7 +617,7 @@ class MeijerSeleniumClient(MeijerComprehensiveClient):
             self.selenium_auth.headless = headless
             
             # Get authorization URL
-            auth_url, state, code_verifier = self.get_authorization_url()
+            auth_url, state, code_verifier = self.get_authorization_url(use_mobile_uri=True)
             
             # Perform authentication
             auth_code = self.selenium_auth.authenticate(auth_url)
