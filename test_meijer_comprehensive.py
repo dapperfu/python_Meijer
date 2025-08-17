@@ -34,7 +34,8 @@ class TestOAuthConfig(unittest.TestCase):
         self.assertEqual(config.auth_url, "https://id.meijer.com/oauth2/default/v1/authorize")
         self.assertEqual(config.token_url, "https://id.meijer.com/oauth2/default/v1/token")
         self.assertEqual(config.scope, "openid profile offline_access")
-        self.assertEqual(config.redirect_uri, "com.meijer.mobile.meijer:/login")
+        self.assertEqual(config.redirect_uri, "https://localhost:8080/callback")  # Web-compatible URI
+        self.assertEqual(config.mobile_redirect_uri, "com.meijer.mobile.meijer:/login")  # Mobile app URI
         self.assertEqual(config.response_type, "code")
         self.assertEqual(config.code_challenge_method, "S256")
 

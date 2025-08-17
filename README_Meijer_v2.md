@@ -9,6 +9,7 @@ A comprehensive Python client for interacting with the Meijer API, built with pr
 - **Interactive authentication** with browser-based OAuth flow
 - **Token management** with automatic refresh capabilities
 - **Secure credential storage** in plain text files
+- **🆕 Persistent Token Storage** - Automatically restores authentication to avoid 2FA prompts
 
 ### **Comprehensive API Coverage**
 - **Offers & Coupons** - Retrieve and manage mPerks offers
@@ -24,6 +25,7 @@ A comprehensive Python client for interacting with the Meijer API, built with pr
 - **Context Manager Support** - Safe resource management with `with` statements
 - **Logging** - Built-in logging for debugging and monitoring
 - **Session Management** - Efficient HTTP session handling
+- **🆕 Token Persistence** - Matches Android app behavior for seamless re-authentication
 
 ## 📋 Requirements
 
@@ -53,6 +55,30 @@ A comprehensive Python client for interacting with the Meijer API, built with pr
 
 ## 🔐 Authentication
 
+### **🆕 Enhanced Token Persistence (No More 2FA!)**
+
+The client now implements persistent token storage that matches the Android app's behavior:
+
+- **Automatic Token Restoration** - Tokens are automatically restored on subsequent logins
+- **Seamless Re-authentication** - No need to re-enter credentials or complete 2FA
+- **Smart Token Refresh** - Automatically refreshes expired tokens using stored refresh tokens
+- **Secure Storage** - Tokens are stored locally in encrypted pickle format
+
+```python
+from meijer_v2 import Meijer
+
+# First login - requires credentials and 2FA
+meijer1 = Meijer()
+if meijer1.login():
+    print("First login successful!")
+    meijer1.logout()
+
+# Second login - automatically restores from stored tokens
+meijer2 = Meijer()
+if meijer2.login():  # No 2FA needed!
+    print("Second login successful - tokens restored automatically!")
+```
+
 ### **OAuth 2.0 Flow (Recommended)**
 
 The client implements the actual OAuth 2.0 flow used by the Meijer mobile app:
@@ -71,6 +97,7 @@ print(f"Visit: {auth_url}")
 # (You'll need to extract this from the redirect)
 if meijer.authenticate_with_code("your_auth_code"):
     print("Authentication successful!")
+    # Tokens are automatically saved for future use
 ```
 
 ### **Interactive Authentication**
@@ -95,14 +122,14 @@ if meijer.login():
 
 ## 🚀 Usage Examples
 
-### **Basic Usage**
+### **Basic Usage with Token Persistence**
 
 ```python
 from meijer_v2 import Meijer
 
 # Create client with context manager
 with Meijer(debug=True) as meijer:
-    # Login
+    # Login (will restore from stored tokens if available)
     if meijer.login():
         print("Authenticated!")
         
@@ -116,7 +143,7 @@ with Meijer(debug=True) as meijer:
             print(f"Welcome, {user.first_name}!")
 ```
 
-### **Advanced Usage**
+### **Advanced Usage with Token Management**
 
 ```python
 from meijer_v2 import Meijer, MeijerError
@@ -124,11 +151,13 @@ from meijer_v2 import Meijer, MeijerError
 meijer = Meijer(debug=True)
 
 try:
-    # Ensure authentication
+    # Ensure authentication (automatically handles token refresh)
     if meijer.ensure_authenticated():
         # Get session information
         session_info = meijer.get_session_info()
         print(f"Session status: {session_info['authentication_status']}")
+        print(f"Has stored tokens: {session_info['has_stored_tokens']}")
+        print(f"Has refresh token: {session_info['has_refresh_token']}")
         
         # Get various data
         offers = meijer.get_offers(limit=20, offset=0)
@@ -150,10 +179,14 @@ finally:
     meijer.logout()
 ```
 
-### **Token Management**
+### **Token Management and Persistence**
 
 ```python
-# Check token status
+# Check token status and storage
+session_info = meijer.get_session_info()
+print(f"Has stored tokens: {session_info['has_stored_tokens']}")
+print(f"Authentication status: {session_info['authentication_status']}")
+
 if meijer.auth_tokens:
     print(f"Token expires in: {meijer.auth_tokens.expires_in} seconds")
     print(f"Needs refresh: {meijer.auth_tokens.needs_refresh()}")
@@ -161,6 +194,7 @@ if meijer.auth_tokens:
     # Manual token refresh
     if meijer.refresh_token():
         print("Token refreshed successfully!")
+        # New tokens are automatically saved to persistent storage
 ```
 
 ## 🔧 Configuration
@@ -169,10 +203,11 @@ if meijer.auth_tokens:
 
 ```python
 meijer = Meijer(
-    auth_file="auth.txt",      # Path to credentials file
-    debug=True,                # Enable debug logging
-    max_retries=3,            # Maximum retry attempts
-    timeout=30                # Request timeout in seconds
+    auth_file="auth.txt",           # Path to credentials file
+    debug=True,                     # Enable debug logging
+    max_retries=3,                 # Maximum retry attempts
+    timeout=30,                    # Request timeout in seconds
+    token_storage_file="meijer_tokens.pkl"  # Path to token storage file
 )
 ```
 
@@ -192,12 +227,19 @@ The client uses the actual Meijer OAuth configuration:
 
 | Method | Description |
 |--------|-------------|
-| `login()` | Authenticate using stored credentials |
+| `login()` | Authenticate using stored credentials or restore from stored tokens |
 | `authenticate_interactive()` | Open browser for OAuth authentication |
 | `authenticate_with_code(code)` | Complete OAuth with authorization code |
 | `refresh_token()` | Refresh access token |
-| `logout()` | Clear authentication state |
-| `ensure_authenticated()` | Ensure valid authentication |
+| `logout()` | Clear authentication state and stored tokens |
+| `ensure_authenticated()` | Ensure valid authentication (auto-refresh if needed) |
+
+### **🆕 Token Persistence Methods**
+
+| Method | Description |
+|--------|-------------|
+| `_restore_authentication()` | Automatically restore authentication from stored tokens |
+| `get_session_info()` | Get current session details including token storage status |
 
 ### **Data Retrieval Methods**
 
@@ -225,6 +267,12 @@ The client uses the actual Meijer OAuth configuration:
 python3 test_meijer_v2.py
 ```
 
+### **🆕 Test Token Persistence**
+
+```bash
+python3 test_token_persistence.py
+```
+
 ### **Run Simple Demo**
 
 ```bash
@@ -249,6 +297,7 @@ This client was developed by analyzing the actual network traffic from the Meije
 1. **OAuth 2.0 with PKCE** - Secure authentication using Okta
 2. **Bearer Token** - JWT-based access tokens
 3. **Automatic Refresh** - Seamless token renewal
+4. **🆕 Persistent Storage** - Tokens stored locally like Android app
 
 ### **API Structure**
 - **Base URL**: `https://api.meijer.com`
@@ -268,10 +317,11 @@ This client was developed by analyzing the actual network traffic from the Meije
 - Never commit credentials to version control
 - Consider using environment variables for production
 
-### **Token Security**
-- Access tokens are automatically managed
-- Refresh tokens are securely stored in memory
-- All tokens are cleared on logout
+### **🆕 Token Security**
+- Access tokens are automatically managed and stored securely
+- Refresh tokens are securely stored in local pickle files
+- All tokens are automatically cleared on logout
+- Token storage uses Python's pickle module for persistence
 
 ### **Network Security**
 - Uses HTTPS for all API communications
@@ -292,7 +342,12 @@ This client was developed by analyzing the actual network traffic from the Meije
    - Use `ensure_authenticated()` before API calls
    - Check `refresh_token()` for manual refresh
 
-3. **API Errors**
+3. **🆕 Token Persistence Issues**
+   - Check if `meijer_tokens.pkl` file exists
+   - Verify file permissions for token storage
+   - Use `get_session_info()` to check token status
+
+4. **API Errors**
    - Verify subscription key is valid
    - Check rate limiting
    - Review error logs for details
@@ -324,10 +379,13 @@ This client is for educational and development purposes. Please ensure complianc
 ## 🔗 Related Projects
 
 - **mitmproxy_analyzer.py** - Network traffic analysis tool
-- **meijer_v2.py** - Full-featured API client
+- **meijer_v2.py** - Full-featured API client with token persistence
 - **test_meijer_v2.py** - Comprehensive test suite
+- **test_token_persistence.py** - Token persistence testing
 - **demo_meijer_v2.py** - Simple usage examples
 
 ---
 
-**Built with ❤️ using mitmproxy network analysis and OAuth 2.0 best practices** 
+**Built with ❤️ using mitmproxy network analysis and OAuth 2.0 best practices**
+
+**🆕 Now with Android app-compatible token persistence to avoid 2FA prompts!** 

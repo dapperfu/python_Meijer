@@ -15,6 +15,8 @@ import hashlib
 import base64
 import secrets
 import webbrowser
+import pickle
+import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union, Tuple
 from urllib.parse import urljoin, urlparse, parse_qs, urlencode
@@ -69,7 +71,7 @@ class OAuthConfig:
 
 @dataclass
 class AuthTokens:
-    """Authentication tokens container."""
+    """Authentication tokens container with persistent storage support."""
     access_token: str
     refresh_token: str
     id_token: str
@@ -77,6 +79,8 @@ class AuthTokens:
     expires_in: int
     expires_at: datetime
     scope: str
+    device_secret: Optional[str] = None
+    issued_token_type: Optional[str] = None
     
     @classmethod
     def from_response(cls, response: Dict[str, Any]) -> 'AuthTokens':
@@ -91,7 +95,9 @@ class AuthTokens:
             token_type=response.get('token_type', 'Bearer'),
             expires_in=expires_in,
             expires_at=expires_at,
-            scope=response.get('scope', '')
+            scope=response.get('scope', ''),
+            device_secret=response.get('device_secret'),
+            issued_token_type=response.get('issued_token_type')
         )
     
     def is_expired(self, buffer_seconds: int = 300) -> bool:
@@ -101,6 +107,37 @@ class AuthTokens:
     def needs_refresh(self, buffer_seconds: int = 600) -> bool:
         """Check if token needs refresh (with buffer)."""
         return datetime.now() + timedelta(seconds=buffer_seconds) >= self.expires_at
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for storage."""
+        return {
+            'access_token': self.access_token,
+            'refresh_token': self.refresh_token,
+            'id_token': self.id_token,
+            'token_type': self.token_type,
+            'expires_in': self.expires_in,
+            'expires_at': self.expires_at.isoformat(),
+            'scope': self.scope,
+            'device_secret': self.device_secret,
+            'issued_token_type': self.issued_token_type
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'AuthTokens':
+        """Create AuthTokens from stored dictionary."""
+        expires_at = datetime.fromisoformat(data['expires_at'])
+        
+        return cls(
+            access_token=data['access_token'],
+            refresh_token=data['refresh_token'],
+            id_token=data['id_token'],
+            token_type=data['token_type'],
+            expires_in=data['expires_in'],
+            expires_at=expires_at,
+            scope=data['scope'],
+            device_secret=data.get('device_secret'),
+            issued_token_type=data.get('issued_token_type')
+        )
 
 
 @dataclass
@@ -143,6 +180,51 @@ class MeijerAuth(AuthBase):
         return request
 
 
+class TokenStorage:
+    """Handles persistent storage of authentication tokens."""
+    
+    def __init__(self, storage_file: str = "meijer_tokens.pkl"):
+        self.storage_file = storage_file
+    
+    def save_tokens(self, tokens: AuthTokens) -> bool:
+        """Save tokens to persistent storage."""
+        try:
+            with open(self.storage_file, 'wb') as f:
+                pickle.dump(tokens.to_dict(), f)
+            return True
+        except Exception as e:
+            logging.error(f"Failed to save tokens: {e}")
+            return False
+    
+    def load_tokens(self) -> Optional[AuthTokens]:
+        """Load tokens from persistent storage."""
+        try:
+            if not os.path.exists(self.storage_file):
+                return None
+            
+            with open(self.storage_file, 'rb') as f:
+                token_data = pickle.load(f)
+            
+            return AuthTokens.from_dict(token_data)
+        except Exception as e:
+            logging.error(f"Failed to load tokens: {e}")
+            return None
+    
+    def clear_tokens(self) -> bool:
+        """Clear stored tokens."""
+        try:
+            if os.path.exists(self.storage_file):
+                os.remove(self.storage_file)
+            return True
+        except Exception as e:
+            logging.error(f"Failed to clear tokens: {e}")
+            return False
+    
+    def has_tokens(self) -> bool:
+        """Check if tokens are stored."""
+        return os.path.exists(self.storage_file)
+
+
 class Meijer:
     """
     Full-featured Meijer API client with OAuth 2.0 authentication.
@@ -150,6 +232,8 @@ class Meijer:
     This client implements the complete authentication flow discovered
     through network analysis, including OAuth 2.0 with PKCE, token
     management, and comprehensive API access.
+    
+    Features persistent token storage to avoid 2FA on subsequent logins.
     """
     
     def __init__(
@@ -157,7 +241,8 @@ class Meijer:
         auth_file: str = "auth.txt",
         debug: bool = False,
         max_retries: int = 3,
-        timeout: int = 30
+        timeout: int = 30,
+        token_storage_file: str = "meijer_tokens.pkl"
     ):
         """
         Initialize the Meijer client.
@@ -167,6 +252,7 @@ class Meijer:
             debug: Enable debug logging
             max_retries: Maximum number of retry attempts
             timeout: Request timeout in seconds
+            token_storage_file: Path to token storage file
         """
         self.auth_file = auth_file
         self.debug = debug
@@ -185,11 +271,17 @@ class Meijer:
         self.auth_status = AuthenticationStatus.UNAUTHENTICATED
         self.user_info: Optional[UserInfo] = None
         
+        # Token storage
+        self.token_storage = TokenStorage(token_storage_file)
+        
         # Session management
         self.session = self._create_session()
         
         # Load credentials if available
         self.credentials = self._load_credentials()
+        
+        # Try to restore authentication from stored tokens
+        self._restore_authentication()
         
         self.logger.info("Meijer client initialized")
     
@@ -248,6 +340,41 @@ class Meijer:
         except Exception as e:
             self.logger.error(f"Failed to load credentials: {e}")
             return {}
+    
+    def _restore_authentication(self) -> bool:
+        """Try to restore authentication from stored tokens."""
+        try:
+            stored_tokens = self.token_storage.load_tokens()
+            if not stored_tokens:
+                self.logger.info("No stored tokens found")
+                return False
+            
+            # Check if tokens are still valid
+            if stored_tokens.is_expired():
+                self.logger.info("Stored tokens are expired")
+                # Try to refresh if we have a refresh token
+                if stored_tokens.refresh_token:
+                    self.auth_tokens = stored_tokens
+                    if self.refresh_token():
+                        self.logger.info("Successfully restored authentication from stored tokens")
+                        return True
+                    else:
+                        self.logger.warning("Failed to refresh stored tokens")
+                        return False
+                else:
+                    self.logger.warning("Stored tokens expired and no refresh token available")
+                    return False
+            else:
+                # Tokens are still valid
+                self.auth_tokens = stored_tokens
+                self.auth_status = AuthenticationStatus.AUTHENTICATED
+                self.session.auth = MeijerAuth(self.auth_tokens.access_token)
+                self.logger.info("Successfully restored authentication from stored tokens")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Failed to restore authentication: {e}")
+            return False
     
     def _generate_pkce_pair(self) -> Tuple[str, str]:
         """Generate PKCE code verifier and challenge."""
@@ -365,6 +492,12 @@ class Meijer:
             # Update session with access token
             self.session.auth = MeijerAuth(self.auth_tokens.access_token)
             
+            # Store tokens persistently
+            if self.token_storage.save_tokens(self.auth_tokens):
+                self.logger.info("Tokens saved to persistent storage")
+            else:
+                self.logger.warning("Failed to save tokens to persistent storage")
+            
             # Clear PKCE values
             delattr(self, '_pkce_verifier')
             delattr(self, '_pkce_state')
@@ -423,6 +556,11 @@ class Meijer:
             True if login successful, False otherwise
         """
         try:
+            # First, try to restore from stored tokens
+            if self._restore_authentication():
+                self.logger.info("Successfully logged in using stored tokens")
+                return True
+            
             # Use provided credentials or load from file
             if username and password:
                 return self.authenticate_with_credentials(username, password)
@@ -468,11 +606,19 @@ class Meijer:
                 raise MeijerAuthenticationError(f"Token refresh failed: {response.status_code} - {response.text}")
             
             token_response = response.json()
+            
+            # Update tokens - note that refresh token might be updated
             self.auth_tokens = AuthTokens.from_response(token_response)
             self.auth_status = AuthenticationStatus.AUTHENTICATED
             
             # Update session with new access token
             self.session.auth = MeijerAuth(self.auth_tokens.access_token)
+            
+            # Store updated tokens persistently
+            if self.token_storage.save_tokens(self.auth_tokens):
+                self.logger.info("Refreshed tokens saved to persistent storage")
+            else:
+                self.logger.warning("Failed to save refreshed tokens to persistent storage")
             
             self.logger.info("Token refreshed successfully")
             return True
@@ -505,6 +651,9 @@ class Meijer:
         self.auth_status = AuthenticationStatus.UNAUTHENTICATED
         self.user_info = None
         self.session.auth = None
+        
+        # Clear stored tokens
+        self.token_storage.clear_tokens()
         
         # Clear PKCE values if they exist
         for attr in ['_pkce_verifier', '_pkce_state', '_pkce_nonce']:
@@ -663,7 +812,8 @@ class Meijer:
         info = {
             'authentication_status': self.auth_status.value,
             'has_tokens': self.auth_tokens is not None,
-            'user_info_loaded': self.user_info is not None
+            'user_info_loaded': self.user_info is not None,
+            'has_stored_tokens': self.token_storage.has_tokens()
         }
         
         if self.auth_tokens:
@@ -671,7 +821,8 @@ class Meijer:
                 'token_expires_at': self.auth_tokens.expires_at.isoformat(),
                 'token_expires_in': self.auth_tokens.expires_in,
                 'token_type': self.auth_tokens.token_type,
-                'scope': self.auth_tokens.scope
+                'scope': self.auth_tokens.scope,
+                'has_refresh_token': bool(self.auth_tokens.refresh_token)
             })
         
         return info
