@@ -174,13 +174,16 @@ class Meijer:
     def _get_api_headers(self) -> Dict[str, str]:
         """Get headers required for API requests."""
         headers = {
-            "ocp-apim-subscription-key": self.subscription_key,
             "user-agent": "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)",
             "accept-encoding": "gzip"
         }
         
+        # Use Bearer token for authenticated endpoints
         if self._access_token:
             headers["Authorization"] = f"Bearer {self._access_token}"
+        else:
+            # Fallback to subscription key for public endpoints only
+            headers["ocp-apim-subscription-key"] = self.subscription_key
         
         return headers
     

@@ -51,6 +51,7 @@ class MeijerList:
             "delete_all": "/loyalty/shoppinglist/DeleteAllListItems",
             "get_favorites": "/loyalty/shoppinglist/GetFavoritesList",
             "add_favorite": "/loyalty/shoppinglist/AddFavoritesListItem",
+            "delete_favorite": "/loyalty/shoppinglist/DeleteBulkListItems",  # Add missing endpoint
             "delete_bulk_favorites": "/loyalty/shoppinglist/DeleteBulkListItems",
         }
 
@@ -701,6 +702,8 @@ class MeijerList:
             'itemDisplayOrder': 'item_display_order',
             'itemPartNumber': 'item_part_number',
             'itemDescription': 'item_description',
+            'quantity': 'quantity',  # Add missing quantity mapping
+            'notes': 'notes',        # Add missing notes mapping
             'storeId': 'store_id',
             'isComplete': 'is_complete',
             'isFavorite': 'is_favorite',
@@ -742,6 +745,8 @@ class MeijerList:
         mapped_data.setdefault('is_favorite', False)
         mapped_data.setdefault('listing_id', None)
         mapped_data.setdefault('coupon_id', 0)
+        mapped_data.setdefault('promotion_start', None)  # Ensure this is always provided
+        mapped_data.setdefault('promotion_end', None)    # Ensure this is always provided
         
         return mapped_data
 

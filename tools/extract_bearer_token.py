@@ -136,10 +136,18 @@ def save_bearer_token(token_info: Dict[str, Any], output_file: str = "bearer_aut
 
 
 def main():
-    print("🔍 Extracting Bearer tokens from meijer2.log...")
+    import sys
+    
+    # Get log file from command line argument or use default
+    if len(sys.argv) > 1:
+        log_file = sys.argv[1]
+    else:
+        log_file = "meijer2.log"  # Default fallback
+    
+    print(f"🔍 Extracting Bearer tokens from {log_file}...")
 
     # Load flows from the log
-    flows = load_flows("meijer2.log")
+    flows = load_flows(log_file)
     print(f"📊 Loaded {len(flows)} flows")
 
     # Extract Bearer tokens
