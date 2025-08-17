@@ -16,7 +16,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Tuple
 from urllib.parse import urlencode
 
 import requests
@@ -797,6 +797,45 @@ class MeijerComprehensiveClient:
         except Exception as e:
             self.logger.error(f"Error extracting auth code: {e}")
             return None
+
+
+def read_auth_file(filepath: str = "auth.txt") -> Tuple[str, str]:
+    """
+    Read authentication credentials from auth.txt file.
+    
+    Args:
+        filepath: Path to the auth file
+        
+    Returns:
+        Tuple of (username, password)
+        
+    Raises:
+        FileNotFoundError: If auth file doesn't exist
+        ValueError: If auth file format is invalid
+    """
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read().strip()
+        
+        username = None
+        password = None
+        
+        for line in content.split('\n'):
+            line = line.strip()
+            if line.startswith('username='):
+                username = line.split('=', 1)[1]
+            elif line.startswith('password='):
+                password = line.split('=', 1)[1]
+        
+        if not username or not password:
+            raise ValueError("Both username and password must be specified in auth.txt")
+        
+        return username, password
+        
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Auth file not found: {filepath}")
+    except Exception as e:
+        raise ValueError(f"Error reading auth file: {e}")
 
 
 def main():
