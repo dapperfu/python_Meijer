@@ -5,7 +5,6 @@ Meijer API Client Package
 A comprehensive Python client for the Meijer mobile app API.
 
 Features:
-- Unified authentication (Bearer tokens, OAuth, Selenium)
 - Complete Shop & Scan functionality
 - Shopping lists, coupons, store search
 - Automatic token management and refresh

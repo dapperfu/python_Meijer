@@ -166,13 +166,13 @@ def test_authentication_methods():
         print("❌ No persistent tokens found")
         print("💡 Tokens will be saved automatically after successful login")
 
-    # Now test the unified login
-    print("\n" + "🚀 TESTING UNIFIED LOGIN")
-    print("-" * 50)
+    # Now test the login
+    print("\n" + "🚀 TESTING LOGIN")
+    print("-" * 40)
+
+    print("🔐 Attempting login (tries all methods automatically)...")
 
     with Meijer(debug=True) as test_meijer:
-        print("🔐 Attempting unified login (tries all methods automatically)...")
-
         if test_meijer.login():
             print("✅ LOGIN SUCCESSFUL!")
 
