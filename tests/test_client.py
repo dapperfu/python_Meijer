@@ -43,13 +43,26 @@ class TestMeijerClient:
     
     def test_init_with_auth_file(self):
         """Test client initialization with auth file."""
+        # Test bearer token
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
-            f.write("bearer=test_token_123\nuser=test@example.com\npassword=testpass")
+            f.write("bearer=test_token_123")
             auth_file = f.name
         
         try:
             client = Meijer(auth_file)
             assert client._access_token == "test_token_123"
+            assert client._user_credentials is None
+        finally:
+            os.unlink(auth_file)
+        
+        # Test user credentials
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            f.write("user=test@example.com\npassword=testpass")
+            auth_file = f.name
+        
+        try:
+            client = Meijer(auth_file)
+            assert client._access_token is None
             assert client._user_credentials == ("test@example.com", "testpass")
         finally:
             os.unlink(auth_file)
