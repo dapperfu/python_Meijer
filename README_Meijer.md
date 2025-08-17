@@ -29,7 +29,15 @@ This client provides programmatic access to Meijer services including:
 
 ## Usage
 
-### Basic Authentication
+### Authentication from File
+
+The recommended approach is to store credentials in a plain text file:
+
+```bash
+# Create auth.txt file
+echo "username=your_meijer_email@example.com" > auth.txt
+echo "password=your_meijer_password" >> auth.txt
+```
 
 ```python
 from meijer import Meijer
@@ -37,8 +45,24 @@ from meijer import Meijer
 # Create a client instance
 meijer = Meijer()
 
-# Login (placeholder implementation)
-if meijer.login("username", "password"):
+# Login using auth file (default: auth.txt)
+if meijer.login():
+    print("Login successful!")
+else:
+    print("Login failed!")
+```
+
+### Direct Credentials
+
+You can also pass credentials directly:
+
+```python
+from meijer import Meijer
+
+meijer = Meijer()
+
+# Login with provided credentials
+if meijer.login_with_credentials("username", "password"):
     print("Login successful!")
 else:
     print("Login failed!")
@@ -108,6 +132,38 @@ except MeijerError as e:
     print(f"API error: {e}")
 ```
 
+## Advanced Network Analysis with Mitmproxy
+
+Instead of parsing log files as plain text, you can use the included `mitmproxy_analyzer.py` script to leverage mitmproxy's powerful flow inspection capabilities.
+
+### Using the Mitmproxy Analyzer
+
+```bash
+# Install mitmproxy
+pip install mitmproxy
+
+# Run the analyzer
+mitmdump -s mitmproxy_analyzer.py --set flow_detail=0
+```
+
+This approach provides several advantages over plain text log parsing:
+- **Structured Data**: Direct access to HTTP flow objects with all metadata
+- **Real-time Analysis**: Process flows as they happen
+- **Rich Context**: Headers, content, timing, and flow relationships
+- **Easy Filtering**: Built-in filtering and categorization
+- **JSON Output**: Structured analysis reports
+
+### Flow File Analysis
+
+You can also analyze saved flow files directly:
+
+```python
+from mitmproxy_analyzer import analyze_flow_file
+
+# Analyze a saved flow file
+results = analyze_flow_file("your_flows.mitm")
+```
+
 ## Network Analysis Details
 
 This client was developed by analyzing network traffic from the Meijer mobile application using mitmproxy. The analysis revealed:
@@ -143,6 +199,14 @@ The network analysis showed authentication status tracking:
 4. **Rate Limiting**: Be mindful of API rate limits and implement appropriate delays between requests.
 
 ## Development
+
+### Testing
+
+Test the authentication file reading:
+
+```bash
+python test_auth.py
+```
 
 ### Running Tests
 
