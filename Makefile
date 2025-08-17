@@ -23,18 +23,19 @@ log:
 	@echo "🌍 HTTP proxy available on 0.0.0.0:8080"
 	@echo "⏹️  Press Ctrl+C when done to extract auth and cleanup"
 	@echo ""
-	@mitmweb \
+	@LOG_FILE="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
+	mitmweb \
 		--mode wireguard \
 		--listen-host 0.0.0.0 \
 		--listen-port 8080 \
 		--socks5-listen-port 1080 \
 		--socks5-listen-host 0.0.0.0 \
-		-w meijer_mitm.log \
+		-w "$$LOG_FILE" \
 		-s shop_n_scan_faker.py \
 		--set block_global=false || \
 	(echo "" && \
-	 echo "🔄 Extracting authentication tokens..." && \
-	 python meijer_cli.py auth meijer_mitm.log && \
-	 echo "🧹 Cleaning up log file..." && \
-	 rm -f meijer_mitm.log && \
+	 echo "🔄 Extracting authentication tokens from $$LOG_FILE..." && \
+	 python meijer_cli.py auth "$$LOG_FILE" && \
+	 echo "🧹 Cleaning up current session log file..." && \
+	 rm -f "$$LOG_FILE" && \
 	 echo "✅ Authentication updated and log cleaned up!")

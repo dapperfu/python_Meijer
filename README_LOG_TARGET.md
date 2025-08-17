@@ -5,8 +5,9 @@
 The `make log` target provides a complete workflow for:
 1. **Capturing network traffic** from the Meijer mobile app
 2. **Extracting authentication tokens** when done
-3. **Automatic cleanup** of sensitive log files
+3. **Automatic cleanup** of current session log files
 4. **Multiple proxy endpoints** for different use cases
+5. **Log preservation** for historical analysis
 
 ## 🚀 Usage
 
@@ -40,8 +41,8 @@ make log
 - The system automatically:
   - Extracts authentication tokens
   - Updates `~/.config/meijer.txt`
-  - Deletes the log file
-  - Cleans up temporary files
+  - Deletes only the current session's log file
+  - Preserves previous logs for analysis
 
 ## 🔧 Technical Details
 
@@ -50,9 +51,19 @@ make log
 - **HTTP Proxy**: `0.0.0.0:8080` (all interfaces)
 - **SOCKS5 Proxy**: `0.0.0.0:1080` (all interfaces)
 - **Web Interface**: `http://localhost:8081` (traffic monitoring)
-- **Log file**: `meijer_mitm.log`
+- **Log file**: `meijer_mitm_YYYYMMDD_HHMMSS.log` (timestamped)
 - **Script**: `shop_n_scan_faker.py` (location spoofing)
 - **Global blocking**: Disabled for proper operation
+
+### Timestamped Log Files
+Each session creates a unique log file:
+- **Format**: `meijer_mitm_YYYYMMDD_HHMMSS.log`
+- **Example**: `meijer_mitm_20250117_143052.log`
+- **Benefits**: 
+  - Multiple sessions can be captured
+  - Historical analysis is possible
+  - No log file conflicts
+  - Easy identification of session timing
 
 ### Multiple Listeners
 The configuration provides multiple access points:
@@ -72,11 +83,13 @@ The `shop_n_scan_faker.py` script intercepts store location requests and fakes:
 The target uses proper error handling:
 - If mitmweb exits normally: No action
 - If mitmweb is interrupted (Ctrl+C): Extract auth and cleanup
-- Always ensures log files are removed
+- Only removes the current session's log file
+- Preserves all previous logs for analysis
 
 ## 🛡️ Security Features
 
-- **Automatic cleanup**: Log files are deleted after use
+- **Selective cleanup**: Only current session logs are deleted
+- **Log preservation**: Previous logs remain for analysis
 - **Size limits**: Pre-commit hook prevents large files
 - **Sensitive patterns**: .gitignore blocks log files
 - **No persistence**: Authentication data goes to `~/.config/` only
@@ -105,14 +118,23 @@ The target uses proper error handling:
 - **Web Interface**: Open browser to `http://localhost:8081`
 - **Wireguard**: For apps that support wireguard proxy mode
 
+### Log Management
+- **Current session**: Automatically cleaned up after auth extraction
+- **Previous sessions**: Preserved for analysis and debugging
+- **File naming**: Timestamped for easy identification
+- **Storage**: Logs remain in project directory until manually removed
+
 ### Manual Override
 If automatic cleanup fails:
 ```bash
-# Manual auth extraction
-python meijer_cli.py auth meijer_mitm.log
+# Manual auth extraction (replace with actual log filename)
+python meijer_cli.py auth meijer_mitm_20250117_143052.log
 
-# Manual cleanup
-rm -f meijer_mitm.log
+# Manual cleanup of specific log
+rm -f meijer_mitm_20250117_143052.log
+
+# List all available logs
+ls -la meijer_mitm_*.log
 ```
 
 ## 📚 Related Files
@@ -121,4 +143,5 @@ rm -f meijer_mitm.log
 - **shop_n_scan_faker.py**: Location spoofing script
 - **meijer_cli.py**: Authentication extraction
 - **SECURITY.md**: Security guidelines
-- **.gitignore**: Prevents log file commits 
+- **.gitignore**: Prevents log file commits
+- **Log files**: `meijer_mitm_YYYYMMDD_HHMMSS.log` (timestamped) 
