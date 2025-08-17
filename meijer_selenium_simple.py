@@ -3,7 +3,7 @@
 Simple Selenium-based authentication for Meijer OAuth flow.
 
 This module provides a simplified way to automate the OAuth 2.0 authorization
-flow using Selenium WebDriver with automatic Chrome driver management.
+flow using Selenium WebDriver with Firefox.
 """
 
 import json
@@ -17,9 +17,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 from meijer_comprehensive import MeijerComprehensiveClient
@@ -53,33 +53,31 @@ class MeijerSeleniumAuth:
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
     
-    def _setup_driver(self) -> webdriver.Chrome:
-        """Setup Chrome WebDriver with system ChromeDriver."""
+    def _setup_driver(self) -> webdriver.Firefox:
+        """Setup Firefox WebDriver with automatic driver management."""
         try:
-            # Chrome options
-            chrome_options = Options()
+            # Firefox options
+            firefox_options = Options()
             
             if self.headless:
-                chrome_options.add_argument("--headless")
+                firefox_options.add_argument("--headless")
             
             # Add options for better compatibility
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            firefox_options.add_argument("--no-sandbox")
+            firefox_options.add_argument("--disable-dev-shm-usage")
+            firefox_options.add_argument("--disable-gpu")
+            firefox_options.add_argument("--window-size=1920,1080")
+            firefox_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             
-            # Use Chromium instead of Chrome
-            chrome_options.binary_location = "/usr/bin/chromium"
-            
-            # Use system ChromeDriver
-            service = Service("/usr/bin/chromedriver")
+            # Use webdriver-manager to automatically download and manage geckodriver
+            geckodriver_path = GeckoDriverManager().install()
+            service = Service(geckodriver_path)
             
             # Create driver
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            self.driver = webdriver.Firefox(service=service, options=firefox_options)
             self.driver.implicitly_wait(10)
             
-            self.logger.info("✅ Chromium WebDriver initialized successfully")
+            self.logger.info("✅ Firefox WebDriver initialized successfully")
             return self.driver
             
         except Exception as e:
@@ -490,8 +488,8 @@ def main():
         client = MeijerSeleniumClient(username, password)
         
         # Perform automated login
-        print("\n🚀 Starting automated OAuth authentication...")
-        print("📱 A Chrome browser will open automatically")
+        print("🚀 Starting automated OAuth authentication...")
+        print("📱 A Firefox browser will open automatically")
         print("🔐 Credentials will be filled in automatically")
         print("⚠️  If MFA is required, you'll need to enter the code manually")
         
