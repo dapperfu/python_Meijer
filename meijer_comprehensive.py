@@ -45,7 +45,7 @@ class OAuthConfig:
     token_url: str = "https://id.meijer.com/oauth2/default/v1/token"
     keys_url: str = "https://id.meijer.com/oauth2/default/v1/keys"
     scope: str = "openid profile offline_access"
-    redirect_uri: str = "https://localhost:8080/callback"  # Web-compatible redirect URI
+    redirect_uri: str = "https://localhost:45678/callback"  # Web-compatible redirect URI on high port
     mobile_redirect_uri: str = "com.meijer.mobile.meijer:/login"  # Original mobile app URI
     response_type: str = "code"
     code_challenge_method: str = "S256"
@@ -219,14 +219,18 @@ class MeijerComprehensiveClient:
         redirect_uri = self.oauth_config.mobile_redirect_uri if use_mobile_uri else self.oauth_config.redirect_uri
         
         params = {
+            'login_hint': '',  # Required parameter from working flow
+            'code_challenge': code_challenge,
+            'code_challenge_method': self.oauth_config.code_challenge_method,
             'client_id': self.oauth_config.client_id,
-            'response_type': self.oauth_config.response_type,
             'scope': self.oauth_config.scope,
             'redirect_uri': redirect_uri,
+            'response_type': self.oauth_config.response_type,
             'state': state,
             'nonce': nonce,
-            'code_challenge': code_challenge,
-            'code_challenge_method': self.oauth_config.code_challenge_method
+            'response_mode': 'query',  # Required parameter from working flow
+            'display': 'page',         # Required parameter from working flow
+            'max_age': -1              # Required parameter from working flow
         }
         
         auth_url = f"{self.oauth_config.auth_url}?{urlencode(params)}"
@@ -628,6 +632,83 @@ class MeijerComprehensiveClient:
         """Context manager exit."""
         self.logout()
 
+    def authenticate_with_bearer_token(self, bearer_token: str, user_agent: str = None) -> bool:
+        """
+        Authenticate using a pre-extracted Bearer token from mitmproxy logs.
+        
+        Args:
+            bearer_token: The Bearer token to use
+            user_agent: Optional user agent to use
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.logger.info(f"🎫 Authenticating with pre-extracted Bearer token")
+            
+            # Set the bearer token directly
+            self.auth_tokens = AuthTokens(
+                access_token=bearer_token,
+                token_type="Bearer",
+                expires_in=None,  # We don't know the expiration from the log
+                refresh_token=None,  # We don't have the refresh token
+                scope="openid profile offline_access",
+                id_token=None  # We don't have the ID token
+            )
+            
+            # Update session headers
+            if user_agent:
+                self.session.headers.update({
+                    'User-Agent': user_agent
+                })
+            
+            self.session.headers.update({
+                'Authorization': f'Bearer {bearer_token}',
+                'ocp-apim-subscription-key': self.subscription_key
+            })
+            
+            # Test the token by making a simple API call
+            test_url = "https://api.meijer.com/loyalty/shoppinglist/GetList"
+            self.logger.info(f"🧪 Testing Bearer token with: {test_url}")
+            
+            response = self.session.get(test_url)
+            
+            if response.status_code == 200:
+                self.logger.info(f"✅ Bearer token authentication successful!")
+                self.auth_status = AuthenticationStatus.AUTHENTICATED
+                return True
+            elif response.status_code == 401:
+                self.logger.error(f"❌ Bearer token is expired or invalid (401)")
+                self.auth_status = AuthenticationStatus.UNAUTHENTICATED
+                return False
+            else:
+                self.logger.warning(f"⚠️  Unexpected response: {response.status_code}")
+                self.logger.info(f"Response: {response.text[:200]}...")
+                self.auth_status = AuthenticationStatus.UNAUTHENTICATED
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"❌ Bearer token authentication failed: {e}")
+            self.auth_status = AuthenticationStatus.UNAUTHENTICATED
+            return False
+    
+    def login_with_bearer_token(self, bearer_auth_file: str = "bearer_auth.txt") -> bool:
+        """
+        Login using a Bearer token from a file.
+        
+        Args:
+            bearer_auth_file: Path to the bearer auth file
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            bearer_token, user_agent = read_bearer_auth_file(bearer_auth_file)
+            return self.authenticate_with_bearer_token(bearer_token, user_agent)
+        except Exception as e:
+            self.logger.error(f"❌ Failed to login with Bearer token: {e}")
+            return False
+
     def authenticate_with_requests(self, username: str, password: str) -> bool:
         """
         Authenticate using pure requests library instead of Selenium.
@@ -838,6 +919,46 @@ def read_auth_file(filepath: str = "auth.txt") -> Tuple[str, str]:
         raise FileNotFoundError(f"Auth file not found: {filepath}")
     except Exception as e:
         raise ValueError(f"Error reading auth file: {e}")
+
+
+def read_bearer_auth_file(filepath: str = "bearer_auth.txt") -> Tuple[str, str]:
+    """
+    Read Bearer token from bearer_auth.txt file.
+    
+    Args:
+        filepath: Path to the bearer auth file
+        
+    Returns:
+        tuple: (bearer_token, user_agent)
+        
+    Raises:
+        FileNotFoundError: If the file doesn't exist
+        ValueError: If the file format is invalid
+    """
+    try:
+        bearer_token = None
+        user_agent = None
+        
+        with open(filepath, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('bearer_token='):
+                    bearer_token = line.split('=', 1)[1]
+                elif line.startswith('user_agent='):
+                    user_agent = line.split('=', 1)[1]
+        
+        if not bearer_token:
+            raise ValueError(f"No bearer_token found in {filepath}")
+        
+        if not user_agent:
+            user_agent = "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
+        
+        return bearer_token, user_agent
+    
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Bearer auth file not found: {filepath}")
+    except Exception as e:
+        raise ValueError(f"Error reading bearer auth file: {e}")
 
 
 def main():
