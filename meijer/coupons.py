@@ -187,56 +187,88 @@ def create_meijer_coupons_from_response(
     """
     coupons = []
 
-    offers = response_data.get("offers", [])
-    if not offers and "data" in response_data:
+    # Try different possible field names for offers/coupons based on API response
+    offers = []
+    
+    # From APK debug: API returns 'listOfCoupons' with 473 coupons
+    if "listOfCoupons" in response_data:
+        offers = response_data["listOfCoupons"]
+    elif "offers" in response_data:
+        offers = response_data["offers"]
+    elif "data" in response_data:
         offers = response_data["data"]
+    elif "coupons" in response_data:
+        offers = response_data["coupons"]
+    elif "offerCollection" in response_data:
+        offers = response_data["offerCollection"]
+    
+    if meijer_client:
+        meijer_client.logger.info(f"Parsing {len(offers)} coupons from API response")
 
     for offer_data in offers:
         try:
-            # Extract core fields
-            meijer_offer_id = int(
-                offer_data.get("meijerOfferId", offer_data.get("id", 0))
-            )
-            title = offer_data.get("title", offer_data.get("name", "Unknown Offer"))
-            description = offer_data.get("description", offer_data.get("desc", ""))
+            # Handle nested offer structure - some responses have {offer: {...}, isClipped: ...}
+            if "offer" in offer_data and isinstance(offer_data["offer"], dict):
+                # Extract top-level status flags
+                is_clipped = offer_data.get("isClipped", False)
+                is_suggested = offer_data.get("isSuggested", False)
+                is_targeted = offer_data.get("isTargeted", False)
+                is_hidden = offer_data.get("isHidden", False)
+                
+                # Get actual offer data
+                actual_offer = offer_data["offer"]
+            else:
+                # Direct offer structure
+                is_clipped = offer_data.get("isClipped", False)
+                is_suggested = offer_data.get("isSuggested", False)
+                is_targeted = offer_data.get("isTargeted", False)
+                is_hidden = offer_data.get("isHidden", False)
+                actual_offer = offer_data
 
-            # Parse dates
+            # Extract core fields from actual offer data
+            meijer_offer_id = int(
+                actual_offer.get("meijerOfferId", actual_offer.get("id", 0))
+            )
+            title = actual_offer.get("title", actual_offer.get("name", "Unknown Offer"))
+            description = actual_offer.get("description", actual_offer.get("desc", ""))
+
+            # Parse dates from actual offer data
             redemption_start = None
             redemption_end = None
 
-            if offer_data.get("redemptionStartDate"):
+            if actual_offer.get("redemptionStartDate"):
                 try:
                     redemption_start = datetime.fromisoformat(
-                        offer_data["redemptionStartDate"].replace("Z", "+00:00")
+                        actual_offer["redemptionStartDate"].replace("Z", "+00:00")
                     )
                 except ValueError:
                     pass
 
-            if offer_data.get("redemptionEndDate"):
+            if actual_offer.get("redemptionEndDate"):
                 try:
                     redemption_end = datetime.fromisoformat(
-                        offer_data["redemptionEndDate"].replace("Z", "+00:00")
+                        actual_offer["redemptionEndDate"].replace("Z", "+00:00")
                     )
                 except ValueError:
                     pass
 
-            # Create coupon
+            # Create coupon using the extracted status flags and actual offer data
             coupon = MeijerCoupon(
                 meijer_offer_id=meijer_offer_id,
                 title=title,
                 description=description,
-                is_clipped=offer_data.get("isClipped", False),
-                is_suggested=offer_data.get("isSuggested", False),
-                is_targeted=offer_data.get("isTargeted", False),
-                is_hidden=offer_data.get("isHidden", False),
-                image_url=offer_data.get("imageURL"),
-                disclaimer=offer_data.get("disclaimer"),
+                is_clipped=is_clipped,
+                is_suggested=is_suggested,
+                is_targeted=is_targeted,
+                is_hidden=is_hidden,
+                image_url=actual_offer.get("imageURL"),
+                disclaimer=actual_offer.get("disclaimer"),
                 redemption_start_date=redemption_start,
                 redemption_end_date=redemption_end,
-                redeem_amount=offer_data.get("redeemAmount"),
-                condition_value=offer_data.get("conditionValue"),
-                discount_type_id=offer_data.get("discountTypeId", 0),
-                condition_type_id=offer_data.get("conditionTypeId", 0),
+                redeem_amount=actual_offer.get("redeemAmount"),
+                condition_value=actual_offer.get("conditionValue"),
+                discount_type_id=actual_offer.get("discountTypeId", 0),
+                condition_type_id=actual_offer.get("conditionTypeId", 0),
                 _meijer_client=meijer_client,
             )
 
@@ -252,19 +284,40 @@ def create_meijer_coupons_from_response(
 
 # Coupon management functions for the main client
 def clip_coupon(client: "Meijer", coupon_id: int) -> bool:
-    """Clip a coupon by ID."""
+    """Clip a coupon by ID using APK-discovered endpoint structure."""
     try:
         if not client._ensure_authenticated():
             raise MeijerAuthenticationError("Authentication required")
 
         url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Clip"
         headers = client._get_api_headers()
-        headers.update({"Content-Type": "application/json"})
+        
+        # Use APK-discovered headers from Zk/b.java
+        headers.update({
+            "Accept": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
+            "Content-Type": "application/vnd.meijer.digitalmperks.clip-v1.0+json"
+        })
 
-        data = {"offerId": coupon_id}
+        # Use APK-discovered request body structure (ClipUnclipCouponRequest)
+        data = {
+            "meijerOfferId": coupon_id,  # Long - the coupon's meijerOfferId (not offerId)
+            "storeId": 0,  # Int - store ID, 0 for any store
+            "cartIsActive": False  # Boolean - whether shopping cart is active
+        }
+        
         response = client._make_request("POST", url, headers=headers, json=data)
 
-        return response.status_code == 200
+        # Check for success based on APK-discovered response structure
+        if response.status_code in [200, 201]:
+            try:
+                response_json = response.json()
+                # APK shows ClipUnclipCouponResponse has 'result' field
+                return response_json.get("result", "").lower() == "success"
+            except Exception:
+                # Fallback to status code check
+                return True
+        
+        return False
 
     except Exception as e:
         client.logger.error(f"Failed to clip coupon {coupon_id}: {e}")
@@ -272,19 +325,40 @@ def clip_coupon(client: "Meijer", coupon_id: int) -> bool:
 
 
 def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
-    """Unclip a coupon by ID."""
+    """Unclip a coupon by ID using APK-discovered endpoint structure."""
     try:
         if not client._ensure_authenticated():
             raise MeijerAuthenticationError("Authentication required")
 
         url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Unclip"
         headers = client._get_api_headers()
-        headers.update({"Content-Type": "application/json"})
+        
+        # Use APK-discovered headers from Zk/b.java
+        headers.update({
+            "Accept": "application/vnd.meijer.digitalmperks.unclip-v1.0+json",
+            "Content-Type": "application/vnd.meijer.digitalmperks.unclip-v1.0+json"
+        })
 
-        data = {"offerId": coupon_id}
+        # Use APK-discovered request body structure (ClipUnclipCouponRequest)
+        data = {
+            "meijerOfferId": coupon_id,  # Long - the coupon's meijerOfferId (not offerId)
+            "storeId": 0,  # Int - store ID, 0 for any store  
+            "cartIsActive": False  # Boolean - whether shopping cart is active
+        }
+        
         response = client._make_request("POST", url, headers=headers, json=data)
 
-        return response.status_code == 200
+        # Check for success based on APK-discovered response structure
+        if response.status_code in [200, 201]:
+            try:
+                response_json = response.json()
+                # APK shows ClipUnclipCouponResponse has 'result' field
+                return response_json.get("result", "").lower() == "success"
+            except Exception:
+                # Fallback to status code check
+                return True
+        
+        return False
 
     except Exception as e:
         client.logger.error(f"Failed to unclip coupon {coupon_id}: {e}")
