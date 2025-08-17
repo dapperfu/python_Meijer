@@ -160,3 +160,94 @@ class MeijerList:
         except Exception as e:
             self.logger.error(f"Error deleting item: {e}")
             return False
+
+    def get_favorites(self) -> List[ListItem]:
+        """Get favorites list items."""
+        try:
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+
+            url = urljoin(self.meijer.api_base_url, self.endpoints["get_favorites"])
+            headers = self.meijer._get_api_headers()
+            headers.update(
+                {"Accept": "application/meijer.shoppingList.ShoppingList-v1.0+json"}
+            )
+
+            response = self.meijer._make_request("GET", url, headers=headers)
+
+            if response.status_code == 200:
+                data = response.json()
+                items = []
+                for item_data in data.get("favoriteItems", []):
+                    items.append(ListItem(**item_data))
+                return items
+            else:
+                self.logger.error(
+                    f"Failed to get favorites list: {response.status_code}"
+                )
+                return []
+
+        except Exception as e:
+            self.logger.error(f"Error getting favorites list: {e}")
+            return []
+
+    def add_favorite(self, upc: str) -> bool:
+        """Add item to favorites by UPC."""
+        try:
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+
+            url = urljoin(self.meijer.api_base_url, self.endpoints["add_favorite"])
+            headers = self.meijer._get_api_headers()
+            headers.update(
+                {
+                    "Content-Type": "application/json",
+                    "Accept": "application/meijer.shoppingList.ShoppingList-v1.0+json",
+                }
+            )
+
+            data = {"upc": upc}
+
+            response = self.meijer._make_request(
+                "POST", url, headers=headers, json=data
+            )
+
+            if response.status_code == 200:
+                self.logger.info(f"Added item {upc} to favorites")
+                return True
+            else:
+                self.logger.error(f"Failed to add to favorites: {response.status_code}")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error adding item to favorites: {e}")
+            return False
+
+    def delete_favorite(self, upc: str) -> bool:
+        """Remove item from favorites by UPC."""
+        try:
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+
+            url = urljoin(self.meijer.api_base_url, self.endpoints["delete_favorite"])
+            headers = self.meijer._get_api_headers()
+            headers.update({"Content-Type": "application/json"})
+
+            data = {"upc": upc}
+
+            response = self.meijer._make_request(
+                "POST", url, headers=headers, json=data
+            )
+
+            if response.status_code == 200:
+                self.logger.info(f"Removed item {upc} from favorites")
+                return True
+            else:
+                self.logger.error(
+                    f"Failed to remove from favorites: {response.status_code}"
+                )
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error removing item from favorites: {e}")
+            return False
