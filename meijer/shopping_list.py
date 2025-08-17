@@ -361,7 +361,7 @@ class MeijerList:
             self.logger.error(f"Error removing item from favorites: {e}")
             return False
 
-    def defrag(self, store_id: Optional[str] = None) -> bool:
+    def defrag(self, store_id: Optional[str] = None, reverse: bool = False, zig: bool = False) -> bool:
         """
         Defragment shopping list by organizing items by aisle number.
         
@@ -373,6 +373,8 @@ class MeijerList:
         
         Args:
             store_id: Store ID to use for location lookup (optional)
+            reverse: If True, sort items in reverse order (descending)
+            zig: If True, alternate B aisle sorting (B1 ascending, B2 descending, etc.)
             
         Returns:
             bool: True if defrag was successful, False otherwise
