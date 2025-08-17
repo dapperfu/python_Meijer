@@ -306,12 +306,13 @@ class MeijerComprehensiveClient:
             
             self.logger.info("🔄 Refreshing access token...")
             
-            # Try different refresh approaches based on PKCE OAuth
-            # For PKCE public clients, client_id is usually required but no client_secret
+            # Based on APK analysis: Okta AuthFoundation may need device_secret
+            # Try multiple approaches based on decompiled APK insights
             data = {
                 'grant_type': 'refresh_token',
                 'refresh_token': self.auth_tokens.refresh_token,
-                'client_id': '0oa1o8g9njWsUvwsx697'
+                'client_id': '0oa1o8g9njWsUvwsx697',
+                'scope': 'openid offline_access profile'
             }
             
             # Use the correct token endpoint from the analysis
