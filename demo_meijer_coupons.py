@@ -14,10 +14,10 @@ import json
 from typing import List
 
 from meijer_coupon_comprehensive import MeijerCoupon, create_meijer_coupons_list
-from meijer_comprehensive import MeijerComprehensiveClient
+from meijer import Meijer
 
 
-class MeijerWithCoupons(MeijerComprehensiveClient):
+class MeijerWithCoupons(Meijer):
     """
     Extended Meijer client with comprehensive coupon support.
     

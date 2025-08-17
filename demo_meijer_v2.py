@@ -3,7 +3,7 @@
 Simple demo script for Meijer v2 API client.
 """
 
-from meijer_v2 import Meijer, MeijerError
+from meijer import Meijer, MeijerError
 
 def main():
     print("🚀 Meijer v2 Demo")

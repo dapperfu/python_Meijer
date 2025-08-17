@@ -9,7 +9,7 @@ restores authentication from stored tokens, eliminating the need for
 
 import logging
 import time
-from meijer_v2 import Meijer
+from meijer import Meijer
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -153,7 +153,7 @@ def show_usage_examples():
     
     print("1. Basic Usage with Automatic Token Restoration:")
     print("""
-from meijer_v2 import Meijer
+from meijer import Meijer
 
 # First time - requires credentials
 meijer = Meijer()

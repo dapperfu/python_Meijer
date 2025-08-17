@@ -12,7 +12,7 @@ This script demonstrates the complete Shop & Scan workflow:
 
 import logging
 from typing import Optional
-from meijer_v2 import Meijer, MeijerAPIError, MeijerAuthenticationError
+from meijer import Meijer, MeijerAPIError, MeijerAuthenticationError
 
 def main():
     """Test Shop & Scan workflow."""

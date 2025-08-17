@@ -15,7 +15,7 @@ from typing import List, Dict, Any
 
 from meijer_search import MeijerSearch, MeijerWithSearch
 from meijer_item import MeijerItem, create_meijer_items_from_search
-from meijer_comprehensive import MeijerComprehensiveClient
+from meijer import Meijer
 
 
 class MeijerSearchDemo:
@@ -31,7 +31,7 @@ class MeijerSearchDemo:
         self.search = MeijerSearch()
         
         # For full integration, you would use an authenticated Meijer client:
-        # meijer_client = MeijerComprehensiveClient()
+        # meijer_client = Meijer()
         # meijer_client.login_with_credentials(username, password)
         # self.search_with_client = MeijerWithSearch(meijer_client)
         
