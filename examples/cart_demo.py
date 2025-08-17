@@ -5,7 +5,7 @@
  * Generated via Cursor IDE (cursor.sh) with AI assistance
  * Model: Anthropic Claude 3.5 Sonnet
  * Generation timestamp: 2024-12-19
- * Context: Create demo script for MeijerCart functionality
+ * Context: Update demo script for MeijerCart class based on actual API endpoints
  * 
  * Technical details:
  * - LLM: Claude 3.5 Sonnet (2024-10-22)
@@ -19,228 +19,198 @@ Meijer Cart Demo
 ================
 
 This script demonstrates how to use the MeijerCart class to manage
-shopping cart operations including adding items, updating quantities,
-and managing pickup orders.
+shopping cart operations including cart retrieval and pickup/delivery
+slot management based on actual API endpoints from mitmproxy logs.
 """
 
 import asyncio
 import logging
+from datetime import datetime, timedelta
 from typing import Optional
 
-from meijer.cart import MeijerCart, CartItem, CartSummary, PickupSlot
+from meijer.cart import MeijerCart, PickupSlot, DeliverySlot
+from meijer.exceptions import CartError
 from meijer.api_client import MeijerAPIClient
-from meijer.exceptions import CartError, MeijerAPIError
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def setup_logging() -> None:
-    """Set up logging configuration."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-
-
-def demo_cart_operations() -> None:
-    """Demonstrate basic cart operations."""
-    print("🛒 Meijer Cart Demo")
-    print("=" * 50)
-    
-    # Note: This is a demonstration - you'll need to provide actual credentials
-    print("\n📝 Note: This demo shows the API structure.")
-    print("To use with real data, you'll need to:")
-    print("1. Authenticate with Meijer API")
-    print("2. Provide a valid store ID")
-    print("3. Use real product IDs")
-    
-    print("\n🔧 Cart Operations Available:")
-    print("- get_current_cart() - Retrieve current cart")
-    print("- add_item(product_id, quantity) - Add item to cart")
-    print("- update_quantity(entry_id, quantity) - Update item quantity")
-    print("- remove_item(entry_id) - Remove item from cart")
-    print("- clear_cart() - Clear all items")
-    print("- get_pickup_slots() - Get available pickup times")
-    print("- reserve_pickup_slot(slot_id, date, time) - Reserve pickup slot")
-    
-    print("\n📊 Cart Data Structures:")
-    print("- CartItem: Individual cart items with product details")
-    print("- CartSummary: Overall cart information and totals")
-    print("- PickupSlot: Available pickup time slots")
-
-
-def demo_cart_item_creation() -> None:
-    """Demonstrate creating cart item objects."""
-    print("\n🛍️ Cart Item Creation Demo")
-    print("-" * 30)
-    
-    # Create sample cart items
-    item1 = CartItem(
-        product_id="85002770236",
-        name="Sample Product 1",
-        quantity=2.0,
-        unit_price=5.99,
-        total_price=11.98,
-        entry_id="1",
-        image_url="https://example.com/image1.png",
-        category="Grocery"
-    )
-    
-    item2 = CartItem(
-        product_id="4688",
-        name="Sample Product 2",
-        quantity=1.0,
-        unit_price=3.49,
-        total_price=3.49,
-        entry_id="2",
-        image_url="https://example.com/image2.png",
-        category="Dairy"
-    )
-    
-    print(f"Item 1: {item1.name} - Qty: {item1.quantity} - Price: ${item1.total_price:.2f}")
-    print(f"Item 2: {item2.name} - Qty: {item2.quantity} - Price: ${item2.total_price:.2f}")
-    
-    total = item1.total_price + item2.total_price
-    print(f"Total: ${total:.2f}")
-
-
-def demo_cart_summary_creation() -> None:
-    """Demonstrate creating cart summary objects."""
-    print("\n📋 Cart Summary Creation Demo")
-    print("-" * 30)
-    
-    summary = CartSummary(
-        cart_id="1247396715",
-        store_id="217",
-        item_count=2,
-        subtotal=15.47,
-        tax=1.24,
-        total=16.71,
-        savings=2.50,
-        mperks_discount=1.00
-    )
-    
-    print(f"Cart ID: {summary.cart_id}")
-    print(f"Store: {summary.store_id}")
-    print(f"Items: {summary.item_count}")
-    print(f"Subtotal: ${summary.subtotal:.2f}")
-    print(f"Tax: ${summary.tax:.2f}")
-    print(f"Savings: ${summary.savings:.2f}")
-    print(f"MPerks Discount: ${summary.mperks_discount:.2f}")
-    print(f"Total: ${summary.total:.2f}")
-
-
-def demo_pickup_slots() -> None:
-    """Demonstrate pickup slot functionality."""
-    print("\n⏰ Pickup Slots Demo")
-    print("-" * 30)
-    
-    # Create sample pickup slots
-    slots = [
-        PickupSlot(
-            slot_id="slot_001",
-            date="2024-12-20",
-            start_time="10:00",
-            end_time="11:00",
-            available=True,
-            capacity=10
-        ),
-        PickupSlot(
-            slot_id="slot_002",
-            date="2024-12-20",
-            start_time="11:00",
-            end_time="12:00",
-            available=True,
-            capacity=8
-        ),
-        PickupSlot(
-            slot_id="slot_003",
-            date="2024-12-20",
-            start_time="12:00",
-            end_time="13:00",
-            available=False,
-            capacity=0
-        )
-    ]
-    
-    print("Available Pickup Slots:")
-    for slot in slots:
-        status = "✅ Available" if slot.available else "❌ Unavailable"
-        print(f"  {slot.date} {slot.start_time}-{slot.end_time} - {status}")
-        if slot.available and slot.capacity:
-            print(f"    Capacity: {slot.capacity} orders")
-
-
-def demo_error_handling() -> None:
-    """Demonstrate error handling patterns."""
-    print("\n⚠️ Error Handling Demo")
-    print("-" * 30)
-    
-    print("Common error scenarios:")
-    print("1. CartError - When cart operations fail")
-    print("2. MeijerAPIError - When API requests fail")
-    print("3. Authentication errors - When credentials are invalid")
-    
-    print("\nExample error handling:")
-    print("""
-try:
-    cart.add_item("invalid_product_id")
-except CartError as e:
-    print(f"Cart operation failed: {e}")
-except MeijerAPIError as e:
-    print(f"API request failed: {e}")
-except Exception as e:
-    print(f"Unexpected error: {e}")
-""")
-
-
-def demo_api_integration() -> None:
-    """Demonstrate how to integrate with the API client."""
-    print("\n🔌 API Integration Demo")
-    print("-" * 30)
-    
-    print("To use the cart with real API calls:")
-    print("""
-# 1. Create authenticated API client
-api_client = MeijerAPIClient(
-    username="your_username",
-    password="your_password"
-)
-
-# 2. Authenticate
-api_client.authenticate()
-
-# 3. Create cart instance
-cart = MeijerCart(api_client, store_id="217")
-
-# 4. Use cart operations
-current_cart = cart.get_current_cart()
-cart.add_item("85002770236", quantity=2.0)
-cart.update_quantity("1", quantity=3.0)
-pickup_slots = cart.get_pickup_slots()
-""")
-
-
-def main() -> None:
-    """Run the cart demo."""
-    setup_logging()
+async def demo_cart_retrieval(cart: MeijerCart) -> None:
+    """Demonstrate cart retrieval functionality."""
+    print("\n🛒 === CART RETRIEVAL DEMO ===")
     
     try:
-        demo_cart_operations()
-        demo_cart_item_creation()
-        demo_cart_summary_creation()
-        demo_pickup_slots()
-        demo_error_handling()
-        demo_api_integration()
+        # Get current cart
+        print("Retrieving current cart...")
+        cart_data = await cart.get_current_cart()
         
-        print("\n🎉 Cart Demo Completed Successfully!")
-        print("\nNext steps:")
-        print("1. Set up authentication with Meijer API")
-        print("2. Test with real store ID and product IDs")
-        print("3. Integrate into your shopping application")
+        print(f"✅ Cart retrieved successfully!")
+        print(f"   Cart ID: {cart.cart_id}")
+        print(f"   Item Count: {cart.item_count}")
+        print(f"   Total Price: ${cart.total_price:.2f}")
+        print(f"   Store ID: {cart.store_id}")
+        
+        # Show some cart details
+        if cart_data:
+            print(f"   Raw cart data keys: {list(cart_data.keys())}")
+            
+    except CartError as e:
+        print(f"❌ Cart retrieval failed: {e}")
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+
+
+async def demo_pickup_slots(cart: MeijerCart) -> None:
+    """Demonstrate pickup slot retrieval functionality."""
+    print("\n📅 === PICKUP SLOTS DEMO ===")
+    
+    try:
+        # Get pickup slots for today
+        print("Retrieving pickup slots for today...")
+        pickup_slots = await cart.get_pickup_slots()
+        
+        if pickup_slots:
+            print(f"✅ Found {len(pickup_slots)} pickup slots:")
+            for i, slot in enumerate(pickup_slots[:5]):  # Show first 5
+                print(f"   {i+1}. {slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')} "
+                      f"(ID: {slot.slot_id}, Available: {slot.is_available})")
+        else:
+            print("ℹ️  No pickup slots available")
+            
+    except CartError as e:
+        print(f"❌ Pickup slots retrieval failed: {e}")
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+
+
+async def demo_delivery_slots(cart: MeijerCart) -> None:
+    """Demonstrate delivery slot retrieval functionality."""
+    print("\n🚚 === DELIVERY SLOTS DEMO ===")
+    
+    try:
+        # Get delivery slots for tomorrow
+        tomorrow = datetime.now() + timedelta(days=1)
+        print(f"Retrieving delivery slots for {tomorrow.strftime('%Y-%m-%d')}...")
+        
+        delivery_slots = await cart.get_delivery_slots(date=tomorrow)
+        
+        if delivery_slots:
+            print(f"✅ Found {len(delivery_slots)} delivery slots:")
+            for i, slot in enumerate(delivery_slots[:5]):  # Show first 5
+                fee_info = f" (Fee: ${slot.delivery_fee:.2f})" if slot.delivery_fee else ""
+                print(f"   {i+1}. {slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')} "
+                      f"(ID: {slot.slot_id}, Available: {slot.is_available}){fee_info}")
+        else:
+            print("ℹ️  No delivery slots available")
+            
+    except CartError as e:
+        print(f"❌ Delivery slots retrieval failed: {e}")
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+
+
+async def demo_fulfillment_partners(cart: MeijerCart) -> None:
+    """Demonstrate different fulfillment partner options."""
+    print("\n🤝 === FULFILLMENT PARTNERS DEMO ===")
+    
+    # Test different delivery partners
+    partners = [
+        ("SHIPT", "MI9"),
+        ("MI9", "MI9"),
+        ("BOPAS", "MI9")
+    ]
+    
+    for delivery_partner, curbside_partner in partners:
+        try:
+            print(f"\nTesting {delivery_partner} delivery + {curbside_partner} curbside...")
+            
+            # Get pickup slots with different partners
+            pickup_slots = await cart.get_pickup_slots(
+                delivery_partner=delivery_partner,
+                curbside_partner=curbside_partner
+            )
+            
+            if pickup_slots:
+                print(f"   ✅ {delivery_partner}: Found {len(pickup_slots)} slots")
+            else:
+                print(f"   ℹ️  {delivery_partner}: No slots available")
+                
+        except CartError as e:
+            print(f"   ❌ {delivery_partner}: Failed - {e}")
+        except Exception as e:
+            print(f"   ❌ {delivery_partner}: Unexpected error - {e}")
+
+
+async def demo_cart_properties(cart: MeijerCart) -> None:
+    """Demonstrate cart property access."""
+    print("\n🔍 === CART PROPERTIES DEMO ===")
+    
+    try:
+        # Access cart properties
+        print(f"Cart ID: {cart.cart_id}")
+        print(f"Item Count: {cart.item_count}")
+        print(f"Total Price: ${cart.total_price:.2f}")
+        print(f"Store ID: {cart.store_id}")
+        
+        # Change store and see how it affects the cart
+        print(f"\nChanging store from {cart.store_id} to '47'...")
+        cart.store_id = "47"
+        print(f"New Store ID: {cart.store_id}")
+        print(f"Cart data cleared: {cart._cart_data is None}")
+        
+        # Change back
+        cart.store_id = "217"
+        print(f"Restored Store ID: {cart.store_id}")
         
     except Exception as e:
-        print(f"\n❌ Demo failed with error: {e}")
-        logging.error(f"Demo error: {e}", exc_info=True)
+        print(f"❌ Error accessing cart properties: {e}")
+
+
+async def main() -> None:
+    """Main demo function."""
+    print("🚀 Meijer Cart Management Demo")
+    print("=" * 50)
+    print("This demo shows the actual API endpoints found in mitmproxy logs:")
+    print("• GET /digital/occ/v3/carts/current - Cart retrieval")
+    print("• POST /digital/hybris/v3/fulfillment/reservationslots - Pickup/delivery slots")
+    print("=" * 50)
+    
+    # Note: In a real scenario, you would have an authenticated API client
+    # For demo purposes, we'll show the structure but note that actual API calls will fail
+    
+    print("\n⚠️  NOTE: This is a demonstration of the API structure.")
+    print("   Actual API calls require authentication and will fail in this demo.")
+    print("   The class structure is based on real API endpoints from mitmproxy logs.")
+    
+    # Create a mock cart instance for demonstration
+    try:
+        # This would normally be a real authenticated client
+        mock_client = None  # MeijerAPIClient(...)
+        cart = MeijerCart(mock_client, store_id="217")
+        
+        # Run demos (they will show the structure but not make actual API calls)
+        await demo_cart_properties(cart)
+        
+        print("\n📋 === API ENDPOINTS SUMMARY ===")
+        print("Based on mitmproxy log analysis, the following endpoints are implemented:")
+        print("✅ GET /digital/occ/v3/carts/current - Retrieve current cart")
+        print("✅ POST /digital/hybris/v3/fulfillment/reservationslots - Get pickup slots")
+        print("✅ POST /digital/hybris/v3/fulfillment/reservationslots - Get delivery slots")
+        print("⚠️  Cart modification endpoints (add/remove items) not found in current logs")
+        print("⚠️  Slot reservation endpoints not found in current logs")
+        
+        print("\n🔍 === NEXT STEPS ===")
+        print("To complete the cart functionality, additional API endpoints need to be found:")
+        print("• POST /digital/occ/v3/carts/{cartId}/add/{productId}/{quantity} - Add items")
+        print("• PATCH /digital/occ/v3/carts/{cartId}/entries/{entryId} - Update quantities")
+        print("• DELETE /digital/occ/v3/carts/{cartId}/entries/{entryId} - Remove items")
+        print("• POST /digital/hybris/v3/fulfillment/reserve - Reserve slots")
+        
+    except Exception as e:
+        print(f"❌ Demo setup failed: {e}")
 
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

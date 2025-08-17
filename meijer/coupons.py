@@ -189,7 +189,7 @@ def create_meijer_coupons_from_response(
         return []
         
     coupons = []
-
+    
     # Try different possible field names for offers/coupons based on API response
     offers = []
     
@@ -240,20 +240,31 @@ def create_meijer_coupons_from_response(
 
             # Validate that we have the minimum required fields
             if not isinstance(actual_offer, dict):
+                if meijer_client:
+                    meijer_client.logger.debug(f"Skipping non-dict offer: {type(actual_offer)}")
                 continue
                 
             meijer_offer_id = actual_offer.get("meijerOfferId", actual_offer.get("id"))
             if not meijer_offer_id or not isinstance(meijer_offer_id, (int, str)):
+                if meijer_client:
+                    meijer_client.logger.debug(f"Skipping invalid meijer_offer_id: {meijer_offer_id}")
                 continue
                 
             title = actual_offer.get("title", actual_offer.get("name"))
             if not title or not isinstance(title, str):
+                if meijer_client:
+                    meijer_client.logger.debug(f"Skipping invalid title: {title}")
                 continue
+
+            if meijer_client:
+                meijer_client.logger.debug(f"Creating coupon with id={meijer_offer_id}, title={title}")
 
             # Extract core fields from actual offer data
             meijer_offer_id = int(meijer_offer_id)
             title = str(title)
-            description = actual_offer.get("description", actual_offer.get("desc", ""))
+            description = actual_offer.get("description", actual_offer.get("desc"))
+            if description == "":
+                description = None
 
             # Parse dates from actual offer data
             redemption_start = None
@@ -276,29 +287,39 @@ def create_meijer_coupons_from_response(
                     pass
 
             # Create coupon using the extracted status flags and actual offer data
-            coupon = MeijerCoupon(
-                meijer_offer_id=meijer_offer_id,
-                title=title,
-                description=description,
-                image_url=actual_offer.get("imageURL"),
-                large_image_url=actual_offer.get("largeImageURL"),
-                terms_and_conditions=actual_offer.get("termsAndConditions", ""),
-                manufacturer_coupon=actual_offer.get("manufacturerCoupon", False),
-                redemption_start_date=redemption_start or datetime.now().date(),
-                redemption_end_date=redemption_end or datetime.now().date(),
-                redeem_amount=actual_offer.get("redeemAmount", 0.0),
-                offer_class_id=actual_offer.get("offerClassId", 0),
-                logix_offer_id=actual_offer.get("logixOfferId", 0),
-                is_clipped=is_clipped,
-                is_suggested=is_suggested,
-                is_targeted=is_targeted,
-                is_hidden=is_hidden,
-                hat_color=actual_offer.get("hatColor", 0),
-                border_color=actual_offer.get("borderColor", 0),
-                _meijer_client=meijer_client,
-            )
-
-            coupons.append(coupon)
+            try:
+                coupon = MeijerCoupon(
+                    meijer_offer_id=meijer_offer_id,
+                    title=title,
+                    description=description,
+                    image_url=actual_offer.get("imageUrl"),  # Fix: use "imageUrl" not "imageURL"
+                    disclaimer=actual_offer.get("disclaimer"),
+                    redemption_start_date=redemption_start,
+                    redemption_end_date=redemption_end,
+                    redeem_amount=actual_offer.get("redeemAmount"),
+                    condition_value=actual_offer.get("conditionValue"),
+                    discount_type_id=actual_offer.get("discountTypeId", 0),
+                    discount_level_id=actual_offer.get("discountLevelId", 0),
+                    condition_type_id=actual_offer.get("conditionTypeId", 0),
+                    is_clipped=is_clipped,
+                    is_suggested=is_suggested,
+                    is_targeted=is_targeted,
+                    is_hidden=is_hidden,
+                    hat_color=HatColor(actual_offer.get("hatColor", 0)),
+                    border_color=BorderColor(actual_offer.get("borderColor", 0)),
+                    _meijer_client=meijer_client,
+                )
+                
+                if meijer_client:
+                    meijer_client.logger.debug(f"Successfully created coupon: {coupon}")
+                
+                coupons.append(coupon)
+                
+            except Exception as e:
+                if meijer_client:
+                    meijer_client.logger.error(f"Failed to create MeijerCoupon: {e}")
+                    meijer_client.logger.error(f"Data: meijer_offer_id={meijer_offer_id}, title={title}, description={description}")
+                continue
 
         except Exception as e:
             if meijer_client:

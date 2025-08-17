@@ -102,7 +102,7 @@ class TestCouponFunctions:
     
     def test_clip_coupon_success(self):
         """Test successful coupon clipping."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"result": "success"}
@@ -113,7 +113,7 @@ class TestCouponFunctions:
     
     def test_clip_coupon_success_status_only(self):
         """Test successful coupon clipping with status code only."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_response = Mock()
             mock_response.status_code = 201
             mock_response.json.side_effect = Exception("JSON error")
@@ -124,7 +124,7 @@ class TestCouponFunctions:
     
     def test_clip_coupon_failure(self):
         """Test failed coupon clipping."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_response = Mock()
             mock_response.status_code = 400
             mock_request.return_value = mock_response
@@ -134,7 +134,7 @@ class TestCouponFunctions:
     
     def test_clip_coupon_exception(self):
         """Test coupon clipping with exception."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_request.side_effect = Exception("Network error")
             
             result = clip_coupon(self.mock_client, 123)
@@ -142,7 +142,7 @@ class TestCouponFunctions:
     
     def test_unclip_coupon_success(self):
         """Test successful coupon unclipping."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"result": "success"}
@@ -153,7 +153,7 @@ class TestCouponFunctions:
     
     def test_unclip_coupon_success_status_only(self):
         """Test successful coupon unclipping with status code only."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_response = Mock()
             mock_response.status_code = 201
             mock_response.json.side_effect = Exception("JSON error")
@@ -164,7 +164,7 @@ class TestCouponFunctions:
     
     def test_unclip_coupon_failure(self):
         """Test failed coupon unclipping."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_response = Mock()
             mock_response.status_code = 400
             mock_request.return_value = mock_response
@@ -174,7 +174,7 @@ class TestCouponFunctions:
     
     def test_unclip_coupon_exception(self):
         """Test coupon unclipping with exception."""
-        with patch('requests.request') as mock_request:
+        with patch.object(self.mock_client, '_make_request') as mock_request:
             mock_request.side_effect = Exception("Network error")
             
             result = unclip_coupon(self.mock_client, 123)
@@ -271,7 +271,7 @@ class TestCouponCreation:
                 {
                     "offer": {
                         "meijerOfferId": 123,
-                        "title": "Test Coupon"
+                        "title": "Test Coupon",
                         # Missing description and other fields
                     }
                 }
