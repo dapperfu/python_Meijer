@@ -5,14 +5,18 @@
 The `make log` target provides a complete workflow for:
 1. **Capturing network traffic** from the Meijer mobile app
 2. **Extracting authentication tokens** when done
-3. **Automatic cleanup** of current session log files
+3. **Log preservation** for historical analysis
 4. **Multiple proxy endpoints** for different use cases
-5. **Log preservation** for historical analysis
+5. **Automatic latest log detection** for auth extraction
 
 ## 🚀 Usage
 
 ```bash
+# Start a new capture session
 make log
+
+# Extract auth from most recent log (without starting capture)
+make auth
 ```
 
 ## 📱 Workflow
@@ -41,8 +45,13 @@ make log
 - The system automatically:
   - Extracts authentication tokens
   - Updates `~/.config/meijer.txt`
-  - Deletes only the current session's log file
-  - Preserves previous logs for analysis
+  - **Preserves the log file** for future analysis
+  - Shows the filename for reference
+
+### 4. Subsequent Auth Updates
+- Use `make auth` to extract tokens from the most recent log
+- Automatically finds the latest log file by timestamp
+- No need to specify log filename manually
 
 ## 🔧 Technical Details
 
@@ -64,6 +73,7 @@ Each session creates a unique log file:
   - Historical analysis is possible
   - No log file conflicts
   - Easy identification of session timing
+  - **All logs are preserved indefinitely**
 
 ### Multiple Listeners
 The configuration provides multiple access points:
@@ -82,18 +92,18 @@ The `shop_n_scan_faker.py` script intercepts store location requests and fakes:
 ### Error Handling
 The target uses proper error handling:
 - If mitmweb exits normally: No action
-- If mitmweb is interrupted (Ctrl+C): Extract auth and cleanup
-- Only removes the current session's log file
-- Preserves all previous logs for analysis
+- If mitmweb is interrupted (Ctrl+C): Extract auth and preserve log
+- **Log files are never automatically deleted**
+- Previous logs remain for analysis
 
 ## 🛡️ Security Features
 
-- **Selective cleanup**: Only current session logs are deleted
-- **Log preservation**: Previous logs remain for analysis
+- **Log preservation**: All logs are kept for analysis and debugging
 - **Size limits**: Pre-commit hook prevents large files
 - **Sensitive patterns**: .gitignore blocks log files
 - **No persistence**: Authentication data goes to `~/.config/` only
 - **Multiple interfaces**: Allows flexible proxy configuration
+- **Automatic latest detection**: Always uses most recent log for auth
 
 ## 📋 Prerequisites
 
@@ -119,29 +129,30 @@ The target uses proper error handling:
 - **Wireguard**: For apps that support wireguard proxy mode
 
 ### Log Management
-- **Current session**: Automatically cleaned up after auth extraction
-- **Previous sessions**: Preserved for analysis and debugging
+- **All sessions**: Preserved indefinitely for analysis
 - **File naming**: Timestamped for easy identification
-- **Storage**: Logs remain in project directory until manually removed
+- **Storage**: Logs remain in project directory
+- **Automatic detection**: `make auth` finds most recent log
+- **Manual override**: Can specify specific log files if needed
 
 ### Manual Override
-If automatic cleanup fails:
+If you need to use a specific log file:
 ```bash
-# Manual auth extraction (replace with actual log filename)
+# Manual auth extraction from specific log
 python meijer_cli.py auth meijer_mitm_20250117_143052.log
-
-# Manual cleanup of specific log
-rm -f meijer_mitm_20250117_143052.log
 
 # List all available logs
 ls -la meijer_mitm_*.log
+
+# Use make auth to automatically find latest
+make auth
 ```
 
 ## 📚 Related Files
 
-- **Makefile**: Contains the log target
+- **Makefile**: Contains the log and auth targets
 - **shop_n_scan_faker.py**: Location spoofing script
 - **meijer_cli.py**: Authentication extraction
 - **SECURITY.md**: Security guidelines
 - **.gitignore**: Prevents log file commits
-- **Log files**: `meijer_mitm_YYYYMMDD_HHMMSS.log` (timestamped) 
+- **Log files**: `meijer_mitm_YYYYMMDD_HHMMSS.log` (timestamped, preserved) 

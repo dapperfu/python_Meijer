@@ -34,3 +34,9 @@ class CartError(MeijerError):
     """Raised when cart operations fail."""
 
     pass
+
+
+class FeedbackError(MeijerError):
+    """Raised when feedback operations fail."""
+
+    pass

@@ -552,6 +552,339 @@ class TestSearch:
         assert result.total_results == 0
         assert len(result.results) == 0
 
+    def test_autocomplete_success(self):
+        """Test autocomplete functionality."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "suggestions": [
+                {"query": "milk"},
+                {"query": "milk chocolate"},
+                {"query": "milk shake"}
+            ]
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        suggestions = self.search.autocomplete("milk", limit=3)
+        
+        assert suggestions == ["milk", "milk chocolate", "milk shake"]
+        self.mock_client._make_request.assert_called_once()
+
+    def test_autocomplete_failure(self):
+        """Test autocomplete with API failure."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        suggestions = self.search.autocomplete("milk", limit=3)
+        
+        assert suggestions == []
+
+    def test_autocomplete_exception(self):
+        """Test autocomplete with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        suggestions = self.search.autocomplete("milk", limit=3)
+        
+        assert suggestions == []
+
+    def test_browse_success(self):
+        """Test browse functionality."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Test Product",
+                            "price": 9.99
+                        },
+                        "value": "Test Product"
+                    }
+                ],
+                "total_num_results": 1
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.search.browse("beverages", results_per_page=24, page=1)
+        
+        assert result.total_results == 1
+        assert len(result.results) == 1
+        assert result.query == "beverages"  # No "category:" prefix in this browse method
+        assert result.sort_by == "browse"
+
+    def test_browse_failure(self):
+        """Test browse with API failure."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.search.browse("beverages")
+        
+        assert result.total_results == 0
+        assert len(result.results) == 0
+        assert result.query == "beverages"  # No "category:" prefix in this browse method
+        assert result.sort_by == "browse"
+
+    def test_browse_exception(self):
+        """Test browse with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.search.browse("beverages")
+        
+        assert result.total_results == 0
+        assert len(result.results) == 0
+        assert result.query == "beverages"  # No "category:" prefix in this browse method
+        assert result.sort_by == "browse"
+
+    def test_get_recommendations_success(self):
+        """Test get_recommendations functionality."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Recommended Product",
+                            "price": 9.99
+                        },
+                        "value": "Recommended Product"
+                    }
+                ]
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        recommendations = self.search.get_recommendations(user_id="user123", limit=5)
+        
+        assert len(recommendations) == 1
+        assert recommendations[0].title == "Recommended Product"
+
+    def test_get_recommendations_with_product_id(self):
+        """Test get_recommendations with product ID."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod456",
+                            "description": "Similar Product",
+                            "price": 12.99
+                        },
+                        "value": "Similar Product"
+                    }
+                ]
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        recommendations = self.search.get_recommendations(product_id="prod123", limit=5)
+        
+        assert len(recommendations) == 1
+        assert recommendations[0].title == "Similar Product"
+
+    def test_get_recommendations_failure(self):
+        """Test get_recommendations with API failure."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        recommendations = self.search.get_recommendations(limit=5)
+        
+        assert recommendations == []
+
+    def test_get_recommendations_exception(self):
+        """Test get_recommendations with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        recommendations = self.search.get_recommendations(limit=5)
+        
+        assert recommendations == []
+
+    def test_search_by_barcode_direct_success(self):
+        """Test search_by_barcode with direct search success."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Coca Cola",
+                            "price": 1.99
+                        },
+                        "value": "Coca Cola"
+                    }
+                ],
+                "total_num_results": 1
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.search.search_by_barcode("049000050103")
+        
+        assert result is not None
+        assert result.title == "Coca Cola"
+
+    def test_search_by_barcode_fallback_success(self):
+        """Test search_by_barcode with fallback search success."""
+        # First call fails (no direct barcode results)
+        mock_response_no_results = Mock()
+        mock_response_no_results.status_code = 200
+        mock_response_no_results.json.return_value = {
+            "response": {
+                "results": [],
+                "total_num_results": 0
+            }
+        }
+        
+        # Second call succeeds (fallback search)
+        mock_response_fallback = Mock()
+        mock_response_fallback.status_code = 200
+        mock_response_fallback.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Coca Cola Classic",
+                            "price": 1.99
+                        },
+                        "value": "Coca Cola Classic"
+                    }
+                ],
+                "total_num_results": 1
+            }
+        }
+        
+        self.mock_client._make_request.side_effect = [mock_response_no_results, mock_response_fallback]
+        
+        result = self.search.search_by_barcode("049000050103")
+        
+        assert result is not None
+        assert result.title == "Coca Cola Classic"
+        assert result.upc == "049000050103"  # Should be updated to match barcode
+
+    def test_search_by_barcode_no_results(self):
+        """Test search_by_barcode with no results."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [],
+                "total_num_results": 0
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.search.search_by_barcode("invalid_barcode")
+        
+        assert result is None
+
+    def test_search_by_barcode_exception(self):
+        """Test search_by_barcode with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.search.search_by_barcode("049000050103")
+        
+        assert result is None
+
+    def test_parse_recommendations_response(self):
+        """Test _parse_recommendations_response method."""
+        data = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Recommended Product",
+                            "price": 9.99
+                        },
+                        "value": "Recommended Product"
+                    }
+                ]
+            }
+        }
+        
+        recommendations = self.search._parse_recommendations_response(data)
+        
+        assert len(recommendations) == 1
+        assert recommendations[0].title == "Recommended Product"
+
+    def test_parse_recommendations_response_empty(self):
+        """Test _parse_recommendations_response with empty data."""
+        data = {"response": {"results": []}}
+        
+        recommendations = self.search._parse_recommendations_response(data)
+        
+        assert recommendations == []
+
+    def test_parse_recommendations_response_exception(self):
+        """Test _parse_recommendations_response with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        recommendations = self.search._parse_recommendations_response({})
+        
+        assert recommendations == []
+
+    def test_parse_facets(self):
+        """Test _parse_facets method."""
+        facets_data = {
+            "brand": {
+                "data": [
+                    {"value": "Meijer", "count": 100},
+                    {"value": "Kraft", "count": 50}
+                ]
+            },
+            "category": {
+                "data": [
+                    {"value": "Beverages", "count": 75},
+                    {"value": "Snacks", "count": 25}
+                ]
+            }
+        }
+        
+        filters = self.search._parse_facets(facets_data)
+        
+        assert "brand" in filters
+        assert "category" in filters
+        assert len(filters["brand"]) == 2
+        assert len(filters["category"]) == 2
+        assert filters["brand"][0]["value"] == "Meijer"
+        assert filters["brand"][0]["count"] == 100
+
+    def test_parse_facets_empty(self):
+        """Test _parse_facets with empty data."""
+        filters = self.search._parse_facets({})
+        
+        assert filters == {}
+
+    def test_parse_facets_exception(self):
+        """Test _parse_facets with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        filters = self.search._parse_facets({})
+        
+        assert filters == {}
+
 
 if __name__ == "__main__":
     pytest.main([__file__]) 

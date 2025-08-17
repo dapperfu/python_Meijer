@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""
+/**
+ * This code written by Claude Sonnet 4 (claude-3-5-sonnet-20241022)
+ * Generated via Cursor IDE (cursor.sh) with AI assistance
+ * Model: Anthropic Claude 3.5 Sonnet
+ * Generation timestamp: 2024-12-19
+ * Context: Create Feedback class based on actual API endpoints from mitmproxy log analysis
+ * 
+ * Technical details:
+ * - LLM: Claude 3.5 Sonnet (2024-10-22)
+ * - IDE: Cursor (cursor.sh)
+ * - Generation method: AI-assisted pair programming
+ * - Code style: Python with full mypy typing and numpy-style docstrings
+ * - Dependencies: meijer package
+ */
+
+Meijer Feedback Submission Module
+================================
+
+This module provides functionality for submitting feedback through the Meijer mobile app
+feedback system. Based on actual API calls captured in mitmproxy logs.
+"""
+
+import uuid
+import json
+from datetime import datetime
+from typing import Dict, Any, Optional, List
+from dataclasses import dataclass, asdict
+
+from .exceptions import FeedbackError
+from .api_client import MeijerAPIClient
+
+
+@dataclass
+class MobileDeviceData:
+    """Mobile device information required for feedback submission."""
+    
+    os_version: str
+    sdk_version: str
+    app_version: str
+    os_type: str
+    device_id: str
+    device_model: str
+    app_id: str
+    is_dark_mode: bool
+    is_tablet: bool
+    device_resolution: str
+    device_locale: str
+    device_vendor: str
+
+
+@dataclass
+class FeedbackFormData:
+    """Form-specific data for feedback submission."""
+    
+    form_id: int
+    trigger_type: str  # "live", "manual", etc.
+    form_language: str
+    form_data: Dict[str, Any]
+    user_rating: Optional[int] = None
+    user_comment: Optional[str] = None
+    category: Optional[str] = None
+    priority: Optional[str] = None
+
+
+class MeijerFeedback:
+    """
+    Meijer Feedback submission client.
+    
+    Based on actual API endpoint: POST https://147.75.243.16/mobileSDK/v2/feedback
+    
+    This class handles the submission of feedback through the Meijer mobile app
+    feedback system, including all required device data and form information.
+    """
+    
+    def __init__(self, api_client: MeijerAPIClient):
+        """
+        Initialize the feedback client.
+        
+        Parameters
+        ----------
+        api_client : MeijerAPIClient
+            Authenticated API client for making requests
+        """
+        self.api_client = api_client
+        self.logger = api_client.logger
+        self.base_url = "https://147.75.243.16/mobileSDK/v2"
+        
+    async def submit_feedback(
+        self,
+        form_data: FeedbackFormData,
+        device_data: MobileDeviceData,
+        additional_data: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Submit feedback through the Meijer feedback system.
+        
+        Parameters
+        ----------
+        form_data : FeedbackFormData
+            The feedback form data including form ID, trigger type, and form content
+        device_data : MobileDeviceData
+            Mobile device information required for the submission
+        additional_data : Optional[Dict[str, Any]], default None
+            Additional custom data to include in the feedback
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the feedback API including the feedback UUID
+            
+        Raises
+        ------
+        FeedbackError
+            If the feedback submission fails
+        """
+        try:
+            # Generate unique UUID for this feedback submission
+            feedback_uuid = str(uuid.uuid4())
+            
+            # Build the request payload based on actual API structure
+            payload = {
+                "uuid": feedback_uuid,
+                "mobileDeviceData": asdict(device_data),
+                "formId": form_data.form_id,
+                "triggerType": form_data.trigger_type,
+                "onPremData": None,  # Always null in observed requests
+                "formLanguage": form_data.form_language,
+                "formData": form_data.form_data
+            }
+            
+            # Add optional fields if provided
+            if form_data.user_rating is not None:
+                payload["userRating"] = form_data.user_rating
+            if form_data.user_comment is not None:
+                payload["userComment"] = form_data.user_comment
+            if form_data.category is not None:
+                payload["category"] = form_data.category
+            if form_data.priority is not None:
+                payload["priority"] = form_data.priority
+                
+            # Add additional custom data if provided
+            if additional_data:
+                payload.update(additional_data)
+            
+            # Submit the feedback
+            url = f"{self.base_url}/feedback"
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+            
+            self.logger.info(f"Submitting feedback with UUID: {feedback_uuid}")
+            response = await self.api_client.post(url, json=payload, headers=headers)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.logger.info(f"Feedback submitted successfully: {result.get('uuid', 'unknown')}")
+                return result
+            else:
+                raise FeedbackError(f"Feedback submission failed: {response.status_code}")
+                
+        except Exception as e:
+            if isinstance(e, FeedbackError):
+                raise
+            raise FeedbackError(f"Error submitting feedback: {str(e)}")
+    
+    async def submit_store_search_feedback(
+        self,
+        device_data: MobileDeviceData,
+        search_query: str,
+        error_message: str,
+        user_rating: Optional[int] = None,
+        user_comment: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Submit feedback specifically for store search issues.
+        
+        Parameters
+        ----------
+        device_data : MobileDeviceData
+            Mobile device information
+        search_query : str
+            The store search query that failed
+        error_message : str
+            Error message or description of the issue
+        user_rating : Optional[int], default None
+            User rating of the experience (1-5)
+        user_comment : Optional[str], default None
+            Additional user comments
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the feedback API
+        """
+        form_data = FeedbackFormData(
+            form_id=9234,  # Based on actual log analysis
+            trigger_type="live",
+            form_language="en_US",
+            form_data={
+                "searchQuery": search_query,
+                "errorMessage": error_message,
+                "feature": "store_search",
+                "timestamp": datetime.now().isoformat()
+            },
+            user_rating=user_rating,
+            user_comment=user_comment,
+            category="store_search_error",
+            priority="high"
+        )
+        
+        return await self.submit_feedback(form_data, device_data)
+    
+    async def submit_registration_feedback(
+        self,
+        device_data: MobileDeviceData,
+        registration_step: str,
+        error_message: str,
+        user_rating: Optional[int] = None,
+        user_comment: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Submit feedback specifically for account registration issues.
+        
+        Parameters
+        ----------
+        device_data : MobileDeviceData
+            Mobile device information
+        registration_step : str
+            The step in registration that failed (e.g., "phone_validation", "store_selection")
+        error_message : str
+            Error message or description of the issue
+        user_rating : Optional[int], default None
+            User rating of the experience (1-5)
+        user_comment : Optional[int], default None
+            Additional user comments
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the feedback API
+        """
+        form_data = FeedbackFormData(
+            form_id=9234,  # Based on actual log analysis
+            trigger_type="live",
+            form_language="en_US",
+            form_data={
+                "registrationStep": registration_step,
+                "errorMessage": error_message,
+                "feature": "account_registration",
+                "timestamp": datetime.now().isoformat()
+            },
+            user_rating=user_rating,
+            user_comment=user_comment,
+            category="registration_error",
+            priority="high"
+        )
+        
+        return await self.submit_feedback(form_data, device_data)
+    
+    def create_default_device_data(
+        self,
+        device_id: Optional[str] = None,
+        device_model: str = "HTC One",
+        os_version: str = "10",
+        app_version: str = "10.12.0"
+    ) -> MobileDeviceData:
+        """
+        Create default mobile device data based on observed values.
+        
+        Parameters
+        ----------
+        device_id : Optional[str], default None
+            Custom device ID, will generate UUID if not provided
+        device_model : str, default "HTC One"
+            Device model name
+        os_version : str, default "10"
+            Android OS version
+        app_version : str, default "10.12.0"
+            Meijer app version
+            
+        Returns
+        -------
+        MobileDeviceData
+            Default device data object
+        """
+        if device_id is None:
+            device_id = str(uuid.uuid4())
+            
+        return MobileDeviceData(
+            os_version=os_version,
+            sdk_version="4.7.1",  # Based on actual log
+            app_version=app_version,
+            os_type="Android",
+            device_id=device_id,
+            device_model=device_model,
+            app_id="com.meijer.mobile.meijer",
+            is_dark_mode=False,
+            is_tablet=False,
+            device_resolution="1080*1920",
+            device_locale="en_US",
+            device_vendor="HTC"
+        ) 

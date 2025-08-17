@@ -32,13 +32,16 @@ from .shop_scan import ShopNScan
 from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
 from .stores import MeijerStore, create_meijer_stores_from_response
 from .gas import MeijerGas
+from .feedback import MeijerFeedback, FeedbackFormData, MobileDeviceData
 
 # Import exceptions
 from .exceptions import (
     MeijerError,
     MeijerAuthenticationError,
     MeijerAPIError,
-    MeijerRateLimitError
+    MeijerRateLimitError,
+    CartError,
+    FeedbackError
 )
 
 __all__ = [
@@ -67,10 +70,15 @@ __all__ = [
     "MeijerStore",
     "create_meijer_stores_from_response",
     "MeijerGas",
+    "MeijerFeedback",
+    "FeedbackFormData",
+    "MobileDeviceData",
     
     # Exceptions
     "MeijerError",
     "MeijerAuthenticationError",
     "MeijerAPIError",
-    "MeijerRateLimitError"
+    "MeijerRateLimitError",
+    "CartError",
+    "FeedbackError"
 ]

@@ -359,6 +359,304 @@ class TestShopNScan:
         
         assert result is None
 
+    def test_lookup_barcode_shopscan_success(self):
+        """Test _lookup_barcode_shopscan with successful response."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "product": {
+                "id": "prod123",
+                "name": "Test Product",
+                "description": "Test Description",
+                "price": 9.99,
+                "unitPrice": 0.50
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._lookup_barcode_shopscan("123456789012")
+        
+        assert result is not None
+        assert result.title == "Test Product"
+        assert result.upc == "123456789012"
+
+    def test_lookup_barcode_shopscan_404_continues(self):
+        """Test _lookup_barcode_shopscan continues on 404 responses."""
+        # First endpoint returns 404, second succeeds
+        mock_response_404 = Mock()
+        mock_response_404.status_code = 404
+        
+        mock_response_success = Mock()
+        mock_response_success.status_code = 200
+        mock_response_success.json.return_value = {
+            "product": {
+                "id": "prod123",
+                "name": "Test Product",
+                "price": 9.99
+            }
+        }
+        
+        self.mock_client._make_request.side_effect = [mock_response_404, mock_response_success]
+        
+        result = self.shop_scan._lookup_barcode_shopscan("123456789012")
+        
+        assert result is not None
+        assert result.title == "Test Product"
+
+    def test_lookup_barcode_shopscan_all_fail(self):
+        """Test _lookup_barcode_shopscan when all endpoints fail."""
+        mock_response = Mock()
+        mock_response.status_code = 500
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._lookup_barcode_shopscan("123456789012")
+        
+        assert result is None
+
+    def test_search_by_barcode_direct_success(self):
+        """Test _search_by_barcode_direct with successful response."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Test Product",
+                            "ean": "123456789012",
+                            "price": 9.99
+                        },
+                        "value": "Test Product"
+                    }
+                ],
+                "total_num_results": 1
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._search_by_barcode_direct("123456789012")
+        
+        assert result is not None
+        assert result.title == "Test Product"
+        assert result.upc == "123456789012"
+
+    def test_search_by_barcode_direct_no_exact_match(self):
+        """Test _search_by_barcode_direct with no exact barcode match."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Test Product",
+                            "ean": "different_barcode",
+                            "price": 9.99
+                        },
+                        "value": "Test Product"
+                    }
+                ],
+                "total_num_results": 1
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._search_by_barcode_direct("123456789012")
+        
+        assert result is None
+
+    def test_search_by_barcode_direct_no_results(self):
+        """Test _search_by_barcode_direct with no results."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [],
+                "total_num_results": 0
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._search_by_barcode_direct("123456789012")
+        
+        assert result is None
+
+    def test_search_by_barcode_direct_exception(self):
+        """Test _search_by_barcode_direct with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan._search_by_barcode_direct("123456789012")
+        
+        assert result is None
+
+    def test_search_by_product_name_fallback_success(self):
+        """Test _search_by_product_name_fallback with successful response."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Coca Cola Classic",
+                            "price": 1.99
+                        },
+                        "value": "Coca Cola Classic"
+                    }
+                ],
+                "total_num_results": 1
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._search_by_product_name_fallback("049000050103")
+        
+        assert result is not None
+        assert result.title == "Coca Cola Classic"
+        assert result.upc == "049000050103"  # Should be set to original barcode
+
+    def test_search_by_product_name_fallback_no_results(self):
+        """Test _search_by_product_name_fallback with no results."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [],
+                "total_num_results": 0
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._search_by_product_name_fallback("invalid_barcode")
+        
+        assert result is None
+
+    def test_search_by_product_name_fallback_exception(self):
+        """Test _search_by_product_name_fallback with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan._search_by_product_name_fallback("049000050103")
+        
+        assert result is None
+
+    def test_bulk_lookup_barcodes(self):
+        """Test bulk_lookup_barcodes method."""
+        # Mock successful responses for both barcodes
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "product": {
+                "id": "prod123",
+                "name": "Test Product",
+                "price": 9.99
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        barcodes = ["123456789012", "987654321098"]
+        results = self.shop_scan.bulk_lookup_barcodes(barcodes)
+        
+        assert len(results) == 2
+        assert "123456789012" in results
+        assert "987654321098" in results
+        assert results["123456789012"] is not None
+        assert results["987654321098"] is not None
+
+    def test_add_to_cart_success(self):
+        """Test add_to_cart method with successful response."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.add_to_cart("123456789012", quantity=2)
+        
+        assert result is True
+        self.mock_client._make_request.assert_called_once()
+
+    def test_add_to_cart_failure(self):
+        """Test add_to_cart method with failed response."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan.add_to_cart("123456789012", quantity=1)
+        
+        assert result is False
+
+    def test_add_to_cart_exception(self):
+        """Test add_to_cart method with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+        
+        result = self.shop_scan.add_to_cart("123456789012", quantity=1)
+        
+        assert result is False
+
+    def test_parse_shopscan_response_no_product(self):
+        """Test _parse_shopscan_response with no product data."""
+        data = {"other": "data"}
+        
+        result = self.shop_scan._parse_shopscan_response(data, "123456789012")
+        
+        assert result is None
+
+    def test_parse_shopscan_response_exception(self):
+        """Test _parse_shopscan_response with exception."""
+        # Pass data that will cause an exception during MeijerItem creation
+        # Mock the MeijerItem constructor to raise an exception
+        with patch('meijer.shop_scan.MeijerItem') as mock_meijer_item:
+            mock_meijer_item.side_effect = Exception("Test exception")
+            
+            data = {"product": {"name": "Test Product"}}
+            result = self.shop_scan._parse_shopscan_response(data, "123456789012")
+            
+            assert result is None
+
+    def test_search_by_barcode_direct_success_with_meijer_item(self):
+        """Test _search_by_barcode_direct successfully creating MeijerItem."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "results": [
+                    {
+                        "data": {
+                            "id": "prod123",
+                            "description": "Test Product",
+                            "ean": "123456789012",
+                            "price": 9.99,
+                            "priceByWeight": True
+                        },
+                        "value": "Test Product"
+                    }
+                ],
+                "total_num_results": 1
+            }
+        }
+        
+        self.mock_client._make_request.return_value = mock_response
+        
+        result = self.shop_scan._search_by_barcode_direct("123456789012")
+        
+        assert result is not None
+        assert result.title == "Test Product"
+        assert result.upc == "123456789012"
+        assert result.price == 9.99
+        assert result.is_weighted is True
+        assert result.raw_data is not None
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

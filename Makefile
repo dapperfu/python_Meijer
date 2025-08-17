@@ -36,6 +36,31 @@ log:
 	(echo "" && \
 	 echo "🔄 Extracting authentication tokens from $$LOG_FILE..." && \
 	 python meijer_cli.py auth "$$LOG_FILE" && \
-	 echo "🧹 Cleaning up current session log file..." && \
-	 rm -f "$$LOG_FILE" && \
-	 echo "✅ Authentication updated and log cleaned up!")
+	 echo "✅ Authentication updated successfully!")
+	@echo "📁 Log file preserved: $$LOG_FILE"
+	@echo "💡 Use 'make auth' to extract tokens from any log file"
+
+.PHONY: auth
+auth:
+	@echo "🔍 Finding most recent log file..."
+	@LATEST_LOG=$$(ls -t meijer_mitm_*.log 2>/dev/null | head -1) && \
+	if [ -n "$$LATEST_LOG" ]; then \
+		echo "📋 Using most recent log: $$LATEST_LOG" && \
+		python meijer_cli.py auth "$$LATEST_LOG" && \
+		echo "✅ Authentication updated from $$LATEST_LOG"; \
+	else \
+		echo "❌ No log files found. Run 'make log' first to capture traffic."; \
+		exit 1; \
+	fi
+
+.PHONY: clean
+clean:
+	@echo "🧹 Cleaning up build artifacts..."
+	@rm -rf build/
+	@rm -rf dist/
+	@rm -rf *.egg-info/
+	@rm -rf __pycache__/
+	@rm -rf .pytest_cache/
+	@rm -rf htmlcov/
+	@rm -rf .coverage
+	@echo "✅ Build artifacts cleaned up"
