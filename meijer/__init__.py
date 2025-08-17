@@ -27,7 +27,7 @@ from .shopping_list import MeijerList
 from .search import Search
 from .shop_scan import ShopNScan
 from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
-from .stores import MeijerStore
+from .stores import MeijerStore, create_meijer_stores_from_response
 from .gas import MeijerGas
 
 # Import exceptions
@@ -59,6 +59,7 @@ __all__ = [
     "EarnedReward",
     "MCardInfo",
     "MeijerStore",
+    "create_meijer_stores_from_response",
     "MeijerGas",
     
     # Exceptions

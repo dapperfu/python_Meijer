@@ -7,7 +7,7 @@ storeInfo API analysis with real store data structures.
 """
 
 import sys
-from meijer_store_final import MeijerStore, create_meijer_stores_from_response
+from meijer import MeijerStore
 
 
 def demo_store_creation():

@@ -280,6 +280,107 @@ class MeijerStore:
             _raw_data=data
         )
     
+    @classmethod
+    def from_store_info_response(cls, data: Dict[str, Any], meijer_client: Optional["Meijer"] = None) -> "MeijerStore":
+        """
+        Create MeijerStore instance from storeInfo API response data.
+        
+        This is an alias for from_api_data for backward compatibility.
+        
+        Parameters
+        ----------
+        data : Dict[str, Any]
+            Raw storeInfo API response data for store
+        meijer_client : Meijer, optional
+            Reference to Meijer client instance
+            
+        Returns
+        -------
+        MeijerStore
+            New MeijerStore instance
+        """
+        return cls.from_api_data(data, meijer_client)
+    
+    def get_store_services(self) -> List[str]:
+        """
+        Get a list of available store services.
+        
+        Returns
+        -------
+        List[str]
+            List of available service names
+        """
+        services = []
+        
+        if self.has_pharmacy:
+            services.append("Pharmacy")
+        if self.has_optical:
+            services.append("Optical")
+        if self.has_bank:
+            services.append("Banking")
+        if self.has_gas_station():
+            services.append("Gas Station")
+        if self.has_curbside_pickup:
+            services.append("Curbside Pickup")
+        if self.has_delivery:
+            services.append("Delivery")
+        if self.has_self_checkout:
+            services.append("Self Checkout")
+        if self.has_coin_machine:
+            services.append("Coin Machine")
+        if self.has_photo_center:
+            services.append("Photo Center")
+        if self.has_garden_center:
+            services.append("Garden Center")
+        if self.has_auto_center:
+            services.append("Auto Center")
+        
+        return services
+    
+    def has_alcohol_sales(self) -> bool:
+        """
+        Check if store has alcohol sales.
+        
+        Returns
+        -------
+        bool
+            True if store has alcohol sales, False otherwise
+        """
+        # This would need to be determined from API data
+        # For now, return False as default
+        return False
+    
+    def is_24_hours(self) -> bool:
+        """
+        Check if store is open 24 hours.
+        
+        Returns
+        -------
+        bool
+            True if store is open 24 hours, False otherwise
+        """
+        return self.hours.is_24_hours if self.hours else False
+    
+    @property
+    def store_id(self) -> str:
+        """Get store ID as string."""
+        return str(self.unit_id)
+    
+    @property
+    def display_name(self) -> str:
+        """Get display name for store."""
+        return f"{self.name} - {self.city}, {self.state}"
+    
+    @property
+    def full_address(self) -> str:
+        """Get full address string."""
+        return f"{self.address}, {self.city}, {self.state} {self.zip_code}"
+    
+    @property
+    def distance_miles(self) -> Optional[float]:
+        """Get distance in miles if available."""
+        return self.distance
+    
     def get_distance_from(self, lat: float, lon: float) -> Optional[float]:
         """
         Calculate distance from given coordinates using Haversine formula.
@@ -422,3 +523,52 @@ class MeijerStore:
             "store_type": self.store_type,
             "store_size": self.store_size
         } 
+
+def create_meijer_stores_from_response(store_data: Dict[str, Any], client: Optional[Any] = None) -> List[MeijerStore]:
+    """
+    Create a list of MeijerStore objects from storeInfo API response.
+    
+    Parameters
+    ----------
+    store_data : Dict[str, Any]
+        Raw storeInfo API response data
+    client : Any, optional
+        Meijer client for additional operations
+        
+    Returns
+    -------
+    List[MeijerStore]
+        List of MeijerStore instances
+    """
+    stores = []
+    
+    try:
+        # Handle different response formats
+        if isinstance(store_data, dict):
+            # Single store response
+            if "UnitId" in store_data:
+                store = MeijerStore.from_api_data(store_data, client)
+                stores.append(store)
+            # Multiple stores response
+            elif "stores" in store_data:
+                for store_item in store_data["stores"]:
+                    if isinstance(store_item, dict) and "UnitId" in store_item:
+                        store = MeijerStore.from_api_data(store_item, client)
+                        stores.append(store)
+            # Direct list of stores
+            elif "data" in store_data and isinstance(store_data["data"], list):
+                for store_item in store_data["data"]:
+                    if isinstance(store_item, dict) and "UnitId" in store_item:
+                        store = MeijerStore.from_api_data(store_item, client)
+                        stores.append(store)
+        elif isinstance(store_data, list):
+            # Direct list of stores
+            for store_item in store_data:
+                if isinstance(store_item, dict) and "UnitId" in store_item:
+                    store = MeijerStore.from_api_data(store_item, client)
+                    stores.append(store)
+                    
+    except Exception as e:
+        logger.error(f"Error processing store response: {e}")
+    
+    return stores 
