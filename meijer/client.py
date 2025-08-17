@@ -309,14 +309,27 @@ class Meijer:
                 "longitude": longitude,
                 "miles": radius_miles,
                 "numToReturn": max_results,
-                "dataVariant": 2,  # From API analysis
+                "dataVariant": 2,  # From APK analysis
             }
             
-            # Use the client's authenticated request method
-            response = self._make_request("GET", url, params=params)
+            # Use the correct headers from APK analysis
+            headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json", 
+                "Version": "9",  # Required header from APK
+                "ocp-apim-subscription-key": self.subscription_key,
+            }
+            
+            # Add authorization if available
+            if hasattr(self, '_access_token') and self._access_token:
+                headers["authorization"] = f"Bearer {self._access_token}"
+            
+            # Use the client's request method with custom headers
+            response = self._make_request("GET", url, headers=headers, params=params)
             
             if response.status_code == 200:
                 data = response.json()
+                self.logger.info(f"API Response: {data}")
                 stores = []
                 
                 # Parse the response data into MeijerStore objects
@@ -332,6 +345,7 @@ class Meijer:
                 return stores
             else:
                 self.logger.warning(f"Failed to get stores: {response.status_code}")
+                self.logger.warning(f"Response content: {response.text}")
                 return []
                 
         except Exception as e:

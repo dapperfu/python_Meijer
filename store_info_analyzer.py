@@ -11,6 +11,7 @@ via Cursor IDE (cursor.sh) with AI assistance
 
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
 from collections import defaultdict, Counter
@@ -1092,8 +1093,11 @@ def main():
     print("🏪 StoreInfo API Analyzer")
     print("=" * 60)
 
+    # Get log file path from command line argument, default to meijer2.log
+    log_file_path = sys.argv[1] if len(sys.argv) > 1 else "meijer2.log"
+
     # Initialize analyzer with meijer2.log
-    analyzer = StoreInfoAnalyzer("meijer2.log")
+    analyzer = StoreInfoAnalyzer(log_file_path)
 
     # Load flows
     print("📂 Loading flows from meijer2.log...")
