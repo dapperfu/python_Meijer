@@ -100,7 +100,7 @@ class Meijer:
 
         # Try to restore authentication
         if self._restore_authentication():
-            self.logger.info("✅ Authentication restored from stored tokens")
+            pass  # Method already logs success
 
         self.logger.info("Unified Meijer client initialized with all functionality")
 
