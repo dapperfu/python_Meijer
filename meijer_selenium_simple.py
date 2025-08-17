@@ -308,8 +308,12 @@ class MeijerSeleniumAuth:
         location = element.location
         
         # Click at random position within the element (more human-like)
-        x_offset = random.randint(5, max(5, size['width'] - 5))
-        y_offset = random.randint(5, max(5, size['height'] - 5))
+        # Ensure we have valid dimensions and convert to integers
+        width = max(10, int(size.get('width', 10)))
+        height = max(10, int(size.get('height', 10)))
+        
+        x_offset = random.randint(5, max(5, width - 5))
+        y_offset = random.randint(5, max(5, height - 5))
         
         # Use ActionChains for more natural clicking
         actions = ActionChains(self.driver)
