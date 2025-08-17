@@ -172,9 +172,93 @@ class Meijer:
             self.logger.error(f"Failed to parse JSON response: {e}")
             raise MeijerError(f"Invalid JSON response: {e}")
     
-    def login(self, username: str, password: str) -> bool:
+    def _read_auth_file(self, auth_file: str = "auth.txt") -> Dict[str, str]:
         """
-        Authenticate with Meijer using username and password.
+        Read authentication credentials from a plain text file.
+        
+        Expected format:
+        username=your_email@example.com
+        password=your_password
+        
+        Args:
+            auth_file: Path to the authentication file
+            
+        Returns:
+            Dictionary containing username and password
+            
+        Raises:
+            MeijerError: If the auth file cannot be read or parsed
+        """
+        try:
+            auth_data = {}
+            with open(auth_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and '=' in line and not line.startswith('#'):
+                        key, value = line.split('=', 1)
+                        auth_data[key.strip()] = value.strip()
+            
+            if 'username' not in auth_data or 'password' not in auth_data:
+                raise MeijerError("Auth file must contain both username and password")
+                
+            return auth_data
+            
+        except FileNotFoundError:
+            raise MeijerError(f"Auth file not found: {auth_file}")
+        except Exception as e:
+            raise MeijerError(f"Failed to read auth file: {e}")
+
+    def login(self, auth_file: str = "auth.txt") -> bool:
+        """
+        Authenticate with Meijer using credentials from auth file.
+        
+        Note: This is a placeholder implementation. The actual Meijer
+        authentication flow may require additional steps or different
+        endpoints that were not captured in the network analysis.
+        
+        Args:
+            auth_file: Path to the authentication file
+            
+        Returns:
+            True if authentication successful, False otherwise
+            
+        Raises:
+            MeijerAuthenticationError: If authentication fails
+        """
+        self.logger.info("Attempting to authenticate with Meijer...")
+        
+        try:
+            # Read credentials from auth file
+            auth_data = self._read_auth_file(auth_file)
+            username = auth_data['username']
+            password = auth_data['password']
+            
+            self.logger.info(f"Using credentials for: {username}")
+            
+            # This is a placeholder - the actual login endpoint and flow
+            # would need to be determined from additional network analysis
+            # or reverse engineering of the mobile app
+            
+            # For now, we'll simulate a successful login
+            # In a real implementation, this would make actual API calls
+            
+            # Set authentication state
+            self._authenticated = True
+            self._digital_id = "13266596"  # Example from log
+            self._external_shopper_id = "6361aebe-c5c5-4e0a-bdcb-6dab4a5d92dd"  # Example from log
+            self._home_store_id = 217  # Example from log
+            self._current_store_id = 217  # Example from log
+            
+            self.logger.info("Authentication successful")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Authentication failed: {e}")
+            raise MeijerAuthenticationError(f"Login failed: {e}")
+
+    def login_with_credentials(self, username: str, password: str) -> bool:
+        """
+        Authenticate with Meijer using provided username and password.
         
         Note: This is a placeholder implementation. The actual Meijer
         authentication flow may require additional steps or different
@@ -190,13 +274,13 @@ class Meijer:
         Raises:
             MeijerAuthenticationError: If authentication fails
         """
-        self.logger.info("Attempting to authenticate with Meijer...")
-        
-        # This is a placeholder - the actual login endpoint and flow
-        # would need to be determined from additional network analysis
-        # or reverse engineering of the mobile app
+        self.logger.info(f"Attempting to authenticate with Meijer for: {username}")
         
         try:
+            # This is a placeholder - the actual login endpoint and flow
+            # would need to be determined from additional network analysis
+            # or reverse engineering of the mobile app
+            
             # For now, we'll simulate a successful login
             # In a real implementation, this would make actual API calls
             
@@ -414,9 +498,9 @@ def main() -> None:
     # Create Meijer client
     with Meijer() as meijer:
         try:
-            # Attempt to login (placeholder implementation)
-            print("Logging in to Meijer...")
-            if meijer.login("username", "password"):
+            # Attempt to login using auth file
+            print("Logging in to Meijer using auth file...")
+            if meijer.login():  # Uses default auth.txt file
                 print("Login successful!")
                 
                 # Get user info
