@@ -257,7 +257,7 @@ def clip_coupon(client: "Meijer", coupon_id: int) -> bool:
         if not client._ensure_authenticated():
             raise MeijerAuthenticationError("Authentication required")
 
-        url = f"{client.api_base_url}/digital/mPerks/api/offers/clip"
+        url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Clip"
         headers = client._get_api_headers()
         headers.update({"Content-Type": "application/json"})
 
@@ -277,7 +277,7 @@ def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
         if not client._ensure_authenticated():
             raise MeijerAuthenticationError("Authentication required")
 
-        url = f"{client.api_base_url}/digital/mPerks/api/offers/unclip"
+        url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Unclip"
         headers = client._get_api_headers()
         headers.update({"Content-Type": "application/json"})
 

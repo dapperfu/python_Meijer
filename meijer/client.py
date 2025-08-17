@@ -286,19 +286,70 @@ class Meijer:
             return None
 
     def get_offers(self, limit: int = 50) -> List[Dict[str, Any]]:
-        """Get available offers."""
+        """Get available offers from mPerks API using the real POST request structure."""
         try:
             if not self._ensure_authenticated():
                 raise MeijerAuthenticationError("Authentication required")
 
-            url = f"{self.api_base_url}/loyalty/offers"
+            # Real endpoint from mitmproxy analysis - uses POST, not GET!
+            url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
             headers = self._get_api_headers()
 
-            params = {"limit": limit}
-            response = self._make_request("GET", url, headers=headers, params=params)
+            # Add proper mPerks content type from analysis
+            headers.update(
+                {
+                    "Accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
+                    "Content-Type": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
+                }
+            )
+
+            # Real request body structure from mitmproxy analysis
+            request_body = {
+                "sortType": "BySuggested",
+                "pageSize": min(limit, 9999),
+                "currentPage": 1,
+                "offerClass": 1,
+                "searchCriteria": "",
+                "storeId": 0,
+                "ceilingCount": 0,
+                "ceilingDuration": 0,
+                "rewardCouponId": 0,
+                "tagId": "",
+                "getOfferCountPerDepartment": True,
+                "upcList": [],
+                "showClippedCoupons": True,
+                "showOnlySpecialOffers": False,
+                "showRedeemedOffers": False,
+                "offerIds": [],
+                "displayReasonFilters": [],
+            }
+
+            response = self._make_request(
+                "POST", url, headers=headers, json=request_body
+            )
 
             if response.status_code == 200:
-                return response.json().get("offers", [])
+                data = response.json()
+                # Extract offers from the real response structure
+                offers = data.get("listOfCoupons", [])
+                # Convert to simple format for compatibility
+                simplified_offers = []
+                for item in offers:
+                    if "offer" in item:
+                        offer = item["offer"]
+                        simplified_offers.append(
+                            {
+                                "id": offer.get("meijerOfferId"),
+                                "title": offer.get("title", "").strip(),
+                                "description": offer.get("description", ""),
+                                "discount": f"${offer.get('redeemAmount', 0):.2f}",
+                                "expires": offer.get("redemptionEndDate"),
+                                "isClipped": item.get("isClipped", False),
+                                "imageUrl": offer.get("imageURL"),
+                                "terms": offer.get("termsAndConditions", ""),
+                            }
+                        )
+                return simplified_offers
             else:
                 raise MeijerAPIError(f"Failed to get offers: {response.status_code}")
 
@@ -309,21 +360,23 @@ class Meijer:
     def get_stores(
         self, zip_code: str = None, radius: int = 25
     ) -> List[Dict[str, Any]]:
-        """Get store information."""
+        """Get store information from store locator API."""
         try:
-            url = f"{self.api_base_url}/stores"
+            # Store locator endpoint from APK analysis
+            url = f"{self.api_base_url}/stores/locator"
             headers = self._get_api_headers()
 
             params = {}
             if zip_code:
-                params["zip"] = zip_code
+                params["zipCode"] = zip_code  # Use correct parameter name
             if radius:
                 params["radius"] = radius
 
             response = self._make_request("GET", url, headers=headers, params=params)
 
             if response.status_code == 200:
-                return response.json().get("stores", [])
+                data = response.json()
+                return data.get("stores", data.get("data", []))
             else:
                 raise MeijerAPIError(f"Failed to get stores: {response.status_code}")
 
@@ -346,10 +399,39 @@ class Meijer:
             return []
 
         try:
+            # Use the same endpoint and method as get_offers
+            url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
+            headers = self._get_api_headers()
+            headers.update(
+                {
+                    "Accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
+                    "Content-Type": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
+                }
+            )
+
+            # Same request body structure
+            request_body = {
+                "sortType": "BySuggested",
+                "pageSize": min(limit, 9999),
+                "currentPage": 1,
+                "offerClass": 1,
+                "searchCriteria": "",
+                "storeId": 0,
+                "ceilingCount": 0,
+                "ceilingDuration": 0,
+                "rewardCouponId": 0,
+                "tagId": "",
+                "getOfferCountPerDepartment": True,
+                "upcList": [],
+                "showClippedCoupons": True,
+                "showOnlySpecialOffers": False,
+                "showRedeemedOffers": False,
+                "offerIds": [],
+                "displayReasonFilters": [],
+            }
+
             response = self._make_request(
-                "GET",
-                f"{self.api_base_url}/digital/mPerks/api/offers",
-                params={"limit": limit},
+                "POST", url, headers=headers, json=request_body
             )
 
             coupon_data = response.json()

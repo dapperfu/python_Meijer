@@ -136,9 +136,12 @@ class MeijerSearch:
         self.meijer = meijer_client
         self.logger = meijer_client.logger
 
-        # Constructor.io configuration (from network analysis)
+        # Constructor.io configuration (from APK analysis)
         self.constructor_base_url = "https://ac.cnstrc.com"
-        self.api_key = "key_Rf2XGUz9WKRJ6qUL"  # From mitmproxy analysis
+        # API key needs to be extracted from actual requests or APK
+        self.api_key = (
+            "key_Rf2XGUz9WKRJ6qUL"  # Placeholder - extract from real requests
+        )
 
     def search(
         self,
@@ -300,7 +303,7 @@ class MeijerSearch:
                 self.logger.warning(f"Failed to parse search result: {e}")
                 continue
 
-        # Extract pagination info  
+        # Extract pagination info
         total_results = data.get("response", {}).get("total_num_results", len(items))
 
         # Calculate total pages
