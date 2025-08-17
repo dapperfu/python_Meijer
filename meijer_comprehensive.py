@@ -150,6 +150,10 @@ class MeijerComprehensiveClient:
         self.user_info: Optional[UserInfo] = None
         self.auth_status = AuthenticationStatus.UNAUTHENTICATED
         
+        # Setup logging
+        import logging
+        self.logger = logging.getLogger(__name__)
+        
         # Session with retry logic
         self.session = requests.Session()
         retry_strategy = Retry(
@@ -615,6 +619,184 @@ class MeijerComprehensiveClient:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.logout()
+
+    def authenticate_with_requests(self, username: str, password: str) -> bool:
+        """
+        Authenticate using pure requests library instead of Selenium.
+        
+        This method follows the OAuth flow programmatically by:
+        1. Creating a session with proper headers
+        2. Following redirects and maintaining cookies
+        3. Handling the login form submission
+        4. Extracting the authorization code
+        
+        Args:
+            username: Meijer account username/email
+            password: Meijer account password
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.logger.info("🌐 Starting requests-based OAuth authentication")
+            
+            # Create a session for cookie management
+            session = requests.Session()
+            
+            # Set headers to mimic a real browser
+            session.headers.update({
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            })
+            
+            # Step 1: Get the authorization URL and follow it
+            auth_url, state, code_verifier = self.get_authorization_url()
+            self.logger.info(f"🔗 Following authorization URL: {auth_url[:80]}...")
+            
+            # Use a standard redirect URI that we can handle
+            # Replace the mobile app URI with a standard one
+            auth_url_modified = auth_url.replace(
+                'com.meijer.mobile.meijer:/login',
+                'https://localhost:8080/callback'
+            )
+            
+            # Follow the authorization URL
+            response = session.get(auth_url_modified, allow_redirects=True)
+            self.logger.info(f"📄 Initial response status: {response.status_code}")
+            
+            # Step 2: Extract the login form from the response
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Look for the login form
+            login_form = soup.find('form')
+            if not login_form:
+                self.logger.error("❌ Login form not found")
+                return False
+            
+            # Extract form action and method
+            form_action = login_form.get('action', '')
+            form_method = login_form.get('method', 'post').upper()
+            
+            # Find CSRF token if present
+            csrf_token = None
+            csrf_input = soup.find('input', {'name': '_csrf'}) or soup.find('input', {'name': 'csrf'})
+            if csrf_input:
+                csrf_token = csrf_input.get('value')
+                self.logger.info("🔒 CSRF token found")
+            
+            # Step 3: Submit the login form
+            login_data = {
+                'username': username,
+                'password': password,
+            }
+            
+            if csrf_token:
+                login_data['_csrf'] = csrf_token
+            
+            # Add any other hidden fields from the form
+            for hidden_input in login_form.find_all('input', {'type': 'hidden'}):
+                name = hidden_input.get('name')
+                value = hidden_input.get('value')
+                if name and value and name not in login_data:
+                    login_data[name] = value
+            
+            self.logger.info("🔐 Submitting login form...")
+            
+            # Determine the full URL for form submission
+            if form_action.startswith('http'):
+                submit_url = form_action
+            elif form_action.startswith('/'):
+                submit_url = f"https://id.meijer.com{form_action}"
+            else:
+                submit_url = response.url
+            
+            # Submit the form
+            if form_method == 'POST':
+                response = session.post(submit_url, data=login_data, allow_redirects=False)
+            else:
+                response = session.get(submit_url, params=login_data, allow_redirects=False)
+            
+            self.logger.info(f"📄 Login response status: {response.status_code}")
+            
+            # Step 4: Handle redirects and look for authorization code
+            if response.status_code in [301, 302, 303, 307, 308]:
+                redirect_url = response.headers.get('Location', '')
+                self.logger.info(f"🔄 Following redirect: {redirect_url[:80]}...")
+                
+                # Follow the redirect
+                response = session.get(redirect_url, allow_redirects=True)
+                self.logger.info(f"📄 Final response status: {response.status_code}")
+            
+            # Step 5: Extract authorization code from response
+            auth_code = self._extract_auth_code_from_response(response)
+            
+            if auth_code:
+                self.logger.info(f"🎉 Authorization code found: {auth_code[:10]}...")
+                
+                # Exchange code for tokens
+                success = self.authenticate_with_code(auth_code, code_verifier)
+                if success:
+                    self.logger.info("✅ Requests-based authentication completed successfully!")
+                    return True
+                else:
+                    self.logger.error("❌ Failed to exchange auth code for tokens")
+                    return False
+            else:
+                self.logger.error("❌ Authorization code not found in response")
+                self.logger.debug(f"Response URL: {response.url}")
+                self.logger.debug(f"Response content preview: {response.text[:500]}...")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"❌ Requests-based authentication failed: {e}")
+            return False
+    
+    def _extract_auth_code_from_response(self, response) -> Optional[str]:
+        """
+        Extract authorization code from various response formats.
+        
+        Args:
+            response: requests.Response object
+            
+        Returns:
+            Authorization code if found, None otherwise
+        """
+        try:
+            # Check URL for auth code
+            if 'code=' in response.url:
+                from urllib.parse import parse_qs, urlparse
+                parsed = urlparse(response.url)
+                query_params = parse_qs(parsed.query)
+                if 'code' in query_params:
+                    return query_params['code'][0]
+            
+            # Check response content for auth code patterns
+            content = response.text
+            import re
+            
+            patterns = [
+                r'code=([a-zA-Z0-9_-]+)',
+                r'authorization_code=([a-zA-Z0-9_-]+)',
+                r'auth_code=([a-zA-Z0-9_-]+)',
+                r'com\.meijer\.mobile\.meijer:/login\?code=([a-zA-Z0-9_-]+)'
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, content)
+                if match:
+                    return match.group(1)
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting auth code: {e}")
+            return None
 
 
 def main():
