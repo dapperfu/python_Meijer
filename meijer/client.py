@@ -17,6 +17,7 @@ from .coupons import MeijerCouponManager
 from .search import Search
 from .shop_scan import ShopNScan
 from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
+from .feedback import MeijerFeedback
 from .models import MeijerItem, ListItem, MeijerCoupon, Store, SearchResult
 from .stores import MeijerStore
 from .exceptions import MeijerError, MeijerAuthenticationError, MeijerAPIError, MeijerRateLimitError
@@ -57,6 +58,7 @@ class Meijer:
         self.search = Search(self)
         self.shop_scan = ShopNScan(self)
         self.mperks = MPerksEarnedRewards(self)
+        self.feedback = MeijerFeedback(self)
         
         # Add alias for CLI compatibility
         self.list = self.shopping_list

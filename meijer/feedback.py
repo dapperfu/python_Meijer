@@ -5,7 +5,7 @@
  * Generated via Cursor IDE (cursor.sh) with AI assistance
  * Model: Anthropic Claude 3.5 Sonnet
  * Generation timestamp: 2024-12-19
- * Context: Create Feedback class based on actual API endpoints from mitmproxy log analysis
+ * Context: Update Feedback class to use correct endpoint and payload structure from actual API analysis
  * 
  * Technical details:
  * - LLM: Claude 3.5 Sonnet (2024-10-22)
@@ -25,11 +25,10 @@ feedback system. Based on actual API calls captured in mitmproxy logs.
 import uuid
 import json
 from datetime import datetime
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass, asdict
 
 from .exceptions import FeedbackError
-from .api_client import MeijerAPIClient
 
 
 @dataclass
@@ -51,43 +50,75 @@ class MobileDeviceData:
 
 
 @dataclass
+class FeedbackComponent:
+    """Individual feedback form component."""
+    
+    id: int
+    type: str
+    unique_name: str
+    value: Optional[Union[str, int, List[str]]] = None
+    is_csat: bool = False
+    role: Optional[str] = None
+
+
+@dataclass
+class FeedbackPage:
+    """Feedback form page containing components."""
+    
+    components: List[FeedbackComponent]
+
+
+@dataclass
+class FeedbackCustomParam:
+    """Custom parameter for feedback submission."""
+    
+    unique_name: str
+    value: str
+
+
+@dataclass
+class FeedbackDynamicData:
+    """Dynamic data for feedback submission."""
+    
+    custom_params: List[FeedbackCustomParam]
+    pages: List[FeedbackPage]
+
+
+@dataclass
 class FeedbackFormData:
     """Form-specific data for feedback submission."""
     
     form_id: int
     trigger_type: str  # "live", "manual", etc.
     form_language: str
-    form_data: Dict[str, Any]
-    user_rating: Optional[int] = None
-    user_comment: Optional[str] = None
-    category: Optional[str] = None
-    priority: Optional[str] = None
+    dynamic_data: FeedbackDynamicData
+    appearance_mode: str = "light"
 
 
 class MeijerFeedback:
     """
     Meijer Feedback submission client.
     
-    Based on actual API endpoint: POST https://147.75.243.16/mobileSDK/v2/feedback
+    Based on actual API endpoint: POST https://meijer.md-apis.medallia.com/mobileSDK/v2/feedback
     
     This class handles the submission of feedback through the Meijer mobile app
     feedback system, including all required device data and form information.
     """
     
-    def __init__(self, api_client: MeijerAPIClient):
+    def __init__(self, meijer_client):
         """
         Initialize the feedback client.
         
         Parameters
         ----------
-        api_client : MeijerAPIClient
-            Authenticated API client for making requests
+        meijer_client
+            Main Meijer client instance for making requests
         """
-        self.api_client = api_client
-        self.logger = api_client.logger
-        self.base_url = "https://147.75.243.16/mobileSDK/v2"
+        self.meijer_client = meijer_client
+        self.logger = meijer_client.logger
+        self.base_url = "https://meijer.md-apis.medallia.com/mobileSDK/v2"
         
-    async def submit_feedback(
+    def submit_feedback(
         self,
         form_data: FeedbackFormData,
         device_data: MobileDeviceData,
@@ -127,19 +158,12 @@ class MeijerFeedback:
                 "triggerType": form_data.trigger_type,
                 "onPremData": None,  # Always null in observed requests
                 "formLanguage": form_data.form_language,
-                "formData": form_data.form_data
+                "clientCorrelationId": feedback_uuid,
+                "fallbackScreenResolution": "360X640",  # From actual API call
+                "dynamicData": asdict(form_data.dynamic_data),
+                "appearanceMode": form_data.appearance_mode
             }
             
-            # Add optional fields if provided
-            if form_data.user_rating is not None:
-                payload["userRating"] = form_data.user_rating
-            if form_data.user_comment is not None:
-                payload["userComment"] = form_data.user_comment
-            if form_data.category is not None:
-                payload["category"] = form_data.category
-            if form_data.priority is not None:
-                payload["priority"] = form_data.priority
-                
             # Add additional custom data if provided
             if additional_data:
                 payload.update(additional_data)
@@ -148,11 +172,12 @@ class MeijerFeedback:
             url = f"{self.base_url}/feedback"
             headers = {
                 "Content-Type": "application/json",
-                "Accept": "application/json"
+                "Accept": "application/json",
+                "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
             }
             
             self.logger.info(f"Submitting feedback with UUID: {feedback_uuid}")
-            response = await self.api_client.post(url, json=payload, headers=headers)
+            response = self.meijer_client._make_request("POST", url, json_data=payload, headers=headers)
             
             if response.status_code == 200:
                 result = response.json()
@@ -166,99 +191,235 @@ class MeijerFeedback:
                 raise
             raise FeedbackError(f"Error submitting feedback: {str(e)}")
     
-    async def submit_store_search_feedback(
+    def submit_shop_scan_feedback(
         self,
         device_data: MobileDeviceData,
-        search_query: str,
-        error_message: str,
-        user_rating: Optional[int] = None,
-        user_comment: Optional[str] = None
+        feedback_text: str,
+        rating: Optional[int] = None,
+        store_name: str = "",
+        store_comment: str = "",
+        contact_name: str = "",
+        phone: str = "",
+        email: str = "",
+        additional_comments: str = ""
     ) -> Dict[str, Any]:
         """
-        Submit feedback specifically for store search issues.
+        Submit feedback specifically for Shop & Scan functionality.
         
         Parameters
         ----------
         device_data : MobileDeviceData
             Mobile device information
-        search_query : str
-            The store search query that failed
-        error_message : str
-            Error message or description of the issue
-        user_rating : Optional[int], default None
-            User rating of the experience (1-5)
-        user_comment : Optional[str], default None
-            Additional user comments
+        feedback_text : str
+            The main feedback text for Shop & Scan (goes in S&S_APP_FEEDBACK)
+        rating : Optional[int], default None
+            Overall satisfaction rating (1-10) - goes in OSAT_11
+        store_name : str, default ""
+            Name of the store if feedback is store-related
+        store_comment : str, default ""
+            Additional store-specific comments
+        contact_name : str, default ""
+            Contact name if user wants follow-up
+        phone : str, default ""
+            Phone number for contact
+        email : str, default ""
+            Email for contact
+        additional_comments : str, default ""
+            Any additional comments (goes in OPEN_CMT)
             
         Returns
         -------
         Dict[str, Any]
             Response from the feedback API
         """
-        form_data = FeedbackFormData(
-            form_id=9234,  # Based on actual log analysis
-            trigger_type="live",
-            form_language="en_US",
-            form_data={
-                "searchQuery": search_query,
-                "errorMessage": error_message,
-                "feature": "store_search",
-                "timestamp": datetime.now().isoformat()
-            },
-            user_rating=user_rating,
-            user_comment=user_comment,
-            category="store_search_error",
-            priority="high"
+        # Create components based on actual API structure for Shop & Scan
+        components = [
+            FeedbackComponent(196946, "radio", "FEEDBACK_TOPICAPP", "C", False),  # Shop & Scan
+            FeedbackComponent(305822, "grading0to10", "q_bp_digital_osat_scale11", rating, False),
+            FeedbackComponent(196950, "select", "NEW_VISIT_REASONAPP", None, False),
+            FeedbackComponent(196965, "grading0to10", "EASE_OF_TASK_11", None, False),
+            FeedbackComponent(255342, "textArea", "OPEN_CMT", additional_comments, False),
+            FeedbackComponent(197003, "radio", "STORE_FEED", None, False),
+            FeedbackComponent(197004, "textInput", "STORE_NAME", store_name, False),
+            FeedbackComponent(197005, "textArea", "STORE_CMT", store_comment, False),
+            FeedbackComponent(197006, "radio", "NEW_CONTACT_METHOD", None, False),
+            FeedbackComponent(197007, "textInput", "Fullname", contact_name, False, "contactName"),
+            FeedbackComponent(197008, "textInput", "Phone", phone, False),
+            FeedbackComponent(197009, "textInput", "EMAIL", email, False),
+            FeedbackComponent(361058, "grading0to10", "OSAT_11", rating, False),  # Shop & Scan rating
+            FeedbackComponent(361059, "checkbox", "S&S_PROBLEMSS", None, False),
+            FeedbackComponent(357091, "textArea", "S&S_APP_FEEDBACK", feedback_text, False),  # Main Shop & Scan feedback
+            FeedbackComponent(255347, "label", "PRIVACY_POLICY", None, False)
+        ]
+        
+        # Create custom parameters
+        custom_params = [
+            FeedbackCustomParam("HOME_STORE_NAME", store_name),
+            FeedbackCustomParam("APP_ENVIRONMENT", "playstore")
+        ]
+        
+        # Create dynamic data
+        dynamic_data = FeedbackDynamicData(
+            custom_params=custom_params,
+            pages=[FeedbackPage(components=components)]
         )
         
-        return await self.submit_feedback(form_data, device_data)
+        # Create form data
+        form_data = FeedbackFormData(
+            form_id=9234,  # Based on actual API call
+            trigger_type="live",
+            form_language="en",
+            dynamic_data=dynamic_data,
+            appearance_mode="light"
+        )
+        
+        return self.submit_feedback(form_data, device_data)
     
-    async def submit_registration_feedback(
+    def submit_general_feedback(
         self,
         device_data: MobileDeviceData,
-        registration_step: str,
-        error_message: str,
-        user_rating: Optional[int] = None,
-        user_comment: Optional[str] = None
+        feedback_text: str,
+        rating: Optional[int] = None,
+        category: str = "general",
+        additional_comments: str = ""
     ) -> Dict[str, Any]:
         """
-        Submit feedback specifically for account registration issues.
+        Submit general feedback about the app.
         
         Parameters
         ----------
         device_data : MobileDeviceData
             Mobile device information
-        registration_step : str
-            The step in registration that failed (e.g., "phone_validation", "store_selection")
-        error_message : str
-            Error message or description of the issue
-        user_rating : Optional[int], default None
-            User rating of the experience (1-5)
-        user_comment : Optional[int], default None
-            Additional user comments
+        feedback_text : str
+            The main feedback text
+        rating : Optional[int], default None
+            Overall satisfaction rating (1-10)
+        category : str, default "general"
+            Category of feedback
+        additional_comments : str, default ""
+            Additional comments
             
         Returns
         -------
         Dict[str, Any]
             Response from the feedback API
         """
-        form_data = FeedbackFormData(
-            form_id=9234,  # Based on actual log analysis
-            trigger_type="live",
-            form_language="en_US",
-            form_data={
-                "registrationStep": registration_step,
-                "errorMessage": error_message,
-                "feature": "account_registration",
-                "timestamp": datetime.now().isoformat()
-            },
-            user_rating=user_rating,
-            user_comment=user_comment,
-            category="registration_error",
-            priority="high"
+        # Create components for general feedback
+        components = [
+            FeedbackComponent(196946, "radio", "FEEDBACK_TOPICAPP", "C", False),
+            FeedbackComponent(305822, "grading0to10", "q_bp_digital_osat_scale11", rating, False),
+            FeedbackComponent(255342, "textArea", "OPEN_CMT", additional_comments, False),
+            FeedbackComponent(361058, "grading0to10", "OSAT_11", rating, False),
+            FeedbackComponent(357091, "textArea", "S&S_APP_FEEDBACK", feedback_text, False),
+            FeedbackComponent(255347, "label", "PRIVACY_POLICY", None, False)
+        ]
+        
+        # Create custom parameters
+        custom_params = [
+            FeedbackCustomParam("HOME_STORE_NAME", ""),
+            FeedbackCustomParam("APP_ENVIRONMENT", "playstore")
+        ]
+        
+        # Create dynamic data
+        dynamic_data = FeedbackDynamicData(
+            custom_params=custom_params,
+            pages=[FeedbackPage(components=components)]
         )
         
-        return await self.submit_feedback(form_data, device_data)
+        # Create form data
+        form_data = FeedbackFormData(
+            form_id=9234,  # Based on actual API call
+            trigger_type="live",
+            form_language="en",
+            dynamic_data=dynamic_data,
+            appearance_mode="light"
+        )
+        
+        return self.submit_feedback(form_data, device_data)
+    
+    def submit_app_feedback(
+        self,
+        device_data: MobileDeviceData,
+        feedback_text: str,
+        rating: Optional[int] = None,
+        visit_reason: str = "F",
+        ease_rating: Optional[int] = None,
+        additional_comments: str = "",
+        contact_name: str = "",
+        phone: str = "",
+        email: str = ""
+    ) -> Dict[str, Any]:
+        """
+        Submit feedback specifically for app functionality.
+        
+        Parameters
+        ----------
+        device_data : MobileDeviceData
+            Mobile device information
+        feedback_text : str
+            The main feedback text about the app
+        rating : Optional[int], default None
+            Overall satisfaction rating (1-10)
+        visit_reason : str, default "F"
+            Reason for the visit (from NEW_VISIT_REASONAPP)
+        ease_rating : Optional[int], default None
+            Rating for ease of task completion (1-10)
+        additional_comments : str, default ""
+            Additional comments in OPEN_CMT field
+        contact_name : str, default ""
+            Contact name if user wants follow-up
+        phone : str, default ""
+            Phone number for contact
+        email : str, default ""
+            Email for contact
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the feedback API
+        """
+        # Create components based on actual API structure for app feedback
+        components = [
+            FeedbackComponent(196946, "radio", "FEEDBACK_TOPICAPP", "A", False),  # App feedback
+            FeedbackComponent(305822, "grading0to10", "q_bp_digital_osat_scale11", rating, False),
+            FeedbackComponent(196950, "select", "NEW_VISIT_REASONAPP", visit_reason, False),
+            FeedbackComponent(196965, "grading0to10", "EASE_OF_TASK_11", ease_rating, False),
+            FeedbackComponent(255342, "textArea", "OPEN_CMT", additional_comments, False),
+            FeedbackComponent(197003, "radio", "STORE_FEED", None, False),
+            FeedbackComponent(197004, "textInput", "STORE_NAME", "", False),
+            FeedbackComponent(197005, "textArea", "STORE_CMT", "", False),
+            FeedbackComponent(197006, "radio", "NEW_CONTACT_METHOD", None, False),
+            FeedbackComponent(197007, "textInput", "Fullname", contact_name, False, "contactName"),
+            FeedbackComponent(197008, "textInput", "Phone", phone, False),
+            FeedbackComponent(197009, "textInput", "EMAIL", email, False),
+            FeedbackComponent(361058, "grading0to10", "OSAT_11", None, False),
+            FeedbackComponent(361059, "checkbox", "S&S_PROBLEMSS", None, False),
+            FeedbackComponent(357091, "textArea", "S&S_APP_FEEDBACK", "", False),  # Empty for app feedback
+            FeedbackComponent(255347, "label", "PRIVACY_POLICY", None, False)
+        ]
+        
+        # Create custom parameters
+        custom_params = [
+            FeedbackCustomParam("HOME_STORE_NAME", ""),
+            FeedbackCustomParam("APP_ENVIRONMENT", "playstore")
+        ]
+        
+        # Create dynamic data
+        dynamic_data = FeedbackDynamicData(
+            custom_params=custom_params,
+            pages=[FeedbackPage(components=components)]
+        )
+        
+        # Create form data
+        form_data = FeedbackFormData(
+            form_id=9234,  # Based on actual API call
+            trigger_type="live",
+            form_language="en",
+            dynamic_data=dynamic_data,
+            appearance_mode="light"
+        )
+        
+        return self.submit_feedback(form_data, device_data)
     
     def create_default_device_data(
         self,
