@@ -1,0 +1,432 @@
+{
+  "summary": {
+    "total_flows_analyzed": 1590,
+    "constructor_search_calls": 11,
+    "constructor_autocomplete_calls": 8,
+    "constructor_browse_calls": 6,
+    "constructor_behavior_calls": 3,
+    "unique_search_terms": 8,
+    "unique_item_fields": 40,
+    "total_items_analyzed": 180
+  },
+  "api_configuration": {
+    "api_key": "key_GdYuTcnduTUtsZd6",
+    "client_id": "ddb589cb-983f-4ef7-bd71-b4df9ae4e9de",
+    "session_id": "7",
+    "base_url": "https://ac.cnstrc.com"
+  },
+  "search_terms": {
+    "lego": 7,
+    "milk": 5,
+    "lego/search": 2,
+    "mi": 1,
+    "milk/search": 1,
+    "milk/click_through": 1,
+    "lego/select": 1,
+    "lego/click_through": 1
+  },
+  "common_filters": {
+    "availableInStores": {
+      "217": 9
+    }
+  },
+  "api_parameters": {
+    "filters[availableInStores]": {
+      "217": 9
+    },
+    "page": {
+      "1": 5,
+      "2": 4
+    },
+    "num_results_per_page": {
+      "30": 5,
+      "10": 4
+    },
+    "key": {
+      "key_GdYuTcnduTUtsZd6": 28
+    },
+    "i": {
+      "ddb589cb-983f-4ef7-bd71-b4df9ae4e9de": 28
+    },
+    "ui": {
+      "6361aebe-c5c5-4e0a-bdcb-6dab4a5d92dd": 27
+    },
+    "s": {
+      "7": 28
+    },
+    "c": {
+      "cioand-2.31.0": 28
+    },
+    "_dt": {
+      "1755413900335": 1,
+      "1755413900753": 1,
+      "1755414558365": 1,
+      "1755414663390": 1,
+      "1755414669774": 1
+    },
+    "action": {
+      "focus": 3,
+      "search-results": 3
+    },
+    "num_results_Search Suggestions": {
+      "8": 5
+    },
+    "num_results_Products": {
+      "0": 5
+    },
+    "original_query": {
+      "lego": 3,
+      "milk": 1
+    },
+    "tr": {
+      "search": 3,
+      "click": 1
+    },
+    "term": {
+      "lego": 2,
+      "milk": 1
+    },
+    "num_results": {
+      "425": 2,
+      "934": 1
+    },
+    "customer_ids": {
+      "67341940946,67341940363,67341940411,67341938838,67341938839,67341940362,67341940410,67341938840,67341940578,67341940361,67341938750,67341940708,67341937360,67341938841,67341939017,67341940050,67341940688,67341938683,67341940355,67341940423,67341940716,67341938726,67341940713,67341940372,67341940672,67341939308,67341923359,67341940345,67341940722,67341937486": 2,
+      "4125010200,4125010210,4125010211,4125010201,4125010268,4125011261,4125010269,85631200277,4125010202,4125010231,4125010212,71928341155,81326702000,81162002016,85631200275,81326702007,74236500707,4190007765,85631200279,7160000901,4138309036,71928341154,4138309010,71373336283,7160000257,74236500420,4138309072,74236500416,7160000786,4125010232": 1
+    },
+    "name": {
+      "Meijer Whole Milk, Gallon": 1,
+      "LEGO Jurassic World T. rex River Escape 76975": 1
+    },
+    "customer_id": {
+      "4125010200": 1,
+      "67341940946": 1
+    },
+    "section": {
+      "Products": 2,
+      "Search Suggestions": 1
+    }
+  },
+  "item_field_analysis": {
+    "most_common_fields": {
+      "matched_terms": 180,
+      "data_id": 180,
+      "data_ean": 180,
+      "data_isBopas": 180,
+      "data_isBuyable": 180,
+      "data_isAlcohol": 180,
+      "data_image_url": 180,
+      "data_priceUnit": 180,
+      "data_hasMPerks": 180,
+      "data_specialBuy": 180,
+      "data_description": 180,
+      "data_deactivated": 180,
+      "data_productUnit": 180,
+      "data_qtyIncrement": 180,
+      "data_chokingHazard": 180,
+      "data_isPurchasable": 180,
+      "data_priceByWeight": 180,
+      "data_MPerksOfferID": 180,
+      "data_isAgeRestricted": 180,
+      "data_ebtFoodstampable": 180,
+      "data_pickupAvailableFlag": 180,
+      "data_homeDeliveryNotAvailable": 180,
+      "data_requiresDiscreteInventoryTracking": 180,
+      "data_sale": 180,
+      "data_isMap": 180,
+      "data_price": 180,
+      "data_variation_id": 180,
+      "data_priceGoodThrough": 180,
+      "data_stockLevelStatus": 180,
+      "data_discountSalePriceValue": 180
+    },
+    "field_data_types": {
+      "matched_terms": "list",
+      "data_id": "str",
+      "data_ean": "int",
+      "data_isBopas": "bool",
+      "data_isBuyable": "bool",
+      "data_isAlcohol": "bool",
+      "data_image_url": "str",
+      "data_priceUnit": "str",
+      "data_hasMPerks": "bool",
+      "data_specialBuy": "bool",
+      "data_description": "str",
+      "data_deactivated": "bool",
+      "data_ingredients": "str",
+      "data_productUnit": "str",
+      "data_qtyIncrement": "int",
+      "data_chokingHazard": "bool",
+      "data_isPurchasable": "bool",
+      "data_priceByWeight": "bool",
+      "data_MPerksOfferID": "list",
+      "data_isAgeRestricted": "bool",
+      "data_ebtFoodstampable": "bool",
+      "data_pickupAvailableFlag": "bool",
+      "data_homeDeliveryNotAvailable": "bool",
+      "data_requiresDiscreteInventoryTracking": "bool",
+      "data_group_ids": "list",
+      "data_sale": "bool",
+      "data_isMap": "bool",
+      "data_price": "float",
+      "data_variation_id": "str",
+      "data_priceGoodThrough": "str",
+      "data_stockLevelStatus": "str",
+      "data_discountSalePriceValue": "Union[float, int]",
+      "value": "str",
+      "is_slotted": "bool",
+      "data_discountValue": "float",
+      "data_discountSavingsText": "str",
+      "data_discountSalePriceType": "str",
+      "data_discountSalePriceText": "str",
+      "data_depositValue": "float",
+      "data_maxOrderQuantity": "int"
+    }
+  },
+  "sample_items": [
+    {
+      "matched_terms": [],
+      "labels": {},
+      "data": {
+        "id": "4119210043",
+        "ean": 4119210043,
+        "isBopas": false,
+        "isBuyable": true,
+        "isAlcohol": false,
+        "image_url": "https://www.meijer.com/content/dam/meijer/product/0041/19/2100/43/0041192100437_2_A1C1_0200.jpg",
+        "priceUnit": "EA",
+        "hasMPerks": true,
+        "specialBuy": false,
+        "description": "Just like Tony the Tiger, your whole family can get even their busiest days going with Kellogg's Frosted Flakes ready-to-eat breakfast cereal. Thanks to the toasty, crunchy corn flakes sprinkled with sweet frosting, adults and kids experience a tasty and satisfying bowl every time. Each serving of this healthy cereal is fat free and a good source of 8 vitamins and minerals. Plus, there are no artificial colors or flavors; Enjoy sweet cereal milk after a delicious bowl of Frosted Flakes cereal. Make it a sweet complement to your morning coffee or tea. Eat pawfuls as a school snack or even a late-night bite. Crush them up as a crunchy topping for ice cream. Kellogg's Frosted Flakes cereal gives you the sweet spark to go all in and let your\u00a0GR-R-REAT out.",
+        "deactivated": false,
+        "ingredients": "MILLED CORN, SUGAR, MALT FLAVOR, CONTAINS 2% OR LESS OF SALT. VITAMINS AND MINERALS: IRON (FERRIC PHOSPHATE), NIACINAMIDE, VITAMIN B6 (PYRIDOXINE HYDROCHLORIDE), VITAMIN B2 (RIBOFLAVIN), VITAMIN B1 (THIAMIN HYDROCHLORIDE), FOLIC ACID, VITAMIN D3, VITAMIN B12.",
+        "productUnit": "EA",
+        "qtyIncrement": 1,
+        "chokingHazard": false,
+        "isPurchasable": true,
+        "priceByWeight": false,
+        "MPerksOfferID": [
+          ""
+        ],
+        "isAgeRestricted": false,
+        "ebtFoodstampable": true,
+        "pickupAvailableFlag": true,
+        "homeDeliveryNotAvailable": false,
+        "requiresDiscreteInventoryTracking": false,
+        "group_ids": [
+          "L1-865",
+          "L2-9979",
+          "L3-1287",
+          "L4-3979"
+        ],
+        "sale": false,
+        "isMap": false,
+        "price": 4.19,
+        "variation_id": "4119210043_3",
+        "priceGoodThrough": "2025-09-07T23:59:00",
+        "stockLevelStatus": "inStock",
+        "discountSalePriceValue": 4.19
+      },
+      "value": "Kellogg's Frosted Flakes Breakfast Cereal Original, 12 oz",
+      "is_slotted": false
+    },
+    {
+      "matched_terms": [],
+      "labels": {},
+      "data": {
+        "id": "4119210239",
+        "ean": 4119210239,
+        "isBopas": false,
+        "isBuyable": true,
+        "isAlcohol": false,
+        "image_url": "https://www.meijer.com/content/dam/meijer/product/0041/19/2102/39/0041192102394_1_A1C1_0200.jpg",
+        "priceUnit": "EA",
+        "hasMPerks": true,
+        "specialBuy": false,
+        "ingredients": "WHOLE GRAIN WHEAT, SUGAR, CONTAINS 2% OR LESS OF BROWN RICE SYRUP, GELATIN, BHT FOR FRESHNESS. VITAMINS AND MINERALS: REDUCED IRON, FOLIC ACID.",
+        "deactivated": false,
+        "productUnit": "EA",
+        "description": "Greet the day with Kellogg's Original Frosted Mini-Wheats, a wholesome, low-fat breakfast cereal that's built for big days. Includes one, 16-ounce box of Frosted Mini-Wheats breakfast cereal. These bite-sized biscuits pack a hearty crunch with crispy layers of wheat made from 100% whole grain and frosted with irresistible sweetness in every bite. With 48 grams of whole grain per 60-gram serving, these tasty squares are not only delicious but are an excellent source of fiber; Each serving contains a good source of 7 vitamins and minerals to help fuel you for what's ahead. Enjoy wheat bites throughout the day, as a well-deserved snack at the office, an afternoon pick-me-up, a post-workout treat, or a late-night bowlful of sweet, crunchy cereal. A travel-ready food, this cereal is perfect to pack for lunchboxes, after-school snacks, sporting events, and busy, on-the-go moments. Frosted Mini-Wheats are a great start to your morning breakfast routine and for the adventures that follow.",
+        "qtyIncrement": 1,
+        "isPurchasable": true,
+        "chokingHazard": false,
+        "priceByWeight": false,
+        "MPerksOfferID": [
+          ""
+        ],
+        "isAgeRestricted": false,
+        "ebtFoodstampable": true,
+        "pickupAvailableFlag": true,
+        "homeDeliveryNotAvailable": false,
+        "requiresDiscreteInventoryTracking": false,
+        "group_ids": [
+          "L1-865",
+          "L2-9979",
+          "L3-1287",
+          "L4-3978"
+        ],
+        "sale": false,
+        "price": 4.49,
+        "isMap": false,
+        "variation_id": "4119210239_2",
+        "stockLevelStatus": "inStock",
+        "priceGoodThrough": "2025-08-17T23:59:00",
+        "discountSalePriceValue": 4.49
+      },
+      "value": "Kellogg's Frosted Mini-Wheats Breakfast Cereal, Original, 16oz, 1 Box",
+      "is_slotted": false
+    },
+    {
+      "matched_terms": [],
+      "labels": {},
+      "data": {
+        "id": "3800063570",
+        "ean": 3800063570,
+        "isBopas": false,
+        "isBuyable": true,
+        "hasMPerks": false,
+        "isAlcohol": false,
+        "image_url": "https://www.meijer.com/content/dam/meijer/product/0038/00/0635/70/0038000635700_1_A1C1_0200.jpg",
+        "priceUnit": "EA",
+        "specialBuy": false,
+        "ingredients": "Milled corn, sugar, malt flavor, contains 2% or less of salt. Vitamins and Minerals: Iron (ferric phosphate), niacinamide, vitamin B6 (pyridoxine hydrochloride), vitamin B2 (riboflavin), vitamin B1 (thiamin hydrochloride), folic acid, vitamin D3, vitamin B12.",
+        "deactivated": false,
+        "description": "Start your day off right with Tony the Tiger and Kellogg's Frosted Flakes - a deliciously crafted cereal that helps you let your gr-r-reat out with every crunchy spoonful. Conveniently packaged in a milk-ready cup for a scrumptious start to your day, each yummy, fat-free serving of crispy frosted corn flakes delivers a spark of sweetness in each and every bite. Each individually packaged cup also contains 10 vitamins and minerals to energize your morning. Whether you enjoy a cup at breakfast time, snack on it at school, or enjoy as an anytime treat, Kellogg's Frosted Flakes Cereal brings the sparkle with every mouthful.",
+        "productUnit": "EA",
+        "qtyIncrement": 1,
+        "MPerksOfferID": [
+          ""
+        ],
+        "chokingHazard": false,
+        "isPurchasable": true,
+        "priceByWeight": false,
+        "isAgeRestricted": false,
+        "ebtFoodstampable": true,
+        "pickupAvailableFlag": true,
+        "homeDeliveryNotAvailable": false,
+        "requiresDiscreteInventoryTracking": false,
+        "group_ids": [
+          "L1-865",
+          "L2-9979",
+          "L4-3975",
+          "L3-1287",
+          "L4-3979"
+        ],
+        "sale": true,
+        "price": 1.09,
+        "isMap": false,
+        "variation_id": "3800063570_4",
+        "discountValue": 0.09,
+        "priceGoodThrough": "2025-08-16T23:59:00",
+        "stockLevelStatus": "inStock",
+        "discountSavingsText": "$0.09 Off",
+        "discountSalePriceType": "Sale",
+        "discountSalePriceValue": 1
+      },
+      "value": "Kellogg's Frosted Flakes Breakfast Cereal Cup, Original, 2.1oz Cup, 1 Cup",
+      "is_slotted": false
+    },
+    {
+      "matched_terms": [],
+      "labels": {},
+      "data": {
+        "id": "3800063530",
+        "ean": 3800063530,
+        "isBopas": false,
+        "priceUnit": "EA",
+        "isBuyable": true,
+        "isAlcohol": false,
+        "image_url": "https://www.meijer.com/content/dam/meijer/product/0038/00/0635/30/0038000635304_1_A1C1_0200.jpg",
+        "hasMPerks": false,
+        "specialBuy": false,
+        "productUnit": "EA",
+        "ingredients": "Corn flour blend (whole grain yellow corn flour, degerminated yellow corn flour), sugar, wheat flour, whole grain oat flour, modified food starch, contains 2% or less of vegetable oil (hydrogenated coconut, soybean and/or cottonseed), oat fiber, maltodextrin, salt, soluble corn fiber, natural flavor, red 40, yellow 5, blue 1, yellow 6. Vitamins and Minerals: Vitamin C (ascorbic acid), reduced iron, niacinamide, vitamin B6 (pyridoxine hydrochloride), vitamin B2 (riboflavin), vitamin B1 (thiamin hydrochloride), folic acid, vitamin D3, vitamin B12.",
+        "description": "A fun part of any complete breakfast and bursting with fruity flavor, Kellogg's Froot Loops is a delicious, sweetened cereal made with whole grains. An excellent source of 8 vitamins and minerals and a good source of fiber, Froot Loops is also low in fat. Made to help bring energy to your mornings, our colorful cold cereal makes for a tasty pick-me-up at school or work, as an afternoon bite, or late night treat. Individually sized and conveniently packaged, Kellogg's Froot Loops Cereal Cups are an ideal companion for lunch boxes, after-school snacks, and busy, on-the-go moments. Just add your favorite dairy or nut-milk or enjoy as a crispy treat straight from the cup.",
+        "deactivated": false,
+        "qtyIncrement": 1,
+        "isPurchasable": true,
+        "MPerksOfferID": [
+          ""
+        ],
+        "priceByWeight": false,
+        "chokingHazard": false,
+        "isAgeRestricted": false,
+        "ebtFoodstampable": true,
+        "pickupAvailableFlag": true,
+        "homeDeliveryNotAvailable": false,
+        "requiresDiscreteInventoryTracking": false,
+        "group_ids": [
+          "L4-3975",
+          "L1-865",
+          "L2-9979",
+          "L3-1287",
+          "L4-3979"
+        ],
+        "sale": true,
+        "isMap": false,
+        "price": 1.09,
+        "variation_id": "3800063530_3",
+        "discountValue": 0.09,
+        "stockLevelStatus": "inStock",
+        "priceGoodThrough": "2025-08-16T23:59:00",
+        "discountSavingsText": "$0.09 Off",
+        "discountSalePriceType": "Sale",
+        "discountSalePriceValue": 1
+      },
+      "value": "Kellogg's Froot Loops Breakfast Cereal Cup, Original, 1.5oz Cup, 1 Cup",
+      "is_slotted": false
+    },
+    {
+      "matched_terms": [],
+      "labels": {},
+      "data": {
+        "id": "3800026996",
+        "ean": 3800026996,
+        "isBopas": false,
+        "hasMPerks": true,
+        "image_url": "https://www.meijer.com/content/dam/meijer/product/0038/00/0269/96/0038000269967_1_A1C1_0200.jpg",
+        "isBuyable": true,
+        "isAlcohol": false,
+        "priceUnit": "EA",
+        "specialBuy": false,
+        "deactivated": false,
+        "ingredients": "WHOLE GRAIN WHEAT, SUGAR, CONTAINS 2% OR LESS OF BROWN RICE SYRUP, GELATIN, BHT FOR FRESHNESS. VITAMINS AND MINERALS: REDUCED IRON, FOLIC ACID.",
+        "productUnit": "EA",
+        "description": "Greet the day with Kellogg's Frosted Mini-Wheats Original cereal, a wholesome, low-fat breakfast cereal that's built for big days. These bite-sized biscuits pack a hearty crunch with crispy layers of wheat made from 100% whole grain and frosted with irresistible sweetness in every bite. With 48g of whole grain per 60g serving, these tasty squares not only provide a delicious quick breakfast but are an excellent source of fiber; Each serving contains a good source of seven vitamins and minerals to help fuel you for what's ahead. Enjoy wheat bites throughout the day, as a well-deserved snack at the office, an afternoon pick-me-up, or a late-night bowlful of sweet, crunchy cereal. Enjoy sweet cereal milk after a delicious bowl of Frosted Mini-Wheats cereal. This cereal is perfect to pack for lunchboxes, school snacks, sporting events, and busy, on-the-go moments. Frosted Mini-Wheats are a great start to your morning breakfast routine and for the adventures that follow.\u001a",
+        "qtyIncrement": 1,
+        "MPerksOfferID": [
+          ""
+        ],
+        "isPurchasable": true,
+        "chokingHazard": false,
+        "priceByWeight": false,
+        "isAgeRestricted": false,
+        "ebtFoodstampable": true,
+        "pickupAvailableFlag": true,
+        "homeDeliveryNotAvailable": false,
+        "requiresDiscreteInventoryTracking": false,
+        "group_ids": [
+          "L1-865",
+          "L4-3978",
+          "L3-1287",
+          "L2-9979"
+        ],
+        "sale": false,
+        "isMap": false,
+        "price": 6.79,
+        "variation_id": "3800026996_2",
+        "priceGoodThrough": "2099-12-31T23:59:00",
+        "stockLevelStatus": "inStock",
+        "discountSalePriceValue": 6.79
+      },
+      "value": "Kellogg's Frosted Mini Wheats Breakfast Cereal Original, 29.5 oz",
+      "is_slotted": false
+    }
+  ],
+  "endpoint_analysis": {
+    "search_endpoint": "/search/{query}",
+    "autocomplete_endpoint": "/autocomplete/{partial_query}",
+    "browse_endpoint": "/browse/collection_id/{collection_id}",
+    "behavior_endpoint": "/behavior"
+  }
+}
