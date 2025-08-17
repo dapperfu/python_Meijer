@@ -13,9 +13,11 @@ import logging
 import secrets
 import time
 import urllib.parse
-from dataclasses import dataclass, field
+import os
+from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from enum import Enum
+from pathlib import Path
 from typing import Dict, List, Optional, Any, Union, Tuple
 from urllib.parse import urlencode
 
@@ -76,6 +78,22 @@ class AuthTokens:
         if self.expires_at is None:
             return None
         return self.expires_at - datetime.now()
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        data = asdict(self)
+        # Convert datetime to ISO string for JSON serialization
+        if self.expires_at:
+            data['expires_at'] = self.expires_at.isoformat()
+        return data
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'AuthTokens':
+        """Create from dictionary (JSON deserialization)."""
+        # Convert ISO string back to datetime
+        if 'expires_at' in data and data['expires_at']:
+            data['expires_at'] = datetime.fromisoformat(data['expires_at'])
+        return cls(**data)
 
 
 @dataclass
@@ -171,6 +189,9 @@ class MeijerComprehensiveClient:
         self.api_base = "https://api.meijer.com"
         self.id_base = "https://id.meijer.com"
         
+        # API subscription key from network analysis
+        self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"
+        
         # Common headers discovered from network analysis
         self.default_headers = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36',
@@ -183,6 +204,164 @@ class MeijerComprehensiveClient:
         
         # Update session headers
         self.session.headers.update(self.default_headers)
+        
+        # Config file path
+        self.config_dir = Path.home() / '.config'
+        self.config_file = self.config_dir / 'meijer.txt'
+        
+        # Try to load existing tokens from config
+        self._load_tokens_from_config()
+    
+    def _get_config_path(self) -> Path:
+        """Get the path to the config file."""
+        return self.config_file
+    
+    def _ensure_config_dir(self) -> None:
+        """Ensure the config directory exists."""
+        self.config_dir.mkdir(parents=True, exist_ok=True)
+    
+    def _save_tokens_to_config(self) -> bool:
+        """Save current tokens to config file."""
+        try:
+            if not self.auth_tokens:
+                self.logger.warning("No tokens to save")
+                return False
+            
+            self._ensure_config_dir()
+            
+            config_data = {
+                "tokens": self.auth_tokens.to_dict(),
+                "username": self.username,
+                "last_updated": datetime.now().isoformat(),
+                "user_agent": self.session.headers.get('User-Agent', ''),
+                "api_version": "1.0"
+            }
+            
+            with open(self.config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+            
+            self.logger.info(f"✅ Tokens saved to: {self.config_file}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to save tokens to config: {e}")
+            return False
+    
+    def _load_tokens_from_config(self) -> bool:
+        """Load tokens from config file."""
+        try:
+            if not self.config_file.exists():
+                self.logger.info("📄 No existing config file found")
+                return False
+            
+            with open(self.config_file, 'r') as f:
+                config_data = json.load(f)
+            
+            if 'tokens' not in config_data:
+                self.logger.warning("⚠️  Invalid config format")
+                return False
+            
+            # Load tokens
+            self.auth_tokens = AuthTokens.from_dict(config_data['tokens'])
+            
+            # Update session headers with saved user agent if available
+            if 'user_agent' in config_data and config_data['user_agent']:
+                self.session.headers['User-Agent'] = config_data['user_agent']
+            
+            # Update session with authorization header
+            self.session.headers['Authorization'] = f'Bearer {self.auth_tokens.access_token}'
+            self.session.headers.update({
+                'ocp-apim-subscription-key': self.subscription_key,
+                'Accept-Encoding': 'gzip',
+                'Accept': 'application/meijer.shoppingList.ShoppingList-v1.0+json'
+            })
+            
+            self.logger.info(f"📋 Loaded tokens from: {self.config_file}")
+            
+            # Check if tokens are expired
+            if self.auth_tokens.is_expired():
+                self.logger.warning("⚠️  Loaded tokens are expired")
+                if self.auth_tokens.refresh_token:
+                    self.logger.info("🔄 Attempting to refresh tokens...")
+                    return self._refresh_tokens()
+                else:
+                    self.logger.warning("❌ No refresh token available")
+                    return False
+            else:
+                time_left = self.auth_tokens.time_until_expiry()
+                self.logger.info(f"✅ Tokens valid for: {time_left}")
+                self.auth_status = AuthenticationStatus.AUTHENTICATED
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"❌ Failed to load tokens from config: {e}")
+            return False
+    
+    def _refresh_tokens(self) -> bool:
+        """Refresh access token using refresh token."""
+        try:
+            if not self.auth_tokens or not self.auth_tokens.refresh_token:
+                self.logger.error("❌ No refresh token available")
+                return False
+            
+            self.logger.info("🔄 Refreshing access token...")
+            
+            data = {
+                'grant_type': 'refresh_token',
+                'refresh_token': self.auth_tokens.refresh_token,
+                'client_id': self.oauth_config.client_id,
+                'scope': self.oauth_config.scope
+            }
+            
+            response = self.session.post(self.oauth_config.token_url, data=data)
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                
+                # Update tokens
+                self.auth_tokens.access_token = token_data['access_token']
+                if 'refresh_token' in token_data:
+                    self.auth_tokens.refresh_token = token_data['refresh_token']
+                if 'expires_in' in token_data:
+                    self.auth_tokens.expires_in = token_data['expires_in']
+                    self.auth_tokens.expires_at = datetime.now() + timedelta(seconds=token_data['expires_in'])
+                
+                # Update session headers
+                self.session.headers['Authorization'] = f'Bearer {self.auth_tokens.access_token}'
+                
+                # Save refreshed tokens
+                self._save_tokens_to_config()
+                
+                self.logger.info("✅ Tokens refreshed successfully")
+                self.auth_status = AuthenticationStatus.AUTHENTICATED
+                return True
+            else:
+                self.logger.error(f"❌ Token refresh failed: {response.status_code}")
+                self.logger.error(f"Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"❌ Token refresh failed: {e}")
+            return False
+    
+    def clear_config(self) -> bool:
+        """Clear saved configuration."""
+        try:
+            if self.config_file.exists():
+                self.config_file.unlink()
+                self.logger.info(f"🗑️  Cleared config: {self.config_file}")
+            
+            self.auth_tokens = None
+            self.auth_status = AuthenticationStatus.UNAUTHENTICATED
+            
+            # Remove auth headers
+            if 'Authorization' in self.session.headers:
+                del self.session.headers['Authorization']
+                
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to clear config: {e}")
+            return False
     
     def _generate_pkce_pair(self) -> tuple[str, str]:
         """Generate PKCE code verifier and challenge."""
@@ -649,14 +828,13 @@ class MeijerComprehensiveClient:
             # Set the bearer token directly
             self.auth_tokens = AuthTokens(
                 access_token=bearer_token,
+                refresh_token="",  # We don't have the refresh token
                 token_type="Bearer",
-                expires_in=None,  # We don't know the expiration from the log
-                refresh_token=None,  # We don't have the refresh token
-                scope="openid profile offline_access",
+                expires_in=3600,  # Default expiration
                 id_token=None  # We don't have the ID token
             )
             
-            # Update session headers
+            # Update session headers to match working request exactly
             if user_agent:
                 self.session.headers.update({
                     'User-Agent': user_agent
@@ -664,7 +842,9 @@ class MeijerComprehensiveClient:
             
             self.session.headers.update({
                 'Authorization': f'Bearer {bearer_token}',
-                'ocp-apim-subscription-key': self.subscription_key
+                'ocp-apim-subscription-key': self.subscription_key,
+                'Accept-Encoding': 'gzip',
+                'Accept': 'application/meijer.shoppingList.ShoppingList-v1.0+json'
             })
             
             # Test the token by making a simple API call
@@ -676,6 +856,10 @@ class MeijerComprehensiveClient:
             if response.status_code == 200:
                 self.logger.info(f"✅ Bearer token authentication successful!")
                 self.auth_status = AuthenticationStatus.AUTHENTICATED
+                
+                # Save tokens to config for future use
+                self._save_tokens_to_config()
+                
                 return True
             elif response.status_code == 401:
                 self.logger.error(f"❌ Bearer token is expired or invalid (401)")
