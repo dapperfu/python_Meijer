@@ -152,8 +152,8 @@ class MeijerSeleniumAuth:
             self.logger.info(f"🌐 Opening: {auth_url[:80]}...")
             self.driver.get(auth_url)
             
-            # Wait for page to load
-            time.sleep(3)
+            # Wait for page to load and immediately look for username/email field
+            self.logger.info("🔍 Looking for email field...")
             
             # Look for username/email field using the specific selector provided
             username_selectors = [
@@ -169,18 +169,25 @@ class MeijerSeleniumAuth:
                 "input[placeholder*='username' i]"
             ]
             
+            # Wait for any of the username fields to appear with a shorter timeout
             username_field = None
-            for selector in username_selectors:
-                username_field = self._find_element_safe(By.CSS_SELECTOR, selector)
-                if username_field:
-                    self.logger.info(f"✅ Found username field: {selector}")
-                    break
+            max_wait = 10  # Reduced from 30 to 10 seconds
+            start_time = time.time()
+            
+            while time.time() - start_time < max_wait and not username_field:
+                for selector in username_selectors:
+                    username_field = self._find_element_safe(By.CSS_SELECTOR, selector)
+                    if username_field:
+                        self.logger.info(f"✅ Found username field: {selector}")
+                        break
+                if not username_field:
+                    time.sleep(0.5)  # Check every 500ms instead of waiting longer
             
             if not username_field:
-                self.logger.error("❌ Username field not found")
+                self.logger.error("❌ Username field not found within timeout")
                 return None
             
-            # Fill in email/username
+            # Fill in email/username immediately
             self.logger.info("🔐 Filling in email...")
             username_field.clear()
             username_field.send_keys(self.username)
@@ -211,8 +218,8 @@ class MeijerSeleniumAuth:
                 self.logger.info("🖱️  Clicking Next button...")
                 next_button.click()
                 
-                # Wait for password field to appear
-                time.sleep(3)
+                # Reduced wait time after clicking Next
+                time.sleep(1)  # Reduced from 3 to 1 second
             else:
                 self.logger.info("ℹ️  No Next button found, proceeding to password field")
             
@@ -230,15 +237,22 @@ class MeijerSeleniumAuth:
                 "input[aria-labelledby*='password']"
             ]
             
+            # Wait for password field to appear with shorter timeout
             password_field = None
-            for selector in password_selectors:
-                password_field = self._find_element_safe(By.CSS_SELECTOR, selector)
-                if password_field:
-                    self.logger.info(f"✅ Found password field: {selector}")
-                    break
+            max_wait = 8  # Reduced timeout for password field
+            start_time = time.time()
+            
+            while time.time() - start_time < max_wait and not password_field:
+                for selector in password_selectors:
+                    password_field = self._find_element_safe(By.CSS_SELECTOR, selector)
+                    if password_field:
+                        self.logger.info(f"✅ Found password field: {selector}")
+                        break
+                if not password_field:
+                    time.sleep(0.3)  # Check every 300ms for faster response
             
             if not password_field:
-                self.logger.error("❌ Password field not found")
+                self.logger.error("❌ Password field not found within timeout")
                 return None
             
             # Fill in password
