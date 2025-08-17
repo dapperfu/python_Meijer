@@ -363,3 +363,58 @@ def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
     except Exception as e:
         client.logger.error(f"Failed to unclip coupon {coupon_id}: {e}")
         return False
+
+
+class MeijerCouponManager:
+    """
+    Manager class for Meijer coupon operations.
+    
+    This class provides the interface that the main client expects
+    for managing coupons and offers.
+    """
+    
+    def __init__(self, meijer_client: "Meijer"):
+        """
+        Initialize the coupon manager.
+        
+        Args:
+            meijer_client: The main Meijer client instance
+        """
+        self.meijer_client = meijer_client
+        self.logger = meijer_client.logger
+    
+    def create_meijer_coupons_from_response(self, data: Dict[str, Any]) -> List["MeijerCoupon"]:
+        """
+        Create MeijerCoupon objects from API response data.
+        
+        Args:
+            data: API response data containing coupon information
+            
+        Returns:
+            List of MeijerCoupon objects
+        """
+        return create_meijer_coupons_from_response(data, self.meijer_client)
+    
+    def clip_coupon(self, coupon_id: int) -> bool:
+        """
+        Clip a coupon by ID.
+        
+        Args:
+            coupon_id: The coupon ID to clip
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return clip_coupon(self.meijer_client, coupon_id)
+    
+    def unclip_coupon(self, coupon_id: int) -> bool:
+        """
+        Unclip a coupon by ID.
+        
+        Args:
+            coupon_id: The coupon ID to unclip
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return unclip_coupon(self.meijer_client, coupon_id)

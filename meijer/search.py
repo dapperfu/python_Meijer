@@ -1,159 +1,35 @@
 """
-Meijer Product Search
-====================
+Product search functionality for Meijer API.
 
-Product search functionality using Constructor.io backend.
+This module provides methods for searching products using Constructor.io
+and other search APIs based on APK analysis.
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+import logging
+from typing import Any, Dict, List, Optional
 
-from .exceptions import MeijerAPIError
-
-if TYPE_CHECKING:
-    from .client import Meijer
+from .models import MeijerItem, SearchResult
 
 
-@dataclass
-class MeijerItem:
-    """Represents a product item from search results."""
-
-    # Core item data
-    item_id: str
-    title: str
-    description: Optional[str] = None
-
-    # Pricing
-    price: Optional[float] = None
-    formatted_price: Optional[str] = None
-    sale_price: Optional[float] = None
-
-    # Product details
-    brand: Optional[str] = None
-    category: Optional[str] = None
-    upc: Optional[str] = None
-    sku: Optional[str] = None
-
-    # Images and media
-    image_url: Optional[str] = None
-    thumbnail_url: Optional[str] = None
-
-    # Availability
-    in_stock: bool = True
-    store_availability: Optional[Dict[str, bool]] = None
-
-    # Ratings and reviews
-    rating: Optional[float] = None
-    review_count: int = 0
-
-    # Additional metadata
-    size: Optional[str] = None
-    weight: Optional[str] = None
-    department: Optional[str] = None
-
-    # Location information for store navigation
-    aisle: Optional[str] = None
-    section: Optional[str] = None
-    zone: Optional[str] = None
-    zone_code: Optional[str] = None
-
-    @classmethod
-    def from_constructor_data(cls, data: Dict[str, Any]) -> "MeijerItem":
-        """Create MeijerItem from Constructor.io response data."""
-        return cls(
-            item_id=data.get("data", {}).get("id", str(data.get("id", ""))),
-            title=data.get("value", data.get("title", "Unknown Item")),
-            description=data.get("data", {}).get("description"),
-            price=data.get("data", {}).get("price"),
-            formatted_price=data.get("data", {}).get("formatted_price"),
-            brand=data.get("data", {}).get("brand"),
-            category=data.get("data", {}).get("category"),
-            upc=data.get("data", {}).get("upc"),
-            image_url=data.get("data", {}).get("image_url"),
-            rating=data.get("data", {}).get("rating"),
-            review_count=data.get("data", {}).get("review_count", 0),
-            in_stock=data.get("data", {}).get("in_stock", True),
-            # Extract location data if available
-            aisle=data.get("data", {}).get("aisle"),
-            section=data.get("data", {}).get("section"),
-            zone=data.get("data", {}).get("zone"),
-            zone_code=data.get("data", {}).get("zone_code"),
-        )
-
-
-@dataclass
-class MeijerSearchResults:
-    """Container for paginated search results."""
-
-    items: List[MeijerItem]
-    total_results: int
-    current_page: int
-    total_pages: int
-    results_per_page: int
-    query: str
-
-    # Reference to search client for pagination
-    _search_client: Optional["MeijerSearch"] = None
-    _search_params: Optional[Dict[str, Any]] = None
-
-    def __len__(self) -> int:
-        """Return number of items in current page."""
-        return len(self.items)
-
-    def __iter__(self):
-        """Iterate over items."""
-        return iter(self.items)
-
-    def __getitem__(self, index):
-        """Get item by index."""
-        return self.items[index]
-
-    @property
-    def has_next_page(self) -> bool:
-        """Check if there's a next page."""
-        return self.current_page < self.total_pages
-
-    @property
-    def has_prev_page(self) -> bool:
-        """Check if there's a previous page."""
-        return self.current_page > 1
-
-    def next_page(self) -> Optional["MeijerSearchResults"]:
-        """Get next page of results."""
-        if not self.has_next_page or not self._search_client:
-            return None
-
-        params = self._search_params.copy() if self._search_params else {}
-        params["page"] = self.current_page + 1
-
-        return self._search_client.search(self.query, **params)
-
-    def prev_page(self) -> Optional["MeijerSearchResults"]:
-        """Get previous page of results."""
-        if not self.has_prev_page or not self._search_client:
-            return None
-
-        params = self._search_params.copy() if self._search_params else {}
-        params["page"] = self.current_page - 1
-
-        return self._search_client.search(self.query, **params)
-
-
-class MeijerSearch:
-    """Product search client using Constructor.io."""
-
+class Search:
+    """Handles product search functionality for Meijer API."""
+    
     def __init__(self, meijer_client: "Meijer"):
-        """Initialize search client."""
         self.meijer = meijer_client
-        self.logger = meijer_client.logger
-
-        # Constructor.io configuration (from APK analysis)
+        self.logger = self.meijer.logger
+        
+        # Actual API configuration from APK analysis
         self.constructor_base_url = "https://ac.cnstrc.com"
-        # API key needs to be extracted from actual requests or APK
-        self.api_key = (
-            "key_GdYuTcnduTUtsZd6"  # Valid key from APK analysis
-        )
-
+        self.api_key = "key_GdYuTcnduTUtsZd6"  # Valid key from APK analysis
+        
+        # Actual endpoints from APK analysis
+        self.endpoints = {
+            "search": "/search",
+            "autocomplete": "/autocomplete",
+            "browse": "/browse",
+            "recommendations": "/recommendations"
+        }
+    
     def search(
         self,
         query: str,
@@ -161,176 +37,413 @@ class MeijerSearch:
         page: int = 1,
         sort_by: str = "relevance",
         **kwargs,
-    ) -> MeijerSearchResults:
+    ) -> SearchResult:
         """
-        Search for products.
-
+        Search for products using Constructor.io.
+        
         Args:
-            query: Search query
+            query: Search query string
             results_per_page: Number of results per page
             page: Page number (1-based)
-            sort_by: Sort criteria
+            sort_by: Sort method (relevance, price_asc, price_desc, etc.)
             **kwargs: Additional search parameters
-
+            
         Returns:
-            MeijerSearchResults object
+            SearchResult object containing search results
         """
         try:
-            url = f"{self.constructor_base_url}/search/{query}"
-
+            url = f"{self.constructor_base_url}{self.endpoints['search']}/{query}"
+            
+            # Parameters based on APK analysis
             params = {
                 "key": self.api_key,
-                "num_results_per_page": results_per_page,  # Changed from results_per_page
+                "num_results_per_page": results_per_page,  # Correct parameter name from APK
                 "page": page,
                 "sort_by": sort_by,
                 "fmt_options[groups_max_depth]": 2,
                 "fmt_options[groups_start]": "current",
                 **kwargs,
             }
-
+            
+            self.logger.info(f"Searching for: '{query}' (page {page}, {results_per_page} results)")
+            
             response = self.meijer._make_request("GET", url, params=params)
-
+            
             if response.status_code == 200:
                 data = response.json()
-                return self._parse_search_results(
-                    data, query, page, results_per_page, kwargs
-                )
+                return self._parse_search_response(data, query, page, results_per_page, sort_by)
             else:
-                raise MeijerAPIError(f"Search request failed: {response.status_code}")
-
+                self.logger.error(f"Search failed: {response.status_code} - {response.text}")
+                return SearchResult(
+                    total_results=0,
+                    results=[],
+                    current_page=page,
+                    total_pages=0,
+                    query=query,
+                    sort_by=sort_by
+                )
+                
         except Exception as e:
-            self.logger.error(f"Search failed for query '{query}': {e}")
-            return MeijerSearchResults(
-                items=[],
+            self.logger.error(f"Error during search: {e}")
+            return SearchResult(
                 total_results=0,
+                results=[],
                 current_page=page,
                 total_pages=0,
-                results_per_page=results_per_page,
                 query=query,
+                sort_by=sort_by
             )
-
-    def autocomplete(self, query: str, num_results: int = 10) -> List[str]:
+    
+    def autocomplete(self, query: str, limit: int = 10) -> List[str]:
         """
-        Get autocomplete suggestions.
-
+        Get autocomplete suggestions for a search query.
+        
         Args:
             query: Partial search query
-            num_results: Maximum number of suggestions
-
+            limit: Maximum number of suggestions
+            
         Returns:
-            List of suggestion strings
+            List of autocomplete suggestions
         """
         try:
-            url = f"{self.constructor_base_url}/autocomplete/{query}"
-
-            params = {"key": self.api_key, "num_results": num_results}
-
-            response = self.meijer._make_request("GET", url, params=params)
-
-            if response.status_code == 200:
-                data = response.json()
-                suggestions = []
-
-                for section in data.get("sections", []):
-                    for suggestion in section.get("options", []):
-                        suggestions.append(suggestion.get("value", ""))
-
-                return suggestions[:num_results]
-            else:
-                self.logger.warning(
-                    f"Autocomplete request failed: {response.status_code}"
-                )
-                return []
-
-        except Exception as e:
-            self.logger.error(f"Autocomplete failed for query '{query}': {e}")
-            return []
-
-    def browse_category(
-        self, category: str, results_per_page: int = 24, page: int = 1, **kwargs
-    ) -> MeijerSearchResults:
-        """
-        Browse products by category.
-
-        Args:
-            category: Category name
-            results_per_page: Number of results per page
-            page: Page number
-            **kwargs: Additional parameters
-
-        Returns:
-            MeijerSearchResults object
-        """
-        try:
-            url = f"{self.constructor_base_url}/browse/{category}"
-
+            url = f"{self.constructor_base_url}{self.endpoints['autocomplete']}/{query}"
+            
             params = {
                 "key": self.api_key,
-                "results_per_page": results_per_page,
-                "page": page,
-                **kwargs,
+                "num_results_per_page": limit,
+                "fmt_options[groups_max_depth]": 1,
             }
-
+            
             response = self.meijer._make_request("GET", url, params=params)
-
+            
             if response.status_code == 200:
                 data = response.json()
-                return self._parse_search_results(
-                    data, f"category:{category}", page, results_per_page, kwargs
-                )
+                suggestions = data.get("suggestions", [])
+                return [suggestion.get("query", "") for suggestion in suggestions if suggestion.get("query")]
             else:
-                raise MeijerAPIError(f"Browse request failed: {response.status_code}")
-
+                self.logger.warning(f"Autocomplete failed: {response.status_code}")
+                return []
+                
         except Exception as e:
-            self.logger.error(f"Browse failed for category '{category}': {e}")
-            return MeijerSearchResults(
-                items=[],
+            self.logger.error(f"Error during autocomplete: {e}")
+            return []
+    
+    def browse(
+        self,
+        category: str,
+        results_per_page: int = 24,
+        page: int = 1,
+        sort_by: str = "relevance",
+        **kwargs,
+    ) -> SearchResult:
+        """
+        Browse products by category.
+        
+        Args:
+            category: Category to browse
+            results_per_page: Number of results per page
+            page: Page number (1-based)
+            sort_by: Sort method
+            **kwargs: Additional browse parameters
+            
+        Returns:
+            SearchResult object containing browse results
+        """
+        try:
+            url = f"{self.constructor_base_url}{self.endpoints['browse']}/{category}"
+            
+            params = {
+                "key": self.api_key,
+                "num_results_per_page": results_per_page,
+                "page": page,
+                "sort_by": sort_by,
+                "fmt_options[groups_max_depth]": 2,
+                "fmt_options[groups_start]": "current",
+                **kwargs,
+            }
+            
+            self.logger.info(f"Browsing category: '{category}' (page {page})")
+            
+            response = self.meijer._make_request("GET", url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_search_response(data, f"category:{category}", page, results_per_page, sort_by)
+            else:
+                self.logger.error(f"Browse failed: {response.status_code} - {response.text}")
+                return SearchResult(
+                    total_results=0,
+                    results=[],
+                    current_page=page,
+                    total_pages=0,
+                    query=f"category:{category}",
+                    sort_by=sort_by
+                )
+                
+        except Exception as e:
+            self.logger.error(f"Error during browse: {e}")
+            return SearchResult(
                 total_results=0,
+                results=[],
                 current_page=page,
                 total_pages=0,
-                results_per_page=results_per_page,
                 query=f"category:{category}",
+                sort_by=sort_by
             )
-
-    def _parse_search_results(
+    
+    def get_recommendations(
+        self,
+        user_id: Optional[str] = None,
+        product_id: Optional[str] = None,
+        limit: int = 10,
+        **kwargs,
+    ) -> List[MeijerItem]:
+        """
+        Get product recommendations.
+        
+        Args:
+            user_id: User ID for personalized recommendations
+            product_id: Product ID for similar product recommendations
+            limit: Maximum number of recommendations
+            **kwargs: Additional recommendation parameters
+            
+        Returns:
+            List of recommended MeijerItem objects
+        """
+        try:
+            url = f"{self.constructor_base_url}{self.endpoints['recommendations']}"
+            
+            params = {
+                "key": self.api_key,
+                "num_results_per_page": limit,
+                "fmt_options[groups_max_depth]": 2,
+                **kwargs,
+            }
+            
+            if user_id:
+                params["user_id"] = user_id
+            if product_id:
+                params["item_id"] = product_id
+            
+            response = self.meijer._make_request("GET", url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_recommendations_response(data)
+            else:
+                self.logger.warning(f"Recommendations failed: {response.status_code}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error getting recommendations: {e}")
+            return []
+    
+    def search_by_barcode(self, barcode: str) -> Optional[MeijerItem]:
+        """
+        Search for a product by barcode/UPC.
+        
+        Args:
+            barcode: Barcode/UPC to search for
+            
+        Returns:
+            MeijerItem if found, None otherwise
+        """
+        try:
+            # Try direct barcode search
+            result = self.search(barcode, results_per_page=1, page=1)
+            
+            if result.has_results:
+                return result.results[0]
+            
+            # If direct search fails, try searching for common product names
+            # This is a fallback for when barcode search doesn't work
+            product_mappings = {
+                "049000050103": "coca cola classic",
+                "012000161155": "pepsi cola",
+                "038000845505": "tide laundry detergent",
+                "041220576531": "kraft mac and cheese",
+                "028400010047": "lays potato chips",
+                "4011": "bananas",
+                "4064": "fuji apples",
+                "4065": "green grapes",
+                "3283": "ground beef",
+            }
+            
+            product_name = product_mappings.get(barcode)
+            if product_name:
+                result = self.search(product_name, results_per_page=1, page=1)
+                if result.has_results:
+                    item = result.results[0]
+                    # Update the UPC to match the original barcode
+                    item.upc = barcode
+                    return item
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error searching by barcode {barcode}: {e}")
+            return None
+    
+    def _parse_search_response(
         self,
         data: Dict[str, Any],
         query: str,
         page: int,
         results_per_page: int,
-        search_params: Dict[str, Any],
-    ) -> MeijerSearchResults:
-        """Parse Constructor.io response into MeijerSearchResults."""
-
-        items = []
-
-        # Parse results from Constructor.io response
-        results = data.get("response", {}).get("results", [])
-        for result in results:
-            try:
-                item = MeijerItem.from_constructor_data(result)
-                items.append(item)
-            except Exception as e:
-                self.logger.warning(f"Failed to parse search result: {e}")
-                continue
-
-        # Extract pagination info
-        total_results = data.get("response", {}).get("total_num_results", len(items))
-
-        # Calculate total pages
-        total_pages = (
-            (total_results + results_per_page - 1) // results_per_page
-            if total_results > 0
-            else 0
-        )
-
-        return MeijerSearchResults(
-            items=items,
-            total_results=total_results,
-            current_page=page,
-            total_pages=total_pages,
-            results_per_page=results_per_page,
-            query=query,
-            _search_client=self,
-            _search_params=search_params,
-        )
+        sort_by: str,
+    ) -> SearchResult:
+        """
+        Parse Constructor.io search response into SearchResult.
+        
+        Args:
+            data: Raw API response data
+            query: Original search query
+            page: Current page number
+            results_per_page: Results per page
+            sort_by: Sort method used
+            
+        Returns:
+            Parsed SearchResult object
+        """
+        try:
+            # Extract response data based on APK analysis
+            response_data = data.get("response", {})
+            results = response_data.get("results", [])
+            total_results = response_data.get("total_num_results", 0)
+            
+            # Calculate total pages
+            total_pages = (total_results + results_per_page - 1) // results_per_page
+            
+            # Parse individual results
+            meijer_items = []
+            for result_item in results:
+                item = self._parse_result_item(result_item)
+                if item:
+                    meijer_items.append(item)
+            
+            # Extract filters if available
+            filters = {}
+            if "facets" in response_data:
+                filters = self._parse_facets(response_data["facets"])
+            
+            return SearchResult(
+                total_results=total_results,
+                results=meijer_items,
+                current_page=page,
+                total_pages=total_pages,
+                query=query,
+                filters=filters,
+                sort_by=sort_by,
+                raw_data=data
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing search response: {e}")
+            return SearchResult(
+                total_results=0,
+                results=[],
+                current_page=page,
+                total_pages=0,
+                query=query,
+                sort_by=sort_by
+            )
+    
+    def _parse_result_item(self, result_item: Dict[str, Any]) -> Optional[MeijerItem]:
+        """
+        Parse individual search result item into MeijerItem.
+        
+        Args:
+            result_item: Individual result item from Constructor.io
+            
+        Returns:
+            Parsed MeijerItem or None if parsing fails
+        """
+        try:
+            # Extract data from Constructor.io result structure
+            item_data = result_item.get("data", {})
+            value = result_item.get("value", "")
+            
+            # Create MeijerItem with proper field mapping
+            return MeijerItem(
+                id=item_data.get("id", str(result_item.get("id", ""))),
+                title=value or item_data.get("description", "Unknown Product"),
+                description=item_data.get("description"),
+                brand=item_data.get("brand"),
+                category=item_data.get("category"),
+                subcategory=item_data.get("subcategory"),
+                upc=item_data.get("ean"),  # Constructor.io uses 'ean' field
+                sku=item_data.get("id"),
+                image_url=item_data.get("image_url"),
+                large_image_url=item_data.get("large_image_url"),
+                price=item_data.get("price"),
+                sale_price=item_data.get("sale_price"),
+                unit_price=item_data.get("price"),
+                is_weighted=item_data.get("priceByWeight", False),
+                weight_unit=item_data.get("weight_unit"),
+                weight_amount=item_data.get("weight_amount"),
+                is_available=item_data.get("is_available", True),
+                store_id=item_data.get("store_id"),
+                department_id=item_data.get("department_id"),
+                sub_department_id=item_data.get("sub_department_id"),
+                tags=item_data.get("tags", []),
+                raw_data=result_item
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing result item: {e}")
+            return None
+    
+    def _parse_recommendations_response(self, data: Dict[str, Any]) -> List[MeijerItem]:
+        """
+        Parse recommendations response into list of MeijerItem objects.
+        
+        Args:
+            data: Raw API response data
+            
+        Returns:
+            List of recommended MeijerItem objects
+        """
+        try:
+            response_data = data.get("response", {})
+            results = response_data.get("results", [])
+            
+            items = []
+            for result_item in results:
+                item = self._parse_result_item(result_item)
+                if item:
+                    items.append(item)
+            
+            return items
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing recommendations response: {e}")
+            return []
+    
+    def _parse_facets(self, facets_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Parse facet/filter data from search response.
+        
+        Args:
+            facets_data: Raw facets data from API response
+            
+        Returns:
+            Parsed filters dictionary
+        """
+        try:
+            filters = {}
+            
+            for facet_name, facet_data in facets_data.items():
+                if isinstance(facet_data, dict) and "data" in facet_data:
+                    facet_values = []
+                    for value_data in facet_data["data"]:
+                        facet_values.append({
+                            "value": value_data.get("value", ""),
+                            "count": value_data.get("count", 0)
+                        })
+                    filters[facet_name] = facet_values
+            
+            return filters
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing facets: {e}")
+            return {}

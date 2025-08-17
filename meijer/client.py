@@ -1,323 +1,357 @@
 """
-Meijer API Client
-================
+Main Meijer API client.
 
-Main client class for the Meijer API.
+This module provides the main client class for interacting with Meijer's APIs,
+based on actual endpoint analysis from the decompiled APK and network logs.
 """
 
+import json
 import logging
-import requests
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
+import os
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from .models import AuthTokens, UserInfo, OAuthConfig
-
-if TYPE_CHECKING:
-    from .coupons import MeijerCoupon
-    from .search import MeijerSearchResults
-from .enums import AuthenticationStatus
-from .exceptions import MeijerAuthenticationError, MeijerAPIError
-from .auth import TokenStorage, MeijerAuth, load_auth_from_config_file, load_auth_file
+from .models import MeijerItem, ListItem, MeijerCoupon, Store, SearchResult
 from .shopping_list import MeijerList
+from .coupons import MeijerCoupon, MeijerCouponManager
+from .search import Search
+from .shop_scan import ShopNScan
 from .stores import MeijerStore
+from .exceptions import MeijerAuthenticationError, MeijerAPIError
 
 
 class Meijer:
     """
-    Meijer API client with all authentication methods and functionality.
-
-    This client consolidates all working authentication approaches:
-    - OAuth 2.0 with PKCE (interactive and programmatic)
-    - Bearer token authentication (for extracted tokens)
-    - Selenium-based automation (for full automation)
-    - Persistent token storage (eliminates 2FA repeats)
-
-    Features:
-    - Complete Shop & Scan functionality
-    - Shopping list management
-    - Offers and coupons
-    - Store locator
-    - User profile management
+    Main client for Meijer API interactions.
+    
+    This class provides access to all Meijer API functionality including:
+    - Authentication and token management
+    - Shopping lists and favorites
+    - Coupons and offers
+    - Product search
+    - Shop & Scan functionality
+    - Store information
     """
-
-    def __init__(
-        self,
-        auth: str = None,
-        debug: bool = False,
-        max_retries: int = 3,
-        timeout: int = 30,
-    ):
+    
+    def __init__(self, auth: Optional[str] = None):
         """
-        Initialize the Meijer client.
-
+        Initialize Meijer client.
+        
         Args:
-            auth: Path to auth file (auto-detects bearer= or user=/password=) or None for auto-discovery
-            debug: Enable debug logging
-            max_retries: Maximum number of retry attempts
-            timeout: Request timeout in seconds
-
-        Authentication Priority:
-            1. auth file (if specified) - intelligently parses bearer= or user=/password=
-            2. ~/.config/meijer.txt - automatic JSON config loading
-            3. mitmproxy log files - automatic token extraction
+            auth: Authentication method - can be:
+                - Path to auth.txt file with bearer=token or user=email&password=pass
+                - Path to mitmproxy log file
+                - None to auto-detect from ~/.config/meijer.txt
         """
-        self.auth_file = auth
-        self.debug = debug
-        self.max_retries = max_retries
-        self.timeout = timeout
-
-        # Setup logging
-        self._setup_logging()
-
-        # Initialize configuration
-        self.oauth_config = OAuthConfig()
-        self.api_base_url = "https://api.meijer.com"
-        self.id_base_url = "https://id.meijer.com"
-
-        # API subscription key from network analysis
-        self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"
-
-        # Authentication state
-        self.auth_tokens: Optional[AuthTokens] = None
-        self.auth_status = AuthenticationStatus.UNAUTHENTICATED
-        self.user_info: Optional[UserInfo] = None
-
-        # Token storage
-        self.token_storage = TokenStorage("meijer_tokens.pkl")
-
-        # Session management
-        self.session = self._create_session()
-
-        # Load credentials if available
-        self.credentials, self.bearer_info = self._load_auth_data()
-
-        # Initialize shopping list functionality
-        self.list = MeijerList(self)
-
-        # Initialize Shop & Scan functionality
-        from .shop_scan import ShopNScan
-
-        self.shop_scan = ShopNScan(self)
-
-        # Try to restore authentication
-        if self._restore_authentication():
-            pass  # Method already logs success
-
-        self.logger.info("Meijer client initialized with all functionality")
-
-    def _setup_logging(self):
-        """Setup logging configuration."""
-        level = logging.DEBUG if self.debug else logging.INFO
         self.logger = logging.getLogger(__name__)
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-        self.logger.setLevel(level)
-
-    def _create_session(self) -> requests.Session:
-        """Create and configure requests session."""
-        session = requests.Session()
-
-        # Default headers
-        session.headers.update(
-            {
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip, deflate",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "Pragma": "no-cache",
-                "User-Agent": "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)",
-                "X-Requested-With": "com.meijer.mobile.meijer",
-            }
-        )
-
-        return session
-
-    def _load_auth_data(self) -> tuple:
-        """Load authentication data from auth file."""
-        if self.auth_file:
-            return load_auth_file(self.auth_file)
-        else:
-            self.logger.info("No auth file specified")
-            return None, None
-
-    def _restore_authentication(self) -> bool:
-        """Try to restore authentication from stored tokens."""
-        try:
-            # First try to load from stored tokens
-            stored_tokens = self.token_storage.load_tokens()
-            if stored_tokens and not stored_tokens.is_expired:
-                self.auth_tokens = stored_tokens
-                self.session.auth = MeijerAuth(stored_tokens.access_token)
-                self.auth_status = AuthenticationStatus.AUTHENTICATED
-                self.logger.info("✅ Authentication restored from stored tokens")
-                return True
-
-            # If no stored tokens, try other methods
-            return self.login()
-
-        except Exception as e:
-            self.logger.error(f"Failed to restore authentication: {e}")
-            return False
-
-    def login(self) -> bool:
-        """
-        Login method that intelligently tries all available authentication methods.
-
-        Authentication methods (in priority order):
-        1. Auth file (if specified) - intelligently detects bearer= or user=/password=
-        2. Config file - ~/.config/meijer.txt automatic JSON config loading
-        3. Mitmproxy logs - automatic bearer token extraction from log files
-        4. Interactive OAuth - manual browser authentication (fallback)
-        """
-        # Method 1: Bearer token from auth file
-        if self.bearer_info:
-            bearer_token, user_agent = self.bearer_info
-            self.logger.info("🎫 Attempting bearer token authentication from auth file")
-            if self.authenticate_with_bearer_token(bearer_token, user_agent):
-                return True
-
-        # Method 2: Bearer token from ~/.config/meijer.txt
-        config_auth = load_auth_from_config_file()
-        if config_auth:
-            bearer_token, user_agent = config_auth
-            self.logger.info(
-                "🎫 Attempting bearer token authentication from config file"
-            )
-            if self.authenticate_with_bearer_token(bearer_token, user_agent):
-                return True
-
-        # Method 3: Username/Password authentication (if available)
-        if self.credentials:
-            username = self.credentials.get("username")
-            password = self.credentials.get("password")
-            if username and password:
-                self.logger.info("🔐 Attempting username/password authentication")
-                # This would need Selenium implementation
-                self.logger.warning(
-                    "⚠️ Username/password authentication not implemented in simplified version"
-                )
-
-        self.logger.error("❌ All authentication methods failed")
-        return False
-
-    def authenticate_with_bearer_token(
-        self, bearer_token: str, user_agent: str = None
-    ) -> bool:
-        """Authenticate using a pre-extracted Bearer token."""
-        try:
-            self.logger.info("🎫 Authenticating with Bearer token")
-
-            # Create tokens from bearer token
-            self.auth_tokens = AuthTokens(access_token=bearer_token)
-
-            # Update session
-            self.session.auth = MeijerAuth(bearer_token)
-            if user_agent:
-                self.session.headers["User-Agent"] = user_agent
-
-            # Test authentication with a simple API call
-            test_url = f"{self.api_base_url}/loyalty/shoppinglist/GetList"
-            headers = self._get_api_headers()
-
-            response = self._make_request("GET", test_url, headers=headers)
-
-            if response.status_code == 200:
-                self.auth_status = AuthenticationStatus.AUTHENTICATED
-                self.logger.info("✅ Bearer token authentication successful")
-
-                # Save tokens for future use
-                self.token_storage.save_tokens(self.auth_tokens)
-
-                return True
+        
+        # API configuration based on APK analysis
+        self.api_base_url = "https://api.meijer.com"
+        self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis
+        
+        # Initialize components
+        self.shopping_list = MeijerList(self)
+        self.coupons = MeijerCouponManager(self)
+        self.search = Search(self)
+        self.shop_scan = ShopNScan(self)
+        
+        # Authentication state
+        self._access_token = None
+        self._refresh_token = None
+        self._token_expires_at = None
+        
+        # Load authentication
+        self._load_auth(auth)
+    
+    def _load_auth(self, auth: Optional[str] = None):
+        """Load authentication credentials from various sources."""
+        if auth:
+            if auth.endswith('.log'):
+                self._load_auth_from_log(auth)
             else:
-                self.logger.error(
-                    f"Bearer token authentication failed: {response.status_code}"
-                )
-                return False
-
+                self._load_auth_from_file(auth)
+        else:
+            self._load_auth_from_config()
+    
+    def _load_auth_from_config(self):
+        """Load authentication from ~/.config/meijer.txt."""
+        config_path = Path.home() / ".config" / "meijer.txt"
+        if config_path.exists():
+            try:
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                
+                self._access_token = config.get("access_token")
+                self._refresh_token = config.get("refresh_token")
+                
+                if self._access_token:
+                    self.logger.info("Loaded authentication from config file")
+                    return
+                    
+            except Exception as e:
+                self.logger.warning(f"Failed to load config file: {e}")
+        
+        self.logger.info("No authentication found in config file")
+    
+    def _load_auth_from_file(self, auth_file: str):
+        """Load authentication from plain text auth file."""
+        try:
+            with open(auth_file, 'r') as f:
+                content = f.read().strip()
+            
+            if content.startswith('bearer='):
+                self._access_token = content[7:]  # Remove 'bearer=' prefix
+                self.logger.info("Loaded bearer token from auth file")
+            elif 'user=' in content and 'password=' in content:
+                # Parse user/password format
+                lines = content.split('\n')
+                user = None
+                password = None
+                
+                for line in lines:
+                    if line.startswith('user='):
+                        user = line[5:]
+                    elif line.startswith('password='):
+                        password = line[9:]
+                
+                if user and password:
+                    self._user_credentials = (user, password)
+                    self.logger.info("Loaded user credentials from auth file")
+                else:
+                    raise ValueError("Invalid auth file format")
+            else:
+                raise ValueError("Invalid auth file format")
+                
         except Exception as e:
-            self.logger.error(f"Bearer token authentication error: {e}")
-            return False
-
+            self.logger.error(f"Failed to load auth file: {e}")
+            raise
+    
+    def _load_auth_from_log(self, log_file: str):
+        """Load authentication from mitmproxy log file."""
+        try:
+            # This would require mitmproxy analysis
+            # For now, just log that we need to implement this
+            self.logger.info(f"Log file authentication not yet implemented: {log_file}")
+        except Exception as e:
+            self.logger.error(f"Failed to load auth from log: {e}")
+    
     def _ensure_authenticated(self) -> bool:
-        """Ensure client is authenticated, attempt login if not."""
-        if self.auth_status == AuthenticationStatus.AUTHENTICATED:
-            return True
-
-        return self.login()
-
+        """Ensure we have a valid access token."""
+        if not self._access_token:
+            raise MeijerAuthenticationError("No access token available")
+        
+        # Check if token is expired or about to expire
+        if self._token_expires_at and datetime.now() >= self._token_expires_at - timedelta(minutes=5):
+            self.logger.info("Token expired or expiring soon, refreshing...")
+            if not self._refresh_token():
+                raise MeijerAuthenticationError("Failed to refresh token")
+        
+        return True
+    
+    def _refresh_token(self) -> bool:
+        """Refresh the access token using refresh token."""
+        if not self._refresh_token:
+            self.logger.error("No refresh token available")
+            return False
+        
+        try:
+            # This would require implementing the actual refresh endpoint
+            # For now, just log that we need to implement this
+            self.logger.info("Token refresh not yet implemented")
+            return False
+        except Exception as e:
+            self.logger.error(f"Failed to refresh token: {e}")
+            return False
+    
     def _get_api_headers(self) -> Dict[str, str]:
-        """Get headers for API requests."""
+        """Get headers required for API requests."""
         headers = {
             "ocp-apim-subscription-key": self.subscription_key,
-            "Accept-Encoding": "gzip",
-            "Accept": "application/json",
+            "user-agent": "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)",
+            "accept-encoding": "gzip"
         }
         
-        # Add Authorization header if we have bearer token
-        if self.auth_tokens and self.auth_tokens.access_token:
-            headers["Authorization"] = f"Bearer {self.auth_tokens.access_token}"
+        if self._access_token:
+            headers["authorization"] = f"Bearer {self._access_token}"
         
         return headers
-
-    def _make_request(self, method: str, url: str, **kwargs) -> requests.Response:
-        """Make authenticated request with retry logic."""
+    
+    def _make_request(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        json_data: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ) -> Any:
+        """Make HTTP request with proper error handling."""
+        import requests
+        
         try:
-            # Add timeout if not specified
-            if "timeout" not in kwargs:
-                kwargs["timeout"] = self.timeout
-
-            response = self.session.request(method, url, **kwargs)
-            return response
-
-        except Exception as e:
-            raise MeijerAPIError(f"Request failed: {e}")
-
-    def get_user_info(self) -> Optional[UserInfo]:
-        """Get user information."""
-        try:
-            if not self._ensure_authenticated():
-                return None
-
-            # This would be implemented with actual API endpoints
-            self.logger.warning("get_user_info not implemented in simplified version")
-            return None
-
-        except Exception as e:
-            self.logger.error(f"Error getting user info: {e}")
-            return None
-
-    def get_offers(self, limit: int = 50) -> List[Dict[str, Any]]:
-        """Get available offers from mPerks API using the real POST request structure."""
-        try:
-            if not self._ensure_authenticated():
-                raise MeijerAuthenticationError("Authentication required")
-
-            # Real endpoint from mitmproxy analysis - uses POST, not GET!
-            url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
-            headers = self._get_api_headers()
-
-            # Add proper mPerks content type from analysis
-            headers.update(
-                {
-                    "Accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                    "Content-Type": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                }
+            # Use default headers if none provided
+            if headers is None:
+                headers = self._get_api_headers()
+            
+            # Make request
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=headers,
+                params=params,
+                json=json_data,
+                timeout=30,
+                **kwargs
             )
-
-            # Real request body structure from mitmproxy analysis
-            request_body = {
+            
+            # Log request details
+            self.logger.debug(f"{method} {url} - Status: {response.status_code}")
+            
+            return response
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Request failed: {e}")
+            raise MeijerAPIError(f"Request failed: {e}")
+    
+    def get_stores(self, zip_code: Optional[str] = None, latitude: Optional[float] = None, longitude: Optional[float] = None, radius: Optional[int] = None) -> List[MeijerStore]:
+        """
+        Get list of Meijer stores with enhanced proximity search support.
+        
+        Args:
+            zip_code: Optional ZIP code for location-based search
+            latitude: Optional latitude for location-based search
+            longitude: Optional longitude for location-based search
+            radius: Optional radius in miles for proximity search (uses enhanced API)
+            
+        Returns:
+            List of MeijerStore objects
+        """
+        # If radius is specified, use the enhanced proximity search
+        if radius and latitude and longitude:
+            return self.find_stores_nearby(latitude, longitude, radius)
+        
+        # Otherwise, fall back to the basic store endpoint
+        try:
+            # Actual endpoint from APK analysis
+            url = f"{self.api_base_url}/stores"
+            
+            params = {}
+            if zip_code:
+                params["zipCode"] = zip_code
+            if latitude and longitude:
+                params["latitude"] = latitude
+                params["longitude"] = longitude
+            
+            response = self._make_request("GET", url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                stores = []
+                
+                for store_data in data.get("stores", []):
+                    store = Store(
+                        store_id=store_data.get("storeId", ""),
+                        name=store_data.get("name", ""),
+                        address=store_data.get("address", ""),
+                        city=store_data.get("city", ""),
+                        state=store_data.get("state", ""),
+                        zip_code=store_data.get("zipCode", ""),
+                        phone=store_data.get("phone"),
+                        hours=store_data.get("hours"),
+                        latitude=store_data.get("latitude"),
+                        longitude=store_data.get("longitude"),
+                        distance=store_data.get("distance"),
+                        is_open=store_data.get("isOpen", True),
+                        services=store_data.get("services", []),
+                        raw_data=store_data
+                    )
+                    stores.append(store)
+                
+                return stores
+            else:
+                self.logger.warning(f"Failed to get stores: {response.status_code}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error getting stores: {e}")
+            return []
+    
+    def find_stores_nearby(self, latitude: float, longitude: float, radius_miles: int = 100, max_results: int = 50) -> List[MeijerStore]:
+        """
+        Find Meijer stores near given coordinates using proximity search.
+        
+        Args:
+            latitude: Search latitude
+            longitude: Search longitude
+            radius_miles: Search radius in miles (default: 100)
+            max_results: Maximum number of stores to return (default: 50)
+            
+        Returns:
+            List of MeijerStore objects sorted by distance
+        """
+        try:
+            # Use the storeInfo proximity endpoint for better results
+            url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
+            
+            params = {
+                "latitude": latitude,
+                "longitude": longitude,
+                "miles": radius_miles,
+                "numToReturn": max_results,
+                "dataVariant": 2,  # From API analysis
+            }
+            
+            # Use direct request like the working store search
+            import requests
+            response = requests.get(url, params=params, timeout=30)
+            
+            if response.status_code == 200:
+                data = response.json()
+                stores = []
+                
+                # Parse the response data into MeijerStore objects
+                for store_data in data.get("stores", []):
+                    try:
+                        store = MeijerStore.from_api_data(store_data, self)
+                        stores.append(store)
+                    except Exception as e:
+                        self.logger.warning(f"Failed to parse store data: {e}")
+                        continue
+                
+                self.logger.info(f"Found {len(stores)} stores within {radius_miles} miles of ({latitude}, {longitude})")
+                return stores
+            else:
+                self.logger.warning(f"Failed to get stores: {response.status_code}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error finding stores nearby: {e}")
+            return []
+    
+    def get_offers(self, store_id: Optional[str] = None, limit: int = 100) -> List[MeijerCoupon]:
+        """
+        Get available offers/coupons.
+        
+        Args:
+            store_id: Optional store ID for store-specific offers
+            limit: Maximum number of offers to return
+            
+        Returns:
+            List of MeijerCoupon objects
+        """
+        try:
+            # Actual endpoint from APK analysis
+            url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
+            
+            # Request body based on APK analysis
+            data = {
                 "sortType": "BySuggested",
-                "pageSize": min(limit, 9999),
+                "pageSize": min(limit, 9999),  # API limit from APK analysis
                 "currentPage": 1,
                 "offerClass": 1,
                 "searchCriteria": "",
-                "storeId": 0,
+                "storeId": int(store_id) if store_id else 0,
                 "ceilingCount": 0,
                 "ceilingDuration": 0,
                 "rewardCouponId": 0,
@@ -328,362 +362,275 @@ class Meijer:
                 "showOnlySpecialOffers": False,
                 "showRedeemedOffers": False,
                 "offerIds": [],
-                "displayReasonFilters": [],
+                "displayReasonFilters": []
             }
-
-            response = self._make_request(
-                "POST", url, headers=headers, json=request_body
-            )
-
+            
+            headers = self._get_api_headers()
+            headers.update({
+                "accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
+                "content-type": "application/vnd.meijer.digitalmperks.offers-v1.0+json"
+            })
+            
+            response = self._make_request("POST", url, headers=headers, json=data)
+            
             if response.status_code == 200:
                 data = response.json()
-                # Extract offers from the real response structure
-                offers = data.get("listOfCoupons", [])
-                # Convert to simple format for compatibility
-                simplified_offers = []
-                for item in offers:
-                    if "offer" in item:
-                        offer = item["offer"]
-                        simplified_offers.append(
-                            {
-                                "id": offer.get("meijerOfferId"),
-                                "title": offer.get("title", "").strip(),
-                                "description": offer.get("description", ""),
-                                "discount": f"${offer.get('redeemAmount', 0):.2f}",
-                                "expires": offer.get("redemptionEndDate"),
-                                "isClipped": item.get("isClipped", False),
-                                "imageUrl": offer.get("imageURL"),
-                                "terms": offer.get("termsAndConditions", ""),
-                            }
-                        )
-                return simplified_offers
+                return self.coupons.create_meijer_coupons_from_response(data)
             else:
-                raise MeijerAPIError(f"Failed to get offers: {response.status_code}")
-
+                self.logger.warning(f"Failed to get offers: {response.status_code}")
+                return []
+                
         except Exception as e:
             self.logger.error(f"Error getting offers: {e}")
             return []
-
-    def get_stores(
-        self, zip_code: str = None, radius: int = 25, latitude: float = None, longitude: float = None
-    ) -> List["MeijerStore"]:
+    
+    def get_coupons(self, limit: int = 1000, use_pagination: bool = True) -> List[MeijerCoupon]:
         """
-        Get store information from store locator API.
+        Get available coupons with pagination support.
         
-        Parameters
-        ----------
-        zip_code : str, optional
-            ZIP code to search around (default: None, uses device location)
-        radius : int, optional
-            Search radius in miles (default: 25)
-        latitude : float, optional
-            Latitude coordinate for search (overrides zip_code)
-        longitude : float, optional
-            Longitude coordinate for search (overrides zip_code)
-            
-        Returns
-        -------
-        List[MeijerStore]
-            List of MeijerStore objects found in the area
-        """
-        # Store search requires authentication
-        if not self._ensure_authenticated():
-            self.logger.warning("Not authenticated - store search will likely fail")
-        
-        try:
-            # Since the proximity search API is not working, we'll use known working store IDs
-            # and implement proximity search by fetching individual stores and filtering by distance
-            known_store_ids = [20, 71, 100, 200, 300]  # Known working store IDs
-            
-            # Use coordinates if provided, otherwise use zip code
-            if latitude is not None and longitude is not None:
-                search_lat, search_lon = latitude, longitude
-            elif zip_code:
-                # For zip code searches, use a default location (Grand Rapids area)
-                search_lat, search_lon = 42.9634, -85.6681
-                self.logger.info(f"Using default coordinates for ZIP code {zip_code}")
-            else:
-                # Default to Grand Rapids area
-                search_lat, search_lon = 42.9634, -85.6681
-                self.logger.info("Using default coordinates (Grand Rapids area)")
-            
-            self.logger.info(f"Searching for stores within {radius} miles of ({search_lat}, {search_lon})")
-            
-            stores = []
-            for store_id in known_store_ids:
-                try:
-                    # Fetch individual store data
-                    store_url = f"{self.api_base_url}/digital/storeInfo/stores/{store_id}"
-                    headers = self._get_api_headers()
-                    
-                    response = self._make_request("GET", store_url, headers=headers)
-                    
-                    if response.status_code == 200:
-                        store_data = response.json()
-                        store_list = store_data.get("store", [])
-                        
-                        for store_item in store_list:
-                            try:
-                                # Create MeijerStore object
-                                store = MeijerStore.from_api_data(store_item, self)
-                                
-                                # Check if store is within search radius
-                                if store.latitude and store.longitude:
-                                    distance = store.get_distance_from(search_lat, search_lon)
-                                    if distance and distance <= radius:
-                                        stores.append(store)
-                                        self.logger.debug(f"Found store {store.name} at {distance:.1f} miles")
-                                
-                            except Exception as e:
-                                self.logger.warning(f"Failed to parse store {store_id}: {e}")
-                                continue
-                                
-                except Exception as e:
-                    self.logger.warning(f"Failed to fetch store {store_id}: {e}")
-                    continue
-            
-            self.logger.info(f"Found {len(stores)} stores within {radius} miles")
-            return stores
-            
-        except Exception as e:
-            self.logger.error(f"Error getting stores: {e}")
-            return []
-
-    def get_coupons(self, limit: int = 1000, use_pagination: bool = True) -> List["MeijerCoupon"]:
-        """
-        Fetch coupons from mPerks API with pagination support.
-
         Args:
-            limit: Maximum number of coupons to fetch (default 1000 to get all ~473 available)
-            use_pagination: Whether to use pagination to fetch all available coupons
-
+            limit: Maximum number of coupons to return
+            use_pagination: Whether to use pagination for large requests
+            
         Returns:
             List of MeijerCoupon objects
         """
-        if not self._ensure_authenticated():
-            self.logger.warning("Not authenticated - cannot fetch coupons")
-            return []
-
         try:
-            # Import coupon creation function
-            try:
-                from .coupons import create_meijer_coupons_from_response
-            except ImportError:
-                self.logger.warning(
-                    "Coupon functionality not yet available in modular version"
-                )
-                return []
-
-            # Setup API request parameters
+            # Actual endpoint from APK analysis
             url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
-            headers = self._get_api_headers()
-            headers.update(
-                {
-                    "Accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                    "Content-Type": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                }
-            )
-
-            all_coupons = []
-            current_page = 1
-            total_fetched = 0
             
-            # Determine page size strategy
-            if use_pagination:
-                # Use smaller page size for pagination (API max seems to be around 50)
-                page_size = min(50, limit) if limit < 1000 else 50
-                max_pages = (limit // page_size) + 1
+            if use_pagination and limit > 100:
+                # Use pagination for large requests
+                all_coupons = []
+                current_page = 1
+                page_size = min(100, limit)  # Reasonable page size
+                
+                while len(all_coupons) < limit:
+                    data = {
+                        "sortType": "BySuggested",
+                        "pageSize": page_size,
+                        "currentPage": current_page,
+                        "offerClass": 1,
+                        "searchCriteria": "",
+                        "storeId": 0,
+                        "ceilingCount": 0,
+                        "ceilingDuration": 0,
+                        "rewardCouponId": 0,
+                        "tagId": "",
+                        "getOfferCountPerDepartment": True,
+                        "upcList": [],
+                        "showClippedCoupons": True,
+                        "showOnlySpecialOffers": False,
+                        "showRedeemedOffers": False,
+                        "offerIds": [],
+                        "displayReasonFilters": []
+                    }
+                    
+                    headers = self._get_api_headers()
+                    headers.update({
+                        "accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
+                        "content-type": "application/vnd.meijer.digitalmperks.offers-v1.0+json"
+                    })
+                    
+                    response = self._make_request("POST", url, headers=headers, json=data)
+                    
+                    if response.status_code == 200:
+                        page_data = response.json()
+                        page_coupons = self.coupons.create_meijer_coupons_from_response(page_data)
+                        
+                        if not page_coupons:
+                            break  # No more coupons
+                        
+                        all_coupons.extend(page_coupons)
+                        
+                        # Check if we've reached the limit
+                        if len(all_coupons) >= limit:
+                            all_coupons = all_coupons[:limit]
+                            break
+                        
+                        current_page += 1
+                        
+                        # Check if we've reached the end
+                        total_coupons = page_data.get("couponCount", 0)
+                        if len(all_coupons) >= total_coupons:
+                            break
+                    else:
+                        self.logger.warning(f"Failed to get coupons page {current_page}: {response.status_code}")
+                        break
+                
+                self.logger.info(f"Retrieved {len(all_coupons)} coupons using pagination")
+                return all_coupons
             else:
-                # Try to get everything in one request
-                page_size = min(limit, 9999)
-                max_pages = 1
-
-            self.logger.info(f"Fetching coupons: limit={limit}, pagination={use_pagination}, page_size={page_size}")
-
-            while current_page <= max_pages and total_fetched < limit:
-                # Base request body structure
-                request_body = {
-                    "sortType": "BySuggested",
-                    "pageSize": page_size,
-                    "currentPage": current_page,
-                    "offerClass": 1,
-                    "searchCriteria": "",
-                    "storeId": 0,
-                    "ceilingCount": 0,
-                    "ceilingDuration": 0,
-                    "rewardCouponId": 0,
-                    "tagId": "",
-                    "getOfferCountPerDepartment": True,
-                    "upcList": [],
-                    "showClippedCoupons": True,
-                    "showOnlySpecialOffers": False,
-                    "showRedeemedOffers": False,
-                    "offerIds": [],
-                    "displayReasonFilters": [],
-                }
-
-                self.logger.debug(f"Fetching page {current_page} with page size {page_size}")
-
-                response = self._make_request(
-                    "POST", url, headers=headers, json=request_body
-                )
-
-                coupon_data = response.json()
+                # Single request for smaller limits
+                return self.get_offers(limit=limit)
                 
-                # Log API response metadata
-                total_available = coupon_data.get("couponCount", 0)
-                available_count = coupon_data.get("availableCouponCount", 0)
-                self.logger.info(f"Page {current_page}: API reports {total_available} total coupons, {available_count} available")
-
-                # Parse coupons from this page
-                page_coupons = create_meijer_coupons_from_response(coupon_data, self)
-                
-                if not page_coupons:
-                    self.logger.info(f"No more coupons found on page {current_page}, stopping pagination")
-                    break
-
-                all_coupons.extend(page_coupons)
-                total_fetched += len(page_coupons)
-                
-                self.logger.info(f"Page {current_page}: Added {len(page_coupons)} coupons (total: {total_fetched})")
-
-                # Check if we have enough or if we should stop pagination
-                if not use_pagination or len(page_coupons) < page_size or total_fetched >= limit:
-                    break
-
-                current_page += 1
-
-            # Limit the final result if needed
-            if len(all_coupons) > limit:
-                all_coupons = all_coupons[:limit]
-
-            self.logger.info(f"Successfully fetched {len(all_coupons)} coupons total")
-            return all_coupons
-
         except Exception as e:
-            self.logger.error(f"Failed to fetch coupons: {e}")
+            self.logger.error(f"Error getting coupons: {e}")
             return []
-
-    def search_products(self, query: str, **kwargs) -> "MeijerSearchResults":
+    
+    def lookup_barcode_price(self, barcode: str, store_id: Optional[str] = None) -> Optional[MeijerItem]:
         """
-        Search for products using Constructor.io.
-
-        Args:
-            query: Search query
-            **kwargs: Additional search parameters
-
-        Returns:
-            MeijerSearchResults object
-        """
-        try:
-            from .search import MeijerSearch
-
-            search_client = MeijerSearch(self)
-            return search_client.search(query, **kwargs)
-        except ImportError:
-            self.logger.warning(
-                "Search functionality not yet available in modular version"
-            )
-            return None
-
-    def lookup_barcode_price(self, barcode: str, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """
-        Look up price and product information for any barcode.
-        
-        This uses the Shop & Scan API to get real-time pricing without requiring
-        an active shopping session.
+        Look up product information by barcode.
         
         Args:
-            barcode: UPC/barcode to look up
-            store_id: Optional store ID for location-specific pricing
+            barcode: The barcode/UPC to look up
+            store_id: Optional store ID for store-specific pricing
             
         Returns:
-            Dict containing product info and pricing, or None if not found
-            
-        Example:
-            >>> client = Meijer()
-            >>> product = client.lookup_barcode_price("123456789012")
-            >>> print(f"{product['title']}: ${product['unitPrice']:.2f}")
+            MeijerItem if found, None otherwise
         """
         return self.shop_scan.lookup_barcode_price(barcode, store_id)
-
-    def bulk_lookup_barcodes(self, barcodes: List[str], store_id: Optional[str] = None) -> Dict[str, Optional[Dict[str, Any]]]:
+    
+    def bulk_lookup_barcodes(self, barcodes: List[str], store_id: Optional[str] = None) -> Dict[str, Optional[MeijerItem]]:
         """
-        Look up multiple barcodes efficiently.
+        Look up multiple barcodes at once.
         
         Args:
-            barcodes: List of UPC/barcodes to look up
-            store_id: Optional store ID for location-specific pricing
+            barcodes: List of barcodes to look up
+            store_id: Optional store ID for store-specific pricing
             
         Returns:
-            Dict mapping barcode -> product info (or None if not found)
+            Dictionary mapping barcodes to MeijerItem objects (or None if not found)
         """
         return self.shop_scan.bulk_lookup_barcodes(barcodes, store_id)
-
-    def get_autocomplete(self, query: str, num_results: int = 10) -> List[str]:
+    
+    def search_products(self, query: str, results_per_page: int = 24, page: int = 1) -> SearchResult:
         """
-        Get autocomplete suggestions.
-
+        Search for products.
+        
         Args:
-            query: Partial search query
-            num_results: Number of suggestions
-
+            query: Search query string
+            results_per_page: Number of results per page
+            page: Page number (1-based)
+            
         Returns:
-            List of suggestion strings
+            SearchResult object containing search results
         """
+        return self.search.search(query, results_per_page, page)
+    
+    def get_shopping_list(self) -> List[ListItem]:
+        """Get current shopping list items."""
+        return self.shopping_list.get_list()
+    
+    def get_favorites(self) -> List[ListItem]:
+        """Get current favorites list items."""
+        return self.shopping_list.get_favorites()
+    
+    def add_to_shopping_list(self, item: Union[str, MeijerItem], quantity: int = 1) -> bool:
+        """
+        Add item to shopping list.
+        
+        Args:
+            item: Item to add (string description or MeijerItem)
+            quantity: Quantity to add
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if isinstance(item, str):
+            return self.shopping_list.add_item(item, quantity)
+        else:
+            return self.shopping_list.add_item(item.title, quantity, item.upc)
+    
+    def add_to_favorites(self, item: Union[str, MeijerItem]) -> bool:
+        """
+        Add item to favorites list.
+        
+        Args:
+            item: Item to add (string description or MeijerItem)
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if isinstance(item, str):
+            return self.shopping_list.add_favorite(item)
+        else:
+            return self.shopping_list.add_favorite(item.title, item.upc)
+    
+    def remove_from_shopping_list(self, item_id: int) -> bool:
+        """
+        Remove item from shopping list.
+        
+        Args:
+            item_id: ID of item to remove
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.shopping_list.delete_item(item_id)
+    
+    def remove_from_favorites(self, item_id: int) -> bool:
+        """
+        Remove item from favorites list.
+        
+        Args:
+            item_id: ID of item to remove
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.shopping_list.delete_favorite(item_id)
+    
+    def complete_shopping_list_item(self, item_id: int) -> bool:
+        """
+        Mark shopping list item as complete.
+        
+        Args:
+            item_id: ID of item to mark complete
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.shopping_list.complete_item(item_id)
+    
+    def clip_coupon(self, coupon_id: int) -> bool:
+        """
+        Clip a coupon.
+        
+        Args:
+            coupon_id: ID of coupon to clip
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.coupons.clip_coupon(coupon_id)
+    
+    def unclip_coupon(self, coupon_id: int) -> bool:
+        """
+        Unclip a coupon.
+        
+        Args:
+            coupon_id: ID of coupon to unclip
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.coupons.unclip_coupon(coupon_id)
+    
+    def save_tokens(self):
+        """Save current tokens to config file."""
+        if not self._access_token:
+            self.logger.warning("No access token to save")
+            return
+        
         try:
-            from .search import MeijerSearch
-
-            search_client = MeijerSearch(self)
-            return search_client.autocomplete(query, num_results)
-        except ImportError:
-            self.logger.warning(
-                "Search functionality not yet available in modular version"
-            )
-            return []
-
-    def clip_coupon(self, coupon) -> bool:
-        """Clip (activate) a coupon."""
-        try:
-            from .coupons import clip_coupon
-
-            if hasattr(coupon, "meijer_offer_id"):
-                return clip_coupon(self, coupon.meijer_offer_id)
-            elif isinstance(coupon, int):
-                return clip_coupon(self, coupon)
-            else:
-                self.logger.error("Invalid coupon parameter")
-                return False
-        except ImportError:
-            self.logger.warning(
-                "Coupon functionality not yet available in modular version"
-            )
-            return False
-
-    def unclip_coupon(self, coupon) -> bool:
-        """Unclip (deactivate) a coupon."""
-        try:
-            from .coupons import unclip_coupon
-
-            if hasattr(coupon, "meijer_offer_id"):
-                return unclip_coupon(self, coupon.meijer_offer_id)
-            elif isinstance(coupon, int):
-                return unclip_coupon(self, coupon)
-            else:
-                self.logger.error("Invalid coupon parameter")
-                return False
-        except ImportError:
-            self.logger.warning(
-                "Coupon functionality not yet available in modular version"
-            )
-            return False
-
-    def get_clipped_coupons(self) -> List["MeijerCoupon"]:
-        """Get list of clipped coupons."""
-        coupons = self.get_coupons()
-        return [c for c in coupons if c.is_clipped]
-
-    def get_available_coupons(self) -> List["MeijerCoupon"]:
-        """Get list of available (unclipped) coupons."""
-        coupons = self.get_coupons()
-        return [c for c in coupons if not c.is_clipped]
+            config_path = Path.home() / ".config" / "meijer.txt"
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            config = {
+                "access_token": self._access_token,
+                "refresh_token": self._refresh_token,
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=2)
+            
+            self.logger.info("Tokens saved to config file")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to save tokens: {e}")
+    
+    def is_authenticated(self) -> bool:
+        """Check if client is authenticated."""
+        return self._access_token is not None
