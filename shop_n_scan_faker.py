@@ -5,6 +5,7 @@ If you use mock locations in Android the app detects and shuts you down.
 
 So, just rewrite the URL
 """
+
 import mitmproxy
 
 # Location of the store you would like to Shop'n'Scan at.

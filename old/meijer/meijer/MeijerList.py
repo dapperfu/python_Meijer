@@ -56,9 +56,9 @@ class MeijerList:
         elif isinstance(item, int):
             listItemId = item
         request = dict()
-        request[
-            "url"
-        ] = f"https://mservices.meijer.com/listmanagement/api/listItem/markascompleted/{listItemId}"
+        request["url"] = (
+            f"https://mservices.meijer.com/listmanagement/api/listItem/markascompleted/{listItemId}"
+        )
         request["headers"] = {
             "Accept": "application/vnd.meijer.listManagement.list-v1.0+json",
             "Content-Type": "application/vnd.meijer.listManagement.list-v1.0+json",
@@ -72,9 +72,9 @@ class MeijerList:
         elif isinstance(item, int):
             listItemId = item
         request = dict()
-        request[
-            "url"
-        ] = f"https://mservices.meijer.com/listmanagement/api/listItem/markasnotcompleted/{listItemId}"
+        request["url"] = (
+            f"https://mservices.meijer.com/listmanagement/api/listItem/markasnotcompleted/{listItemId}"
+        )
         request["headers"] = {
             "Accept": "application/vnd.meijer.listManagement.list-v1.0+json",
             "Content-Type": "application/vnd.meijer.listManagement.list-v1.0+json",

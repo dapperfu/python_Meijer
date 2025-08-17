@@ -17,11 +17,11 @@ import json
 class MeijerCoupon:
     """
     Represents a Meijer coupon/offer with all discovered fields.
-    
+
     This class provides methods to clip() and unclip() coupons, as well as
     access to all coupon metadata discovered from API analysis.
     """
-    
+
     offer: dict
     is_suggested: bool
     is_clipped: bool
@@ -40,16 +40,18 @@ class MeijerCoupon:
     def clip(self, clipped: bool = True) -> bool:
         """
         Clip or unclip this coupon.
-        
+
         Args:
             clipped: True to clip the coupon, False to unclip
-            
+
         Returns:
             True if successful, False otherwise
         """
         if not self._meijer_client:
-            raise RuntimeError("MeijerCoupon must be associated with a Meijer client to clip/unclip")
-        
+            raise RuntimeError(
+                "MeijerCoupon must be associated with a Meijer client to clip/unclip"
+            )
+
         try:
             if clipped:
                 return self._clip()
@@ -57,54 +59,64 @@ class MeijerCoupon:
                 return self._unclip()
         except Exception:
             return False
-    
+
     def unclip(self) -> bool:
         """
         Unclip this coupon.
-        
+
         Returns:
             True if successful, False otherwise
         """
         return self.clip(clipped=False)
-    
+
     def _clip(self) -> bool:
         """Internal method to clip the coupon."""
-        offer_id = getattr(self, 'meijer_offer_id', None) or getattr(self, 'offer_id', None)
+        offer_id = getattr(self, "meijer_offer_id", None) or getattr(
+            self, "offer_id", None
+        )
         if not offer_id:
             return False
-        
+
         endpoint = "/loyalty/mPerks/api/offers/Clip"
         data = {"meijerOfferId": offer_id}
-        
+
         response = self._meijer_client._make_request("POST", endpoint, data=data)
         return response is not None
-    
+
     def _unclip(self) -> bool:
         """Internal method to unclip the coupon."""
-        offer_id = getattr(self, 'meijer_offer_id', None) or getattr(self, 'offer_id', None)
+        offer_id = getattr(self, "meijer_offer_id", None) or getattr(
+            self, "offer_id", None
+        )
         if not offer_id:
             return False
-        
-        endpoint = "/loyalty/mPerks/api/offers/Unclip"  
+
+        endpoint = "/loyalty/mPerks/api/offers/Unclip"
         data = {"meijerOfferId": offer_id}
-        
+
         response = self._meijer_client._make_request("POST", endpoint, data=data)
         return response is not None
 
     @property
     def is_clipped(self) -> bool:
         """Check if this coupon is currently clipped."""
-        return getattr(self, 'clipped', False) or getattr(self, 'is_clipped', False)
-    
+        return getattr(self, "clipped", False) or getattr(self, "is_clipped", False)
+
     @property
     def offer_id(self) -> Optional[str]:
         """Get the offer ID for this coupon."""
-        return (getattr(self, 'meijer_offer_id', None) or 
-                getattr(self, 'offer_id', None) or
-                getattr(self, 'id', None))
-    
+        return (
+            getattr(self, "meijer_offer_id", None)
+            or getattr(self, "offer_id", None)
+            or getattr(self, "id", None)
+        )
+
     def __str__(self) -> str:
         """String representation of the coupon."""
-        title = getattr(self, 'title', None) or getattr(self, 'name', None) or 'Unknown Coupon'
-        status = 'Clipped' if self.is_clipped else 'Available'
+        title = (
+            getattr(self, "title", None)
+            or getattr(self, "name", None)
+            or "Unknown Coupon"
+        )
+        status = "Clipped" if self.is_clipped else "Available"
         return f"MeijerCoupon({title}) - {status}"

@@ -11,26 +11,26 @@ def test_version():
 
 
 def test_meijer_instance():
-    """ Test making a Meijer Instance."""
+    """Test making a Meijer Instance."""
     meijer_api_key = os.environ["MEIJER_API_KEY"]
     m = Meijer(meijer_api_key)
 
 
 def test_meijer_login():
-    """ Test logging in to Meijer's API."""
+    """Test logging in to Meijer's API."""
     meijer_api_key = os.environ["MEIJER_API_KEY"]
     m = Meijer(meijer_api_key)
     m.login()
 
 
 def test_meijer_login2():
-    """ Test logging in to Meijer's, test reading API_KEY automatically."""
+    """Test logging in to Meijer's, test reading API_KEY automatically."""
     m = Meijer()
     m.login()
 
 
 def test_meijer_store_count():
-    """ Count the number of Meijer stores returned by the API."""
+    """Count the number of Meijer stores returned by the API."""
     meijer_api_key = os.environ["MEIJER_API_KEY"]
     m = Meijer(meijer_api_key)
     m.login()
@@ -38,7 +38,7 @@ def test_meijer_store_count():
 
 
 def test_meijer_store_count_location():
-    """ Count the number of Meijer stores returned by the API."""
+    """Count the number of Meijer stores returned by the API."""
     meijer_api_key = os.environ["MEIJER_API_KEY"]
     m = Meijer(meijer_api_key)
     m.login()
@@ -47,7 +47,7 @@ def test_meijer_store_count_location():
 
 
 def test_meijer_store_count_distance():
-    """ Count the number of Meijer stores returned by the API."""
+    """Count the number of Meijer stores returned by the API."""
     meijer_api_key = os.environ["MEIJER_API_KEY"]
     m = Meijer(meijer_api_key)
     m.login()

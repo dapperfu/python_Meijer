@@ -12,12 +12,12 @@ def meijer():
 
 
 def test_meijer_store_count3(meijer):
-    """ Count the number of Meijer stores returned by the API."""
+    """Count the number of Meijer stores returned by the API."""
     assert len(meijer.stores()) == 248
 
 
 def test_meijer_coupons(meijer):
-    """ Count the number of Meijer stores returned by the API."""
+    """Count the number of Meijer stores returned by the API."""
     meijer.coupons
 
 

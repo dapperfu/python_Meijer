@@ -1,4 +1,5 @@
 """High level Mixin for simplifying Request requests."""
+
 import base64
 
 import requests

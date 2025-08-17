@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 class MeijerItem:
     """
     Represents a Meijer product item from search results.
-    
+
     This class contains all fields discovered from Constructor.io API analysis
     and provides methods for interacting with individual items.
     """
-    
+
     data_id: str
     data_ean: int
     data_isbopas: bool
@@ -70,199 +70,215 @@ class MeijerItem:
     matched_terms: List[Any] = field(default_factory=list)
 
     # Internal fields
-    _meijer_client: Optional["MeijerComprehensiveClient"] = field(default=None, repr=False)
+    _meijer_client: Optional["MeijerComprehensiveClient"] = field(
+        default=None, repr=False
+    )
     _raw_data: Optional[Dict[str, Any]] = field(default=None, repr=False)
 
     @classmethod
-    def from_constructor_response(cls, item_data: Dict[str, Any], client: Optional["MeijerComprehensiveClient"] = None) -> "MeijerItem":
+    def from_constructor_response(
+        cls,
+        item_data: Dict[str, Any],
+        client: Optional["MeijerComprehensiveClient"] = None,
+    ) -> "MeijerItem":
         """
         Create a MeijerItem from Constructor.io API response data.
-        
+
         Args:
             item_data: Raw item data from Constructor.io search response
             client: Meijer client for additional operations
-            
+
         Returns:
             MeijerItem instance
         """
         # Extract common Constructor.io fields
-        value = item_data.get('value', '')
-        data = item_data.get('data', {})
-        
+        value = item_data.get("value", "")
+        data = item_data.get("data", {})
+
         # Create instance with discovered field mappings
-        kwargs = {
-            '_meijer_client': client,
-            '_raw_data': item_data
-        }
-        
+        kwargs = {"_meijer_client": client, "_raw_data": item_data}
+
         # Map Constructor.io response fields to dataclass fields
         # Extract data fields if they exist
-        data = item_data.get('data', {})
-        
+        data = item_data.get("data", {})
+
         # Create kwargs for all dataclass fields
-        kwargs.update({
-            'value': item_data.get('value', ''),
-            'matched_terms': item_data.get('matched_terms', []),
-            # Map all data_ fields
-            'data_id': data.get('id', ''),
-            'data_ean': data.get('ean', 0),
-            'data_isbopas': data.get('isBopas', False),
-            'data_isbuyable': data.get('isBuyable', True),
-            'data_isalcohol': data.get('isAlcohol', False),
-            'data_image_url': data.get('image_url', ''),
-            'data_priceunit': data.get('priceUnit', 'ea'),
-            'data_hasmperks': data.get('hasMPerks', False),
-            'data_specialbuy': data.get('specialBuy', False),
-            'data_description': data.get('description', ''),
-            'data_deactivated': data.get('deactivated', False),
-            'data_productunit': data.get('productUnit', 'ea'),
-            'data_qtyincrement': data.get('qtyIncrement', 1),
-            'data_chokinghazard': data.get('chokingHazard', False),
-            'data_ispurchasable': data.get('isPurchasable', True),
-            'data_pricebyweight': data.get('priceByWeight', False),
-            'data_mperksofferid': data.get('mPerksOfferId', []),
-            'data_isagerestricted': data.get('isAgeRestricted', False),
-            'data_ebtfoodstampable': data.get('ebtFoodStampable', False),
-            'data_pickupavailableflag': data.get('pickupAvailableFlag', True),
-            'data_homedeliverynotavailable': data.get('homeDeliveryNotAvailable', False),
-            'data_requiresdiscreteinventorytracking': data.get('requiresDiscreteInventoryTracking', False),
-            'data_sale': data.get('sale', False),
-            'data_ismap': data.get('isMap', False),
-            'data_price': float(data.get('price', 0.0)),
-            'data_variation_id': data.get('variation_id', ''),
-            'data_pricegoodthrough': data.get('priceGoodThrough', ''),
-            'data_stocklevelstatus': data.get('stockLevelStatus', 'inStock'),
-            'data_discountsalepricevalue': data.get('discountSalePriceValue', 0),
-            'data_group_ids': data.get('group_ids', []),
-            # Optional fields
-            'data_ingredients': data.get('ingredients'),
-            'data_discountvalue': data.get('discountValue'),
-            'data_discountsavingstext': data.get('discountSavingsText'),
-            'data_discountsalepricetype': data.get('discountSalePriceType'),
-            'data_depositvalue': data.get('depositValue'),
-            'data_maxorderquantity': data.get('maxOrderQuantity'),
-            'data_discountsalepricetext': data.get('discountSalePriceText'),
-        })
-        
+        kwargs.update(
+            {
+                "value": item_data.get("value", ""),
+                "matched_terms": item_data.get("matched_terms", []),
+                # Map all data_ fields
+                "data_id": data.get("id", ""),
+                "data_ean": data.get("ean", 0),
+                "data_isbopas": data.get("isBopas", False),
+                "data_isbuyable": data.get("isBuyable", True),
+                "data_isalcohol": data.get("isAlcohol", False),
+                "data_image_url": data.get("image_url", ""),
+                "data_priceunit": data.get("priceUnit", "ea"),
+                "data_hasmperks": data.get("hasMPerks", False),
+                "data_specialbuy": data.get("specialBuy", False),
+                "data_description": data.get("description", ""),
+                "data_deactivated": data.get("deactivated", False),
+                "data_productunit": data.get("productUnit", "ea"),
+                "data_qtyincrement": data.get("qtyIncrement", 1),
+                "data_chokinghazard": data.get("chokingHazard", False),
+                "data_ispurchasable": data.get("isPurchasable", True),
+                "data_pricebyweight": data.get("priceByWeight", False),
+                "data_mperksofferid": data.get("mPerksOfferId", []),
+                "data_isagerestricted": data.get("isAgeRestricted", False),
+                "data_ebtfoodstampable": data.get("ebtFoodStampable", False),
+                "data_pickupavailableflag": data.get("pickupAvailableFlag", True),
+                "data_homedeliverynotavailable": data.get(
+                    "homeDeliveryNotAvailable", False
+                ),
+                "data_requiresdiscreteinventorytracking": data.get(
+                    "requiresDiscreteInventoryTracking", False
+                ),
+                "data_sale": data.get("sale", False),
+                "data_ismap": data.get("isMap", False),
+                "data_price": float(data.get("price", 0.0)),
+                "data_variation_id": data.get("variation_id", ""),
+                "data_pricegoodthrough": data.get("priceGoodThrough", ""),
+                "data_stocklevelstatus": data.get("stockLevelStatus", "inStock"),
+                "data_discountsalepricevalue": data.get("discountSalePriceValue", 0),
+                "data_group_ids": data.get("group_ids", []),
+                # Optional fields
+                "data_ingredients": data.get("ingredients"),
+                "data_discountvalue": data.get("discountValue"),
+                "data_discountsavingstext": data.get("discountSavingsText"),
+                "data_discountsalepricetype": data.get("discountSalePriceType"),
+                "data_depositvalue": data.get("depositValue"),
+                "data_maxorderquantity": data.get("maxOrderQuantity"),
+                "data_discountsalepricetext": data.get("discountSalePriceText"),
+            }
+        )
+
         return cls(**kwargs)
-    
+
     @property
     def title(self) -> str:
         """Get the item title/name."""
-        return getattr(self, 'value', '') or getattr(self, 'title', '') or 'Unknown Item'
-    
+        return (
+            getattr(self, "value", "") or getattr(self, "title", "") or "Unknown Item"
+        )
+
     @property
     def product_id(self) -> Optional[str]:
         """Get the product ID."""
-        if hasattr(self, 'data_id'):
-            return getattr(self, 'data_id', None)
-        return getattr(self, 'id', None)
-    
+        if hasattr(self, "data_id"):
+            return getattr(self, "data_id", None)
+        return getattr(self, "id", None)
+
     @property
     def price(self) -> Optional[float]:
         """Get the item price."""
-        price_val = getattr(self, 'data_price', None)
+        price_val = getattr(self, "data_price", None)
         if price_val:
             try:
                 return float(price_val)
             except (ValueError, TypeError):
                 pass
         return None
-    
+
     @property
     def image_url(self) -> Optional[str]:
         """Get the item image URL."""
-        return getattr(self, 'data_image_url', None)
-    
+        return getattr(self, "data_image_url", None)
+
     @property
     def brand(self) -> Optional[str]:
         """Get the item brand."""
-        return getattr(self, 'data_brand', None)
-    
+        return getattr(self, "data_brand", None)
+
     def add_to_cart(self, quantity: int = 1) -> bool:
         """
         Add this item to the shopping cart.
-        
+
         Args:
             quantity: Number of items to add
-            
+
         Returns:
             True if successful, False otherwise
         """
         if not self._meijer_client:
             logger.warning("No Meijer client associated with item")
             return False
-        
+
         # This would need implementation in the Meijer client
-        if hasattr(self._meijer_client, 'add_to_cart'):
+        if hasattr(self._meijer_client, "add_to_cart"):
             return self._meijer_client.add_to_cart(self.product_id, quantity)
-        
+
         logger.warning("Meijer client does not support add_to_cart")
         return False
-    
+
     def get_detailed_info(self) -> Dict[str, Any]:
         """
         Get detailed product information.
-        
+
         Returns:
             Dictionary with detailed product data
         """
         if self._raw_data:
             return self._raw_data
-        
+
         # Return basic info from current fields
         return {
-            'title': self.title,
-            'product_id': self.product_id,
-            'price': self.price,
-            'image_url': self.image_url,
-            'brand': self.brand
+            "title": self.title,
+            "product_id": self.product_id,
+            "price": self.price,
+            "image_url": self.image_url,
+            "brand": self.brand,
         }
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert item to dictionary representation."""
         result = {}
         for field_name, field_value in self.__dict__.items():
-            if field_name.startswith('_'):
+            if field_name.startswith("_"):
                 continue
             result[field_name] = field_value
         return result
-    
+
     def __str__(self) -> str:
         """String representation of the item."""
         price_str = f"${self.price:.2f}" if self.price else "Price N/A"
         brand_str = f" by {self.brand}" if self.brand else ""
         return f"MeijerItem({self.title}{brand_str}) - {price_str}"
-    
+
     def __repr__(self) -> str:
         """Detailed representation of the item."""
         return f"MeijerItem(id={self.product_id}, title='{self.title}', price={self.price})"
 
 
 # Factory function for creating MeijerItem lists from search responses
-def create_meijer_items_from_search(search_response: Dict[str, Any], client: Optional["MeijerComprehensiveClient"] = None) -> List[MeijerItem]:
+def create_meijer_items_from_search(
+    search_response: Dict[str, Any],
+    client: Optional["MeijerComprehensiveClient"] = None,
+) -> List[MeijerItem]:
     """
     Create a list of MeijerItem objects from Constructor.io search response.
-    
+
     Args:
         search_response: Response from Constructor.io search API
         client: Meijer client for additional operations
-        
+
     Returns:
         List of MeijerItem objects
     """
     items = []
-    
+
     # Handle different Constructor.io response structures
     results = []
     if isinstance(search_response, dict):
-        if 'results' in search_response:
-            results = search_response['results']
-        elif 'response' in search_response and isinstance(search_response['response'], dict):
-            resp = search_response['response']
-            if 'results' in resp:
-                results = resp['results']
-    
+        if "results" in search_response:
+            results = search_response["results"]
+        elif "response" in search_response and isinstance(
+            search_response["response"], dict
+        ):
+            resp = search_response["response"]
+            if "results" in resp:
+                results = resp["results"]
+
     for item_data in results:
         try:
             item = MeijerItem.from_constructor_response(item_data, client)
@@ -270,7 +286,7 @@ def create_meijer_items_from_search(search_response: Dict[str, Any], client: Opt
         except Exception as e:
             logger.error(f"Failed to create MeijerItem from data: {e}")
             continue
-    
+
     return items
 
 

@@ -9,8 +9,9 @@ datetime_object = datetime.datetime.now()
 inventory_file = datetime_object.strftime("%Y.%b.%d.inventory.txt")
 
 from meijer import Meijer
+
 # m = Meijer("<mperks-email>|<mperks-password>") # Password, not PIN.
-# If no meijer_api_key is specified the class looks at the ```MEIJER_API_KEY``` environmental variable. 
+# If no meijer_api_key is specified the class looks at the ```MEIJER_API_KEY``` environmental variable.
 m = Meijer()
 
 while True:

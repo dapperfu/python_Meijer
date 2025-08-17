@@ -14,6 +14,7 @@ can be used as a handy facility for running the task from a command line.
     To learn more about running Luigi, visit the Luigi project's
     `Read-The-Docs <http://luigi.readthedocs.io/en/stable/>`_ page.
 """
+
 import logging
 
 import click

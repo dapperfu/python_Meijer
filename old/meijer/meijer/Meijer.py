@@ -1,4 +1,5 @@
 """Meijer object file."""
+
 import base64
 import json
 import os
@@ -129,10 +130,10 @@ class Meijer(RequestsMixin):
 
     def get_store(self, store_id):
         request = dict()
-        request[
-            "url"
-        ] = "https://mservices.meijer.com/storeinfo/api/mobile/stores/{}?dataVariant=2".format(
-            store_id
+        request["url"] = (
+            "https://mservices.meijer.com/storeinfo/api/mobile/stores/{}?dataVariant=2".format(
+                store_id
+            )
         )
         request["headers"] = {"Version": "7"}
         r = self.get(**request)
@@ -140,9 +141,9 @@ class Meijer(RequestsMixin):
 
     def get_upc(self, upc="4125010200", storeID="226"):
         request = dict()
-        request[
-            "url"
-        ] = f"https://mservices.meijer.com/DRNavMobileSvc/search/products?storeId={storeID}&q.upc={upc}"
+        request["url"] = (
+            f"https://mservices.meijer.com/DRNavMobileSvc/search/products?storeId={storeID}&q.upc={upc}"
+        )
         request["headers"] = {
             "Accept": "application/vnd.meijer.search.product-v1.2+json"
         }
