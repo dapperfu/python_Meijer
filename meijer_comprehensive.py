@@ -45,7 +45,8 @@ class OAuthConfig:
     token_url: str = "https://id.meijer.com/oauth2/default/v1/token"
     keys_url: str = "https://id.meijer.com/oauth2/default/v1/keys"
     scope: str = "openid profile offline_access"
-    redirect_uri: str = "com.meijer.mobile.meijer:/login"
+    redirect_uri: str = "https://localhost:8080/callback"  # Web-compatible redirect URI
+    mobile_redirect_uri: str = "com.meijer.mobile.meijer:/login"  # Original mobile app URI
     response_type: str = "code"
     code_challenge_method: str = "S256"
 
@@ -199,9 +200,13 @@ class MeijerComprehensiveClient:
         """Generate random nonce parameter for OAuth security."""
         return secrets.token_urlsafe(32)
     
-    def get_authorization_url(self) -> tuple[str, str, str]:
+    def get_authorization_url(self, use_mobile_uri: bool = False) -> tuple[str, str, str]:
         """
         Generate OAuth 2.0 authorization URL with PKCE.
+        
+        Args:
+            use_mobile_uri: If True, use the mobile app redirect URI (for Selenium)
+                           If False, use web-compatible redirect URI (for requests)
         
         Returns:
             tuple: (authorization_url, state, code_verifier)
@@ -210,11 +215,14 @@ class MeijerComprehensiveClient:
         state = self._generate_state()
         nonce = self._generate_nonce()
         
+        # Choose appropriate redirect URI
+        redirect_uri = self.oauth_config.mobile_redirect_uri if use_mobile_uri else self.oauth_config.redirect_uri
+        
         params = {
             'client_id': self.oauth_config.client_id,
             'response_type': self.oauth_config.response_type,
             'scope': self.oauth_config.scope,
-            'redirect_uri': self.oauth_config.redirect_uri,
+            'redirect_uri': redirect_uri,
             'state': state,
             'nonce': nonce,
             'code_challenge': code_challenge,
@@ -655,18 +663,12 @@ class MeijerComprehensiveClient:
             })
             
             # Step 1: Get the authorization URL and follow it
-            auth_url, state, code_verifier = self.get_authorization_url()
+            auth_url, state, code_verifier = self.get_authorization_url(use_mobile_uri=False)
             self.logger.info(f"🔗 Following authorization URL: {auth_url[:80]}...")
             
-            # Use a standard redirect URI that we can handle
-            # Replace the mobile app URI with a standard one
-            auth_url_modified = auth_url.replace(
-                'com.meijer.mobile.meijer:/login',
-                'https://localhost:8080/callback'
-            )
-            
+            # Use the web-compatible redirect URI (no need to modify)
             # Follow the authorization URL
-            response = session.get(auth_url_modified, allow_redirects=True)
+            response = session.get(auth_url, allow_redirects=True)
             self.logger.info(f"📄 Initial response status: {response.status_code}")
             
             # Step 2: Extract the login form from the response
