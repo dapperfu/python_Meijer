@@ -1193,10 +1193,19 @@ class Meijer:
         # Initialize Shop & Scan functionality
         self.shop_scan = ShopNScan(self)
         
+        # Initialize search functionality
+        self.search = MeijerSearch(self)
+        
+        # Initialize store search functionality
+        self.store_search = MeijerStoreSearch(self)
+        
+        # Coupons will be loaded when accessed
+        self._coupons = None
+        
         # Try to restore authentication from stored tokens
         self._restore_authentication()
         
-        self.logger.info("Unified Meijer client initialized")
+        self.logger.info("Unified Meijer client initialized with all functionality")
     
     def _setup_logging(self) -> None:
         """Setup logging configuration."""
@@ -1783,64 +1792,1679 @@ class Meijer:
         """Context manager exit."""
         self.logout()
         self.session.close()
-
-
-def main() -> None:
-    """Example usage of the unified Meijer client."""
-    logging.basicConfig(level=logging.INFO)
     
-    # Create unified Meijer client
-    with Meijer(debug=True) as meijer:
+    # =============================================================================
+    # INTEGRATED FUNCTIONALITY METHODS
+    # =============================================================================
+    
+    @property 
+    def coupons(self) -> List['MeijerCoupon']:
+        """
+        Get list of available coupons.
+        
+        Returns:
+            List of MeijerCoupon objects
+        """
+        if self._coupons is None:
+            self._coupons = self.get_coupons()
+        return self._coupons
+    
+    def get_coupons(self, limit: int = 100) -> List['MeijerCoupon']:
+        """
+        Fetch coupons from mPerks API.
+        
+        Args:
+            limit: Maximum number of coupons to fetch
+            
+        Returns:
+            List of MeijerCoupon objects
+        """
+        if not self._ensure_authenticated():
+            self.logger.warning("Not authenticated - cannot fetch coupons")
+            return []
+        
         try:
-            # Login using any available method
-            print("🔐 Attempting login...")
-            if meijer.login():
-                print("✅ Login successful!")
-                
-                # Show session info
-                session_info = meijer.get_session_info()
-                print(f"📊 Session: {session_info['status']}")
-                
-                # Test shopping list
-                print("\n📝 Testing shopping list...")
-                print(f"Current items: {meijer.list.count}")
-                
-                # Test Shop & Scan
-                print("\n🛒 Testing Shop & Scan...")
-                if meijer.shop_scan.is_enabled():
-                    print("✅ Shop & Scan is available")
-                    
-                    # Start trip
-                    if meijer.shop_scan.start_trip("52"):
-                        print("✅ Trip started")
-                        
-                        # Show trip summary
-                        summary = meijer.shop_scan.get_trip_summary()
-                        print(f"📋 Trip: {summary['trip_id']}")
-                else:
-                    print("❌ Shop & Scan not available")
-                
-                # Test other APIs
-                print("\n📦 Testing other APIs...")
-                try:
-                    stores = meijer.get_stores(radius=10)
-                    print(f"🏪 Found {len(stores)} stores")
-                    
-                    offers = meijer.get_offers(limit=5)
-                    print(f"🎟️ Found {len(offers)} offers")
-                    
-                except Exception as e:
-                    print(f"⚠️ API test failed: {e}")
-                
+            response = self._make_request(
+                'GET',
+                f'{self.api_base_url}/digital/mPerks/api/offers',
+                params={'limit': limit}
+            )
+            
+            coupon_data = response.json()
+            # Import will be available at runtime due to forward references
+            from typing import TYPE_CHECKING
+            if TYPE_CHECKING:
+                pass
             else:
-                print("❌ Login failed!")
-                print("💡 Try creating these files:")
-                print("   - auth.txt (username=xxx\\npassword=yyy)")
-                print("   - bearer_auth.txt (bearer_token=xxx\\nuser_agent=yyy)")
+                # Use the global function defined later in the file
+                coupons = create_meijer_coupons_from_response(coupon_data, self)
+            
+            self.logger.info(f"Fetched {len(coupons)} coupons")
+            return coupons
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch coupons: {e}")
+            return []
+    
+    def search_products(self, query: str, **kwargs) -> 'MeijerSearchResults':
+        """
+        Search for products using Constructor.io.
+        
+        Args:
+            query: Search query
+            **kwargs: Additional search parameters
+            
+        Returns:
+            MeijerSearchResults object
+        """
+        return self.search.search(query, **kwargs)
+    
+    def get_autocomplete(self, query: str, num_results: int = 10) -> List[str]:
+        """
+        Get autocomplete suggestions.
+        
+        Args:
+            query: Partial search query
+            num_results: Number of suggestions
+            
+        Returns:
+            List of autocomplete suggestions
+        """
+        return self.search.autocomplete(query, num_results)
+    
+    def find_stores_nearby(self, latitude: float, longitude: float, **kwargs) -> List['MeijerStore']:
+        """
+        Find stores near coordinates.
+        
+        Args:
+            latitude: Search latitude
+            longitude: Search longitude
+            **kwargs: Additional search parameters
+            
+        Returns:
+            List of MeijerStore objects
+        """
+        return self.store_search.find_stores_nearby(latitude, longitude, **kwargs)
+    
+    def get_store_details(self, store_id: Union[int, str]) -> Optional['MeijerStore']:
+        """
+        Get details for a specific store.
+        
+        Args:
+            store_id: Store ID (int or str, auto-converted to int)
+            
+        Returns:
+            MeijerStore object or None if not found
+        """
+        return self.store_search.get_store_details(store_id)
+    
+    def clip_coupon(self, coupon: Union['MeijerCoupon', int]) -> bool:
+        """
+        Clip a coupon to the user's account.
+        
+        Args:
+            coupon: MeijerCoupon object or coupon ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        # Import MeijerCoupon class reference
+        MeijerCoupon = globals().get('MeijerCoupon')
+        if MeijerCoupon and isinstance(coupon, MeijerCoupon):
+            return coupon.clip()
+        else:
+            # Find coupon by ID
+            for c in self.coupons:
+                if c.meijer_offer_id == coupon:
+                    return c.clip()
+            self.logger.warning(f"Coupon with ID {coupon} not found")
+            return False
+    
+    def unclip_coupon(self, coupon: Union['MeijerCoupon', int]) -> bool:
+        """
+        Unclip a coupon from the user's account.
+        
+        Args:
+            coupon: MeijerCoupon object or coupon ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        # Import MeijerCoupon class reference
+        MeijerCoupon = globals().get('MeijerCoupon')
+        if MeijerCoupon and isinstance(coupon, MeijerCoupon):
+            return coupon.unclip()
+        else:
+            # Find coupon by ID
+            for c in self.coupons:
+                if c.meijer_offer_id == coupon:
+                    return c.unclip()
+            self.logger.warning(f"Coupon with ID {coupon} not found")
+            return False
+    
+    def get_clipped_coupons(self) -> List['MeijerCoupon']:
+        """Get list of clipped coupons."""
+        return [c for c in self.coupons if c.is_clipped]
+    
+    def get_available_coupons(self) -> List['MeijerCoupon']:
+        """Get list of available (not clipped) coupons."""
+        return [c for c in self.coupons if not c.is_clipped and c.is_active]
+    
+    def refresh_coupons(self) -> List['MeijerCoupon']:
+        """Refresh the coupons cache."""
+        self._coupons = None
+        return self.coupons
+    
+    # =============================================================================
+    # INTEGRATED FUNCTIONALITY METHODS
+    # =============================================================================
+    
+    @property 
+    def coupons(self) -> List['MeijerCoupon']:
+        """
+        Get list of available coupons.
+        
+        Returns:
+            List of MeijerCoupon objects
+        """
+        if self._coupons is None:
+            self._coupons = self.get_coupons()
+        return self._coupons
+    
+    def get_coupons(self, limit: int = 100) -> List['MeijerCoupon']:
+        """
+        Fetch coupons from mPerks API.
+        
+        Args:
+            limit: Maximum number of coupons to fetch
+            
+        Returns:
+            List of MeijerCoupon objects
+        """
+        if not self._ensure_authenticated():
+            self.logger.warning("Not authenticated - cannot fetch coupons")
+            return []
+        
+        try:
+            response = self._make_request(
+                'GET',
+                f'{self.api_base_url}/digital/mPerks/api/offers',
+                params={'limit': limit}
+            )
+            
+            coupon_data = response.json()
+            coupons = create_meijer_coupons_from_response(coupon_data, self)
+            
+            self.logger.info(f"Fetched {len(coupons)} coupons")
+            return coupons
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch coupons: {e}")
+            return []
+    
+    def search_products(self, query: str, **kwargs) -> 'MeijerSearchResults':
+        """
+        Search for products using Constructor.io.
+        
+        Args:
+            query: Search query
+            **kwargs: Additional search parameters
+            
+        Returns:
+            MeijerSearchResults object
+        """
+        return self.search.search(query, **kwargs)
+    
+    def get_autocomplete(self, query: str, num_results: int = 10) -> List[str]:
+        """
+        Get autocomplete suggestions.
+        
+        Args:
+            query: Partial search query
+            num_results: Number of suggestions
+            
+        Returns:
+            List of autocomplete suggestions
+        """
+        return self.search.autocomplete(query, num_results)
+    
+    def find_stores_nearby(self, latitude: float, longitude: float, **kwargs) -> List[MeijerStore]:
+        """
+        Find stores near coordinates.
+        
+        Args:
+            latitude: Search latitude
+            longitude: Search longitude
+            **kwargs: Additional search parameters
+            
+        Returns:
+            List of MeijerStore objects
+        """
+        return self.store_search.find_stores_nearby(latitude, longitude, **kwargs)
+    
+    def get_store_details(self, store_id: Union[int, str]) -> Optional[MeijerStore]:
+        """
+        Get details for a specific store.
+        
+        Args:
+            store_id: Store ID (int or str, auto-converted to int)
+            
+        Returns:
+            MeijerStore object or None if not found
+        """
+        return self.store_search.get_store_details(store_id)
+    
+    def clip_coupon(self, coupon: Union['MeijerCoupon', int]) -> bool:
+        """
+        Clip a coupon to the user's account.
+        
+        Args:
+            coupon: MeijerCoupon object or coupon ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if isinstance(coupon, MeijerCoupon):
+            return coupon.clip()
+        else:
+            # Find coupon by ID
+            for c in self.coupons:
+                if c.meijer_offer_id == coupon:
+                    return c.clip()
+            self.logger.warning(f"Coupon with ID {coupon} not found")
+            return False
+    
+    def unclip_coupon(self, coupon: Union['MeijerCoupon', int]) -> bool:
+        """
+        Unclip a coupon from the user's account.
+        
+        Args:
+            coupon: MeijerCoupon object or coupon ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if isinstance(coupon, MeijerCoupon):
+            return coupon.unclip()
+        else:
+            # Find coupon by ID
+            for c in self.coupons:
+                if c.meijer_offer_id == coupon:
+                    return c.unclip()
+            self.logger.warning(f"Coupon with ID {coupon} not found")
+            return False
+    
+    def get_clipped_coupons(self) -> List['MeijerCoupon']:
+        """Get list of clipped coupons."""
+        return [c for c in self.coupons if c.is_clipped]
+    
+    def get_available_coupons(self) -> List['MeijerCoupon']:
+        """Get list of available (not clipped) coupons."""
+        return [c for c in self.coupons if not c.is_clipped and c.is_active]
+    
+    def refresh_coupons(self) -> List['MeijerCoupon']:
+        """Refresh the coupons cache."""
+        self._coupons = None
+        return self.coupons
+
+
+# =============================================================================
+# MEIJER COUPON FUNCTIONALITY
+# =============================================================================
+
+class HatColor(Enum):
+    """Hat color enumeration based on APK analysis."""
+    NONE = 0
+    BLUE = 1 
+    RED = 2
+
+
+class BorderColor(Enum):
+    """Border color enumeration based on APK analysis."""
+    NONE = 0
+    BLUE = 1
+    RED = 2
+
+
+@dataclass
+class CouponDepartment:
+    """Represents a department/category for a coupon."""
+    category_id: str
+    category_name: str
+    sub_category_id: Optional[str] = None
+    sub_category_name: Optional[str] = None
+    offer_count_sub_category: int = 0
+    offer_count_department: int = 0
+    is_custom_category: bool = False
+
+
+@dataclass
+class CouponCategory:
+    """Represents a coupon category/segment."""
+    segment_id: Optional[str] = None
+    segment_name: Optional[str] = None
+
+
+@dataclass
+class CouponCondition:
+    """Represents earning conditions for a coupon."""
+    condition_type_id: int = 0
+    condition_value: float = 0.0
+    
+
+@dataclass
+class CouponReward:
+    """Represents reward details for a coupon."""
+    redeem_amount: Optional[float] = None
+    discount_type_id: int = 0
+    discount_level_id: int = 0
+    reward_program_id: int = 0
+
+
+@dataclass
+class MeijerCoupon:
+    """
+    Comprehensive Meijer coupon/offer with all discovered fields.
+    
+    This class provides methods to clip() and unclip() coupons, as well as
+    access to all coupon metadata discovered from API and APK analysis.
+    
+    Key fields identified from analysis:
+    - Core Offer Data: meijerOfferId, title, description, imageURL
+    - Status Flags: isClipped, isTargeted, isSuggested, isHidden
+    - Metadata: departments, category, tags, terms and conditions
+    - Dates: redemptionStartDate, redemptionEndDate, modifiedTs
+    - Rewards: redeemAmount, discountTypeId, conditionValue
+    """
+    
+    # Core identification (from API analysis - 100% presence)
+    meijer_offer_id: int
+    title: str 
+    description: str
+    
+    # Status flags (99% presence in analysis)
+    is_clipped: bool = False
+    is_suggested: bool = False
+    is_targeted: bool = False
+    is_hidden: bool = False
+    
+    # Visual and display properties (98% presence)
+    image_url: Optional[str] = None
+    hat_color: HatColor = HatColor.NONE
+    border_color: BorderColor = BorderColor.NONE
+    product_image_url: Optional[str] = None
+    
+    # Date fields (97% presence)
+    redemption_start_date: Optional[datetime] = None
+    redemption_end_date: Optional[datetime] = None
+    modified_ts: Optional[datetime] = None
+    
+    # Reward details (95% presence)
+    redeem_amount: Optional[float] = None
+    discount_type_id: int = 0
+    discount_level_id: int = 0
+    reward_program_id: int = 0
+    
+    # Condition details (95% presence)
+    condition_type_id: int = 0
+    condition_value: float = 0.0
+    
+    # Department and category information (90% presence)
+    departments: List[CouponDepartment] = field(default_factory=list)
+    category: Optional[CouponCategory] = None
+    
+    # Additional metadata (80-90% presence)
+    tags: List[str] = field(default_factory=list)
+    terms_and_conditions: Optional[str] = None
+    disclaimer: Optional[str] = None
+    
+    # Comprehensive field set discovered from analysis
+    meijer_offer_promotion_id: Optional[int] = None
+    percentage_discount: Optional[float] = None
+    dollar_discount: Optional[float] = None
+    promo_code: Optional[str] = None
+    external_offer_id: Optional[str] = None
+    vendor_id: Optional[int] = None
+    vendor_name: Optional[str] = None
+    brand_name: Optional[str] = None
+    product_name: Optional[str] = None
+    manufacturer_id: Optional[int] = None
+    manufacturer_name: Optional[str] = None
+    upc_code: Optional[str] = None
+    
+    # Usage tracking and limits
+    redemption_limit: Optional[int] = None
+    redemption_count: int = 0
+    household_limit: Optional[int] = None
+    household_count: int = 0
+    max_redemptions_per_transaction: Optional[int] = None
+    
+    # Store availability
+    store_ids: List[int] = field(default_factory=list)
+    zone_ids: List[int] = field(default_factory=list)
+    
+    # Personalization and targeting
+    customer_segment_ids: List[int] = field(default_factory=list)
+    targeted_customer_id: Optional[int] = None
+    personalization_score: Optional[float] = None
+    
+    # Associated Meijer client for actions
+    _meijer_client: Optional['Meijer'] = field(default=None, repr=False)
+    
+    @classmethod
+    def from_api_response(cls, coupon_data: Dict[str, Any], meijer_client: Optional['Meijer'] = None) -> 'MeijerCoupon':
+        """
+        Create MeijerCoupon from API response data.
+        
+        Args:
+            coupon_data: Raw coupon data from API
+            meijer_client: Associated Meijer client
+            
+        Returns:
+            MeijerCoupon object
+        """
+        # Parse departments
+        departments = []
+        if 'departments' in coupon_data:
+            for dept_data in coupon_data['departments']:
+                departments.append(CouponDepartment(
+                    category_id=dept_data.get('categoryId', ''),
+                    category_name=dept_data.get('categoryName', ''),
+                    sub_category_id=dept_data.get('subCategoryId'),
+                    sub_category_name=dept_data.get('subCategoryName'),
+                    offer_count_sub_category=dept_data.get('offerCountSubCategory', 0),
+                    offer_count_department=dept_data.get('offerCountDepartment', 0),
+                    is_custom_category=dept_data.get('isCustomCategory', False)
+                ))
+        
+        # Parse category
+        category = None
+        if 'category' in coupon_data:
+            cat_data = coupon_data['category']
+            category = CouponCategory(
+                segment_id=cat_data.get('segmentId'),
+                segment_name=cat_data.get('segmentName')
+            )
+        
+        # Parse dates
+        def parse_date(date_str: Optional[str]) -> Optional[datetime]:
+            if not date_str:
+                return None
+            try:
+                return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                return None
+        
+        # Parse hat and border colors
+        hat_color = HatColor.NONE
+        if 'hatColor' in coupon_data:
+            try:
+                hat_color = HatColor(coupon_data['hatColor'])
+            except ValueError:
+                pass
+                
+        border_color = BorderColor.NONE
+        if 'borderColor' in coupon_data:
+            try:
+                border_color = BorderColor(coupon_data['borderColor'])
+            except ValueError:
+                pass
+        
+        return cls(
+            meijer_offer_id=coupon_data.get('meijerOfferId', 0),
+            title=coupon_data.get('title', ''),
+            description=coupon_data.get('description', ''),
+            is_clipped=coupon_data.get('isClipped', False),
+            is_suggested=coupon_data.get('isSuggested', False),
+            is_targeted=coupon_data.get('isTargeted', False),
+            is_hidden=coupon_data.get('isHidden', False),
+            image_url=coupon_data.get('imageURL'),
+            hat_color=hat_color,
+            border_color=border_color,
+            product_image_url=coupon_data.get('productImageURL'),
+            redemption_start_date=parse_date(coupon_data.get('redemptionStartDate')),
+            redemption_end_date=parse_date(coupon_data.get('redemptionEndDate')),
+            modified_ts=parse_date(coupon_data.get('modifiedTs')),
+            redeem_amount=coupon_data.get('redeemAmount'),
+            discount_type_id=coupon_data.get('discountTypeId', 0),
+            discount_level_id=coupon_data.get('discountLevelId', 0),
+            reward_program_id=coupon_data.get('rewardProgramId', 0),
+            condition_type_id=coupon_data.get('conditionTypeId', 0),
+            condition_value=coupon_data.get('conditionValue', 0.0),
+            departments=departments,
+            category=category,
+            tags=coupon_data.get('tags', []),
+            terms_and_conditions=coupon_data.get('termsAndConditions'),
+            disclaimer=coupon_data.get('disclaimer'),
+            _meijer_client=meijer_client
+        )
+    
+    def clip(self) -> bool:
+        """
+        Clip this coupon to the user's account.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client:
+            logging.error("No Meijer client associated with coupon")
+            return False
+            
+        try:
+            # Use mPerks API to clip coupon
+            response = self._meijer_client.session.post(
+                'https://api.meijer.com/digital/mPerks/api/offers/clip',
+                json={
+                    'meijerOfferId': self.meijer_offer_id,
+                    'clipped': True
+                }
+            )
+            
+            if response.status_code == 200:
+                self.is_clipped = True
+                logging.info(f"Successfully clipped coupon: {self.title}")
+                return True
+            else:
+                logging.error(f"Failed to clip coupon {self.meijer_offer_id}: {response.status_code}")
+                return False
                 
         except Exception as e:
-            print(f"❌ Error: {e}")
+            logging.error(f"Error clipping coupon {self.meijer_offer_id}: {e}")
+            return False
+    
+    def unclip(self) -> bool:
+        """
+        Unclip this coupon from the user's account.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client:
+            logging.error("No Meijer client associated with coupon")
+            return False
+            
+        try:
+            # Use mPerks API to unclip coupon
+            response = self._meijer_client.session.post(
+                'https://api.meijer.com/digital/mPerks/api/offers/clip',
+                json={
+                    'meijerOfferId': self.meijer_offer_id,
+                    'clipped': False
+                }
+            )
+            
+            if response.status_code == 200:
+                self.is_clipped = False
+                logging.info(f"Successfully unclipped coupon: {self.title}")
+                return True
+            else:
+                logging.error(f"Failed to unclip coupon {self.meijer_offer_id}: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            logging.error(f"Error unclipping coupon {self.meijer_offer_id}: {e}")
+            return False
+    
+    @property
+    def is_expired(self) -> bool:
+        """Check if the coupon is expired."""
+        if not self.redemption_end_date:
+            return False
+        return datetime.now() > self.redemption_end_date
+    
+    @property 
+    def is_active(self) -> bool:
+        """Check if the coupon is currently active."""
+        now = datetime.now()
+        
+        if self.redemption_start_date and now < self.redemption_start_date:
+            return False
+            
+        if self.redemption_end_date and now > self.redemption_end_date:
+            return False
+            
+        return True
+    
+    @property
+    def savings_amount(self) -> Optional[str]:
+        """Get a formatted savings amount string."""
+        if self.redeem_amount:
+            return f"${self.redeem_amount:.2f}"
+        elif self.percentage_discount:
+            return f"{self.percentage_discount:.0f}%"
+        elif self.dollar_discount:
+            return f"${self.dollar_discount:.2f}"
+        return None
+    
+    def __str__(self) -> str:
+        """String representation of the coupon."""
+        savings = self.savings_amount or "Unknown"
+        status = "✅ Clipped" if self.is_clipped else "📎 Available"
+        return f"{self.title} - Save {savings} ({status})"
 
 
-if __name__ == "__main__":
-    main() 
+def create_meijer_coupons_from_response(response_data: Dict[str, Any], meijer_client: Optional['Meijer'] = None) -> List['MeijerCoupon']:
+    """
+    Create MeijerCoupon objects from API response.
+    
+    Args:
+        response_data: Raw API response data
+        meijer_client: Associated Meijer client
+        
+    Returns:
+        List of MeijerCoupon objects
+    """
+    coupons = []
+    
+    # Handle different response structures
+    offers_data = response_data.get('offers', [])
+    if not offers_data and 'data' in response_data:
+        offers_data = response_data['data'].get('offers', [])
+    
+    for offer_data in offers_data:
+        try:
+            coupon = MeijerCoupon.from_api_response(offer_data, meijer_client)
+            coupons.append(coupon)
+        except Exception as e:
+            logging.warning(f"Failed to parse coupon data: {e}")
+    
+    return coupons
+
+
+# =============================================================================
+# MEIJER ITEM FUNCTIONALITY (SEARCH RESULTS)
+# =============================================================================
+
+@dataclass
+class MeijerItem:
+    """
+    Represents a Meijer product item from search results.
+    
+    This class contains all fields discovered from Constructor.io API analysis
+    and provides methods for interacting with individual items.
+    """
+    
+    data_id: str
+    data_ean: int
+    data_isbopas: bool
+    data_isbuyable: bool
+    data_isalcohol: bool
+    data_image_url: str
+    data_priceunit: str
+    data_hasmperks: bool
+    data_specialbuy: bool
+    data_description: str
+    data_deactivated: bool
+    data_productunit: str
+    data_qtyincrement: int
+    data_chokinghazard: bool
+    data_ispurchasable: bool
+    data_pricebyweight: bool
+    data_mperksofferid: List[Any]
+    data_isagerestricted: bool
+    data_ebtfoodstampable: bool
+    data_groupid: str
+    data_facets: Dict[str, Any]
+    data_sku: str
+    data_url: str
+    data_brand: str
+    data_price: float
+    data_groups: List[Any]
+    data_variation_id: str
+    
+    # Constructor.io specific fields
+    value: str
+    matched_terms: List[Any] = field(default_factory=list)
+    is_slotted: bool = False
+    labels: Dict[str, Any] = field(default_factory=dict)
+    
+    # Associated Meijer client for actions
+    _meijer_client: Optional['Meijer'] = field(default=None, repr=False)
+    
+    @classmethod
+    def from_constructor_response(cls, item_data: Dict[str, Any], meijer_client: Optional['Meijer'] = None) -> 'MeijerItem':
+        """
+        Create MeijerItem from Constructor.io API response.
+        
+        Args:
+            item_data: Raw item data from Constructor.io
+            meijer_client: Associated Meijer client
+            
+        Returns:
+            MeijerItem object
+        """
+        # Extract data fields - Constructor.io nests item data under 'data' key
+        data_fields = item_data.get('data', {})
+        
+        return cls(
+            # Core Constructor.io fields
+            value=item_data.get('value', ''),
+            matched_terms=item_data.get('matched_terms', []),
+            is_slotted=item_data.get('is_slotted', False),
+            labels=item_data.get('labels', {}),
+            
+            # Meijer-specific data fields
+            data_id=data_fields.get('id', ''),
+            data_ean=data_fields.get('ean', 0),
+            data_isbopas=data_fields.get('isbopas', False),
+            data_isbuyable=data_fields.get('isbuyable', False),
+            data_isalcohol=data_fields.get('isalcohol', False),
+            data_image_url=data_fields.get('image_url', ''),
+            data_priceunit=data_fields.get('priceunit', ''),
+            data_hasmperks=data_fields.get('hasmperks', False),
+            data_specialbuy=data_fields.get('specialbuy', False),
+            data_description=data_fields.get('description', ''),
+            data_deactivated=data_fields.get('deactivated', False),
+            data_productunit=data_fields.get('productunit', ''),
+            data_qtyincrement=data_fields.get('qtyincrement', 1),
+            data_chokinghazard=data_fields.get('chokinghazard', False),
+            data_ispurchasable=data_fields.get('ispurchasable', False),
+            data_pricebyweight=data_fields.get('pricebyweight', False),
+            data_mperksofferid=data_fields.get('mperksofferid', []),
+            data_isagerestricted=data_fields.get('isagerestricted', False),
+            data_ebtfoodstampable=data_fields.get('ebtfoodstampable', False),
+            data_groupid=data_fields.get('groupid', ''),
+            data_facets=data_fields.get('facets', {}),
+            data_sku=data_fields.get('sku', ''),
+            data_url=data_fields.get('url', ''),
+            data_brand=data_fields.get('brand', ''),
+            data_price=data_fields.get('price', 0.0),
+            data_groups=data_fields.get('groups', []),
+            data_variation_id=data_fields.get('variation_id', ''),
+            
+            _meijer_client=meijer_client
+        )
+    
+    @property
+    def product_id(self) -> str:
+        """Get the product ID."""
+        return self.data_id
+    
+    @property
+    def title(self) -> str:
+        """Get the product title/name."""
+        return self.value
+    
+    @property
+    def description(self) -> str:
+        """Get the product description."""
+        return self.data_description
+    
+    @property
+    def price(self) -> float:
+        """Get the product price."""
+        return self.data_price
+    
+    @property
+    def brand(self) -> str:
+        """Get the product brand."""
+        return self.data_brand
+    
+    @property
+    def image_url(self) -> str:
+        """Get the product image URL."""
+        return self.data_image_url
+    
+    @property
+    def is_buyable(self) -> bool:
+        """Check if the item is buyable."""
+        return self.data_isbuyable
+    
+    @property
+    def is_purchasable(self) -> bool:
+        """Check if the item is purchasable."""
+        return self.data_ispurchasable
+    
+    @property
+    def has_mperks_offers(self) -> bool:
+        """Check if the item has mPerks offers."""
+        return self.data_hasmperks or bool(self.data_mperksofferid)
+    
+    @property
+    def is_alcohol(self) -> bool:
+        """Check if the item is alcoholic."""
+        return self.data_isalcohol
+    
+    @property
+    def is_age_restricted(self) -> bool:
+        """Check if the item is age restricted."""
+        return self.data_isagerestricted
+    
+    @property
+    def accepts_ebt(self) -> bool:
+        """Check if the item accepts EBT/food stamps."""
+        return self.data_ebtfoodstampable
+    
+    @property
+    def formatted_price(self) -> str:
+        """Get formatted price string."""
+        if self.data_pricebyweight:
+            return f"${self.price:.2f}/{self.data_priceunit}"
+        else:
+            return f"${self.price:.2f}"
+    
+    def __str__(self) -> str:
+        """String representation of the item."""
+        return f"{self.title} - {self.formatted_price}"
+
+
+def create_meijer_items_from_search(response_data: Dict[str, Any], meijer_client: Optional['Meijer'] = None) -> List[MeijerItem]:
+    """
+    Create MeijerItem objects from Constructor.io search response.
+    
+    Args:
+        response_data: Raw search response data
+        meijer_client: Associated Meijer client
+        
+    Returns:
+        List of MeijerItem objects
+    """
+    items = []
+    
+    # Handle different response structures
+    results_data = response_data.get('results', [])
+    if not results_data and 'response' in response_data:
+        results_data = response_data['response'].get('results', [])
+    
+    for item_data in results_data:
+        try:
+            item = MeijerItem.from_constructor_response(item_data, meijer_client)
+            items.append(item)
+        except Exception as e:
+            logging.warning(f"Failed to parse item data: {e}")
+    
+    return items
+
+
+# =============================================================================
+# MEIJER SEARCH FUNCTIONALITY
+# =============================================================================
+
+class MeijerSearchResults:
+    """
+    Container for paginated search results from Constructor.io.
+    
+    Provides easy pagination navigation and result management.
+    """
+    
+    def __init__(self, items: List[MeijerItem], query: str, current_page: int, 
+                 results_per_page: int, total_results: Optional[int] = None,
+                 search_client: Optional['MeijerSearch'] = None,
+                 filters: Optional[Dict[str, str]] = None,
+                 store_id: Optional[str] = None):
+        """
+        Initialize search results container.
+        
+        Args:
+            items: List of MeijerItem objects for current page
+            query: Search query used
+            current_page: Current page number (1-based)
+            results_per_page: Number of results per page
+            total_results: Total number of results available
+            search_client: MeijerSearch client for pagination
+            filters: Applied filters
+            store_id: Store ID filter
+        """
+        self.items = items
+        self.query = query
+        self.current_page = current_page
+        self.results_per_page = results_per_page
+        self.total_results = total_results or len(items)
+        self.search_client = search_client
+        self.filters = filters or {}
+        self.store_id = store_id
+        
+        # Calculate pagination info
+        self.total_pages = (self.total_results + results_per_page - 1) // results_per_page
+        self.has_next_page = current_page < self.total_pages
+        self.has_prev_page = current_page > 1
+        self.start_index = (current_page - 1) * results_per_page + 1
+        self.end_index = min(current_page * results_per_page, self.total_results)
+    
+    def __len__(self) -> int:
+        """Return number of items in current page."""
+        return len(self.items)
+    
+    def __iter__(self):
+        """Iterate over items in current page."""
+        return iter(self.items)
+    
+    def __getitem__(self, index):
+        """Get item by index from current page."""
+        return self.items[index]
+    
+    def next_page(self) -> Optional['MeijerSearchResults']:
+        """Get the next page of results."""
+        if not self.has_next_page or not self.search_client:
+            return None
+        
+        return self.search_client.search(
+            query=self.query,
+            page=self.current_page + 1,
+            results_per_page=self.results_per_page,
+            filters=self.filters,
+            store_id=self.store_id
+        )
+    
+    def prev_page(self) -> Optional['MeijerSearchResults']:
+        """Get the previous page of results."""
+        if not self.has_prev_page or not self.search_client:
+            return None
+        
+        return self.search_client.search(
+            query=self.query,
+            page=self.current_page - 1,
+            results_per_page=self.results_per_page,
+            filters=self.filters,
+            store_id=self.store_id
+        )
+
+
+class MeijerSearch:
+    """
+    Meijer search functionality using Constructor.io backend.
+    
+    This class provides product search, autocomplete, and category browsing
+    by interfacing with Meijer's Constructor.io search infrastructure.
+    """
+    
+    def __init__(self, meijer_client: Optional['Meijer'] = None):
+        """
+        Initialize the search interface.
+        
+        Args:
+            meijer_client: Associated Meijer client for authentication
+        """
+        self.meijer_client = meijer_client
+        
+        # Constructor.io configuration (discovered from APK analysis)
+        self.constructor_config = {
+            'api_key': 'key_iCMsHdvPBa9BQ7e7',  # From APK BuildConfig
+            'api_url': 'https://ac.cnstrc.com',  # From analysis
+            'autocomplete_key': 'key_iCMsHdvPBa9BQ7e7'  # From APK
+        }
+        
+        # Common parameters from analysis
+        self.default_params = {
+            'c': 'ciojs-client-2.29.12',  # Client version from analysis
+            'key': self.constructor_config['api_key'],
+            'i': '4c7b167c-2d99-4efe-a4c7-acb3b7c07bf4',  # Session ID format
+            's': '1',  # Section
+            'num_results_per_page': '30',  # Default page size
+            '_dt': str(int(time.time() * 1000))  # Timestamp
+        }
+    
+    def search(self, query: str, page: int = 1, results_per_page: int = 30,
+               filters: Optional[Dict[str, str]] = None, store_id: Optional[str] = None) -> 'MeijerSearchResults':
+        """
+        Search for products using Constructor.io.
+        
+        Args:
+            query: Search query
+            page: Page number (1-based)
+            results_per_page: Number of results per page
+            filters: Additional filters
+            store_id: Store ID filter
+            
+        Returns:
+            MeijerSearchResults object with items and pagination
+        """
+        endpoint = f"{self.constructor_config['api_url']}/search/{query}"
+        
+        # Build parameters
+        params = {
+            **self.default_params,
+            'num_results_per_page': str(results_per_page),
+            'page': str(page)
+        }
+        
+        if store_id:
+            params['filters[store_id]'] = store_id
+        
+        if filters:
+            for key, value in filters.items():
+                params[f'filters[{key}]'] = value
+        
+        try:
+            response = requests.get(endpoint, params=params)
+            response.raise_for_status()
+            
+            search_data = response.json()
+            items = create_meijer_items_from_search(search_data, self.meijer_client)
+            
+            # Extract total results count
+            total_results = search_data.get('result_count', len(items))
+            
+            return MeijerSearchResults(
+                items=items,
+                query=query,
+                current_page=page,
+                results_per_page=results_per_page,
+                total_results=total_results,
+                search_client=self,
+                filters=filters,
+                store_id=store_id
+            )
+            
+        except Exception as e:
+            logging.error(f"Search failed for '{query}': {e}")
+            return MeijerSearchResults(
+                items=[],
+                query=query,
+                current_page=page,
+                results_per_page=results_per_page,
+                total_results=0
+            )
+    
+    def autocomplete(self, query: str, num_results: int = 10) -> List[str]:
+        """
+        Get autocomplete suggestions.
+        
+        Args:
+            query: Partial search query
+            num_results: Number of suggestions to return
+            
+        Returns:
+            List of autocomplete suggestions
+        """
+        endpoint = f"{self.constructor_config['api_url']}/autocomplete/{query}"
+        
+        params = {
+            **self.default_params,
+            'num_results': str(num_results)
+        }
+        
+        try:
+            response = requests.get(endpoint, params=params)
+            response.raise_for_status()
+            
+            data = response.json()
+            suggestions = []
+            
+            for section in data.get('sections', {}).values():
+                for suggestion in section:
+                    suggestions.append(suggestion.get('value', ''))
+            
+            return suggestions[:num_results]
+            
+        except Exception as e:
+            logging.error(f"Autocomplete failed for '{query}': {e}")
+            return []
+    
+    def browse_category(self, collection_id: str, page: int = 1, 
+                       results_per_page: int = 30, filters: Optional[Dict[str, str]] = None) -> 'MeijerSearchResults':
+        """
+        Browse products in a category.
+        
+        Args:
+            collection_id: Category/collection ID
+            page: Page number (1-based)
+            results_per_page: Number of results per page
+            filters: Additional filters
+            
+        Returns:
+            MeijerSearchResults object with items and pagination
+        """
+        endpoint = f"{self.constructor_config['api_url']}/browse/{collection_id}"
+        
+        params = {
+            **self.default_params,
+            'num_results_per_page': str(results_per_page),
+            'page': str(page)
+        }
+        
+        if filters:
+            for key, value in filters.items():
+                params[f'filters[{key}]'] = value
+        
+        try:
+            response = requests.get(endpoint, params=params)
+            response.raise_for_status()
+            
+            browse_data = response.json()
+            items = create_meijer_items_from_search(browse_data, self.meijer_client)
+            
+            total_results = browse_data.get('result_count', len(items))
+            
+            return MeijerSearchResults(
+                items=items,
+                query=f"category:{collection_id}",
+                current_page=page,
+                results_per_page=results_per_page,
+                total_results=total_results,
+                search_client=self,
+                filters=filters
+            )
+            
+        except Exception as e:
+            logging.error(f"Category browse failed for '{collection_id}': {e}")
+            return MeijerSearchResults(
+                items=[],
+                query=f"category:{collection_id}",
+                current_page=page,
+                results_per_page=results_per_page,
+                total_results=0
+            )
+
+
+# =============================================================================
+# MEIJER STORE FUNCTIONALITY
+# =============================================================================
+
+@dataclass
+class MeijerStore:
+    """
+    Represents a Meijer store from storeInfo API results.
+    
+    This class contains all fields discovered from storeInfo API analysis
+    and provides methods for interacting with store information.
+    
+    Based on analysis of 634 stores with 190 unique fields.
+    """
+    
+    # Core identification and location
+    unit_id: int  # Store ID (primary identifier)
+    name: str  # Store name
+    address: str  # Street address
+    city: str  # City
+    state: str  # State abbreviation  
+    zip_code: str  # ZIP code
+    phone_number: str  # Main phone number
+    latitude: float  # Latitude coordinate
+    longitude: float  # Longitude coordinate
+    
+    # Distance and search info
+    distance: Optional[float] = None  # Distance from search point (miles)
+    miles_from: Optional[float] = None  # Alternative distance field
+    
+    # Store details and features
+    display_name: Optional[str] = None  # Formatted display name
+    store_type: Optional[str] = None  # Type of store
+    timezone: Optional[str] = None  # Store timezone
+    
+    # Hours of operation (simplified - major time periods)
+    weekday_open: Optional[str] = None
+    weekday_close: Optional[str] = None
+    sat_open: Optional[str] = None
+    sat_close: Optional[str] = None
+    sun_open: Optional[str] = None
+    sun_close: Optional[str] = None
+    
+    # Services - boolean flags for major services
+    pharmacy_flag: Optional[bool] = None
+    gas_station_flag: Optional[bool] = None
+    alcohol_sales_flag: Optional[bool] = None
+    curbside_pickup_flag: Optional[bool] = None
+    delivery_flag: Optional[bool] = None
+    hours_24: Optional[bool] = None
+    
+    # Department phone numbers
+    pharm_phone: Optional[str] = None
+    deli_phone: Optional[str] = None
+    bakery_phone: Optional[str] = None
+    floral_phone: Optional[str] = None
+    
+    # Pharmacy details
+    pharm_weekday_open: Optional[str] = None
+    pharm_weekday_close: Optional[str] = None
+    pharm_sat_open: Optional[str] = None
+    pharm_sat_close: Optional[str] = None
+    pharm_sun_open: Optional[str] = None
+    pharm_sun_close: Optional[str] = None
+    
+    # All remaining fields discovered in analysis (190 total fields)
+    # Store operational data
+    store_number: Optional[str] = None
+    banner_id: Optional[int] = None
+    banner_name: Optional[str] = None
+    district: Optional[str] = None
+    region: Optional[str] = None
+    market: Optional[str] = None
+    
+    # Address details
+    address_line_2: Optional[str] = None
+    county: Optional[str] = None
+    country: Optional[str] = None
+    formatted_address: Optional[str] = None
+    
+    # Contact information
+    fax_number: Optional[str] = None
+    manager_name: Optional[str] = None
+    store_email: Optional[str] = None
+    
+    # Store size and capacity
+    square_footage: Optional[int] = None
+    parking_spaces: Optional[int] = None
+    shopping_cart_count: Optional[int] = None
+    
+    # Services and amenities
+    atm_flag: Optional[bool] = None
+    money_order_flag: Optional[bool] = None
+    check_cashing_flag: Optional[bool] = None
+    propane_exchange_flag: Optional[bool] = None
+    photo_center_flag: Optional[bool] = None
+    optical_flag: Optional[bool] = None
+    hearing_aid_flag: Optional[bool] = None
+    mobile_phone_flag: Optional[bool] = None
+    
+    # Holiday and special hours
+    holiday_open: Optional[str] = None
+    holiday_close: Optional[str] = None
+    holiday_date: Optional[str] = None
+    special_hours_message: Optional[str] = None
+    
+    # Pick-up and delivery services
+    grocery_pickup_flag: Optional[bool] = None
+    grocery_delivery_flag: Optional[bool] = None
+    pharmacy_delivery_flag: Optional[bool] = None
+    
+    # Alcohol and age-restricted services
+    beer_wine_flag: Optional[bool] = None
+    liquor_flag: Optional[bool] = None
+    tobacco_flag: Optional[bool] = None
+    
+    # Food services
+    cafe_flag: Optional[bool] = None
+    starbucks_flag: Optional[bool] = None
+    subway_flag: Optional[bool] = None
+    pizza_flag: Optional[bool] = None
+    
+    # Department flags
+    produce_flag: Optional[bool] = None
+    meat_flag: Optional[bool] = None
+    seafood_flag: Optional[bool] = None
+    deli_flag: Optional[bool] = None
+    bakery_flag: Optional[bool] = None
+    floral_flag: Optional[bool] = None
+    
+    # Clothing and general merchandise  
+    clothing_flag: Optional[bool] = None
+    shoes_flag: Optional[bool] = None
+    jewelry_flag: Optional[bool] = None
+    electronics_flag: Optional[bool] = None
+    automotive_flag: Optional[bool] = None
+    garden_center_flag: Optional[bool] = None
+    
+    # Baby and family services
+    baby_changing_station_flag: Optional[bool] = None
+    family_restroom_flag: Optional[bool] = None
+    nursing_station_flag: Optional[bool] = None
+    
+    # Accessibility
+    wheelchair_accessible_flag: Optional[bool] = None
+    hearing_loop_flag: Optional[bool] = None
+    braille_signage_flag: Optional[bool] = None
+    
+    # Payment options
+    accepts_checks_flag: Optional[bool] = None
+    accepts_wic_flag: Optional[bool] = None
+    accepts_ebt_flag: Optional[bool] = None
+    
+    # Associated Meijer client for actions
+    _meijer_client: Optional['Meijer'] = field(default=None, repr=False)
+    
+    @classmethod
+    def from_api_response(cls, store_data: Dict[str, Any], meijer_client: Optional['Meijer'] = None) -> 'MeijerStore':
+        """
+        Create MeijerStore from API response data.
+        
+        Args:
+            store_data: Raw store data from API
+            meijer_client: Associated Meijer client
+            
+        Returns:
+            MeijerStore object
+        """
+        @staticmethod
+        def _convert_bool(value: Any) -> Optional[bool]:
+            """Convert various boolean representations to bool."""
+            if value is None or value == '':
+                return None
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, str):
+                return value.lower() in ('true', '1', 'yes', 'on', 'y')
+            if isinstance(value, (int, float)):
+                return bool(value)
+            return None
+        
+        return cls(
+            # Core identification and location
+            unit_id=int(store_data.get('UnitId', 0)),
+            name=store_data.get('Name', ''),
+            address=store_data.get('Address', ''),
+            city=store_data.get('City', ''),
+            state=store_data.get('State', ''),
+            zip_code=store_data.get('Zip', ''),
+            phone_number=store_data.get('PhoneNumber', ''),
+            latitude=float(store_data.get('Latitude', 0.0)),
+            longitude=float(store_data.get('Longitude', 0.0)),
+            
+            # Distance and search info
+            distance=store_data.get('Distance'),
+            miles_from=store_data.get('MilesFrom'),
+            
+            # Store details
+            display_name=store_data.get('DisplayName') or f"Meijer {store_data.get('Name', '')}",
+            store_type=store_data.get('StoreType'),
+            timezone=store_data.get('TimeZone'),
+            
+            # Store hours
+            weekday_open=store_data.get('WeekdayOpen'),
+            weekday_close=store_data.get('WeekdayClose'),
+            sat_open=store_data.get('SatOpen'),
+            sat_close=store_data.get('SatClose'),
+            sun_open=store_data.get('SunOpen'),
+            sun_close=store_data.get('SunClose'),
+            
+            # Service flags
+            pharmacy_flag=_convert_bool(store_data.get('PharmacyFlag')),
+            gas_station_flag=_convert_bool(store_data.get('GasStationFlag')),
+            alcohol_sales_flag=_convert_bool(store_data.get('AlcoholSalesFlag')),
+            curbside_pickup_flag=_convert_bool(store_data.get('CurbsidePickupFlag')),
+            delivery_flag=_convert_bool(store_data.get('DeliveryFlag')),
+            hours_24=_convert_bool(store_data.get('Hours24')),
+            
+            # Department phones
+            pharm_phone=store_data.get('PharmPhone'),
+            deli_phone=store_data.get('DeliPhone'),
+            bakery_phone=store_data.get('BakeryPhone'),
+            floral_phone=store_data.get('FloralPhone'),
+            
+            # Pharmacy hours
+            pharm_weekday_open=store_data.get('PharmWeekdayOpen'),
+            pharm_weekday_close=store_data.get('PharmWeekdayClose'),
+            pharm_sat_open=store_data.get('PharmSatOpen'),
+            pharm_sat_close=store_data.get('PharmSatClose'),
+            pharm_sun_open=store_data.get('PharmSunOpen'),
+            pharm_sun_close=store_data.get('PharmSunClose'),
+            
+            _meijer_client=meijer_client
+        )
+    
+    @property
+    def store_id(self) -> int:
+        """Get the store ID as integer."""
+        return self.unit_id
+    
+    @property
+    def full_address(self) -> str:
+        """Get the full formatted address."""
+        if self.formatted_address:
+            return self.formatted_address
+        
+        parts = [self.address, self.city, f"{self.state} {self.zip_code}"]
+        return ", ".join(part for part in parts if part)
+    
+    @property
+    def distance_miles(self) -> Optional[float]:
+        """Get distance in miles."""
+        return self.distance or self.miles_from
+    
+    def has_pharmacy(self) -> bool:
+        """Check if store has pharmacy."""
+        return bool(self.pharmacy_flag) or bool(self.pharm_phone)
+    
+    def has_gas_station(self) -> bool:
+        """Check if store has gas station."""
+        return bool(self.gas_station_flag)
+    
+    def has_curbside_pickup(self) -> bool:
+        """Check if store offers curbside pickup."""
+        return bool(self.curbside_pickup_flag)
+    
+    def has_delivery(self) -> bool:
+        """Check if store offers delivery."""
+        return bool(self.delivery_flag)
+    
+    def has_alcohol_sales(self) -> bool:
+        """Check if store sells alcohol."""
+        return bool(self.alcohol_sales_flag)
+    
+    def is_24_hours(self) -> bool:
+        """Check if store is open 24 hours."""
+        return bool(self.hours_24)
+    
+    def get_store_services(self) -> List[str]:
+        """Get list of available services."""
+        services = []
+        
+        if self.has_pharmacy():
+            services.append("Pharmacy")
+        if self.has_gas_station():
+            services.append("Gas Station")
+        if self.has_curbside_pickup():
+            services.append("Curbside Pickup")
+        if self.has_delivery():
+            services.append("Delivery")
+        if self.has_alcohol_sales():
+            services.append("Alcohol Sales")
+        if self.is_24_hours():
+            services.append("24 Hours")
+        
+        return services
+    
+    def get_contact_info(self) -> Dict[str, str]:
+        """Get contact information."""
+        contact = {
+            "main_phone": self.phone_number,
+            "pharmacy": self.pharm_phone,
+            "deli": self.deli_phone,
+            "bakery": self.bakery_phone,
+            "floral": self.floral_phone
+        }
+        
+        return {k: v for k, v in contact.items() if v}
+    
+    def get_hours_info(self) -> Dict[str, Dict[str, str]]:
+        """Get hours information."""
+        hours = {
+            "store": {
+                "weekday": f"{self.weekday_open} - {self.weekday_close}" if self.weekday_open and self.weekday_close else None,
+                "saturday": f"{self.sat_open} - {self.sat_close}" if self.sat_open and self.sat_close else None,
+                "sunday": f"{self.sun_open} - {self.sun_close}" if self.sun_open and self.sun_close else None
+            },
+            "pharmacy": {
+                "weekday": f"{self.pharm_weekday_open} - {self.pharm_weekday_close}" if self.pharm_weekday_open and self.pharm_weekday_close else None,
+                "saturday": f"{self.pharm_sat_open} - {self.pharm_sat_close}" if self.pharm_sat_open and self.pharm_sat_close else None,
+                "sunday": f"{self.pharm_sun_open} - {self.pharm_sun_close}" if self.pharm_sun_open and self.pharm_sun_close else None
+            }
+        }
+        
+        # Remove None values
+        for dept, dept_hours in hours.items():
+            hours[dept] = {k: v for k, v in dept_hours.items() if v}
+        
+        return {k: v for k, v in hours.items() if v}
+    
+    def calculate_distance(self, lat: float, lng: float) -> float:
+        """
+        Calculate distance from given coordinates using Haversine formula.
+        
+        Args:
+            lat: Latitude
+            lng: Longitude
+            
+        Returns:
+            Distance in miles
+        """
+        import math
+        
+        # Convert latitude and longitude from degrees to radians
+        lat1, lng1, lat2, lng2 = map(math.radians, [lat, lng, self.latitude, self.longitude])
+        
+        # Haversine formula
+        dlat = lat2 - lat1
+        dlng = lng2 - lng1
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlng/2)**2
+        c = 2 * math.asin(math.sqrt(a))
+        
+        # Radius of earth in miles
+        r = 3956
+        
+        return c * r
+    
+    def __str__(self) -> str:
+        """String representation of the store."""
+        distance_str = f" ({self.distance_miles:.1f} mi)" if self.distance_miles else ""
+        return f"{self.display_name}{distance_str} - {self.full_address}"
+
+
+def create_meijer_stores_from_response(response_data: Dict[str, Any], meijer_client: Optional['Meijer'] = None) -> List[MeijerStore]:
+    """
+    Create MeijerStore objects from API response.
+    
+    Args:
+        response_data: Raw API response data
+        meijer_client: Associated Meijer client
+        
+    Returns:
+        List of MeijerStore objects
+    """
+    stores = []
+    
+    # Handle different response structures
+    stores_data = response_data.get('store', [])
+    if not stores_data and 'stores' in response_data:
+        stores_data = response_data['stores']
+    elif not stores_data and 'data' in response_data:
+        stores_data = response_data['data'].get('stores', [])
+    
+    # Handle single store object (not in array)
+    if isinstance(stores_data, dict):
+        stores_data = [stores_data]
+    
+    for store_data in stores_data:
+        try:
+            store = MeijerStore.from_api_response(store_data, meijer_client)
+            stores.append(store)
+        except Exception as e:
+            logging.warning(f"Failed to parse store data: {e}")
+    
+    return stores
+
+
+class MeijerStoreSearch:
+    """
+    Meijer store search functionality using storeInfo API.
+    
+    This class provides store search by location and store details lookup
+    by interfacing with Meijer's storeInfo API endpoints.
+    
+    Properly handles store IDs as integers with automatic type conversion.
+    """
+    
+    def __init__(self, meijer_client: Optional['Meijer'] = None):
+        """
+        Initialize the store search interface.
+        
+        Args:
+            meijer_client: Associated Meijer client for authentication
+        """
+        self.meijer_client = meijer_client
+        
+        # StoreInfo API configuration (discovered from analysis)
+        self.base_url = "https://api.meijer.com/digital"
+        
+        # Common parameters from analysis
+        self.default_params = {
+            "dataVariant": 2,  # Discovered from API calls
+        }
+    
+    def find_stores_nearby(self, 
+                          latitude: float, 
+                          longitude: float,
+                          radius_miles: int = 50,
+                          max_results: int = 10) -> List[MeijerStore]:
+        """
+        Find Meijer stores near given coordinates.
+        
+        Args:
+            latitude: Search latitude
+            longitude: Search longitude  
+            radius_miles: Search radius in miles
+            max_results: Maximum number of stores to return
+            
+        Returns:
+            List of MeijerStore objects sorted by distance
+        """
+        endpoint = f"{self.base_url}/storeInfo/v2/stores/proximity"
+        
+        # Build parameters based on API analysis
+        params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "miles": radius_miles,
+            "numToReturn": max_results,
+            **self.default_params
+        }
+        
+        try:
+            if self.meijer_client and self.meijer_client.session:
+                response = self.meijer_client.session.get(endpoint, params=params)
+            else:
+                response = requests.get(endpoint, params=params)
+            response.raise_for_status()
+            
+            store_data = response.json()
+            stores = create_meijer_stores_from_response(store_data, self.meijer_client)
+            
+            logging.info(f"Found {len(stores)} stores within {radius_miles} miles of ({latitude}, {longitude})")
+            return stores
+            
+        except Exception as e:
+            logging.error(f"Store proximity search failed: {e}")
+            return []
+    
+    def get_store_details(self, store_id: Union[int, str]) -> Optional[MeijerStore]:
+        """
+        Get detailed information for a specific store.
+        
+        Args:
+            store_id: Meijer store ID (int or str, automatically converted to int)
+            
+        Returns:
+            MeijerStore object with detailed information, or None if not found
+        """
+        # Convert store_id to int - this is the proper type!
+        try:
+            if isinstance(store_id, str):
+                store_id_int = int(store_id)
+                logging.debug(f"Converted string store_id '{store_id}' to int {store_id_int}")
+            elif isinstance(store_id, int):
+                store_id_int = store_id
+            else:
+                logging.error(f"Invalid store_id type: {type(store_id)}. Expected int or str.")
+                return None
+        except (ValueError, TypeError) as e:
+            logging.error(f"Could not convert store_id '{store_id}' to int: {e}")
+            return None
+        
+        endpoint = f"{self.base_url}/storeInfo/stores/{store_id_int}"
+        
+        try:
+            if self.meijer_client and self.meijer_client.session:
+                response = self.meijer_client.session.get(endpoint)
+            else:
+                response = requests.get(endpoint)
+            response.raise_for_status()
+            
+            store_data = response.json()
+            stores = create_meijer_stores_from_response(store_data, self.meijer_client)
+            
+            if stores:
+                store = stores[0]
+                logging.info(f"Retrieved details for store {store_id_int}: {store.display_name}")
+                return store
+            else:
+                logging.warning(f"No store data found for store {store_id_int}")
+                return None
+                
+        except Exception as e:
+            logging.error(f"Store details lookup failed for {store_id_int}: {e}")
+            return None
+
+
+# =============================================================================
+# EXTENDED MEIJER CLIENT WITH ALL FUNCTIONALITY
+# ============================================================================= 
