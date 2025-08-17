@@ -385,11 +385,12 @@ class MeijerSeleniumAuth:
             
             # Look for Next button to proceed to password field
             next_selectors = [
+                "button[data-se='save']",                 # Specific selector from user (Next button)
+                "button[type='submit']",                  # Type selector
                 "input[type='submit']",
-                "button[type='submit']",
+                "button:contains('Next')",
                 "input[value*='Next' i]",
                 "input[value*='Continue' i]",
-                "button:contains('Next')",
                 "button:contains('Continue')",
                 "input[data-se='identifier-submit']",
                 "button[data-se='identifier-submit']"
