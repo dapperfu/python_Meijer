@@ -1090,31 +1090,32 @@ def load_auth_from_config_file(config_file_path: str = None) -> Optional[Tuple[s
             logging.debug(f"Config file not found: {config_file_path}")
             return None
         
-        logging.info(f"📂 Loading auth from config: {config_file_path}")
-        
-        bearer_token = None
-        user_agent = None
+        logging.info(f"📂 Loading auth from JSON config: {config_file_path}")
         
         with open(config_file_path, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith('bearer=') or line.startswith('bearer_token='):
-                    bearer_token = line.split('=', 1)[1]
-                elif line.startswith('user_agent='):
-                    user_agent = line.split('=', 1)[1]
+            config_data = json.load(f)
+        
+        # Extract tokens from JSON structure
+        tokens = config_data.get('tokens', {})
+        bearer_token = tokens.get('access_token')
+        
+        # Get user agent from config or use default
+        user_agent = config_data.get('user_agent')
+        if not user_agent:
+            user_agent = "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
         
         if bearer_token:
-            if not user_agent:
-                user_agent = "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
-            
-            logging.info(f"✅ Loaded bearer token from config: {bearer_token[:20]}...")
+            logging.info(f"✅ Loaded bearer token from JSON config: {bearer_token[:20]}...")
             return bearer_token, user_agent
         
-        logging.warning(f"No bearer token found in config file: {config_file_path}")
+        logging.warning(f"No access token found in JSON config file: {config_file_path}")
         return None
         
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON in config file: {e}")
+        return None
     except Exception as e:
-        logging.error(f"Error loading config file: {e}")
+        logging.error(f"Error loading JSON config file: {e}")
         return None
 
 
