@@ -111,17 +111,20 @@ def display_items_table(items: List, title: str = "Shopping List Items") -> None
     headers = ["#", "Item", "Qty", "Status", "Notes"]
 
     if TABULATE_AVAILABLE:
-        click.echo(f"\n📊 {title}:")
-        click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
+        click.echo(f"\n�� {title}:")
+        # Use fancy_grid for beautiful box-drawing characters
+        click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
     else:
         click.echo(f"\n📊 {title}:")
-        click.echo("=" * 80)
-        click.echo(f"{'#':<3} {'Item':<40} {'Qty':<4} {'Status':<10} {'Notes':<30}")
-        click.echo("-" * 80)
+        # Use box-drawing characters for prettier fallback
+        click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
+        click.echo(f"│ {'#':<3} {'Item':<40} {'Qty':<4} {'Status':<10} {'Notes':<30} │")
+        click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
         for row in table_data:
             click.echo(
-                f"{row[0]:<3} {row[1]:<40} {row[2]:<4} {row[3]:<10} {row[4]:<30}"
+                f"│ {row[0]:<3} {row[1]:<40} {row[2]:<4} {row[3]:<10} {row[4]:<30} │"
             )
+        click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
 
 
 def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
@@ -548,14 +551,15 @@ def list_favorites():
 
         if TABULATE_AVAILABLE:
             click.echo(f"\n📊 Favorites ({len(favorites)} items):")
-            click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
+            click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         else:
             click.echo(f"\n📊 Favorites ({len(favorites)} items):")
-            click.echo("=" * 60)
-            click.echo(f"{'#':<3} {'Favorite Item':<40} {'Qty':<4} {'Status':<15}")
-            click.echo("-" * 60)
+            click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════╕")
+            click.echo(f"│ {'#':<3} {'Favorite Item':<40} {'Qty':<4} {'Status':<15} │")
+            click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════╡")
             for row in table_data:
-                click.echo(f"{row[0]:<3} {row[1]:<40} {row[2]:<4} {row[3]:<15}")
+                click.echo(f"│ {row[0]:<3} {row[1]:<40} {row[2]:<4} {row[3]:<15} │")
+            click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════╛")
 
     except Exception as e:
         raise click.ClickException(f"❌ Failed to show favorites: {e}")
