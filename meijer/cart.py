@@ -282,12 +282,14 @@ class MeijerCart:
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
+            # Note: The fulfillment endpoint expects specific header format
             headers = self.api_client._get_api_headers()
             headers.update({
-                "x-mfc-store": self.store_id,
-                "deliverypartner": delivery_partner,
-                "fulfillmenttype": "delivery",
-                "fulfillmenteligibility": "NORMAL",
+                "Content-Type": "application/json",
+                "X-MFC-Store": self.store_id,  # Use proper case
+                "DeliveryPartner": delivery_partner,  # Use proper case
+                "FulfillmentType": "delivery",  # Use proper case
+                "FulfillmentEligibility": "NORMAL",  # Use proper case
             })
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
@@ -302,7 +304,7 @@ class MeijerCart:
                 return self._parse_delivery_slots(slots_data)
             else:
                 raise CartError(
-                    f"Failed to retrieve delivery slots: {response.status_code}"
+                    f"Failed to retrieve delivery slots: {response.status_code} - {response.text}"
                 )
 
         except Exception as e:
