@@ -89,18 +89,6 @@ class MeijerList:
                 for item_data in data.get("listItems", []):
                     self.logger.info(f"🔍 RAW ITEM DATA: {item_data}")
                     
-                    # Clean up duplicated aisle values in notes if present
-                    if "notes" in item_data and item_data["notes"]:
-                        notes = item_data["notes"]
-                        # Fix pattern like "A4 A4 Section 12-0" -> "A4 Section 12-0"
-                        if isinstance(notes, str) and " Section " in notes:
-                            # Look for pattern: "A4 A4 Section" -> "A4 Section"
-                            pattern = r'([A-Z]\d+)\s+\1\s+Section'
-                            if re.search(pattern, notes):
-                                cleaned_notes = re.sub(pattern, r'\1 Section', notes)
-                                self.logger.info(f"🔧 Fixed duplicated aisle in notes: '{notes}' -> '{cleaned_notes}'")
-                                item_data["notes"] = cleaned_notes
-                    
                     # Map API response keys to ListItem constructor parameters
                     mapped_data = self._map_api_response_to_listitem(item_data)
                     self.logger.info(f"🔍 MAPPED ITEM DATA: {mapped_data}")
@@ -220,6 +208,43 @@ class MeijerList:
 
         except Exception as e:
             self.logger.error(f"Error completing item: {e}")
+            return False
+
+    def mark_as_not_completed(self, item_id: str) -> bool:
+        """Mark item as not completed using real APK-discovered endpoint."""
+        try:
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+
+            # Use real endpoint with itemId path parameter from APK (Hq/d.java)
+            endpoint = self.endpoints["mark_incomplete"].format(itemId=item_id)
+            url = urljoin(self.meijer.api_base_url, endpoint)
+            headers = self.meijer._get_api_headers()
+
+            # Use real headers from APK analysis
+            headers.update(
+                {"Accept": "application/vnd.meijer.listManagement.listItem-v1.0+json"}
+            )
+
+            # PUT request with no body, itemId in path
+            response = self.meijer._make_request("PUT", url, headers=headers)
+
+            if response.status_code in [
+                200,
+                201,
+                204,
+                205,
+            ]:  # 205 = Reset Content (success)
+                self.logger.info(f"Marked item {item_id} as not completed")
+                return True
+            else:
+                self.logger.error(
+                    f"Failed to mark item as not completed: {response.status_code} - {response.text}"
+                )
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error marking item as not completed: {e}")
             return False
 
     def delete_item(self, item_id: str) -> bool:
@@ -805,12 +830,16 @@ class MeijerList:
                     except (ValueError, IndexError):
                         aisle_num = 999  # Put unknown aisles at the end
                 
-                # Extract section number for secondary sorting
+                # Extract section number for secondary sorting (supports values like "35-4")
                 section_num = 0
-                if section and str(section).replace("Section:", "").strip().isdigit():
+                if section:
                     try:
-                        section_num = int(str(section).replace("Section:", "").strip())
-                    except ValueError:
+                        section_token = str(section).strip().split('-')[0]
+                        if section_token.isdigit():
+                            section_num = int(section_token)
+                        else:
+                            section_num = 999
+                    except Exception:
                         section_num = 999
                 
                 return (0, aisle_num, section_num, item_data["item"].name.lower())
@@ -837,26 +866,30 @@ class MeijerList:
             
             # Sort each aisle group
             for aisle in aisle_groups:
-                # Sort sections within each aisle
-                aisle_groups[aisle].sort(key=lambda x: (
-                    int(str(x["location"]["section"]).replace("Section:", "").strip()) 
-                    if str(x["location"]["section"]).replace("Section:", "").strip().isdigit() 
-                    else 999
-                ))
+                # Sort sections within each aisle (by primary numeric part of section, e.g., 35 from "35-4")
+                def _section_key(x):
+                    s = str(x["location"].get("section", "")).strip()
+                    token = s.split('-')[0]
+                    return int(token) if token.isdigit() else 999
+                aisle_groups[aisle].sort(key=_section_key)
                 
                 # Apply zig-zag within each aisle if it has multiple sections
                 if len(aisle_groups[aisle]) > 1:
-                    sections = [int(str(x["location"]["section"]).replace("Section:", "").strip()) 
-                              for x in aisle_groups[aisle] 
-                              if str(x["location"]["section"]).replace("Section:", "").strip().isdigit()]
+                    sections = []
+                    for x in aisle_groups[aisle]:
+                        s = str(x["location"].get("section", "")).strip()
+                        token = s.split('-')[0]
+                        if token.isdigit():
+                            sections.append(int(token))
                     if len(set(sections)) > 1:
                         # Reverse every other section group for zig-zag effect
                         current_section = None
                         section_start = 0
                         for i, item_data in enumerate(aisle_groups[aisle]):
-                            item_section = str(item_data["location"]["section"]).replace("Section:", "").strip()
-                            if item_section.isdigit():
-                                item_section = int(item_section)
+                            s = str(item_data["location"].get("section", "")).strip()
+                            token = s.split('-')[0]
+                            if token.isdigit():
+                                item_section = int(token)
                                 if current_section is None:
                                     current_section = item_section
                                 elif item_section != current_section:
@@ -897,77 +930,23 @@ class MeijerList:
         self.logger.info("🗑️  Clearing current shopping list...")
         self.clear_list()
         
-        # Re-add items in sorted order with enhanced location notes
-        self.logger.info("📝 Re-adding items in aisle order with enhanced notes...")
+        # Re-add items in sorted order with minimal location notes
+        self.logger.info("📝 Re-adding items in aisle order with ILC-based notes...")
         added_count = 0
         
         for idx, item_data in enumerate(sorted_items):
             item = item_data["item"]
             location = item_data["location"]
-            matched_product = item_data.get("matched_product")
-            
-            # Create enhanced notes with the format: "Aisle:Section | Full Product Name"
-            notes_parts = []
-            
-            # Add location information FIRST (but only for sorting, not for storage)
-            if location and location.get("aisle"):
-                aisle = location['aisle']
-                section = location.get('section', '')
-                
-                # Debug: Show the raw values before any processing
-                self.logger.info(f"🔍 RAW LOCATION DATA for {item.name}:")
-                self.logger.info(f"   - Raw aisle: '{aisle}' (type: {type(aisle)}, length: {len(str(aisle))})")
-                self.logger.info(f"   - Raw section: '{section}' (type: {type(section)})")
-                self.logger.info(f"   - Full location dict: {location}")
-                
-                # Fix duplicated aisle values (e.g., "A4A4" -> "A4")
-                if isinstance(aisle, str) and len(aisle) >= 4:
-                    # Check for pattern like "A4A4" or "B17B17"
-                    if aisle[0].isalpha() and aisle[1:3].isdigit() and aisle[3:5] == aisle[0:2]:
-                        # Remove the duplicate part
-                        original_aisle = aisle
-                        aisle = aisle[0:3]
-                        self.logger.info(f"🔧 Fixed duplicated aisle: '{original_aisle}' -> '{aisle}'")
-                
-                # Debug: Show the values after cleanup
-                self.logger.info(f"🔍 AFTER CLEANUP for {item.name}:")
-                self.logger.info(f"   - Cleaned aisle: '{aisle}'")
-                self.logger.info(f"   - Cleaned section: '{section}'")
-                
-                # Store location info for sorting but don't add to notes
-                # The location will be used only for organizing the list, not for display
-                self.logger.info(f"📍 Location info for sorting: {aisle} Section {section}")
-            
-            # Don't add location information to notes - it's only for sorting
-            # The notes should remain clean for the user
-            
-            # Add pipe separator if we have other notes
-            if notes_parts:
-                notes_parts.append("|")
-            
-            # Add the FULL searched product name (but only if it's different from the original)
-            if matched_product and matched_product.get('title'):
-                # Only add the product name if it's different from the original item name
-                if matched_product['title'] != item.name:
-                    notes_parts.append(matched_product['title'])
-            
-            # Join notes with proper formatting
-            enhanced_notes = " ".join(notes_parts) if notes_parts else None
-            
-            # Debug the final notes
-            self.logger.debug(f"📝 Final notes for {item.name}: '{enhanced_notes}'")
-            
-            # Limit notes to 60 characters as required by the API
-            if enhanced_notes and len(enhanced_notes) > 60:
-                # Try to truncate intelligently
-                if "|" in enhanced_notes:
-                    location_part = enhanced_notes.split("|")[0].strip()
-                    if len(location_part) < 55:  # Leave room for " | ..."
-                        enhanced_notes = f"{location_part} | ..."
-                    else:
-                        enhanced_notes = enhanced_notes[:57] + "..."
-                else:
-                    enhanced_notes = enhanced_notes[:57] + "..."
+            # Build notes strictly from ILC-derived fields: "<aisle>:<section>"
+            enhanced_notes = None
+            if location and location.get("zone_code") == "STORE" and location.get("aisle"):
+                aisle = str(location.get("aisle", "")).strip()
+                section = str(location.get("section", "")).strip()
+                loc_str = aisle if not section else f"{aisle}:{section}"
+                enhanced_notes = loc_str
+                # Enforce API notes length limit conservatively
+                if len(enhanced_notes) > 60:
+                    enhanced_notes = enhanced_notes[:60]
             
             # Re-add the item with the ORIGINAL name and enhanced location information
             success = self.add_item_with_details(

@@ -1105,18 +1105,9 @@ class Meijer:
             if location_info:
                 self.logger.info(f"🔍 Setting aisle_primary from location_info: {location_info}")
                 
-                # Fix duplicated aisle values before setting
-                aisle_value = location_info.get("aisle")
-                if isinstance(aisle_value, str) and len(aisle_value) >= 4:
-                    # Check for pattern like "A4A4" or "B17B17"
-                    if aisle_value[0].isalpha() and aisle_value[1:3].isdigit() and aisle_value[3:5] == aisle_value[0:2]:
-                        # Remove the duplicate part
-                        cleaned_aisle = aisle_value[0:3]
-                        self.logger.info(f"🔧 Fixed duplicated aisle in product detail: '{aisle_value}' -> '{cleaned_aisle}'")
-                        location_info["aisle"] = cleaned_aisle
-                
                 item.aisle_primary = location_info.get("aisle")
-                item.aisle_locations = [location_info.get("formatted_location", "")]
+                # Store section portion (e.g., "35-4") for downstream use
+                item.aisle_locations = [location_info.get("section", "")]
                 self.logger.info(f"📍 Final aisle_primary: {item.aisle_primary}")
             
             return item
@@ -1142,67 +1133,27 @@ class Meijer:
             Dictionary with location information or None
         """
         try:
-            # Check for location data in the stock.ilcPrimary field (actual API structure)
+            # Only use ilcPrimary/ilcs from stock; do not infer from text
             if "stock" in data and isinstance(data["stock"], dict):
                 stock_data = data["stock"]
-                
-                # Primary location from ilcPrimary (e.g., "B-16-35-4")
-                if "ilcPrimary" in stock_data and stock_data["ilcPrimary"]:
-                    ilc_primary = stock_data["ilcPrimary"]
+
+                ilc_primary = stock_data.get("ilcPrimary")
+                if ilc_primary:
                     self.logger.info(f"🔍 Found ilcPrimary: '{ilc_primary}'")
-                    location_info = self._parse_ilc_location(ilc_primary)
-                    if location_info:
-                        return location_info
-                
-                # Alternative locations from ilcs array
-                if "ilcs" in stock_data and isinstance(stock_data["ilcs"], list) and stock_data["ilcs"]:
-                    for ilc in stock_data["ilcs"]:
-                        if ilc and isinstance(ilc, str):
-                            self.logger.info(f"🔍 Found ilc in array: '{ilc}'")
-                            location_info = self._parse_ilc_location(ilc.strip())
-                            if location_info:
-                                return location_info
-            
-            # Try multiple possible location field structures (fallback)
-            location_fields = [
-                "storeLocations",
-                "storeProductLocation", 
-                "location",
-                "aisle",
-                "section",
-                "bay"
-            ]
-            
-            # Look for structured location data
-            for field in location_fields:
-                if field in data:
-                    field_data = data[field]
-                    if isinstance(field_data, dict):
-                        aisle = field_data.get("aisle") or field_data.get("aisleName")
-                        section = field_data.get("section") or field_data.get("sectionNumber")
-                        bay = field_data.get("bay") or field_data.get("bayNumber")
-                        
-                        if aisle or section:
-                            formatted_location = self._format_location_string(aisle, section, bay)
-                            return {
-                                "aisle": aisle,
-                                "section": section,
-                                "bay": bay,
-                                "formatted_location": formatted_location
-                            }
-            
-            # Look for location in description or summary fields (fallback)
-            description_fields = ["description", "summary", "longDescription"]
-            for field in description_fields:
-                if field in data and data[field]:
-                    text = str(data[field])
-                    # Look for patterns like "Aisle B | 16 Section: 35"
-                    location_match = self._extract_location_from_text(text)
-                    if location_match:
-                        return location_match
-            
+                    parsed = self._parse_ilc_location(ilc_primary)
+                    if parsed:
+                        return parsed
+
+                ilcs = stock_data.get("ilcs")
+                if isinstance(ilcs, list):
+                    for ilc in ilcs:
+                        if isinstance(ilc, str) and ilc.strip():
+                            parsed = self._parse_ilc_location(ilc.strip())
+                            if parsed:
+                                return parsed
+
             return None
-            
+
         except Exception as e:
             self.logger.error(f"Error extracting location: {e}")
             return None
@@ -1221,49 +1172,37 @@ class Meijer:
             # Debug logging to see what we're working with
             self.logger.info(f"🔍 Parsing ILC string: '{ilc_string}'")
             
-            # Handle different ILC formats
-            # Format 1: "B-16-35" (with dashes)
-            # Format 2: "B16-35" (aisle+section-dash-bay)
-            # Format 3: "B16-35-4" (with sub-bay)
+            # Handle different ILC formats strictly from ILC parts
             
             # First, try splitting by dash
             parts = ilc_string.split("-")
             self.logger.info(f"🔍 ILC parts (dash-split): {parts}")
             
             if len(parts) >= 3:
-                # Format: "B-16-35" or "B16-35"
+                # Support formats like "B-16-35-4" and "B16-35-4"
                 if parts[0].isalpha() and parts[1].isdigit():
-                    # Format: "B-16-35"
-                    aisle_letter = parts[0]      # "B"
-                    section_num = parts[1]       # "16"
-                    bay_num = parts[2]           # "35"
-                    sub_bay = parts[3] if len(parts) > 3 else None  # "4" (optional)
+                    aisle_letter = parts[0]
+                    section_num = parts[1]
+                    bay_num = parts[2]
+                    sub_bay = parts[3] if len(parts) > 3 else None
                 elif len(parts[0]) >= 2 and parts[0][0].isalpha() and parts[0][1:].isdigit():
-                    # Format: "B16-35"
-                    aisle_letter = parts[0][0]   # "B"
-                    section_num = parts[0][1:]   # "16"
-                    bay_num = parts[1]           # "35"
-                    sub_bay = parts[2] if len(parts) > 2 else None  # "4" (optional)
+                    aisle_letter = parts[0][0]
+                    section_num = parts[0][1:]
+                    bay_num = parts[1]
+                    sub_bay = parts[2] if len(parts) > 2 else None
                 else:
-                    # Unknown format, try to parse as best we can
                     self.logger.warning(f"⚠️  Unknown ILC format: {ilc_string}")
                     return None
-                
-                # Combine aisle letter and section number for the aisle field
+
                 combined_aisle = f"{aisle_letter}{section_num}"
-                
-                # Format the location string
-                if sub_bay:
-                    formatted_location = f"{combined_aisle} Section {bay_num}-{sub_bay}"
-                else:
-                    formatted_location = f"{combined_aisle} Section {bay_num}"
-                
+                section_combined = f"{bay_num}-{sub_bay}" if sub_bay else bay_num
+
                 result = {
-                    "aisle": combined_aisle,  # "B16"
-                    "section": bay_num,       # "35" (the bay number)
-                    "bay": bay_num,           # "35" (for backward compatibility)
-                    "sub_bay": sub_bay,       # "4" (if present)
-                    "formatted_location": formatted_location
+                    "aisle": combined_aisle,
+                    "section": section_combined,
+                    "bay": bay_num,
+                    "sub_bay": sub_bay,
+                    "formatted_location": f"{combined_aisle}:{section_combined}"
                 }
                 
                 self.logger.info(f"📍 Parsed ILC result: {result}")
