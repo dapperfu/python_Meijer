@@ -2304,8 +2304,7 @@ def coupons():
 @click.option("--expired", is_flag=True, help="Show only expired coupons")
 @click.option("--active", is_flag=True, help="Show only active (non-expired) coupons")
 @click.option("--limit", "-l", default=50, help="Maximum number of coupons to show")
-@click.option("--page", "-p", default=0, help="Page number for pagination")
-def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, limit: int, page: int):
+def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, limit: int):
     """List available coupons and offers."""
     client = get_meijer_client()
 
@@ -2313,7 +2312,7 @@ def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, li
         click.echo("🎫 Fetching coupons and offers...")
         
         # Get coupons with pagination
-        coupons = client.get_coupons(limit=limit, page=page)
+        coupons = client.get_coupons(limit=limit)
         
         if not coupons:
             click.echo("❌ No coupons found")
@@ -2340,7 +2339,7 @@ def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, li
             click.echo("❌ No coupons match the specified filters")
             return
 
-        click.echo(f"🎫 Found {len(filtered_coupons)} coupons (page {page + 1})")
+        click.echo(f"🎫 Found {len(filtered_coupons)} coupons")
         click.echo("=" * 80)
 
         # Prepare table data
