@@ -183,9 +183,10 @@ class Meijer:
         # Use Bearer token for authenticated endpoints
         if self._access_token:
             headers["Authorization"] = f"Bearer {self._access_token}"
-        else:
-            # Fallback to subscription key for public endpoints only
-            headers["ocp-apim-subscription-key"] = self.subscription_key
+        
+        # Always include subscription key as some endpoints require both
+        # This is the public key from APK analysis and is safe to include
+        headers["ocp-apim-subscription-key"] = self.subscription_key
         
         return headers
     

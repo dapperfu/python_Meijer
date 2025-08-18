@@ -26,6 +26,15 @@ class ShopNScan:
             "get_cart": "/loyalty/shopandscan/getcart",
             "clear_cart": "/loyalty/shopandscan/clearcart"
         }
+        
+        # Alternative endpoints from older implementations
+        self.alternative_endpoints = {
+            "lookup_item": "/dgtlmma/shopandscan/item/scan",
+            "add_to_cart": "/dgtlmma/shopandscan/cart/add",
+            "remove_from_cart": "/dgtlmma/shopandscan/cart/remove",
+            "get_cart": "/dgtlmma/shopandscan/cart",
+            "clear_cart": "/dgtlmma/shopandscan/cart/clear"
+        }
     
     def lookup_barcode_price(self, barcode: str, store_id: Optional[str] = None) -> Optional[MeijerItem]:
         """
@@ -77,14 +86,14 @@ class ShopNScan:
                     if store_id:
                         data["storeId"] = store_id
                     
-                    response = self.meijer._make_request("POST", endpoint, json_data=data)
+                    response = self.meijer._make_request("POST", f"{self.meijer.api_base_url}{endpoint}", json_data=data)
                 else:
                     # GET request
                     params = {}
                     if store_id:
                         params["storeId"] = store_id
                     
-                    response = self.meijer._make_request("GET", endpoint, params=params)
+                    response = self.meijer._make_request("GET", f"{self.meijer.api_base_url}{endpoint}", params=params)
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -315,7 +324,7 @@ class ShopNScan:
             if store_id:
                 data["storeId"] = store_id
             
-            response = self.meijer._make_request("POST", self.endpoints["add_to_cart"], json_data=data)
+            response = self.meijer._make_request("POST", f"{self.meijer.api_base_url}{self.endpoints["add_to_cart"]}", json_data=data)
             return response.status_code in [200, 201]
             
         except Exception as e:
@@ -340,7 +349,7 @@ class ShopNScan:
             if store_id:
                 data["storeId"] = store_id
             
-            response = self.meijer._make_request("POST", self.endpoints["remove_from_cart"], json_data=data)
+            response = self.meijer._make_request("POST", f"{self.meijer.api_base_url}{self.endpoints["remove_from_cart"]}", json_data=data)
             return response.status_code in [200, 204]
             
         except Exception as e:
@@ -362,7 +371,7 @@ class ShopNScan:
             if store_id:
                 params["storeId"] = store_id
             
-            response = self.meijer._make_request("GET", self.endpoints["get_cart"], params=params)
+            response = self.meijer._make_request("GET", f"{self.meijer.api_base_url}{self.endpoints["get_cart"]}", params=params)
             
             if response.status_code == 200:
                 data = response.json()
@@ -400,9 +409,30 @@ class ShopNScan:
             if store_id:
                 params["storeId"] = store_id
             
-            response = self.meijer._make_request("POST", self.endpoints["clear_cart"], params=params)
+            response = self.meijer._make_request("POST", f"{self.meijer.api_base_url}{self.endpoints["clear_cart"]}", params=params)
             return response.status_code in [200, 204]
             
         except Exception as e:
             self.logger.error(f"Error clearing cart: {e}")
+            return False
+    def _try_add_to_cart_with_endpoints(self, endpoints: Dict[str, str], barcode: str, quantity: int, store_id: Optional[str] = None) -> bool:
+        """Try to add item to cart using specified endpoint set."""
+        try:
+            data = {
+                "barcode": barcode,
+                "quantity": quantity
+            }
+            if store_id:
+                data["storeId"] = store_id
+            
+            response = self.meijer._make_request("POST", endpoints["add_to_cart"], json_data=data)
+            if response.status_code in [200, 201]:
+                self.logger.info(f"Successfully added {barcode} to cart using {endpoints["add_to_cart"]}")
+                return True
+            else:
+                self.logger.warning(f"Failed to add to cart using {endpoints["add_to_cart"]}: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.logger.debug(f"Error adding to cart using {endpoints["add_to_cart"]}: {e}")
             return False
