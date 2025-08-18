@@ -688,7 +688,6 @@ class MeijerList:
                                     }
                                     match_confidence = "Low"
                                     self.logger.warning(f"⚠️  No related results found for {search_query}")
-                        
                         except Exception as e:
                             self.logger.error(f"❌ Search failed for {search_query}: {e}")
                             # Use fallback location
@@ -870,6 +869,18 @@ class MeijerList:
                 aisle = location['aisle']
                 section = location.get('section', '')
                 
+                # Fix duplicated aisle values (e.g., "A4A4" -> "A4")
+                if isinstance(aisle, str) and len(aisle) >= 4:
+                    # Check for pattern like "A4A4" or "B17B17"
+                    if aisle[0].isalpha() and aisle[1:3].isdigit() and aisle[3:5] == aisle[0:2]:
+                        # Remove the duplicate part
+                        aisle = aisle[0:3]
+                        self.logger.info(f"🔧 Fixed duplicated aisle: '{location['aisle']}' -> '{aisle}'")
+                
+                # Debug logging to see what we're working with
+                self.logger.debug(f"🔍 Location data for {item.name}: aisle='{aisle}', section='{section}', full_location={location}")
+                self.logger.info(f"🔍 Processing location for {item.name}: aisle='{aisle}' (type: {type(aisle)}), section='{section}' (type: {type(section)})")
+                
                 if location.get("zone_code") == "STORE":
                     # Real store location - format as "B16 Section 23 | Product Name"
                     if section and section != 'Unknown':
@@ -877,16 +888,26 @@ class MeijerList:
                         section_num = str(section).replace("Section:", "").strip()
                         if section_num.isdigit():
                             notes_parts.append(f"{aisle} Section {section_num}")
+                            self.logger.info(f"📍 Formatted as: {aisle} Section {section_num}")
                         else:
-                            notes_parts.append(f"{aisle}{section}")
+                            # Check if section already contains "Section" text
+                            if "Section" in str(section):
+                                notes_parts.append(f"{aisle} {section}")
+                                self.logger.info(f"📍 Formatted as: {aisle} {section}")
+                            else:
+                                notes_parts.append(f"{aisle} Section {section}")
+                                self.logger.info(f"📍 Formatted as: {aisle} Section {section}")
                     else:
                         notes_parts.append(aisle)
+                        self.logger.info(f"📍 Formatted as: {aisle}")
                 else:
                     # Search-based location - format as "Search_High | Product Name"
                     if section and section != 'Unknown':
                         notes_parts.append(f"{aisle}:{section}")
+                        self.logger.info(f"📍 Formatted as: {aisle}:{section}")
                     else:
                         notes_parts.append(aisle)
+                        self.logger.info(f"📍 Formatted as: {aisle}")
             
             # Add pipe separator if we have location info
             if notes_parts:
@@ -898,6 +919,9 @@ class MeijerList:
             
             # Join notes with proper formatting
             enhanced_notes = " ".join(notes_parts) if notes_parts else None
+            
+            # Debug the final notes
+            self.logger.debug(f"📝 Final notes for {item.name}: '{enhanced_notes}'")
             
             # Limit notes to 60 characters as required by the API
             if enhanced_notes and len(enhanced_notes) > 60:

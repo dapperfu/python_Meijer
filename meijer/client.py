@@ -1104,6 +1104,17 @@ class Meijer:
             location_info = self._extract_location_from_product_detail(data)
             if location_info:
                 self.logger.info(f"🔍 Setting aisle_primary from location_info: {location_info}")
+                
+                # Fix duplicated aisle values before setting
+                aisle_value = location_info.get("aisle")
+                if isinstance(aisle_value, str) and len(aisle_value) >= 4:
+                    # Check for pattern like "A4A4" or "B17B17"
+                    if aisle_value[0].isalpha() and aisle_value[1:3].isdigit() and aisle_value[3:5] == aisle_value[0:2]:
+                        # Remove the duplicate part
+                        cleaned_aisle = aisle_value[0:3]
+                        self.logger.info(f"🔧 Fixed duplicated aisle in product detail: '{aisle_value}' -> '{cleaned_aisle}'")
+                        location_info["aisle"] = cleaned_aisle
+                
                 item.aisle_primary = location_info.get("aisle")
                 item.aisle_locations = [location_info.get("formatted_location", "")]
                 self.logger.info(f"📍 Final aisle_primary: {item.aisle_primary}")
@@ -1201,7 +1212,7 @@ class Meijer:
         Parse ILC (Inventory Location Code) string from stock.ilcPrimary.
         
         Args:
-            ilc_string: ILC string like "B-16-35"
+            ilc_string: ILC string like "B-16-35" or "B16-35" or "B16-35-4"
             
         Returns:
             Dictionary with location information or None
@@ -1210,15 +1221,33 @@ class Meijer:
             # Debug logging to see what we're working with
             self.logger.info(f"🔍 Parsing ILC string: '{ilc_string}'")
             
-            # Parse ILC format: "B-16-35" or "B-16-35"
+            # Handle different ILC formats
+            # Format 1: "B-16-35" (with dashes)
+            # Format 2: "B16-35" (aisle+section-dash-bay)
+            # Format 3: "B16-35-4" (with sub-bay)
+            
+            # First, try splitting by dash
             parts = ilc_string.split("-")
-            self.logger.info(f"🔍 ILC parts: {parts}")
+            self.logger.info(f"🔍 ILC parts (dash-split): {parts}")
             
             if len(parts) >= 3:
-                aisle_letter = parts[0]      # "B"
-                section_num = parts[1]       # "16"
-                bay_num = parts[2]           # "35"
-                sub_bay = parts[3] if len(parts) > 3 else None  # "4" (optional)
+                # Format: "B-16-35" or "B16-35"
+                if parts[0].isalpha() and parts[1].isdigit():
+                    # Format: "B-16-35"
+                    aisle_letter = parts[0]      # "B"
+                    section_num = parts[1]       # "16"
+                    bay_num = parts[2]           # "35"
+                    sub_bay = parts[3] if len(parts) > 3 else None  # "4" (optional)
+                elif len(parts[0]) >= 2 and parts[0][0].isalpha() and parts[0][1:].isdigit():
+                    # Format: "B16-35"
+                    aisle_letter = parts[0][0]   # "B"
+                    section_num = parts[0][1:]   # "16"
+                    bay_num = parts[1]           # "35"
+                    sub_bay = parts[2] if len(parts) > 2 else None  # "4" (optional)
+                else:
+                    # Unknown format, try to parse as best we can
+                    self.logger.warning(f"⚠️  Unknown ILC format: {ilc_string}")
+                    return None
                 
                 # Combine aisle letter and section number for the aisle field
                 combined_aisle = f"{aisle_letter}{section_num}"

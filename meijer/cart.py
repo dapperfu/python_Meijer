@@ -202,21 +202,35 @@ class MeijerCart:
 
             # Build request body based on actual API call from logs
             # The working app sends storeId and lineItems array
+            # The API might require at least one item in lineItems
             request_data = {
                 "storeId": self.store_id,
-                "lineItems": []  # Empty array for just checking available slots
+                "lineItems": [
+                    {
+                        "retailerProductId": "0000000000",  # Dummy product ID
+                        "retailerProductIdType": "UPCA",
+                        "quantity": 1.0,
+                        "isAlcohol": False
+                    }
+                ]
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
-            # The fulfillment endpoint expects minimal headers - just auth and content-type
+            # The fulfillment endpoint might expect specific fulfillment headers
             headers = self.api_client._get_api_headers()
             headers.update({
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-Fulfillment-Type": "pickup",
+                "X-Fulfillment-Store": self.store_id
             })
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
             self.logger.info(f"Retrieving pickup slots for store {self.store_id}")
+            self.logger.info(f"Request URL: {url}")
+            self.logger.info(f"Request headers: {headers}")
+            self.logger.info(f"Request body: {request_data}")
+            
             response = self.api_client._make_request(
                 "POST", url, json_data=request_data, headers=headers
             )
@@ -266,9 +280,17 @@ class MeijerCart:
 
             # Build request body based on actual API call from logs
             # The working app sends storeId and lineItems array
+            # The API might require at least one item in lineItems
             request_data = {
                 "storeId": self.store_id,
-                "lineItems": []  # Empty array for just checking available slots
+                "lineItems": [
+                    {
+                        "retailerProductId": "0000000000",  # Dummy product ID
+                        "retailerProductIdType": "UPCA",
+                        "quantity": 1.0,
+                        "isAlcohol": False
+                    }
+                ]
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
@@ -330,16 +352,26 @@ class MeijerCart:
         try:
             # Build request body based on actual API call from logs
             # The working app sends storeId and lineItems array
+            # The API might require at least one item in lineItems
             request_data = {
                 "storeId": self.store_id,
-                "lineItems": []  # Empty array for just checking available slots
+                "lineItems": [
+                    {
+                        "retailerProductId": "0000000000",  # Dummy product ID
+                        "retailerProductIdType": "UPCA",
+                        "quantity": 1.0,
+                        "isAlcohol": False
+                    }
+                ]
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
-            # The fulfillment endpoint expects minimal headers - just auth and content-type
+            # The fulfillment endpoint might expect specific fulfillment headers
             headers = self.api_client._get_api_headers()
             headers.update({
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-Fulfillment-Type": "pickup",
+                "X-Fulfillment-Store": self.store_id
             })
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
@@ -388,16 +420,26 @@ class MeijerCart:
         try:
             # Build request body based on actual API call from logs
             # The working app sends storeId and lineItems array
+            # The API might require at least one item in lineItems
             request_data = {
                 "storeId": self.store_id,
-                "lineItems": []  # Empty array for just checking available slots
+                "lineItems": [
+                    {
+                        "retailerProductId": "0000000000",  # Dummy product ID
+                        "retailerProductIdType": "UPCA",
+                        "quantity": 1.0,
+                        "isAlcohol": False
+                    }
+                ]
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
-            # The fulfillment endpoint expects minimal headers - just auth and content-type
+            # The fulfillment endpoint might expect specific fulfillment headers
             headers = self.api_client._get_api_headers()
             headers.update({
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-Fulfillment-Type": "delivery",
+                "X-Fulfillment-Store": self.store_id
             })
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
