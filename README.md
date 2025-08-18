@@ -52,6 +52,128 @@ meijer/
    pip install -e .
    ```
 
+## 📱 Usage & Authentication Setup
+
+### Prerequisites
+
+**⚠️ Important**: This client requires a device that can accept self-signed certificates for MITM (Man-in-the-Middle) traffic capture. This typically means:
+
+- **Rooted Android device** with certificate installation capabilities
+- **Jailbroken iOS device** with certificate management
+- **Emulator** with certificate bypass capabilities
+- **Development device** with custom certificate authority
+
+**Note**: OKTA OAuth2 authentication is still pending implementation. Currently, the client relies on Bearer token extraction from captured traffic.
+
+### Step-by-Step Authentication Setup
+
+#### 1. Install mitmproxy
+```bash
+# Install mitmproxy globally or in your virtual environment
+pip install mitmproxy
+
+# Or use the Makefile target (recommended)
+make venv
+```
+
+#### 2. Start Traffic Capture
+```bash
+make log
+```
+
+This command:
+- Starts `mitmweb` with multiple proxy modes (HTTP, SOCKS5, WireGuard)
+- Opens a web interface at `http://localhost:8081`
+- Creates a timestamped log file (e.g., `meijer_mitm_20241219_143022.log`)
+- Applies custom scripts for traffic analysis
+
+**What happens during capture:**
+- Your device connects to the proxy (configure network settings to use the proxy)
+- Install the mitmproxy certificate on your device
+- Use the Meijer mobile app normally - all traffic is logged
+- The proxy captures API calls, including authentication tokens
+
+#### 3. Extract Authentication Tokens
+```bash
+make auth
+```
+
+This command:
+- Automatically finds the most recent log file
+- Parses the log using specialized tools (not plain text analysis)
+- Extracts Bearer tokens and user credentials
+- Updates `~/.config/meijer.txt` with the extracted information
+
+**Manual file specification:**
+```bash
+make auth FILE=meijer_mitm_20241219_143022.log
+```
+
+#### 4. Verify Authentication
+```bash
+python -c "from meijer.client import Meijer; client = Meijer(); print('Auth status:', 'OK' if client._access_token else 'Failed')"
+```
+
+### How the Make Commands Work
+
+#### `make log` - Traffic Capture
+```bash
+make log
+```
+- **Purpose**: Captures Meijer app traffic for token extraction
+- **Process**: 
+  1. Generates timestamped log filename
+  2. Starts mitmweb with multiple proxy modes
+  3. Opens web interface for monitoring
+  4. Applies custom analysis scripts
+- **Output**: Creates `meijer_mitm_YYYYMMDD_HHMMSS.log`
+- **Duration**: Runs until manually stopped (Ctrl+C)
+
+#### `make auth` - Token Extraction
+```bash
+make auth
+```
+- **Purpose**: Extracts authentication tokens from captured logs
+- **Process**:
+  1. Automatically finds most recent log file
+  2. Uses specialized mitmproxy analysis tools (not grep/strings)
+  3. Parses authentication headers and responses
+  4. Updates `~/.config/meijer.txt` with extracted tokens
+- **Output**: Updates authentication configuration file
+- **Requirements**: Must have captured traffic first with `make log`
+
+#### `make logs` - Log Management
+```bash
+make logs
+```
+- **Purpose**: Lists available log files for analysis
+- **Output**: Shows recent log files with timestamps
+- **Use Case**: When you want to extract from a specific log file
+
+### Authentication File Format
+
+The client expects `~/.config/meijer.txt` in this format:
+```json
+{
+  "bearer": "your_bearer_token_here",
+  "user_agent": "Mozilla/5.0...",
+  "captured_at": "2024-12-19T14:30:22Z"
+}
+```
+
+### Troubleshooting Authentication
+
+#### Common Issues:
+1. **"No log files found"**: Run `make log` first to capture traffic
+2. **"Authentication failed"**: Check that your device accepted the mitmproxy certificate
+3. **"Token expired"**: Re-run the capture and extraction process
+4. **"Proxy connection failed"**: Ensure your device is configured to use the proxy
+
+#### Device Configuration Tips:
+- **Android**: Settings → Network & Internet → Wi-Fi → Advanced → Proxy
+- **iOS**: Settings → Wi-Fi → (i) → Configure Proxy
+- **Emulator**: Use `adb reverse` to forward proxy connections
+
 ## 🔐 Authentication
 
 The client uses OAuth2 Bearer token authentication. Tokens are automatically loaded from `~/.config/meijer.txt`.
