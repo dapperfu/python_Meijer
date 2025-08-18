@@ -1223,11 +1223,30 @@ def extract_tokens_with_regex(log_file: str) -> Optional[dict]:
 
 
 @cli.command()
-@click.argument("log_file", type=click.Path(exists=True))
-def auth(log_file: str):
-    """Extract authentication tokens from mitmproxy log and save to ~/.config/meijer.txt."""
+@click.option("--log-file", type=click.Path(exists=True), help="Specific log file to use (optional)")
+def auth(log_file: str = None):
+    """Extract authentication tokens from the latest mitmproxy log and save to ~/.config/meijer.txt."""
     try:
-        click.echo(f"🔍 Analyzing mitmproxy log: {log_file}")
+        # If no log file specified, automatically find the latest one
+        if not log_file:
+            import glob
+            import os
+            
+            # Find all meijer_mitm_*.log files
+            log_pattern = "meijer_mitm_*.log"
+            log_files = glob.glob(log_pattern)
+            
+            if not log_files:
+                raise click.ClickException("❌ No mitmproxy log files found. Expected pattern: meijer_mitm_*.log")
+            
+            # Sort by modification time and get the latest
+            log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            log_file = log_files[0]
+            
+            click.echo(f"🔍 Automatically found latest log file: {log_file}")
+        else:
+            click.echo(f"🔍 Using specified log file: {log_file}")
+        
         click.echo("⏳ This may take a moment for large log files...")
 
         # Use the existing extract_bearer_token.py tool
@@ -1521,7 +1540,7 @@ def settings_summary():
     client = get_meijer_client()
     
     try:
-        click.echo("🔧 Settings Summary")
+        click.echo("�� Settings Summary")
         click.echo("=" * 50)
         
         # Vehicle information
