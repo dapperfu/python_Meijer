@@ -429,8 +429,9 @@ class Meijer:
         """
         Get detailed store information by UnitId (store ID).
 
-        This uses the storeInfo v2 endpoint which includes richer fields such
-        as gas station amenities and hours when available.
+        This uses the storeInfo v2 proximity endpoint with a large radius to find
+        the specific store by ID, which includes richer fields such as gas station
+        amenities and hours when available.
 
         Parameters
         ----------
@@ -443,8 +444,19 @@ class Meijer:
             Parsed store information if found, None otherwise
         """
         try:
-            # Endpoint observed in APK traffic for store info
-            url = f"https://api.meijer.com/digital/storeInfo/v2/stores/{store_id}"
+            # Use the proximity endpoint with a large radius to find the store
+            # This approach is more reliable than direct store ID lookup
+            url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
+            
+            # Use coordinates near the center of Michigan as a starting point
+            # The API will return stores within the radius, and we'll filter by ID
+            params = {
+                "latitude": 44.3148,  # Center of Michigan
+                "longitude": -85.6024,
+                "miles": 500,  # Large radius to ensure we find the store
+                "numToReturn": 100,  # Get more stores to increase chances of finding the target
+                "dataVariant": 2,
+            }
 
             # Headers required by storeInfo APIs
             headers = {
@@ -457,7 +469,7 @@ class Meijer:
             if hasattr(self, "_access_token") and self._access_token:
                 headers["authorization"] = f"Bearer {self._access_token}"
 
-            response = self._make_request("GET", url, headers=headers)
+            response = self._make_request("GET", url, headers=headers, params=params)
 
             if response.status_code != 200:
                 self.logger.warning(
@@ -466,32 +478,85 @@ class Meijer:
                 return None
 
             data = response.json()
-
-            # The API may return either a single store dict or a wrapper
+            
+            # Handle different response formats
             if isinstance(data, dict):
-                # Single store
-                if "UnitId" in data:
-                    return MeijerStore.from_api_data(data, self)
-
-                # Wrapper forms
-                if "stores" in data and isinstance(data["stores"], list):
-                    for s in data["stores"]:
-                        if isinstance(s, dict) and str(s.get("UnitId")) == str(store_id):
-                            return MeijerStore.from_api_data(s, self)
-                    # Fall back to first store if id match not found
-                    if data["stores"]:
-                        return MeijerStore.from_api_data(data["stores"][0], self)
-
-                if "data" in data and isinstance(data["data"], list):
-                    for s in data["data"]:
-                        if isinstance(s, dict) and str(s.get("UnitId")) == str(store_id):
-                            return MeijerStore.from_api_data(s, self)
-                    if data["data"]:
-                        return MeijerStore.from_api_data(data["data"][0], self)
-
-            # Unrecognized format
-            self.logger.warning("Unexpected storeInfo response format")
-            return None
+                # Check for 'stores' key (plural) - proximity search response
+                if "stores" in data:
+                    stores_data = data["stores"]
+                    self.logger.info(f"Found {len(stores_data)} stores in response")
+                    if isinstance(stores_data, list):
+                        for store_data in stores_data:
+                            if isinstance(store_data, dict) and str(store_data.get("UnitId")) == str(store_id):
+                                self.logger.info(f"Found target store {store_id}")
+                                return MeijerStore.from_api_data(store_data, self)
+                        
+                        # If we didn't find the exact store, log what we did find
+                        found_ids = [str(s.get("UnitId")) for s in stores_data if s.get("UnitId")]
+                        self.logger.warning(f"Store {store_id} not found. Available store IDs: {found_ids[:10]}...")
+                        return None
+                    else:
+                        self.logger.warning("Unexpected stores data format in response")
+                        return None
+                
+                # Check for 'store' key (singular) - direct store lookup response
+                elif "store" in data:
+                    store_data = data["store"]
+                    self.logger.info(f"Found 'store' key in response")
+                    
+                    # Handle case where 'store' is a list
+                    if isinstance(store_data, list):
+                        for store_item in store_data:
+                            if isinstance(store_item, dict):
+                                store_id_from_response = str(store_item.get("UnitId"))
+                                if store_id_from_response == str(store_id):
+                                    self.logger.info(f"Found target store {store_id}")
+                                    return MeijerStore.from_api_data(store_item, self)
+                        
+                        # If we didn't find the exact store, log what we did find
+                        found_ids = [str(s.get("UnitId")) for s in store_data if isinstance(s, dict) and s.get("UnitId")]
+                        self.logger.warning(f"Store {store_id} not found in list. Available store IDs: {found_ids[:10]}...")
+                        return None
+                    
+                    # Handle case where 'store' is a single dict
+                    elif isinstance(store_data, dict):
+                        store_id_from_response = str(store_data.get("UnitId"))
+                        if store_id_from_response == str(store_id):
+                            self.logger.info(f"Found target store {store_id}")
+                            return MeijerStore.from_api_data(store_data, self)
+                        else:
+                            self.logger.warning(f"Store ID mismatch. Expected: {store_id}, Got: {store_id_from_response}")
+                            return None
+                    else:
+                        self.logger.warning("Unexpected store data format in response")
+                        return None
+                
+                # Check for other wrapper formats
+                elif "data" in data and isinstance(data["data"], list):
+                    stores_data = data["data"]
+                    for store_data in stores_data:
+                        if isinstance(store_data, dict) and str(store_data.get("UnitId")) == str(store_id):
+                            self.logger.info(f"Found target store {store_id}")
+                            return MeijerStore.from_api_data(store_data, self)
+                    return None
+                
+                # Check if the data itself is a store
+                elif "UnitId" in data:
+                    if str(data.get("UnitId")) == str(store_id):
+                        self.logger.info(f"Found target store {store_id}")
+                        return MeijerStore.from_api_data(data, self)
+                    else:
+                        return None
+                
+                else:
+                    self.logger.warning("Unexpected storeInfo response format")
+                    self.logger.info(f"Response structure: {type(data)}")
+                    if isinstance(data, dict):
+                        self.logger.info(f"Response keys: {list(data.keys())}")
+                    return None
+            else:
+                self.logger.warning(f"Response is not a dict: {type(data)}")
+                return None
 
         except Exception as e:
             self.logger.error(f"Error getting store by id {store_id}: {e}")
@@ -1038,8 +1103,10 @@ class Meijer:
             # Extract location information
             location_info = self._extract_location_from_product_detail(data)
             if location_info:
+                self.logger.info(f"🔍 Setting aisle_primary from location_info: {location_info}")
                 item.aisle_primary = location_info.get("aisle")
                 item.aisle_locations = [location_info.get("formatted_location", "")]
+                self.logger.info(f"📍 Final aisle_primary: {item.aisle_primary}")
             
             return item
             
@@ -1071,6 +1138,7 @@ class Meijer:
                 # Primary location from ilcPrimary (e.g., "B-16-35-4")
                 if "ilcPrimary" in stock_data and stock_data["ilcPrimary"]:
                     ilc_primary = stock_data["ilcPrimary"]
+                    self.logger.info(f"🔍 Found ilcPrimary: '{ilc_primary}'")
                     location_info = self._parse_ilc_location(ilc_primary)
                     if location_info:
                         return location_info
@@ -1079,6 +1147,7 @@ class Meijer:
                 if "ilcs" in stock_data and isinstance(stock_data["ilcs"], list) and stock_data["ilcs"]:
                     for ilc in stock_data["ilcs"]:
                         if ilc and isinstance(ilc, str):
+                            self.logger.info(f"🔍 Found ilc in array: '{ilc}'")
                             location_info = self._parse_ilc_location(ilc.strip())
                             if location_info:
                                 return location_info
@@ -1138,8 +1207,12 @@ class Meijer:
             Dictionary with location information or None
         """
         try:
+            # Debug logging to see what we're working with
+            self.logger.info(f"🔍 Parsing ILC string: '{ilc_string}'")
+            
             # Parse ILC format: "B-16-35" or "B-16-35"
             parts = ilc_string.split("-")
+            self.logger.info(f"🔍 ILC parts: {parts}")
             
             if len(parts) >= 3:
                 aisle_letter = parts[0]      # "B"
@@ -1156,14 +1229,18 @@ class Meijer:
                 else:
                     formatted_location = f"{combined_aisle} Section {bay_num}"
                 
-                return {
+                result = {
                     "aisle": combined_aisle,  # "B16"
                     "section": bay_num,       # "35" (the bay number)
                     "bay": bay_num,           # "35" (for backward compatibility)
                     "sub_bay": sub_bay,       # "4" (if present)
                     "formatted_location": formatted_location
                 }
+                
+                self.logger.info(f"📍 Parsed ILC result: {result}")
+                return result
             
+            self.logger.warning(f"⚠️  ILC string '{ilc_string}' doesn't have enough parts (expected 3+, got {len(parts)})")
             return None
             
         except Exception as e:
