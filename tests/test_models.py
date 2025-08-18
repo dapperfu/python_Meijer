@@ -92,7 +92,7 @@ class TestMeijerItem:
         item.price = None
         assert item.price is None
     
-    def test_is_on_sale(self):
+    def test_on_sale(self):
         """Test sale status property."""
         # On sale
         item = MeijerItem(

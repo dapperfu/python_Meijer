@@ -106,7 +106,7 @@ print(f"Available: {basic_item.is_available}")
 print(f"\\nComputed Properties:")
 print(f"Display Name: {basic_item.display_name}")
 print(f"Best Price: ${basic_item.best_price}")
-print(f"On Sale: {basic_item.is_on_sale}")""")
+        print(f"On Sale: {basic_item.on_sale}")""")
     
     # Constructor.io example
     constructor_example = nbf.v4.new_markdown_cell("""### Constructor.io Integration

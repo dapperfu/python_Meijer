@@ -1,4 +1,4 @@
-"""
+                                                                                                                                                                                                                                                                                                                                                                                                                """
 Data models for Meijer API responses.
 
 This module contains dataclasses that represent the structure of API responses
@@ -199,7 +199,7 @@ class MeijerItem:
         return self.price
 
     @property
-    def is_on_sale(self) -> bool:
+    def on_sale(self) -> bool:
         """Check if the item is currently on sale."""
         return self.sale_price is not None and self.sale_price < (self.price or 0)
 
@@ -216,68 +216,68 @@ class MeijerItem:
     @property
     def discount_amount(self) -> Optional[float]:
         """Get the discount amount if the item is on sale."""
-        if self.is_on_sale and self.price and self.sale_price:
+        if self.on_sale and self.price and self.sale_price:
             return self.price - self.sale_price
         return None
 
     @property
     def discount_percentage(self) -> Optional[float]:
         """Get the discount percentage if the item is on sale."""
-        if self.is_on_sale and self.price and self.sale_price:
+        if self.on_sale and self.price and self.sale_price:
             return ((self.price - self.sale_price) / self.price) * 100
         return None
 
     @property
-    def is_dairy(self) -> bool:
+    def dairy(self) -> bool:
         """Check if the item is in the dairy category."""
         dairy_keywords = ["milk", "cheese", "yogurt", "cream", "butter", "dairy"]
         return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
                   for keyword in dairy_keywords)
 
     @property
-    def is_produce(self) -> bool:
+    def produce(self) -> bool:
         """Check if the item is in the produce category."""
         produce_keywords = ["fruit", "vegetable", "produce", "fresh"]
         return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
                   for keyword in produce_keywords)
 
     @property
-    def is_meat(self) -> bool:
+    def meat(self) -> bool:
         """Check if the item is in the meat category."""
         meat_keywords = ["meat", "chicken", "beef", "pork", "fish", "steak", "ground"]
         return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
                   for keyword in meat_keywords)
 
     @property
-    def is_frozen(self) -> bool:
+    def frozen(self) -> bool:
         """Check if the item is frozen."""
         frozen_keywords = ["frozen", "ice cream", "frozen food"]
         return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
                   for keyword in frozen_keywords)
 
     @property
-    def is_organic(self) -> bool:
+    def organic(self) -> bool:
         """Check if the item is organic."""
         organic_keywords = ["organic", "organically grown"]
         return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
                   for keyword in organic_keywords)
 
     @property
-    def is_gluten_free(self) -> bool:
+    def gluten_free(self) -> bool:
         """Check if the item is gluten-free."""
         gluten_free_keywords = ["gluten free", "gluten-free", "no gluten"]
         return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
                   for keyword in gluten_free_keywords)
 
     @property
-    def is_vegan(self) -> bool:
+    def vegan(self) -> bool:
         """Check if the item is vegan."""
         vegan_keywords = ["vegan", "plant-based", "no animal products"]
         return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
                   for keyword in vegan_keywords)
 
     @property
-    def is_alcoholic(self) -> bool:
+    def alcoholic(self) -> bool:
         """Check if the item contains alcohol."""
         return self.data_isalcohol or any(keyword in (self.title or "").lower() 
                                          for keyword in ["wine", "beer", "liquor", "alcohol"])
@@ -285,15 +285,15 @@ class MeijerItem:
     @property
     def requires_age_verification(self) -> bool:
         """Check if the item requires age verification."""
-        return self.data_isagerestricted or self.is_alcoholic
+        return self.data_isagerestricted or self.alcoholic
 
     @property
-    def is_available_for_pickup(self) -> bool:
+    def available_for_pickup(self) -> bool:
         """Check if the item is available for pickup."""
         return self.data_pickupavailableflag and self.is_available
 
     @property
-    def is_available_for_delivery(self) -> bool:
+    def available_for_delivery(self) -> bool:
         """Check if the item is available for home delivery."""
         return not self.data_homedeliverynotavailable and self.is_available
 
@@ -303,19 +303,19 @@ class MeijerItem:
         return bool(self.data_hasmperks and self.data_mperksofferid)
 
     @property
-    def is_special_buy(self) -> bool:
+    def special_buy(self) -> bool:
         """Check if the item is a special buy."""
         return self.data_specialbuy
 
     @property
-    def is_deactivated(self) -> bool:
+    def deactivated(self) -> bool:
         """Check if the item is deactivated."""
         return self.data_deactivated
 
     @property
-    def is_purchasable(self) -> bool:
+    def purchasable(self) -> bool:
         """Check if the item can be purchased."""
-        return self.data_ispurchasable and self.is_available and not self.is_deactivated
+        return self.data_ispurchasable and self.is_available and not self.deactivated
 
     @property
     def has_location_data(self) -> bool:
@@ -519,12 +519,12 @@ class ListItem:
             return f"Active ({days_left} days left)"
 
     @property
-    def is_high_priority(self) -> bool:
+    def high_priority(self) -> bool:
         """Check if the item is high priority (low display order)."""
         return self.item_display_order <= 3
 
     @property
-    def is_low_priority(self) -> bool:
+    def low_priority(self) -> bool:
         """Check if the item is low priority (high display order)."""
         return self.item_display_order > 10
 
@@ -555,7 +555,7 @@ class ListItem:
         return self.is_complete
 
     @property
-    def is_favorite_item(self) -> bool:
+    def favorite_item(self) -> bool:
         """Check if this item is marked as a favorite."""
         return self.is_favorite
 
@@ -698,12 +698,12 @@ class MeijerCoupon:
         return (date.today() - self.redemption_start_date).days
 
     @property
-    def is_about_to_expire(self) -> bool:
+    def about_to_expire(self) -> bool:
         """Check if the coupon expires within 7 days."""
         return self.days_until_expiry <= 7
 
     @property
-    def is_newly_available(self) -> bool:
+    def newly_available(self) -> bool:
         """Check if the coupon became available within 7 days."""
         return self.days_since_start <= 7
 
@@ -718,7 +718,7 @@ class MeijerCoupon:
         return self.large_image_url or self.image_url
 
     @property
-    def is_clippable_now(self) -> bool:
+    def clippable_now(self) -> bool:
         """Check if the coupon can be clipped right now."""
         return self.is_clippable and self.is_active and not self.is_clipped
 
@@ -728,22 +728,22 @@ class MeijerCoupon:
         return self.is_clipped
 
     @property
-    def is_auto_clipped(self) -> bool:
+    def auto_clipped(self) -> bool:
         """Check if the coupon was automatically clipped."""
         return self.is_auto_clipped
 
     @property
-    def is_hidden_from_view(self) -> bool:
+    def hidden_from_view(self) -> bool:
         """Check if the coupon is hidden from normal view."""
         return self.is_hidden
 
     @property
-    def is_targeted_for_user(self) -> bool:
+    def targeted_for_user(self) -> bool:
         """Check if the coupon is specifically targeted for the current user."""
         return self.is_targeted
 
     @property
-    def is_meijer_buck_eligible(self) -> bool:
+    def meijer_buck_eligible(self) -> bool:
         """Check if the coupon is eligible for Meijer Bucks."""
         return self.is_meijer_buck
 
@@ -792,17 +792,17 @@ class MeijerCoupon:
             return discount_type
 
     @property
-    def is_special_offer_type(self) -> bool:
+    def special_offer_type(self) -> bool:
         """Check if this is a special type of offer."""
         return self.is_special_offer
 
     @property
-    def is_manufacturer_coupon_type(self) -> bool:
+    def manufacturer_coupon_type(self) -> bool:
         """Check if this is a manufacturer coupon."""
         return self.manufacturer_coupon
 
     @property
-    def is_suggested_for_user(self) -> bool:
+    def suggested_for_user(self) -> bool:
         """Check if this coupon is suggested for the current user."""
         return self.is_suggested
 
@@ -817,14 +817,14 @@ class MeijerCoupon:
         return self.hat_color != 0 or self.border_color != 0
 
     @property
-    def is_ebt_eligible(self) -> bool:
+    def ebt_eligible(self) -> bool:
         """Check if the coupon is eligible for EBT/food stamps."""
         # This would need to be implemented based on actual EBT logic
         # For now, return False as a placeholder
         return False
 
     @property
-    def is_alcohol_related(self) -> bool:
+    def alcohol_related(self) -> bool:
         """Check if the coupon is related to alcohol products."""
         alcohol_keywords = ["wine", "beer", "liquor", "alcohol", "spirits"]
         return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
@@ -833,7 +833,7 @@ class MeijerCoupon:
     @property
     def requires_age_verification(self) -> bool:
         """Check if the coupon requires age verification."""
-        return self.is_alcohol_related
+        return self.alcohol_related
 
     @property
     def display_priority(self) -> int:
@@ -841,19 +841,19 @@ class MeijerCoupon:
         priority = 0
         
         # High priority: expiring soon
-        if self.is_about_to_expire:
+        if self.about_to_expire:
             priority -= 100
         
         # High priority: newly available
-        if self.is_newly_available:
+        if self.newly_available:
             priority -= 50
         
         # High priority: targeted for user
-        if self.is_targeted:
+        if self.targeted_for_user:
             priority -= 25
         
         # High priority: suggested for user
-        if self.is_suggested:
+        if self.suggested_for_user:
             priority -= 20
         
         # Medium priority: clipped
@@ -1052,21 +1052,21 @@ class Store:
                   for keyword in auto_keywords)
 
     @property
-    def is_24_hour(self) -> bool:
+    def open_24_hours(self) -> bool:
         """Check if the store is open 24 hours."""
         if not self.has_hours:
             return False
         return "24" in self.hours or "24 hour" in self.hours.lower()
 
     @property
-    def is_open_late(self) -> bool:
+    def open_late(self) -> bool:
         """Check if the store is open late (past 10 PM)."""
         if not self.has_hours:
             return False
         return any(time in self.hours for time in ["11", "12", "1 AM", "2 AM", "3 AM"])
 
     @property
-    def is_open_early(self) -> bool:
+    def open_early(self) -> bool:
         """Check if the store opens early (before 7 AM)."""
         if not self.has_hours:
             return False
@@ -1116,11 +1116,11 @@ class Store:
             score += 5
         
         # Hours convenience
-        if self.is_24_hour:
+        if self.open_24_hours:
             score += 20
-        elif self.is_open_late:
+        elif self.open_late:
             score += 10
-        elif self.is_open_early:
+        elif self.open_early:
             score += 5
         
         return min(score, 100)
@@ -1170,7 +1170,7 @@ class SearchResult:
         return self.current_page >= self.total_pages
 
     @property
-    def is_first_page(self) -> bool:
+    def first_page(self) -> bool:
         """Check if this is the first page of results."""
         return self.current_page == 1
 
@@ -1189,7 +1189,7 @@ class SearchResult:
     @property
     def previous_page_number(self) -> Optional[int]:
         """Get the previous page number, or None if on first page."""
-        if self.is_first_page:
+        if self.first_page:
             return None
         return self.current_page - 1
 
@@ -1209,22 +1209,22 @@ class SearchResult:
         return len(self.filters)
 
     @property
-    def is_sorted_by_relevance(self) -> bool:
+    def sorted_by_relevance(self) -> bool:
         """Check if results are sorted by relevance."""
         return self.sort_by.lower() == "relevance"
 
     @property
-    def is_sorted_by_price(self) -> bool:
+    def sorted_by_price(self) -> bool:
         """Check if results are sorted by price."""
         return "price" in self.sort_by.lower()
 
     @property
-    def is_sorted_by_name(self) -> bool:
+    def sorted_by_name(self) -> bool:
         """Check if results are sorted by name."""
         return "name" in self.sort_by.lower() or "title" in self.sort_by.lower()
 
     @property
-    def is_sorted_by_popularity(self) -> bool:
+    def sorted_by_popularity(self) -> bool:
         """Check if results are sorted by popularity."""
         return "popular" in self.sort_by.lower() or "trending" in self.sort_by.lower()
 
@@ -1256,7 +1256,7 @@ class SearchResult:
     @property
     def results_on_sale(self) -> List["MeijerItem"]:
         """Get results that are currently on sale."""
-        return [item for item in self.results if item.is_on_sale]
+        return [item for item in self.results if item.on_sale]
 
     @property
     def results_with_images(self) -> List["MeijerItem"]:
