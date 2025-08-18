@@ -478,6 +478,11 @@ def cli():
         meijer list defrag                  # Organize list by aisle
         meijer list export list.txt         # Export list to text file
         meijer list import list.txt         # Import list from file
+        meijer settings vehicle --show      # Show current vehicle
+        meijer settings vehicle --update "Honda"  # Update vehicle
+        meijer settings preferences --show  # Show all preferences
+        meijer settings account --show      # Show account details
+        meijer settings summary             # Show settings summary
     """
     pass
 
@@ -1348,6 +1353,233 @@ def status():
 
     except Exception as e:
         click.echo(f"❌ Status check failed: {e}")
+
+
+@cli.group()
+def settings():
+    """Manage Meijer account settings and preferences."""
+    pass
+
+
+@settings.command("vehicle")
+@click.option("--show", is_flag=True, help="Show current vehicle information")
+@click.option("--update", help="Update vehicle description (e.g., 'Honda', 'VW')")
+def settings_vehicle(show: bool, update: str):
+    """Manage vehicle information for fuel rewards."""
+    client = get_meijer_client()
+    
+    try:
+        if show or not update:
+            # Show current vehicle information
+            vehicle = client.settings.get_vehicle_information()
+            
+            if vehicle:
+                click.echo("🚗 Current Vehicle Information:")
+                click.echo(f"  Vehicle ID: {vehicle.vehicle_id}")
+                click.echo(f"  Description: {vehicle.vehicle_description}")
+                click.echo(f"  Account ID: {vehicle.account_id}")
+            else:
+                click.echo("❌ No vehicle information found")
+                return
+        
+        if update:
+            # Update vehicle information
+            click.echo(f"🔧 Updating vehicle to: {update}")
+            success = client.settings.update_vehicle_information(update)
+            
+            if success:
+                click.echo(f"✅ Vehicle updated to: {update}")
+                
+                # Show updated information
+                updated_vehicle = client.settings.get_vehicle_information()
+                if updated_vehicle:
+                    click.echo(f"  Verified: {updated_vehicle.vehicle_description}")
+            else:
+                click.echo("❌ Failed to update vehicle")
+                
+    except Exception as e:
+        raise click.ClickException(f"❌ Vehicle operation failed: {e}")
+
+
+@settings.command("preferences")
+@click.option("--show", is_flag=True, help="Show current preferences")
+@click.option("--choices", is_flag=True, help="Show available preference choices")
+@click.option("--update", nargs=2, help="Update preference: TYPE VALUE (e.g., 'Substitutions' 'No Substitutions')")
+def settings_preferences(show: bool, choices: bool, update: tuple):
+    """Manage customer preferences."""
+    client = get_meijer_client()
+    
+    try:
+        if show or not update:
+            # Show current preferences
+            preferences = client.settings.get_customer_preferences()
+            
+            if preferences:
+                click.echo(f"⚙️  Customer Preferences ({len(preferences)} found):")
+                
+                # Prepare table data
+                table_data = []
+                for i, pref in enumerate(preferences, 1):
+                    table_data.append([
+                        i,
+                        pref.preference_type_name,
+                        pref.preference_value,
+                        pref.owning_program_name,
+                        pref.data_type_name,
+                        "Yes" if pref.is_preference_discrete_choice else "No"
+                    ])
+                
+                headers = ["#", "Preference Type", "Current Value", "Program", "Data Type", "Discrete Choice"]
+                
+                if TABULATE_AVAILABLE:
+                    click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
+                else:
+                    for row in table_data:
+                        click.echo(f"  {row[0]}. {row[1]}: {row[2]} ({row[3]})")
+            else:
+                click.echo("❌ No preferences found")
+                return
+        
+        if choices:
+            # Show available discrete choices
+            choices_list = client.settings.get_preference_discrete_choices()
+            
+            if choices_list:
+                click.echo("🎯 Available Preference Choices:")
+                
+                table_data = []
+                for choice in choices_list:
+                    table_data.append([
+                        choice.digital_preference_discrete_choice_id,
+                        choice.digital_preference_discrete_choice_value
+                    ])
+                
+                headers = ["Choice ID", "Choice Value"]
+                
+                if TABULATE_AVAILABLE:
+                    click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
+                else:
+                    for choice in choices_list:
+                        click.echo(f"  {choice.digital_preference_discrete_choice_id}: {choice.digital_preference_discrete_choice_value}")
+            else:
+                click.echo("❌ No discrete choices found")
+        
+        if update:
+            # Update preference
+            preference_type, preference_value = update
+            click.echo(f"🔧 Updating preference '{preference_type}' to: {preference_value}")
+            
+            success = client.settings.update_customer_preference(
+                preference_type, 
+                preference_value, 
+                "DigitalGrocery"  # Default program
+            )
+            
+            if success:
+                click.echo(f"✅ Preference '{preference_type}' updated successfully")
+            else:
+                click.echo(f"❌ Failed to update preference '{preference_type}'")
+                
+    except Exception as e:
+        raise click.ClickException(f"❌ Preferences operation failed: {e}")
+
+
+@settings.command("account")
+@click.option("--show", is_flag=True, help="Show account details")
+@click.option("--update", help="Update account field (format: FIELD=VALUE)")
+def settings_account(show: bool, update: str):
+    """Manage account information."""
+    client = get_meijer_client()
+    
+    try:
+        if show or not update:
+            # Show account details
+            account = client.settings.get_account_details()
+            
+            if account:
+                click.echo("👤 Account Details:")
+                click.echo(f"  Account ID: {account.get('accountId')}")
+                click.echo(f"  Name: {account.get('firstName')} {account.get('lastName')}")
+                click.echo(f"  Email: {account.get('email')}")
+                click.echo(f"  Birth Date: {account.get('birthDate')}")
+                click.echo(f"  ZIP Code: {account.get('zip')}")
+                click.echo(f"  Store ID: {account.get('storeId')}")
+                click.echo(f"  mPerks ID: {account.get('mPerksId')}")
+                click.echo(f"  Account Status: {account.get('accountStatus')}")
+            else:
+                click.echo("❌ No account details found")
+                return
+        
+        if update:
+            # Parse update field
+            if "=" not in update:
+                raise click.ClickException("❌ Update format must be FIELD=VALUE (e.g., 'firstName=John')")
+            
+            field, value = update.split("=", 1)
+            click.echo(f"🔧 Updating account field '{field}' to: {value}")
+            
+            # Note: This is a simplified update - in production you'd want more validation
+            updates = {field: value}
+            success = client.settings.update_account_details(updates)
+            
+            if success:
+                click.echo(f"✅ Account field '{field}' updated successfully")
+            else:
+                click.echo(f"❌ Failed to update account field '{field}'")
+                
+    except Exception as e:
+        raise click.ClickException(f"❌ Account operation failed: {e}")
+
+
+@settings.command("summary")
+def settings_summary():
+    """Show a summary of all settings."""
+    client = get_meijer_client()
+    
+    try:
+        click.echo("🔧 Settings Summary")
+        click.echo("=" * 50)
+        
+        # Vehicle information
+        click.echo("\n🚗 Vehicle Information:")
+        vehicle = client.settings.get_vehicle_information()
+        if vehicle:
+            click.echo(f"  Current Vehicle: {vehicle.vehicle_description}")
+            click.echo(f"  Vehicle ID: {vehicle.vehicle_id}")
+        else:
+            click.echo("  No vehicle information")
+        
+        # Preferences summary
+        click.echo("\n⚙️  Preferences Summary:")
+        preferences = client.settings.get_customer_preferences()
+        if preferences:
+            click.echo(f"  Total Preferences: {len(preferences)}")
+            
+            # Group by program
+            programs = {}
+            for pref in preferences:
+                program = pref.owning_program_name
+                if program not in programs:
+                    programs[program] = []
+                programs[program].append(pref)
+            
+            for program, prefs in programs.items():
+                click.echo(f"    {program}: {len(prefs)} preferences")
+        else:
+            click.echo("  No preferences found")
+        
+        # Account summary
+        click.echo("\n👤 Account Summary:")
+        account = client.settings.get_account_details()
+        if account:
+            click.echo(f"  Name: {account.get('firstName')} {account.get('lastName')}")
+            click.echo(f"  Store ID: {account.get('storeId')}")
+            click.echo(f"  mPerks ID: {account.get('mPerksId')}")
+        else:
+            click.echo("  No account details found")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Settings summary failed: {e}")
 
 
 @cli.command()
