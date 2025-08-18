@@ -168,6 +168,298 @@ def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
     return added_count
 
 
+def export_to_text(items: List, file_path: Path) -> None:
+    """
+    Export shopping list items to a plain text file.
+    
+    Format: Item Name | Quantity | Notes | Status
+    
+    Args:
+        items: List of shopping list items
+        file_path: Path to save the export file
+    """
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write("# Meijer Shopping List Export\n")
+        f.write(f"# Exported on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"# Total items: {len(items)}\n")
+        f.write("# Format: Item Name | Quantity | Notes | Status\n")
+        f.write("# Status: PENDING or COMPLETED\n")
+        f.write("#\n")
+        
+        for item in items:
+            # Escape any pipe characters in the item name or notes
+            item_name = item.name.replace("|", "\\|")
+            notes = (item.notes or "").replace("|", "\\|")
+            status = "COMPLETED" if item.checked else "PENDING"
+            
+            f.write(f"{item_name} | {item.quantity} | {notes} | {status}\n")
+
+
+def export_to_csv(items: List, file_path: Path) -> None:
+    """
+    Export shopping list items to a CSV file.
+    
+    Args:
+        items: List of shopping list items
+        file_path: Path to save the export file
+    """
+    import csv
+    
+    with open(file_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Item Name", "Quantity", "Notes", "Status"])
+        
+        for item in items:
+            status = "COMPLETED" if item.checked else "PENDING"
+            writer.writerow([item.name, item.quantity, item.notes or "", status])
+
+
+def export_to_json(items: List, file_path: Path) -> None:
+    """
+    Export shopping list items to a JSON file.
+    
+    Args:
+        items: List of shopping list items
+        file_path: Path to save the export file
+    """
+    import json
+    
+    export_data = {
+        "export_info": {
+            "exported_at": datetime.now().isoformat(),
+            "total_items": len(items),
+            "format_version": "1.0"
+        },
+        "items": []
+    }
+    
+    for item in items:
+        item_data = {
+            "name": item.name,
+            "quantity": item.quantity,
+            "notes": item.notes,
+            "status": "COMPLETED" if item.checked else "PENDING",
+            "item_id": item.item_id,
+            "list_item_id": item.list_item_id,
+            "item_type": "PRODUCT" if item.is_product else "MANUAL"
+        }
+        export_data["items"].append(item_data)
+    
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(export_data, f, indent=2, ensure_ascii=False)
+
+
+def import_from_text(client: Meijer, file_path: Path) -> int:
+    """
+    Import shopping list items from a plain text file.
+    
+    Expected format: Item Name | Quantity | Notes | Status
+    
+    Args:
+        client: Meijer client instance
+        file_path: Path to the import file
+        
+    Returns:
+        int: Number of items successfully imported
+    """
+    imported_count = 0
+    failed_count = 0
+    
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+            
+            # Skip empty lines, comments, and header lines
+            if not line or line.startswith("#"):
+                continue
+                
+            try:
+                # Parse the line: Item Name | Quantity | Notes | Status
+                parts = line.split(" | ")
+                if len(parts) < 2:
+                    click.echo(f"  ⚠️  Line {line_num}: Invalid format, skipping")
+                    continue
+                
+                item_name = parts[0].strip()
+                quantity = int(parts[1].strip()) if len(parts) > 1 else 1
+                notes = parts[2].strip() if len(parts) > 2 else None
+                status = parts[3].strip() if len(parts) > 3 else "PENDING"
+                
+                # Unescape pipe characters
+                if item_name:
+                    item_name = item_name.replace("\\|", "|")
+                if notes:
+                    notes = notes.replace("\\|", "|")
+                
+                # Add the item
+                success = client.list.add_item_with_details(
+                    upc=f"ITEM_{line_num}_{hash(item_name) % 10000}",
+                    description=item_name,
+                    quantity=quantity,
+                    notes=notes
+                )
+                
+                if success:
+                    imported_count += 1
+                    click.echo(f"  ✅ Imported: {item_name} (qty: {quantity})")
+                    
+                    # Mark as completed if status indicates it
+                    if status.upper() == "COMPLETED":
+                        # Note: We can't mark as completed during import, but we can note it
+                        click.echo(f"     ℹ️  Item marked as completed in import (will be pending in list)")
+                else:
+                    failed_count += 1
+                    click.echo(f"  ❌ Failed to import: {item_name}")
+                    
+            except (ValueError, IndexError) as e:
+                failed_count += 1
+                click.echo(f"  ❌ Line {line_num}: Parse error - {e}")
+            except Exception as e:
+                failed_count += 1
+                click.echo(f"  ❌ Line {line_num}: Error importing '{line}': {e}")
+    
+    click.echo(f"\n📊 Import Summary: {imported_count} imported, {failed_count} failed")
+    return imported_count
+
+
+def import_from_csv(client: Meijer, file_path: Path) -> int:
+    """
+    Import shopping list items from a CSV file.
+    
+    Expected columns: Item Name, Quantity, Notes, Status
+    
+    Args:
+        client: Meijer client instance
+        file_path: Path to the import file
+        
+    Returns:
+        int: Number of items successfully imported
+    """
+    import csv
+    
+    imported_count = 0
+    failed_count = 0
+    
+    with open(file_path, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        
+        # Validate required columns
+        required_columns = {"Item Name", "Quantity", "Notes", "Status"}
+        if not required_columns.issubset(set(reader.fieldnames or [])):
+            raise click.ClickException("❌ CSV file missing required columns: Item Name, Quantity, Notes, Status")
+        
+        for row_num, row in enumerate(reader, 1):
+            try:
+                item_name = row["Item Name"].strip()
+                if not item_name:
+                    continue
+                
+                quantity = int(row["Quantity"]) if row["Quantity"] else 1
+                notes = row["Notes"].strip() if row["Notes"] else None
+                status = row["Status"].strip() if row["Status"] else "PENDING"
+                
+                # Add the item
+                success = client.list.add_item_with_details(
+                    upc=f"ITEM_{row_num}_{hash(item_name) % 10000}",
+                    description=item_name,
+                    quantity=quantity,
+                    notes=notes
+                )
+                
+                if success:
+                    imported_count += 1
+                    click.echo(f"  ✅ Imported: {item_name} (qty: {quantity})")
+                    
+                    if status.upper() == "COMPLETED":
+                        click.echo(f"     ℹ️  Item marked as completed in import (will be pending in list)")
+                else:
+                    failed_count += 1
+                    click.echo(f"  ❌ Failed to import: {item_name}")
+                    
+            except (ValueError, KeyError) as e:
+                failed_count += 1
+                click.echo(f"  ❌ Row {row_num}: Parse error - {e}")
+            except Exception as e:
+                failed_count += 1
+                click.echo(f"  ❌ Row {row_num}: Error importing row: {e}")
+    
+    click.echo(f"\n📊 Import Summary: {imported_count} imported, {failed_count} failed")
+    return imported_count
+
+
+def import_from_json(client: Meijer, file_path: Path) -> int:
+    """
+    Import shopping list items from a JSON file.
+    
+    Expected format: JSON with items array containing name, quantity, notes, status
+    
+    Args:
+        client: Meijer client instance
+        file_path: Path to the import file
+        
+    Returns:
+        int: Number of items successfully imported
+    """
+    import json
+    
+    imported_count = 0
+    failed_count = 0
+    
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    # Validate JSON structure
+    if not isinstance(data, dict) or "items" not in data:
+        raise click.ClickException("❌ Invalid JSON format: missing 'items' array")
+    
+    items = data["items"]
+    if not isinstance(items, list):
+        raise click.ClickException("❌ Invalid JSON format: 'items' is not an array")
+    
+    for item_num, item_data in enumerate(items, 1):
+        try:
+            if not isinstance(item_data, dict):
+                click.echo(f"  ⚠️  Item {item_num}: Invalid item format, skipping")
+                continue
+            
+            item_name = item_data.get("name", "").strip()
+            if not item_name:
+                click.echo(f"  ⚠️  Item {item_num}: Missing name, skipping")
+                continue
+            
+            quantity = int(item_data.get("quantity", 1))
+            notes = item_data.get("notes")
+            status = item_data.get("status", "PENDING")
+            
+            # Add the item
+            success = client.list.add_item_with_details(
+                upc=f"ITEM_{item_num}_{hash(item_name) % 10000}",
+                description=item_name,
+                quantity=quantity,
+                notes=notes
+            )
+            
+            if success:
+                imported_count += 1
+                click.echo(f"  ✅ Imported: {item_name} (qty: {quantity})")
+                
+                if status.upper() == "COMPLETED":
+                    click.echo(f"     ℹ️  Item marked as completed in import (will be pending in list)")
+            else:
+                failed_count += 1
+                click.echo(f"  ❌ Failed to import: {item_name}")
+                
+        except (ValueError, KeyError) as e:
+            failed_count += 1
+            click.echo(f"  ❌ Item {item_num}: Parse error - {e}")
+        except Exception as e:
+            failed_count += 1
+            click.echo(f"  ❌ Item {item_num}: Error importing: {e}")
+    
+    click.echo(f"\n📊 Import Summary: {imported_count} imported, {failed_count} failed")
+    return imported_count
+
+
 @click.group()
 @click.version_option(version="1.0.0", prog_name="meijer")
 def cli():
@@ -184,6 +476,8 @@ def cli():
         echo "Milk" | meijer list add       # Add item from stdin
         meijer list clear                   # Clear completed items
         meijer list defrag                  # Organize list by aisle
+        meijer list export list.txt         # Export list to text file
+        meijer list import list.txt         # Import list from file
     """
     pass
 
@@ -438,6 +732,91 @@ def list_defrag(store_id: Optional[str], reverse: bool, zig: bool):
             raise click.ClickException("❌ Defrag failed!")
     except Exception as e:
         raise click.ClickException(f"❌ Defrag failed: {e}")
+
+
+@list.command("export")
+@click.argument("filename", type=click.Path(), default="shopping_list.txt")
+@click.option("--format", "-f", type=click.Choice(["text", "csv", "json"]), default="text", help="Export format")
+def list_export(filename: str, format: str):
+    """Export shopping list to a file with full details for round-trip import."""
+    client = get_meijer_client()
+
+    try:
+        items = client.list.get()
+
+        if not items:
+            click.echo("📝 Shopping list is empty - nothing to export!")
+            return
+
+        # Create directory if it doesn't exist
+        file_path = Path(filename)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if format == "text":
+            export_to_text(items, file_path)
+        elif format == "csv":
+            export_to_csv(items, file_path)
+        elif format == "json":
+            export_to_json(items, file_path)
+
+        click.echo(f"✅ Exported {len(items)} items to {filename}")
+        click.echo(f"📁 File saved to: {file_path.absolute()}")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Export failed: {e}")
+
+
+@list.command("import")
+@click.argument("filename", type=click.Path(exists=True))
+@click.option("--clear", "-c", is_flag=True, help="Clear existing list before import")
+@click.option("--format", "-f", type=click.Choice(["auto", "text", "csv", "json"]), default="auto", help="Import format (auto-detect if not specified)")
+def list_import(filename: str, clear: bool, format: str):
+    """Import shopping list from a file with full details."""
+    client = get_meijer_client()
+
+    try:
+        file_path = Path(filename)
+        
+        if not file_path.exists():
+            raise click.ClickException(f"❌ File not found: {filename}")
+
+        # Auto-detect format if not specified
+        if format == "auto":
+            if filename.endswith('.csv'):
+                format = "csv"
+            elif filename.endswith('.json'):
+                format = "json"
+            else:
+                format = "text"
+
+        # Clear existing list if requested
+        if clear:
+            click.echo("🗑️ Clearing existing shopping list...")
+            items = client.list.get()
+            if items:
+                deleted_count = 0
+                for item in items:
+                    if client.list.delete_item(str(item.list_item_id)):
+                        deleted_count += 1
+                        click.echo(f"  🗑️ Deleted: {item.name}")
+                    else:
+                        click.echo(f"  ❌ Failed to delete: {item.name}")
+                click.echo(f"✅ Cleared {deleted_count} existing items")
+            else:
+                click.echo("📝 Shopping list was already empty")
+
+        # Import items
+        if format == "text":
+            imported_count = import_from_text(client, file_path)
+        elif format == "csv":
+            imported_count = import_from_csv(client, file_path)
+        elif format == "json":
+            imported_count = import_from_json(client, file_path)
+
+        click.echo(f"✅ Successfully imported {imported_count} items from {filename}")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Import failed: {e}")
 
 
 @list.command("interactive")
