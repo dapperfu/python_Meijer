@@ -210,13 +210,15 @@ class MeijerCart:
                 "date": date.strftime("%Y-%m-%d"),
             }
 
-            headers = {
+            # Get default headers (includes Authorization) and merge with custom headers
+            headers = self.api_client._get_api_headers()
+            headers.update({
                 "x-mfc-store": self.store_id,
                 "deliverypartner": delivery_partner,
                 "fulfillmenttype": "pickup",
                 "fulfillmenteligibility": "NORMAL",
                 "curbsidepartner": curbside_partner,
-            }
+            })
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
@@ -277,12 +279,14 @@ class MeijerCart:
                 "date": date.strftime("%Y-%m-%d"),
             }
 
-            headers = {
+            # Get default headers (includes Authorization) and merge with custom headers
+            headers = self.api_client._get_api_headers()
+            headers.update({
                 "x-mfc-store": self.store_id,
                 "deliverypartner": delivery_partner,
                 "fulfillmenttype": "delivery",
                 "fulfillmenteligibility": "NORMAL",
-            }
+            })
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
