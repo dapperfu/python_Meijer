@@ -467,22 +467,6 @@ def cli():
     🛒 Meijer Shopping List CLI Tool
 
     Manage your Meijer shopping lists from the command line.
-
-    Examples:
-        meijer list show                    # Show current shopping list
-        meijer list add "Milk"              # Add item by description
-        meijer list add 0123456789          # Add item by UPC
-        meijer list add < items.txt         # Add items from file
-        echo "Milk" | meijer list add       # Add item from stdin
-        meijer list clear                   # Clear completed items
-        meijer list defrag                  # Organize list by aisle
-        meijer list export list.txt         # Export list to text file
-        meijer list import list.txt         # Import list from file
-        meijer settings vehicle --show      # Show current vehicle
-        meijer settings vehicle --update "Honda"  # Update vehicle
-        meijer settings preferences --show  # Show all preferences
-        meijer settings account --show      # Show account details
-        meijer settings summary             # Show settings summary
     """
     pass
 
