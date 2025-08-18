@@ -104,7 +104,7 @@ class MeijerCart:
         self._cart_data: Optional[Dict[str, Any]] = None
         self._last_updated: Optional[datetime] = None
 
-    async def get_current_cart(self, force_refresh: bool = False) -> Dict[str, Any]:
+    def get_current_cart(self, force_refresh: bool = False) -> Dict[str, Any]:
         """
         Retrieve the current shopping cart.
 
@@ -586,3 +586,167 @@ class MeijerCart:
         except Exception as e:
             self.logger.error(f"Error getting order history: {e}")
             return []
+
+    def add_item_by_upc(self, upc: str, quantity: int = 1) -> bool:
+        """
+        Add an item to the cart by UPC code.
+
+        This method adds a product to the shopping cart using its UPC (Universal Product Code).
+        The API endpoint for adding items was not found in the current log analysis,
+        so this is a placeholder implementation.
+
+        Parameters
+        ----------
+        upc : str
+            UPC code of the product to add
+        quantity : int, optional
+            Quantity to add (default: 1)
+
+        Returns
+        -------
+        bool
+            True if item was successfully added, False otherwise
+
+        Raises
+        ------
+        CartError
+            If adding the item fails
+        """
+        try:
+            self.logger.info(f"Adding item with UPC {upc}, quantity {quantity} to cart")
+            
+            # Build request body for adding item
+            request_data = {
+                "storeId": self.store_id,
+                "productCode": upc,
+                "quantity": quantity,
+                "productCodeType": "UPCA"
+            }
+
+            # Get default headers and add content-type
+            headers = self.api_client._get_api_headers()
+            headers.update({
+                "Content-Type": "application/json"
+            })
+
+            # Note: The actual endpoint for adding items needs to be determined
+            # This is a placeholder implementation
+            url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries"
+            
+            self.logger.info(f"Adding item to cart: {url}")
+            self.logger.info(f"Request data: {request_data}")
+            
+            response = self.api_client._make_request(
+                "POST", url, json_data=request_data, headers=headers
+            )
+
+            if response.status_code == 200:
+                self.logger.info(f"Successfully added item with UPC {upc} to cart")
+                # Clear cached cart data to force refresh
+                self._cart_data = None
+                self._last_updated = None
+                return True
+            else:
+                self.logger.warning(
+                    f"Failed to add item: {response.status_code} - {response.text}"
+                )
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error adding item to cart: {e}")
+            raise CartError(f"Failed to add item with UPC {upc}: {str(e)}")
+
+    def empty_cart(self) -> bool:
+        """
+        Remove all items from the cart.
+
+        This method clears the entire shopping cart by removing all items.
+        The API endpoint for removing items was not found in the current log analysis,
+        so this is a placeholder implementation.
+
+        Returns
+        -------
+        bool
+            True if cart was successfully emptied, False otherwise
+
+        Raises
+        ------
+        CartError
+            If emptying the cart fails
+        """
+        try:
+            self.logger.info("Emptying shopping cart")
+            
+            # Get current cart data to find item IDs
+            cart_data = self.get_current_cart()
+            if not cart_data or "entries" not in cart_data:
+                self.logger.info("Cart is already empty")
+                return True
+
+            entries = cart_data["entries"]
+            if not entries:
+                self.logger.info("Cart is already empty")
+                return True
+
+            # Remove each item individually
+            success_count = 0
+            for entry in entries:
+                entry_id = entry.get("entryNumber")
+                if entry_id:
+                    if self._remove_cart_item(entry_id):
+                        success_count += 1
+
+            self.logger.info(f"Successfully removed {success_count} items from cart")
+            
+            # Clear cached cart data
+            self._cart_data = None
+            self._last_updated = None
+            
+            return success_count == len(entries)
+
+        except Exception as e:
+            self.logger.error(f"Error emptying cart: {e}")
+            raise CartError(f"Failed to empty cart: {str(e)}")
+
+    def _remove_cart_item(self, entry_id: str) -> bool:
+        """
+        Remove a specific item from the cart.
+
+        Private method to remove individual cart items.
+
+        Parameters
+        ----------
+        entry_id : str
+            ID of the cart entry to remove
+
+        Returns
+        -------
+        bool
+            True if item was successfully removed, False otherwise
+        """
+        try:
+            # Get default headers
+            headers = self.api_client._get_api_headers()
+            
+            # Note: The actual endpoint for removing items needs to be determined
+            # This is a placeholder implementation
+            url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries/{entry_id}"
+            
+            self.logger.info(f"Removing cart item {entry_id}: {url}")
+            
+            response = self.api_client._make_request(
+                "DELETE", url, headers=headers
+            )
+
+            if response.status_code == 200:
+                self.logger.info(f"Successfully removed cart item {entry_id}")
+                return True
+            else:
+                self.logger.warning(
+                    f"Failed to remove item {entry_id}: {response.status_code} - {response.text}"
+                )
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error removing cart item {entry_id}: {e}")
+            return False

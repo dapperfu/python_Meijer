@@ -2019,6 +2019,98 @@ def cart_orders(page: int, size: int, store: str):
         raise click.ClickException(f"❌ Order history operation failed: {e}")
 
 
+@cart.command("add")
+@click.argument("upc", type=str)
+@click.option("--quantity", "-q", default=1, help="Quantity to add (default: 1)")
+@click.option("--store", default="217", help="Store ID for cart operations")
+def cart_add(upc: str, quantity: int, store: str):
+    """Add an item to the cart by UPC code."""
+    client = get_meijer_client()
+    
+    try:
+        # Check if cart is available
+        if not client.cart:
+            raise click.ClickException("❌ Cart functionality not available")
+        
+        # Update store ID if different from default
+        if store != "217":
+            client.cart.store_id = store
+        
+        click.echo(f"🛒 Adding item to cart (Store: {store})")
+        click.echo(f"📦 UPC: {upc}")
+        click.echo(f"🔢 Quantity: {quantity}")
+        click.echo("=" * 50)
+        
+        # Add item to cart
+        success = client.cart.add_item_by_upc(upc, quantity)
+        
+        if success:
+            click.echo("✅ Item successfully added to cart!")
+            
+            # Show updated cart summary
+            cart_data = client.cart.get_current_cart()
+            if cart_data:
+                click.echo(f"📊 Cart now contains {client.cart.item_count} items")
+                click.echo(f"💰 Total price: ${client.cart.total_price:.2f}")
+        else:
+            click.echo("❌ Failed to add item to cart")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Add item operation failed: {e}")
+
+
+@cart.command("empty")
+@click.option("--store", default="217", help="Store ID for cart operations")
+@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
+def cart_empty(store: str, confirm: bool):
+    """Empty the shopping cart (remove all items)."""
+    client = get_meijer_client()
+    
+    try:
+        # Check if cart is available
+        if not client.cart:
+            raise click.ClickException("❌ Cart functionality not available")
+        
+        # Update store ID if different from default
+        if store != "217":
+            client.cart.store_id = store
+        
+        # Get current cart status
+        cart_data = client.cart.get_current_cart()
+        if not cart_data or client.cart.item_count == 0:
+            click.echo("🛒 Cart is already empty")
+            return
+        
+        click.echo(f"🛒 Emptying cart (Store: {store})")
+        click.echo(f"📦 Current items: {client.cart.item_count}")
+        click.echo(f"💰 Total value: ${client.cart.total_price:.2f}")
+        click.echo("=" * 50)
+        
+        # Confirm action unless --confirm flag is used
+        if not confirm:
+            if not click.confirm("⚠️  Are you sure you want to remove ALL items from your cart?"):
+                click.echo("❌ Operation cancelled")
+                return
+        
+        # Empty the cart
+        success = client.cart.empty_cart()
+        
+        if success:
+            click.echo("✅ Cart successfully emptied!")
+            
+            # Verify cart is empty
+            cart_data = client.cart.get_current_cart()
+            if cart_data and client.cart.item_count == 0:
+                click.echo("🛒 Cart is now empty")
+            else:
+                click.echo("⚠️  Some items may not have been removed")
+        else:
+            click.echo("❌ Failed to empty cart completely")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Empty cart operation failed: {e}")
+
+
 @cart.command("summary")
 @click.option("--store", default="217", help="Store ID for cart operations")
 def cart_summary(store: str):
