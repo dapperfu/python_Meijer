@@ -450,56 +450,69 @@ class MeijerList:
             for item in current_items:
                 self.logger.info(f"🔍 Searching for: {item.name}")
 
-                # Search for the item
-                search_results = search_client.search(
-                    query=item.name,
-                    results_per_page=5,  # Just get first few results
-                    store_id=store_id,
-                )
-
-                # Find the first matching result
-                location_info = None
-                matched_product = None
-                match_confidence = "Low"
-
-                if search_results and search_results.results:
-                    first_result = search_results.results[0]
-
-                    # Calculate match confidence based on name similarity
-                    original_name = item.name.lower()
-                    matched_name = first_result.title.lower()
-
-                    # Simple similarity check
-                    if original_name in matched_name or matched_name in original_name:
-                        match_confidence = "High"
-                    elif any(word in matched_name for word in original_name.split()):
-                        match_confidence = "Medium"
-
-                    # Note: Constructor.io search results don't have aisle information
-                    # We'll use a placeholder location system based on search result order
-                    # This allows us to still organize items logically
-                    location_info = {
-                        "aisle": f"Search_{match_confidence}",
-                        "section": "Online",
-                        "zone": "Digital",
-                        "zone_code": "SEARCH",
-                    }
-                    
-                    self.logger.info(
-                        f"📍 Search result: {first_result.title[:50]}... (Confidence: {match_confidence})"
+                try:
+                    # Search for the item
+                    search_results = search_client.search(
+                        query=item.name,
+                        results_per_page=5,  # Just get first few results
+                        store_id=store_id,
                     )
 
-                    # Store matched product details
-                    matched_product = {
-                        "title": first_result.title,
-                        "price": getattr(first_result, "price", "N/A"),
-                        "brand": getattr(first_result, "brand", "N/A"),
-                        "category": getattr(first_result, "category", "N/A"),
-                        "aisle": "Search Result",
-                        "section": "Online",
-                    }
-                else:
-                    self.logger.warning(f"⚠️  No search results found for {item.name}")
+                    self.logger.info(f"📊 Search results for '{item.name}': {search_results.total_results if search_results else 0}")
+
+                    # Find the first matching result
+                    location_info = None
+                    matched_product = None
+                    match_confidence = "Low"
+
+                    if search_results and search_results.results:
+                        first_result = search_results.results[0]
+                        self.logger.info(f"🎯 First result: {first_result.title}")
+
+                        # Calculate match confidence based on name similarity
+                        original_name = item.name.lower()
+                        matched_name = first_result.title.lower()
+
+                        # Simple similarity check
+                        if original_name in matched_name or matched_name in original_name:
+                            match_confidence = "High"
+                        elif any(word in matched_name for word in original_name.split()):
+                            match_confidence = "Medium"
+
+                        # Note: Constructor.io search results don't have aisle information
+                        # We'll use a placeholder location system based on search result order
+                        # This allows us to still organize items logically
+                        location_info = {
+                            "aisle": f"Search_{match_confidence}",
+                            "section": "Online",
+                            "zone": "Digital",
+                            "zone_code": "SEARCH",
+                        }
+                        
+                        self.logger.info(
+                            f"📍 Search result: {first_result.title[:50]}... (Confidence: {match_confidence})"
+                        )
+
+                        # Store matched product details
+                        matched_product = {
+                            "title": first_result.title,
+                            "price": getattr(first_result, "price", "N/A"),
+                            "brand": getattr(first_result, "brand", "N/A"),
+                            "category": getattr(first_result, "category", "N/A"),
+                            "aisle": "Search Result",
+                            "section": "Online",
+                        }
+                    else:
+                        self.logger.warning(f"⚠️  No search results found for {item.name}")
+                        if search_results:
+                            self.logger.info(f"   Search response: {type(search_results)} with {len(search_results.results) if hasattr(search_results, 'results') else 'no results'} results")
+
+                except Exception as e:
+                    self.logger.error(f"❌ Error searching for '{item.name}': {e}")
+                    # Continue with next item instead of failing completely
+                    location_info = None
+                    matched_product = None
+                    match_confidence = "Error"
 
                 # Add to detailed table data
                 matching_table_data.append(

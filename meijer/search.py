@@ -568,20 +568,50 @@ class Search:
         try:
             filters = {}
 
-            for facet_name, facet_data in facets_data.items():
-                if isinstance(facet_data, dict) and "data" in facet_data:
-                    facet_values = []
-                    for value_data in facet_data["data"]:
-                        facet_values.append(
-                            {
-                                "value": value_data.get("value", ""),
-                                "count": value_data.get("count", 0),
-                            }
-                        )
-                    filters[facet_name] = facet_values
+            # Handle different facets data formats
+            if isinstance(facets_data, dict):
+                for facet_name, facet_data in facets_data.items():
+                    if isinstance(facet_data, dict) and "data" in facet_data:
+                        facet_values = []
+                        for value_data in facet_data["data"]:
+                            facet_values.append(
+                                {
+                                    "value": value_data.get("value", ""),
+                                    "count": value_data.get("count", 0),
+                                }
+                            )
+                        filters[facet_name] = facet_values
+                    elif isinstance(facet_data, list):
+                        # Handle case where facet_data is directly a list
+                        facet_values = []
+                        for value_data in facet_data:
+                            if isinstance(value_data, dict):
+                                facet_values.append(
+                                    {
+                                        "value": value_data.get("value", ""),
+                                        "count": value_data.get("count", 0),
+                                    }
+                                )
+                        filters[facet_name] = facet_values
+            elif isinstance(facets_data, list):
+                # Handle case where facets_data is directly a list
+                for facet_data in facets_data:
+                    if isinstance(facet_data, dict) and "name" in facet_data:
+                        facet_name = facet_data.get("name", "unknown")
+                        facet_values = []
+                        if "data" in facet_data:
+                            for value_data in facet_data["data"]:
+                                facet_values.append(
+                                    {
+                                        "value": value_data.get("value", ""),
+                                        "count": value_data.get("count", 0),
+                                    }
+                                )
+                        filters[facet_name] = facet_values
 
             return filters
 
         except Exception as e:
             self.logger.error(f"Error parsing facets: {e}")
+            # Return empty filters instead of failing
             return {}
