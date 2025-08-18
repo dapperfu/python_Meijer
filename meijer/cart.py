@@ -201,25 +201,17 @@ class MeijerCart:
                 date = datetime.now()
 
             # Build request body based on actual API call from logs
+            # The working app sends storeId and lineItems array
             request_data = {
-                "store": self.store_id,
-                "deliveryPartner": delivery_partner,
-                "fulfillmentType": "pickup",
-                "fulfillmentEligibility": "NORMAL",
-                "curbsidePartner": curbside_partner,
-                "date": date.strftime("%Y-%m-%d"),
+                "storeId": self.store_id,
+                "lineItems": []  # Empty array for just checking available slots
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
-            # Note: The fulfillment endpoint expects specific header format
+            # The fulfillment endpoint expects minimal headers - just auth and content-type
             headers = self.api_client._get_api_headers()
             headers.update({
-                "Content-Type": "application/json",
-                "X-MFC-Store": self.store_id,  # Use proper case
-                "DeliveryPartner": delivery_partner,  # Use proper case
-                "FulfillmentType": "pickup",  # Use proper case
-                "FulfillmentEligibility": "NORMAL",  # Use proper case
-                "CurbsidePartner": curbside_partner,  # Use proper case
+                "Content-Type": "application/json"
             })
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
@@ -273,12 +265,10 @@ class MeijerCart:
                 date = datetime.now()
 
             # Build request body based on actual API call from logs
+            # The working app sends storeId and lineItems array
             request_data = {
-                "store": self.store_id,
-                "deliveryPartner": delivery_partner,
-                "fulfillmentType": "delivery",
-                "fulfillmentEligibility": "NORMAL",
-                "date": date.strftime("%Y-%m-%d"),
+                "storeId": self.store_id,
+                "lineItems": []  # Empty array for just checking available slots
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
@@ -313,11 +303,7 @@ class MeijerCart:
             raise CartError(f"Error retrieving delivery slots: {str(e)}")
 
     def reserve_pickup_slot(
-        self,
-        slot_id: str,
-        date: datetime,
-        delivery_partner: str = "SHIPT",
-        curbside_partner: str = "MI9",
+        self, slot_id: str, delivery_partner: str = "SHIPT", curbside_partner: str = "MI9"
     ) -> bool:
         """
         Reserve a pickup time slot.
@@ -326,8 +312,6 @@ class MeijerCart:
         ----------
         slot_id : str
             ID of the slot to reserve
-        date : datetime
-            Date for the pickup
         delivery_partner : str, optional
             Delivery partner (default: "SHIPT")
         curbside_partner : str, optional
@@ -336,21 +320,50 @@ class MeijerCart:
         Returns
         -------
         bool
-            True if reservation successful, False otherwise
+            True if reservation successful
 
         Raises
         ------
         CartError
             If reservation fails
         """
-        # This would be a separate API call to reserve the slot
-        # The exact endpoint wasn't found in the current log analysis
-        raise CartError(
-            "Pickup slot reservation not yet implemented - endpoint not found in logs"
-        )
+        try:
+            # Build request body based on actual API call from logs
+            # The working app sends storeId and lineItems array
+            request_data = {
+                "storeId": self.store_id,
+                "lineItems": []  # Empty array for just checking available slots
+            }
+
+            # Get default headers (includes Authorization) and merge with custom headers
+            # The fulfillment endpoint expects minimal headers - just auth and content-type
+            headers = self.api_client._get_api_headers()
+            headers.update({
+                "Content-Type": "application/json"
+            })
+
+            url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
+
+            self.logger.info(f"Reserving pickup slot {slot_id} for store {self.store_id}")
+            response = self.api_client._make_request(
+                "POST", url, json_data=request_data, headers=headers
+            )
+
+            if response.status_code == 200:
+                self.logger.info(f"Successfully reserved pickup slot {slot_id}")
+                return True
+            else:
+                raise CartError(
+                    f"Failed to reserve pickup slot: {response.status_code} - {response.text}"
+                )
+
+        except Exception as e:
+            if isinstance(e, CartError):
+                raise
+            raise CartError(f"Error reserving pickup slot: {str(e)}")
 
     def reserve_delivery_slot(
-        self, slot_id: str, date: datetime, delivery_partner: str = "SHIPT"
+        self, slot_id: str, delivery_partner: str = "SHIPT"
     ) -> bool:
         """
         Reserve a delivery time slot.
@@ -359,26 +372,53 @@ class MeijerCart:
         ----------
         slot_id : str
             ID of the slot to reserve
-        date : datetime
-            Date for the delivery
         delivery_partner : str, optional
             Delivery partner (default: "SHIPT")
 
         Returns
         -------
         bool
-            True if reservation successful, False otherwise
+            True if reservation successful
 
         Raises
         ------
         CartError
             If reservation fails
         """
-        # This would be a separate API call to reserve the slot
-        # The exact endpoint wasn't found in the current log analysis
-        raise CartError(
-            "Delivery slot reservation not yet implemented - endpoint not found in logs"
-        )
+        try:
+            # Build request body based on actual API call from logs
+            # The working app sends storeId and lineItems array
+            request_data = {
+                "storeId": self.store_id,
+                "lineItems": []  # Empty array for just checking available slots
+            }
+
+            # Get default headers (includes Authorization) and merge with custom headers
+            # The fulfillment endpoint expects minimal headers - just auth and content-type
+            headers = self.api_client._get_api_headers()
+            headers.update({
+                "Content-Type": "application/json"
+            })
+
+            url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
+
+            self.logger.info(f"Reserving delivery slot {slot_id} for store {self.store_id}")
+            response = self.api_client._make_request(
+                "POST", url, json_data=request_data, headers=headers
+            )
+
+            if response.status_code == 200:
+                self.logger.info(f"Successfully reserved delivery slot {slot_id}")
+                return True
+            else:
+                raise CartError(
+                    f"Failed to reserve delivery slot: {response.status_code} - {response.text}"
+                )
+
+        except Exception as e:
+            if isinstance(e, CartError):
+                raise
+            raise CartError(f"Error reserving delivery slot: {str(e)}")
 
     def _parse_pickup_slots(self, slots_data: Dict[str, Any]) -> List[PickupSlot]:
         """Parse pickup slots from API response."""
