@@ -542,12 +542,16 @@ def list_favorites():
         # Prepare table data
         table_data = []
         for i, item in enumerate(favorites, 1):
+            # Check if item is in active list by looking at list_item_id
+            # If it's a favorite item, it might not have the same structure as regular list items
+            in_list_status = "✅ In List" if hasattr(item, 'list_item_id') and item.list_item_id else "⭕ Not in List"
+            
             table_data.append(
                 [
                     i,
                     item.name[:40] + "..." if len(item.name) > 40 else item.name,
                     item.quantity,
-                    "✅ In List" if item.isItemInActiveList else "⭕ Not in List",
+                    in_list_status,
                 ]
             )
 
@@ -637,7 +641,7 @@ def list_clear():
         # Delete completed items
         deleted_count = 0
         for item in completed_items:
-            if client.list.delete_item(str(item.listItemId)):
+            if client.list.delete_item(str(item.list_item_id)):
                 deleted_count += 1
                 click.echo(f"  ✅ Deleted: {item.name}")
             else:
@@ -670,7 +674,7 @@ def list_clearall():
         completed_count = 0
         for item in items:
             if not item.checked:
-                if client.list.complete_item(str(item.listItemId)):
+                if client.list.complete_item(str(item.list_item_id)):
                     completed_count += 1
                     click.echo(f"  ✅ Marked complete: {item.name}")
                 else:
@@ -683,7 +687,7 @@ def list_clearall():
         all_items = client.list.get()  # Get updated list
         deleted_count = 0
         for item in all_items:
-            if client.list.delete_item(str(item.listItemId)):
+            if client.list.delete_item(str(item.list_item_id)):
                 deleted_count += 1
                 click.echo(f"  ✅ Deleted: {item.name}")
             else:
@@ -925,10 +929,10 @@ def list_interactive():
                 item = items[item_num - 1]
 
                 if item.checked:
-                    success = client.list.uncomplete_item(str(item.listItemId))
+                    success = client.list.uncomplete_item(str(item.list_item_id))
                     action = "uncompleted"
                 else:
-                    success = client.list.complete_item(str(item.listItemId))
+                    success = client.list.complete_item(str(item.list_item_id))
                     action = "completed"
 
                 if success:
@@ -953,7 +957,7 @@ def list_interactive():
                 item = items[item_num - 1]
 
                 if Confirm.ask(f"Delete '{item.name}'?"):
-                    success = client.list.delete_item(str(item.listItemId))
+                    success = client.list.delete_item(str(item.list_item_id))
                     if success:
                         console.print(f"✅ Deleted '{item.name}'", style="green")
                     else:
@@ -975,8 +979,10 @@ def list_interactive():
                 fav_table.add_column("Status", style="yellow")
 
                 for i, fav in enumerate(favorites, 1):
+                    # Check if item is in active list by looking at list_item_id
+                    # If it's a favorite item, it might not have the same structure as regular list items
                     status = (
-                        "✅ In List" if fav.isItemInActiveList else "⭕ Not in List"
+                        "✅ In List" if hasattr(fav, 'list_item_id') and fav.list_item_id else "⭕ Not in List"
                     )
                     fav_table.add_row(str(i), fav.name, status)
 
@@ -991,7 +997,7 @@ def list_interactive():
                 favorite = favorites[item_num - 1]
 
                 success = client.list.add_item_with_details(
-                    upc=favorite.itemPartNumber or f"FAV_{favorite.listItemId}",
+                    upc=favorite.item_part_number or f"FAV_{favorite.list_item_id}",
                     description=favorite.name,
                     quantity=1,
                 )
