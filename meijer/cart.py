@@ -536,6 +536,71 @@ class MeijerCart:
         return 0.0
 
     @property
+    def subtotal(self) -> float:
+        """Get the subtotal (sum of item prices before taxes and fees)."""
+        if self._cart_data and "subTotal" in self._cart_data:
+            return float(self._cart_data["subTotal"]["value"])
+        elif self._cart_data and "subtotal" in self._cart_data:
+            return float(self._cart_data["subtotal"]["value"])
+        # Fallback: calculate from items if available
+        elif self._cart_data and "entries" in self._cart_data:
+            subtotal = 0.0
+            for entry in self._cart_data["entries"]:
+                price_info = entry.get("basePrice", {})
+                price = price_info.get("value", 0) if price_info else 0
+                quantity = entry.get("quantity", 1)
+                subtotal += float(price) * quantity
+            return subtotal
+        return 0.0
+
+    @property
+    def tax_amount(self) -> float:
+        """Get the total tax amount."""
+        if self._cart_data and "totalTax" in self._cart_data:
+            return float(self._cart_data["totalTax"]["value"])
+        elif self._cart_data and "tax" in self._cart_data:
+            return float(self._cart_data["tax"]["value"])
+        return 0.0
+
+    @property
+    def pickup_fee(self) -> float:
+        """Get the pickup fee amount."""
+        if self._cart_data and "pickupFee" in self._cart_data:
+            return float(self._cart_data["pickupFee"]["value"])
+        elif self._cart_data and "pickup_fee" in self._cart_data:
+            return float(self._cart_data["pickup_fee"]["value"])
+        elif self._cart_data and "fulfillmentFee" in self._cart_data:
+            return float(self._cart_data["fulfillmentFee"]["value"])
+        return 0.0
+
+    @property
+    def delivery_fee(self) -> float:
+        """Get the delivery fee amount."""
+        if self._cart_data and "deliveryFee" in self._cart_data:
+            return float(self._cart_data["deliveryFee"]["value"])
+        elif self._cart_data and "delivery_fee" in self._cart_data:
+            return float(self._cart_data["delivery_fee"]["value"])
+        return 0.0
+
+    @property
+    def discount_amount(self) -> float:
+        """Get the total discount amount."""
+        if self._cart_data and "totalDiscount" in self._cart_data:
+            return float(self._cart_data["totalDiscount"]["value"])
+        elif self._cart_data and "discount" in self._cart_data:
+            return float(self._cart_data["discount"]["value"])
+        return 0.0
+
+    @property
+    def currency(self) -> str:
+        """Get the currency used for pricing."""
+        if self._cart_data and "totalPrice" in self._cart_data:
+            return self._cart_data["totalPrice"].get("currencyIso", "USD")
+        elif self._cart_data and "subTotal" in self._cart_data:
+            return self._cart_data["subTotal"].get("currencyIso", "USD")
+        return "USD"
+
+    @property
     def store_id(self) -> str:
         """Get the store ID associated with this cart."""
         return self._store_id

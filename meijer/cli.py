@@ -1732,7 +1732,47 @@ def cart_show(refresh: bool, store: str):
         # Display cart summary
         click.echo(f"Cart ID: {client.cart.cart_id or 'N/A'}")
         click.echo(f"Total Items: {client.cart.item_count}")
-        click.echo(f"Total Price: ${client.cart.total_price:.2f}")
+        click.echo()
+        
+        # Display checkout breakdown
+        click.echo("💰 Checkout Breakdown:")
+        click.echo("-" * 30)
+        
+        # Subtotal
+        subtotal = client.cart.subtotal
+        if subtotal > 0:
+            click.echo(f"Subtotal:     ${subtotal:.2f}")
+        
+        # Discounts
+        discount = client.cart.discount_amount
+        if discount > 0:
+            click.echo(f"Discounts:    -${discount:.2f}")
+        
+        # Pickup/Delivery fees
+        pickup_fee = client.cart.pickup_fee
+        delivery_fee = client.cart.delivery_fee
+        if pickup_fee > 0:
+            click.echo(f"Pickup Fee:   ${pickup_fee:.2f}")
+        elif delivery_fee > 0:
+            click.echo(f"Delivery Fee: ${delivery_fee:.2f}")
+        
+        # Taxes
+        tax_amount = client.cart.tax_amount
+        if tax_amount > 0:
+            click.echo(f"Tax:          ${tax_amount:.2f}")
+        
+        # Total
+        total_price = client.cart.total_price
+        click.echo("-" * 30)
+        click.echo(f"Total:        ${total_price:.2f}")
+        click.echo(f"Currency:     {client.cart.currency}")
+        
+        # Debug: Show available pricing fields if no fees/taxes found
+        if pickup_fee == 0 and delivery_fee == 0 and tax_amount == 0 and discount == 0:
+            click.echo()
+            click.echo("ℹ️  Note: No additional fees, taxes, or discounts found in cart data.")
+            click.echo("   This may indicate fees are calculated at checkout or not yet applied.")
+        
         click.echo()
         
         # Display cart items
