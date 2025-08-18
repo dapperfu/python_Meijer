@@ -2170,7 +2170,13 @@ def cart_summary(store: str):
         click.echo("=" * 50)
         
         # Get cart data
-        cart_data = client.cart.get_current_cart()
+        click.echo("🔄 Retrieving cart data...")
+        try:
+            cart_data = client.cart.get_current_cart()
+            click.echo("✅ Cart data retrieved")
+        except Exception as e:
+            click.echo(f"❌ Failed to retrieve cart data: {e}")
+            return
         
         if not cart_data:
             click.echo("❌ No cart data found")
@@ -2183,38 +2189,43 @@ def cart_summary(store: str):
         click.echo(f"Total Items: {client.cart.item_count}")
         click.echo()
         
-        # Display checkout breakdown
+        # Display checkout breakdown with error handling
         click.echo("💰 Checkout Breakdown:")
         click.echo("-" * 30)
         
-        # Subtotal
-        subtotal = client.cart.subtotal
-        if subtotal > 0:
-            click.echo(f"Subtotal:     ${subtotal:.2f}")
-        
-        # Discounts
-        discount = client.cart.discount_amount
-        if discount > 0:
-            click.echo(f"Discounts:    -${discount:.2f}")
-        
-        # Pickup/Delivery fees
-        pickup_fee = client.cart.pickup_fee
-        delivery_fee = client.cart.delivery_fee
-        if pickup_fee > 0:
-            click.echo(f"Pickup Fee:   ${pickup_fee:.2f}")
-        elif delivery_fee > 0:
-            click.echo(f"Delivery Fee: ${delivery_fee:.2f}")
-        
-        # Taxes
-        tax_amount = client.cart.tax_amount
-        if tax_amount > 0:
-            click.echo(f"Tax:          ${tax_amount:.2f}")
-        
-        # Total
-        total_price = client.cart.total_price
-        click.echo("-" * 30)
-        click.echo(f"Total:        ${total_price:.2f}")
-        click.echo(f"Currency:     {client.cart.currency}")
+        try:
+            # Subtotal
+            subtotal = client.cart.subtotal
+            if subtotal > 0:
+                click.echo(f"Subtotal:     ${subtotal:.2f}")
+            
+            # Discounts
+            discount = client.cart.discount_amount
+            if discount > 0:
+                click.echo(f"Discounts:    -${discount:.2f}")
+            
+            # Pickup/Delivery fees
+            pickup_fee = client.cart.pickup_fee
+            delivery_fee = client.cart.delivery_fee
+            if pickup_fee > 0:
+                click.echo(f"Pickup Fee:   ${pickup_fee:.2f}")
+            elif delivery_fee > 0:
+                click.echo(f"Delivery Fee: ${delivery_fee:.2f}")
+            
+            # Taxes
+            tax_amount = client.cart.tax_amount
+            if tax_amount > 0:
+                click.echo(f"Tax:          ${tax_amount:.2f}")
+            
+            # Total
+            total_price = client.cart.total_price
+            click.echo("-" * 30)
+            click.echo(f"Total:        ${total_price:.2f}")
+            click.echo(f"Currency:     {client.cart.currency}")
+            
+        except Exception as e:
+            click.echo(f"⚠️  Error displaying checkout breakdown: {e}")
+            click.echo(f"Total Price: ${client.cart.total_price:.2f}")
         
         # Show store information
         click.echo(f"Store ID: {client.cart.store_id}")
