@@ -480,6 +480,21 @@ def list():
     pass
 
 
+@cli.command()
+def ad():
+    """Browse weekly ad items and add them to your shopping list."""
+    try:
+        from .ad_browser import browse_weekly_ad
+        
+        client = get_meijer_client()
+        browse_weekly_ad(client)
+        
+    except ImportError as e:
+        raise click.ClickException(f"❌ Failed to import ad browser module: {e}")
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to start ad browser: {e}")
+
+
 @list.command("show")
 @click.option("--completed", is_flag=True, help="Show only completed items")
 @click.option("--pending", is_flag=True, help="Show only pending items")

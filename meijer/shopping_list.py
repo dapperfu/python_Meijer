@@ -854,14 +854,14 @@ class MeijerList:
                     section = location.get('section', '')
                     
                     if location.get("zone_code") == "STORE":
-                        # Real store location - format as "B:16 | Product Name"
+                        # Real store location - format as "B16 Section 23 | Product Name"
                         if section and section != 'Unknown':
                             # Extract just the section number if it's formatted as "Section: 35"
                             section_num = str(section).replace("Section:", "").strip()
                             if section_num.isdigit():
-                                notes_parts.append(f"{aisle}:{section_num}")
+                                notes_parts.append(f"{aisle}{section_num} Section {section_num}")
                             else:
-                                notes_parts.append(f"{aisle}:{section}")
+                                notes_parts.append(f"{aisle}{section}")
                         else:
                             notes_parts.append(aisle)
                     else:

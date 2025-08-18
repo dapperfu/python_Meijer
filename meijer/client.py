@@ -984,7 +984,26 @@ class Meijer:
             Dictionary with location information or None
         """
         try:
-            # Try multiple possible location field structures
+            # Check for location data in the stock.ilcPrimary field (actual API structure)
+            if "stock" in data and isinstance(data["stock"], dict):
+                stock_data = data["stock"]
+                
+                # Primary location from ilcPrimary (e.g., "B-16-35-4")
+                if "ilcPrimary" in stock_data and stock_data["ilcPrimary"]:
+                    ilc_primary = stock_data["ilcPrimary"]
+                    location_info = self._parse_ilc_location(ilc_primary)
+                    if location_info:
+                        return location_info
+                
+                # Alternative locations from ilcs array
+                if "ilcs" in stock_data and isinstance(stock_data["ilcs"], list) and stock_data["ilcs"]:
+                    for ilc in stock_data["ilcs"]:
+                        if ilc and isinstance(ilc, str):
+                            location_info = self._parse_ilc_location(ilc.strip())
+                            if location_info:
+                                return location_info
+            
+            # Try multiple possible location field structures (fallback)
             location_fields = [
                 "storeLocations",
                 "storeProductLocation", 
@@ -1012,7 +1031,7 @@ class Meijer:
                                 "formatted_location": formatted_location
                             }
             
-            # Look for location in description or summary fields
+            # Look for location in description or summary fields (fallback)
             description_fields = ["description", "summary", "longDescription"]
             for field in description_fields:
                 if field in data and data[field]:
@@ -1028,12 +1047,55 @@ class Meijer:
             self.logger.error(f"Error extracting location: {e}")
             return None
     
+    def _parse_ilc_location(self, ilc_string: str) -> Optional[Dict[str, str]]:
+        """
+        Parse ILC (Inventory Location Code) string from stock.ilcPrimary.
+        
+        Args:
+            ilc_string: ILC string like "B-16-35-4"
+            
+        Returns:
+            Dictionary with location information or None
+        """
+        try:
+            # Parse ILC format: "B-16-35" or "B-16-35"
+            parts = ilc_string.split("-")
+            
+            if len(parts) >= 3:
+                aisle_letter = parts[0]      # "B"
+                section_num = parts[1]       # "16"
+                bay_num = parts[2]           # "35"
+                sub_bay = parts[3] if len(parts) > 3 else None  # "4" (optional)
+                
+                # Combine aisle letter and section number for the aisle field
+                combined_aisle = f"{aisle_letter}{section_num}"
+                
+                # Format the location string
+                if sub_bay:
+                    formatted_location = f"{combined_aisle} Section {bay_num}-{sub_bay}"
+                else:
+                    formatted_location = f"{combined_aisle} Section {bay_num}"
+                
+                return {
+                    "aisle": combined_aisle,  # "B16"
+                    "section": bay_num,       # "35" (the bay number)
+                    "bay": bay_num,           # "35" (for backward compatibility)
+                    "sub_bay": sub_bay,       # "4" (if present)
+                    "formatted_location": formatted_location
+                }
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing ILC location '{ilc_string}': {e}")
+            return None
+    
     def _format_location_string(self, aisle: Optional[str], section: Optional[str], bay: Optional[str]) -> str:
         """
         Format location information into a readable string.
         
         Args:
-            aisle: Aisle information
+            aisle: Aisle information (may include section number like "B16")
             section: Section information  
             bay: Bay information
             
@@ -1043,17 +1105,22 @@ class Meijer:
         parts = []
         
         if aisle:
-            parts.append(f"Aisle {aisle}")
-        
-        if section:
-            if bay:
-                parts.append(f"{section} Section: {bay}")
+            # Check if aisle already contains section number (e.g., "B16")
+            if section and section.isdigit() and not aisle.endswith(section):
+                # Aisle is just the letter (e.g., "B"), section is separate (e.g., "16")
+                parts.append(f"{aisle}{section}")
             else:
-                parts.append(f"Section: {section}")
-        elif bay:
-            parts.append(f"Bay: {bay}")
+                # Aisle already contains section number or no section
+                parts.append(aisle)
         
-        return " | ".join(parts) if parts else "Location Unknown"
+        if bay and bay != section:
+            # If we have a bay number that's different from section, show it
+            parts.append(f"Section {bay}")
+        elif section and (not aisle or not aisle.endswith(str(section))):
+            # Show section if it's not already part of the aisle
+            parts.append(f"Section {section}")
+        
+        return " ".join(parts) if parts else "Location Unknown"
     
     def _extract_location_from_text(self, text: str) -> Optional[Dict[str, str]]:
         """
@@ -1067,34 +1134,84 @@ class Meijer:
         """
         import re
         
-        # Pattern for "Aisle B | 16 Section: 35"
-        pattern1 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*(\d+)\s*Section:\s*(\d+)"
+        # Pattern for "B16 Section 23" (direct format)
+        pattern1 = r"([A-Z])(\d+)\s+Section\s+(\d+)"
         match1 = re.search(pattern1, text, re.IGNORECASE)
         if match1:
+            aisle_letter = match1.group(1)  # "B"
+            section_num = match1.group(2)   # "16"
+            bay_num = match1.group(3)       # "23"
+            
+            # Combine aisle letter and section number for the aisle field
+            combined_aisle = f"{aisle_letter}{section_num}"
+            
             return {
-                "aisle": match1.group(1),
-                "section": match1.group(2),
-                "bay": match1.group(3),
-                "formatted_location": f"Aisle {match1.group(1)} | {match1.group(2)} Section: {match1.group(3)}"
+                "aisle": combined_aisle,  # "B16"
+                "section": bay_num,       # "23" (the bay number)
+                "bay": bay_num,           # "23" (for backward compatibility)
+                "formatted_location": f"{combined_aisle} Section {bay_num}"
             }
         
-        # Pattern for "Aisle B | Section 16"
-        pattern2 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*Section\s+(\d+)"
+        # Pattern for "Aisle B | 16 Section: 35" (API format)
+        pattern2 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*(\d+)\s*Section:\s*(\d+)"
         match2 = re.search(pattern2, text, re.IGNORECASE)
         if match2:
+            aisle_letter = match2.group(1)  # "B"
+            section_num = match2.group(2)   # "16"
+            bay_num = match2.group(3)       # "35"
+            
+            # Combine aisle letter and section number for the aisle field
+            combined_aisle = f"{aisle_letter}{section_num}"
+            
             return {
-                "aisle": match2.group(1),
-                "section": match2.group(2),
-                "formatted_location": f"Aisle {match2.group(1)} | Section {match2.group(2)}"
+                "aisle": combined_aisle,  # "B16"
+                "section": bay_num,       # "35" (the bay number)
+                "bay": bay_num,           # "35" (for backward compatibility)
+                "formatted_location": f"{combined_aisle} Section {bay_num}"
             }
         
-        # Pattern for just "Aisle B"
-        pattern3 = r"Aisle\s+([A-Z0-9]+)"
+        # Pattern for "B | 16 Section: 35" (alternative API format)
+        pattern3 = r"([A-Z0-9]+)\s*\|\s*(\d+)\s*Section:\s*(\d+)"
         match3 = re.search(pattern3, text, re.IGNORECASE)
         if match3:
+            aisle_letter = match3.group(1)  # "B"
+            section_num = match3.group(2)   # "16"
+            bay_num = match3.group(3)       # "35"
+            
+            # Combine aisle letter and section number for the aisle field
+            combined_aisle = f"{aisle_letter}{section_num}"
+            
             return {
-                "aisle": match3.group(1),
-                "formatted_location": f"Aisle {match3.group(1)}"
+                "aisle": combined_aisle,  # "B16"
+                "section": bay_num,       # "35" (the bay number)
+                "bay": bay_num,           # "35" (for backward compatibility)
+                "formatted_location": f"{combined_aisle} Section {bay_num}"
+            }
+        
+        # Pattern for "Aisle B | Section 16" (simplified format)
+        pattern4 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*Section\s+(\d+)"
+        match4 = re.search(pattern4, text, re.IGNORECASE)
+        if match4:
+            aisle_letter = match4.group(1)  # "B"
+            section_num = match4.group(2)   # "16"
+            
+            # Combine aisle letter and section number
+            combined_aisle = f"{aisle_letter}{section_num}"
+            
+            return {
+                "aisle": combined_aisle,  # "B16"
+                "section": section_num,   # "16"
+                "formatted_location": f"{combined_aisle} Section {section_num}"
+            }
+        
+        # Pattern for just "Aisle B" (basic format)
+        pattern5 = r"Aisle\s+([A-Z0-9]+)"
+        match5 = re.search(pattern5, text, re.IGNORECASE)
+        if match5:
+            aisle_letter = match5.group(1)  # "B"
+            return {
+                "aisle": aisle_letter,  # "B"
+                "formatted_location": f"Aisle {aisle_letter}"
             }
         
         return None
