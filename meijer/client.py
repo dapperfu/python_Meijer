@@ -60,6 +60,14 @@ class Meijer:
         self.mperks = MPerksEarnedRewards(self)
         self.feedback = MeijerFeedback(self)
         self.settings = MeijerSettings(self)
+        
+        # Initialize cart instance
+        try:
+            from .cart import MeijerCart
+            self.cart = MeijerCart(self, store_id="217")
+        except ImportError:
+            self.logger.warning("Cart module not available")
+            self.cart = None
 
         # Add alias for CLI compatibility
         self.list = self.shopping_list
@@ -1052,7 +1060,7 @@ class Meijer:
         Parse ILC (Inventory Location Code) string from stock.ilcPrimary.
         
         Args:
-            ilc_string: ILC string like "B-16-35-4"
+            ilc_string: ILC string like "B-16-35"
             
         Returns:
             Dictionary with location information or None

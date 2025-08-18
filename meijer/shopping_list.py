@@ -5,8 +5,11 @@ Meijer Shopping List Management
 Shopping list functionality for the Meijer API client.
 """
 
+import logging
 from typing import List, TYPE_CHECKING, Optional, Dict, Any
 from urllib.parse import urljoin
+from dataclasses import dataclass, asdict
+from datetime import datetime
 
 try:
     from tabulate import tabulate
@@ -15,6 +18,12 @@ try:
 except ImportError:
     TABULATE_AVAILABLE = False
     # Fallback to basic formatting if tabulate not available
+
+try:
+    from .search import Search
+    SEARCH_AVAILABLE = True
+except ImportError:
+    SEARCH_AVAILABLE = False
 
 from .models import ListItem
 from .exceptions import MeijerAuthenticationError
@@ -401,465 +410,288 @@ class MeijerList:
             self.logger.error(f"Error removing item from favorites: {e}")
             return False
 
-    def defrag(
-        self, store_id: Optional[str] = None, reverse: bool = False, zig: bool = False
-    ) -> bool:
+    def defrag(self, store_id: Optional[str] = None) -> None:
         """
-        Defragment shopping list by organizing items by aisle number.
-
-        This function:
-        1. Gets all current shopping list items
-        2. Searches for each item to find its store location (aisle, section)
-        3. Deletes all items from the list
-        4. Re-adds items sorted by aisle number with location info in notes
-
+        Defrag the shopping list by organizing items by aisle/location.
+        
         Args:
-            store_id: Store ID to use for location lookup (optional)
-            reverse: If True, sort items in reverse order (descending)
-            zig: If True, alternate B aisle sorting (B1 ascending, B2 descending, etc.)
-
-        Returns:
-            bool: True if defrag was successful, False otherwise
+            store_id: Store ID to use for location lookup (defaults to current store)
         """
-        try:
-            self.logger.info("🔧 Starting shopping list defrag...")
-
-            # Step 1: Get current shopping list items
-            current_items = self.get()
-            if not current_items:
-                self.logger.info("📝 Shopping list is empty, nothing to defrag")
-                return True
-
-            self.logger.info(f"📋 Found {len(current_items)} items to defrag")
-
-            # Step 2: Search for each item to get location information
-            items_with_locations = []
-            search_client = None
-
+        if not store_id:
+            # Try to get store ID from current context
             try:
-                from .search import Search
-
-                search_client = Search(self.meijer)
-            except ImportError:
-                self.logger.error("❌ Search functionality not available for defrag")
-                return False
-
-            # Create detailed matching table data
-            matching_table_data = []
-
-            for item in current_items:
-                self.logger.info(f"🔍 Searching for: {item.name}")
-
-                try:
-                    # First, try to get product detail if we have a UPC
-                    location_info = None
-                    matched_product = None
-                    match_confidence = "Low"
+                stores = self.meijer.get_stores()
+                if stores:
+                    store_id = str(stores[0].store_id)
+                else:
+                    store_id = "217"  # Default store from logs
+            except Exception as e:
+                self.logger.warning(f"⚠️  Failed to get stores: {e}")
+                store_id = "217"  # Default store from logs
+        
+        self.logger.info(f"🔧 Starting shopping list defrag for store: {store_id}")
+        
+        # Get current list items
+        try:
+            items = self.get()
+        except Exception as e:
+            self.logger.error(f"❌ Failed to get list items: {e}")
+            return
+        
+        if not items:
+            self.logger.info("ℹ️  No items to defrag")
+            return
+        
+        self.logger.info(f"⏳ This may take a moment to search for product locations...")
+        
+        # Clear the current list
+        self.clear_list()
+        
+        # Process each item
+        for idx, item in enumerate(items):
+            try:
+                # First, try to get product detail if we have a UPC
+                location_info = None
+                matched_product = None
+                match_confidence = "Low"
+                
+                if item.item_part_number and item.item_part_number.startswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
+                    # This looks like a UPC, try to get product detail
+                    try:
+                        product_detail = self.meijer.get_product_detail(item.item_part_number, store_id)
+                        if product_detail and product_detail.aisle_primary:
+                            # We have real location data!
+                            location_info = {
+                                "aisle": product_detail.aisle_primary,
+                                "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
+                                "zone": "Store",
+                                "zone_code": "STORE",
+                            }
+                            matched_product = {
+                                "title": product_detail.title,
+                                "price": product_detail.price,
+                                "brand": product_detail.brand,
+                                "category": product_detail.category,
+                                "aisle": product_detail.aisle_primary,
+                                "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
+                            }
+                            match_confidence = "High"
+                            self.logger.info(f"📍 Found real location: {product_detail.aisle_primary}")
+                        else:
+                            self.logger.info(f"📍 No location data found for UPC {item.item_part_number}")
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  Error fetching product detail for UPC {item.item_part_number}: {e}")
+                
+                # If we don't have real location data, fall back to search
+                if not location_info:
+                    # Split item name by comma and search for first part only
+                    search_query = item.name.split(',')[0].strip()
+                    self.logger.info(f"🔍 Searching for: {search_query}")
                     
-                    if item.item_part_number and item.item_part_number.startswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
-                        # This looks like a UPC, try to get product detail
+                    # Initialize search client
+                    if not SEARCH_AVAILABLE:
+                        self.logger.warning("⚠️  Search functionality not available, skipping search")
+                        location_info = {
+                            "aisle": "Search_Unavailable",
+                            "section": "Online",
+                            "zone": "Online",
+                            "zone_code": "ONLINE",
+                        }
+                        matched_product = {
+                            "title": item.name,
+                            "price": None,
+                            "brand": None,
+                            "category": None,
+                            "aisle": "Online",
+                            "section": "No_Search",
+                        }
+                        match_confidence = "Low"
+                    else:
                         try:
-                            product_detail = self.meijer.get_product_detail(item.item_part_number, store_id)
-                            if product_detail and product_detail.aisle_primary:
-                                # We have real location data!
-                                location_info = {
-                                    "aisle": product_detail.aisle_primary,
-                                    "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
-                                    "zone": "Store",
-                                    "zone_code": "STORE",
-                                }
-                                matched_product = {
-                                    "title": product_detail.title,
-                                    "price": product_detail.price,
-                                    "brand": product_detail.brand,
-                                    "category": product_detail.category,
-                                    "aisle": product_detail.aisle_primary,
-                                    "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
-                                }
-                                match_confidence = "High"
-                                self.logger.info(f"📍 Found real location: {product_detail.aisle_primary}")
-                            else:
-                                self.logger.info(f"📍 No location data found for UPC {item.item_part_number}")
-                        except Exception as e:
-                            self.logger.warning(f"⚠️  Error fetching product detail for UPC {item.item_part_number}: {e}")
-                    
-                    # If we don't have real location data, fall back to search
-                    if not location_info:
-                        # Search for the item
-                        search_results = search_client.search(
-                            query=item.name,
-                            results_per_page=5,  # Just get first few results
-                            store_id=store_id,
-                        )
-
-                        self.logger.info(f"📊 Search results for '{item.name}': {search_results.total_results if search_results else 0}")
-
-                        # Find the first matching result
-                        if search_results and search_results.results:
-                            first_result = search_results.results[0]
-                            self.logger.info(f"🎯 First result: {first_result.title}")
-
-                            # Calculate match confidence based on name similarity
-                            original_name = item.name.lower()
-                            matched_name = first_result.title.lower()
-
-                            # Simple similarity check
-                            if original_name in matched_name or matched_name in original_name:
-                                match_confidence = "High"
-                            elif any(word in matched_name for word in original_name.split()):
-                                match_confidence = "Medium"
-
-                            # Try to get product detail for the search result if it has a UPC
-                            if hasattr(first_result, 'upc') and first_result.upc:
-                                try:
-                                    product_detail = self.meijer.get_product_detail(first_result.upc, store_id)
-                                    if product_detail and product_detail.aisle_primary:
-                                        # We found real location data from search!
-                                        location_info = {
-                                            "aisle": product_detail.aisle_primary,
-                                            "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
-                                            "zone": "Store",
-                                            "zone_code": "STORE",
-                                        }
-                                        matched_product = {
-                                            "title": product_detail.title,
-                                            "price": product_detail.price,
-                                            "brand": product_detail.brand,
-                                            "category": product_detail.category,
-                                            "aisle": product_detail.aisle_primary,
-                                            "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
-                                        }
-                                        match_confidence = "High"
-                                        self.logger.info(f"📍 Found real location from search: {product_detail.aisle_primary}")
-                                    else:
-                                        # No real location, use search confidence placeholder
+                            search_client = Search(self.meijer)
+                            
+                            # Search for the item
+                            search_results = search_client.search(
+                                query=search_query,
+                                results_per_page=5,  # Just get first few results
+                                store_id=store_id,
+                            )
+                            
+                            if search_results and search_results.results:
+                                # Found search results
+                                top_result = search_results.results[0]
+                                
+                                # Try to get product detail for the top search result
+                                if top_result.upc:
+                                    try:
+                                        product_detail = self.meijer.get_product_detail(top_result.upc, store_id)
+                                        if product_detail and product_detail.aisle_primary:
+                                            # We have real location data from search result!
+                                            location_info = {
+                                                "aisle": product_detail.aisle_primary,
+                                                "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
+                                                "zone": "Store",
+                                                "zone_code": "STORE",
+                                            }
+                                            matched_product = {
+                                                "title": product_detail.title,
+                                                "price": product_detail.price,
+                                                "brand": product_detail.brand,
+                                                "category": product_detail.category,
+                                                "aisle": product_detail.aisle_primary,
+                                                "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
+                                            }
+                                            match_confidence = "High"
+                                            self.logger.info(f"📍 Found real location via search: {product_detail.aisle_primary}")
+                                        else:
+                                            # No real location, but we have search results
+                                            location_info = {
+                                                "aisle": f"Search_{match_confidence}",
+                                                "section": "Online",
+                                                "zone": "Online",
+                                                "zone_code": "ONLINE",
+                                            }
+                                            matched_product = {
+                                                "title": top_result.title,
+                                                "price": top_result.price,
+                                                "brand": top_result.brand,
+                                                "category": top_result.category,
+                                                "aisle": "Online",
+                                                "section": "Search",
+                                            }
+                                            match_confidence = "Medium"
+                                            self.logger.info(f"📍 Using search result: {top_result.title}")
+                                    except Exception as e:
+                                        self.logger.warning(f"⚠️  Error fetching product detail for search result UPC {top_result.upc}: {e}")
+                                        # Fall back to search result only
                                         location_info = {
                                             "aisle": f"Search_{match_confidence}",
                                             "section": "Online",
-                                            "zone": "Digital",
-                                            "zone_code": "SEARCH",
+                                            "zone": "Online",
+                                            "zone_code": "ONLINE",
                                         }
                                         matched_product = {
-                                            "title": first_result.title,
-                                            "price": getattr(first_result, "price", "N/A"),
-                                            "brand": getattr(first_result, "brand", "N/A"),
-                                            "category": getattr(first_result, "category", "N/A"),
-                                            "aisle": "Search Result",
-                                            "section": "Online",
+                                            "title": top_result.title,
+                                            "price": top_result.price,
+                                            "brand": top_result.brand,
+                                            "category": top_result.category,
+                                            "aisle": "Online",
+                                            "section": "Search",
                                         }
-                                        self.logger.info(f"📍 Search result: {first_result.title[:50]}... (Confidence: {match_confidence})")
-                                except Exception as e:
-                                    self.logger.warning(f"⚠️  Error fetching product detail for search result: {e}")
-                                    # Fall back to search confidence placeholder
+                                        match_confidence = "Medium"
+                                else:
+                                    # No UPC, use search result directly
                                     location_info = {
                                         "aisle": f"Search_{match_confidence}",
                                         "section": "Online",
-                                        "zone": "Digital",
-                                        "zone_code": "SEARCH",
+                                        "zone": "Online",
+                                        "zone_code": "ONLINE",
                                     }
                                     matched_product = {
-                                        "title": first_result.title,
-                                        "price": getattr(first_result, "price", "N/A"),
-                                        "brand": getattr(first_result, "brand", "N/A"),
-                                        "category": getattr(first_result, "category", "N/A"),
-                                        "aisle": "Search Result",
-                                        "section": "Online",
+                                        "title": top_result.title,
+                                        "price": top_result.price,
+                                        "brand": top_result.brand,
+                                        "category": top_result.category,
+                                        "aisle": "Online",
+                                        "section": "Search",
                                     }
+                                    match_confidence = "Medium"
+                                    self.logger.info(f"📍 Using search result without UPC: {top_result.title}")
                             else:
-                                # No UPC in search result, use search confidence placeholder
-                                location_info = {
-                                    "aisle": f"Search_{match_confidence}",
-                                    "section": "Online",
-                                    "zone": "Digital",
-                                    "zone_code": "SEARCH",
-                                }
-                                matched_product = {
-                                    "title": first_result.title,
-                                    "price": getattr(first_result, "price", "N/A"),
-                                    "brand": getattr(first_result, "brand", "N/A"),
-                                    "category": getattr(first_result, "category", "N/A"),
-                                    "aisle": "Search Result",
-                                    "section": "Online",
-                                }
-                        else:
-                            self.logger.warning(f"⚠️  No search results found for {item.name}")
-                            if search_results:
-                                self.logger.info(f"   Search response: {type(search_results)} with {len(search_results.results) if hasattr(search_results, 'results') else 'no results'} results")
-
-                except Exception as e:
-                    self.logger.error(f"❌ Error searching for '{item.name}': {e}")
-                    # Continue with next item instead of failing completely
-                    location_info = None
-                    matched_product = None
-                    match_confidence = "Error"
-
-                # Add to detailed table data
-                matching_table_data.append(
-                    {
-                        "Original Item": item.name,
-                        "Closest Match": matched_product["title"]
-                        if matched_product
-                        else "No match found",
-                        "Brand": matched_product.get("brand", "N/A")
-                        if matched_product
-                        else "N/A",
-                        "Price": matched_product.get("price", "N/A")
-                        if matched_product
-                        else "N/A",
-                        "Aisle": matched_product.get("aisle", "Unknown")
-                        if matched_product
-                        else "Unknown",
-                        "Section": matched_product.get("section", "Unknown")
-                        if matched_product
-                        else "Unknown",
-                        "Match Confidence": match_confidence,
-                        "Category": matched_product.get("category", "N/A")
-                        if matched_product
-                        else "N/A",
-                    }
-                )
-
-                items_with_locations.append(
-                    {
-                        "item": item,
-                        "location": location_info,
-                        "matched_product": matched_product,
-                        "match_confidence": match_confidence,
-                    }
-                )
-
-            # Display detailed matching table
-            self.logger.info("📊 Product Matching Results:")
-            self.logger.info("=" * 80)
-
-            if TABULATE_AVAILABLE:
-                # Use tabulate for proper table formatting
-                table_headers = [
-                    "Original Item",
-                    "Closest Match",
-                    "Brand",
-                    "Price",
-                    "Aisle",
-                    "Section",
-                    "Confidence",
-                ]
-                table_rows = []
-
-                for row in matching_table_data:
-                    table_rows.append(
-                        [
-                            row["Original Item"][:30] + "..."
-                            if len(row["Original Item"]) > 30
-                            else row["Original Item"],
-                            row["Closest Match"][:35] + "..."
-                            if len(row["Closest Match"]) > 35
-                            else row["Closest Match"],
-                            row["Brand"][:20] + "..."
-                            if row["Brand"] and len(str(row["Brand"])) > 20
-                            else row["Brand"] or "N/A",
-                            row["Price"] or "N/A",
-                            row["Aisle"] or "Unknown",
-                            row["Section"] or "Unknown",
-                            row["Match Confidence"],
-                        ]
-                    )
-
-                # Display formatted table
-                table_output = tabulate(
-                    table_rows, headers=table_headers, tablefmt="grid"
-                )
-                self.logger.info("\n" + table_output)
-            else:
-                # Fallback to basic formatting if tabulate not available
-                self.logger.info(
-                    "Note: Install 'tabulate' for better table formatting: pip install tabulate"
-                )
-
-                # Create a formatted table display
-                table_header = f"{'Original Item':<25} {'Closest Match':<35} {'Aisle':<8} {'Price':<10} {'Confidence':<12}"
-                self.logger.info(table_header)
-                self.logger.info("-" * 80)
-
-                for row in matching_table_data:
-                    # Truncate long names for display
-                    original = (
-                        row["Original Item"][:24]
-                        if len(row["Original Item"]) > 24
-                        else row["Original Item"]
-                    )
-                    match = (
-                        row["Closest Match"][:34]
-                        if len(row["Closest Match"]) > 34
-                        else row["Closest Match"]
-                    )
-                    aisle = (
-                        row["Aisle"][:7]
-                        if row["Aisle"] and len(str(row["Aisle"])) > 7
-                        else row["Aisle"] or "Unknown"
-                    )
-                    price = (
-                        row["Price"][:9]
-                        if row["Price"] and len(str(row["Price"])) > 9
-                        else row["Price"] or "N/A"
-                    )
-                    confidence = (
-                        row["Match Confidence"][:11]
-                        if len(row["Match Confidence"]) > 11
-                        else row["Match Confidence"]
-                    )
-
-                    table_row = f"{original:<25} {match:<35} {aisle:<8} {price:<10} {confidence:<12}"
-                    self.logger.info(table_row)
-
-                self.logger.info("=" * 80)
-
-            # Step 3: Sort items by location (real aisle data first, then search confidence)
-            def get_location_sort_key(item_data):
-                location = item_data.get("location")
-                match_confidence = item_data.get("match_confidence", "Low")
+                                # No search results found
+                                self.logger.warning(f"⚠️  No search results found for {search_query}")
+                                
+                                # Try to find related results by searching for broader terms
+                                broader_terms = self._get_broader_search_terms(search_query)
+                                found_related = False
+                                
+                                for broader_term in broader_terms:
+                                    try:
+                                        related_results = search_client.search(
+                                            query=broader_term,
+                                            results_per_page=3,
+                                            store_id=store_id,
+                                        )
+                                        
+                                        if related_results and related_results.results:
+                                            top_related = related_results.results[0]
+                                            self.logger.info(f"📍 Found related result for '{broader_term}': {top_related.title}")
+                                            
+                                            location_info = {
+                                                "aisle": f"Related_{match_confidence}",
+                                                "section": "Online",
+                                                "zone": "Online",
+                                                "zone_code": "ONLINE",
+                                            }
+                                            matched_product = {
+                                                "title": top_related.title,
+                                                "price": top_related.price,
+                                                "brand": top_related.brand,
+                                                "category": top_related.category,
+                                                "aisle": "Online",
+                                                "section": "Related",
+                                            }
+                                            match_confidence = "Low"
+                                            found_related = True
+                                            break
+                                            
+                                    except Exception as e:
+                                        self.logger.debug(f"Debug: No related results for '{broader_term}': {e}")
+                                        continue
+                                
+                                if not found_related:
+                                    # No related results either
+                                    location_info = {
+                                        "aisle": f"Search_{match_confidence}",
+                                        "section": "Online",
+                                        "zone": "Online",
+                                        "zone_code": "ONLINE",
+                                    }
+                                    matched_product = {
+                                        "title": item.name,
+                                        "price": None,
+                                        "brand": None,
+                                        "category": None,
+                                        "aisle": "Online",
+                                        "section": "No_Match",
+                                    }
+                                    match_confidence = "Low"
+                                    self.logger.warning(f"⚠️  No related results found for {search_query}")
+                        
+                        except Exception as e:
+                            self.logger.error(f"❌ Search failed for {search_query}: {e}")
+                            # Use fallback location
+                            location_info = {
+                                "aisle": f"Search_{match_confidence}",
+                                "section": "Online",
+                                "zone": "Online",
+                                "zone_code": "ONLINE",
+                            }
+                            matched_product = {
+                                "title": item.name,
+                                "price": None,
+                                "brand": None,
+                                "category": None,
+                                "aisle": "Online",
+                                "section": "Error",
+                            }
+                            match_confidence = "Low"
                 
-                if location and location.get("zone_code") == "STORE":
-                    # Real store location - sort by aisle, then section
-                    aisle = location.get("aisle", "")
-                    section = location.get("section", "")
-                    
-                    # Extract aisle number for sorting (e.g., "B" -> 2, "A" -> 1)
-                    aisle_num = 0
-                    if aisle:
-                        try:
-                            # Handle alphanumeric aisles like "B", "A1", "B2", etc.
-                            if aisle[0].isalpha():
-                                aisle_num = ord(aisle[0].upper()) - ord('A') + 1
-                                # Add subsection number if present
-                                if len(aisle) > 1 and aisle[1:].isdigit():
-                                    aisle_num = aisle_num * 100 + int(aisle[1:])
-                        except (ValueError, IndexError):
-                            aisle_num = 999  # Put unknown aisles at the end
-                    
-                    # Extract section number for secondary sorting
-                    section_num = 0
-                    if section and str(section).replace("Section:", "").strip().isdigit():
-                        try:
-                            section_num = int(str(section).replace("Section:", "").strip())
-                        except ValueError:
-                            section_num = 999
-                    
-                    return (0, aisle_num, section_num, item_data["item"].name.lower())
-                else:
-                    # Search-based location - sort by confidence, then by original name
-                    confidence_score = {"High": 3, "Medium": 2, "Low": 1}.get(match_confidence, 0)
-                    has_match = 1 if item_data.get("matched_product") else 0
-                    return (1, confidence_score, has_match, item_data["item"].name.lower())
-
-            # Apply zig-zag sorting for B aisles if requested and we have real aisle data
-            real_aisle_items = [item for item in items_with_locations 
-                               if item.get("location", {}).get("zone_code") == "STORE"]
-            
-            if zig and real_aisle_items:
-                self.logger.info("🔄 Applying zig-zag sorting for real aisle data...")
-                
-                # Group items by aisle
-                aisle_groups = {}
-                for item_data in real_aisle_items:
-                    aisle = item_data["location"]["aisle"]
-                    if aisle not in aisle_groups:
-                        aisle_groups[aisle] = []
-                    aisle_groups[aisle].append(item_data)
-                
-                # Sort each aisle group
-                for aisle in aisle_groups:
-                    # Sort sections within each aisle
-                    aisle_groups[aisle].sort(key=lambda x: (
-                        int(str(x["location"]["section"]).replace("Section:", "").strip()) 
-                        if str(x["location"]["section"]).replace("Section:", "").strip().isdigit() 
-                        else 999
-                    ))
-                    
-                    # Apply zig-zag within each aisle if it has multiple sections
-                    if len(aisle_groups[aisle]) > 1:
-                        sections = [int(str(x["location"]["section"]).replace("Section:", "").strip()) 
-                                  for x in aisle_groups[aisle] 
-                                  if str(x["location"]["section"]).replace("Section:", "").strip().isdigit()]
-                        if len(set(sections)) > 1:
-                            # Reverse every other section group for zig-zag effect
-                            current_section = None
-                            section_start = 0
-                            for i, item_data in enumerate(aisle_groups[aisle]):
-                                item_section = str(item_data["location"]["section"]).replace("Section:", "").strip()
-                                if item_section.isdigit():
-                                    item_section = int(item_section)
-                                    if current_section is None:
-                                        current_section = item_section
-                                    elif item_section != current_section:
-                                        # We've moved to a new section, reverse the previous group if needed
-                                        if (current_section // 10) % 2 == 1:  # Odd section groups get reversed
-                                            aisle_groups[aisle][section_start:i] = reversed(aisle_groups[aisle][section_start:i])
-                                        current_section = item_section
-                                        section_start = i
-                            
-                            # Handle the last section group
-                            if current_section and (current_section // 10) % 2 == 1:
-                                aisle_groups[aisle][section_start:] = reversed(aisle_groups[aisle][section_start:])
-                
-                # Combine sorted aisle groups
-                sorted_real_items = []
-                for aisle in sorted(aisle_groups.keys(), key=lambda x: (
-                    ord(x[0].upper()) - ord('A') + 1 if x[0].isalpha() else 999
-                )):
-                    sorted_real_items.extend(aisle_groups[aisle])
-                
-                # Sort search-based items by confidence
-                search_items = [item for item in items_with_locations 
-                              if item.get("location", {}).get("zone_code") != "STORE"]
-                sorted_search_items = sorted(search_items, key=get_location_sort_key)
-                
-                # Combine real aisle items first, then search items
-                sorted_items = sorted_real_items + sorted_search_items
-                
-            else:
-                # Normal sorting by location (real aisles first, then search confidence)
-                sorted_items = sorted(items_with_locations, key=get_location_sort_key, reverse=False)
-
-            # Apply reverse sorting if requested
-            if reverse:
-                sorted_items = list(reversed(sorted_items))
-
-            # Step 4: Delete all current items
-            self.logger.info("🗑️  Clearing current shopping list...")
-            deleted_count = 0
-            for item in current_items:
-                if self.delete_item(str(item.list_item_id)):
-                    deleted_count += 1
-                else:
-                    self.logger.warning(f"⚠️  Failed to delete item: {item.name}")
-
-            self.logger.info(f"✅ Deleted {deleted_count} items")
-
-            # Step 5: Re-add items in sorted order with enhanced location notes
-            self.logger.info("📝 Re-adding items in aisle order with enhanced notes...")
-            added_count = 0
-
-            for idx, item_data in enumerate(sorted_items, 1):
-                item = item_data["item"]
-                location = item_data["location"]
-                matched_product = item_data.get("matched_product")
-                match_confidence = item_data.get("match_confidence", "Unknown")
-
                 # Create enhanced notes with the format: "Aisle:Section | Full Product Name"
                 notes_parts = []
-
+                
                 # Add location information FIRST
-                if location and location.get("aisle"):
-                    aisle = location['aisle']
-                    section = location.get('section', '')
+                if location_info and location_info.get("aisle"):
+                    aisle = location_info['aisle']
+                    section = location_info.get('section', '')
                     
-                    if location.get("zone_code") == "STORE":
+                    if location_info.get("zone_code") == "STORE":
                         # Real store location - format as "B16 Section 23 | Product Name"
                         if section and section != 'Unknown':
                             # Extract just the section number if it's formatted as "Section: 35"
                             section_num = str(section).replace("Section:", "").strip()
                             if section_num.isdigit():
-                                notes_parts.append(f"{aisle}{section_num} Section {section_num}")
+                                notes_parts.append(f"{aisle} Section {section_num}")
                             else:
                                 notes_parts.append(f"{aisle}{section}")
                         else:
@@ -870,18 +702,18 @@ class MeijerList:
                             notes_parts.append(f"{aisle}:{section}")
                         else:
                             notes_parts.append(aisle)
-
+                
                 # Add pipe separator if we have location info
                 if notes_parts:
                     notes_parts.append("|")
-
+                
                 # Add the FULL searched product name
                 if matched_product and matched_product.get('title'):
                     notes_parts.append(matched_product['title'])
-
+                
                 # Join notes with proper formatting
                 enhanced_notes = " ".join(notes_parts) if notes_parts else None
-
+                
                 # Limit notes to 60 characters as required by the API
                 if enhanced_notes and len(enhanced_notes) > 60:
                     # Try to truncate intelligently
@@ -893,7 +725,7 @@ class MeijerList:
                             enhanced_notes = enhanced_notes[:57] + "..."
                     else:
                         enhanced_notes = enhanced_notes[:57] + "..."
-
+                
                 # Re-add the item with the ORIGINAL name and enhanced location information
                 success = self.add_item_with_details(
                     upc=item.item_part_number or f"ITEM_{item.list_item_id}",
@@ -902,40 +734,74 @@ class MeijerList:
                     notes=enhanced_notes,
                     display_order=idx,
                 )
-
+                
                 if success:
-                    added_count += 1
-                    location_display = location.get("aisle", "Unknown") if location else "Unknown"
-                    
-                    self.logger.info(
-                        f"✅ Added: {item.name} (Location: {location_display})"
-                    )
+                    self.logger.info(f"✅ Added: {item.name} -> {enhanced_notes}")
                 else:
-                    self.logger.warning(f"⚠️  Failed to re-add item: {item.name}")
-
-            # Summary with detailed statistics
-            self.logger.info(
-                f"🎉 Defrag complete! Reorganized {added_count} items by aisle"
-            )
-            self.logger.info(
-                f"📊 Summary: {deleted_count} deleted, {added_count} re-added"
-            )
-
-            # Show confidence distribution
-            confidence_counts = {}
-            for item_data in items_with_locations:
-                confidence = item_data.get("match_confidence", "Unknown")
-                confidence_counts[confidence] = confidence_counts.get(confidence, 0) + 1
-
-            self.logger.info("🎯 Match Confidence Summary:")
-            for confidence, count in confidence_counts.items():
-                self.logger.info(f"   {confidence}: {count} item(s)")
-
-            return added_count > 0
-
-        except Exception as e:
-            self.logger.error(f"❌ Error during shopping list defrag: {e}")
-            return False
+                    self.logger.error(f"❌ Failed to add item: {item.name}")
+                    
+            except Exception as e:
+                self.logger.error(f"❌ Error processing item '{item.name}': {e}")
+                # Add the item anyway with minimal information
+                try:
+                    self.add_item_with_details(
+                        upc=f"ITEM_{item.list_item_id}",
+                        quantity=item.quantity,
+                        description=item.name,
+                        notes=f"Error: {str(e)[:40]}",
+                        display_order=idx,
+                    )
+                except Exception as add_error:
+                    self.logger.error(f"❌ Failed to add error item '{item.name}': {add_error}")
+        
+        self.logger.info("🎉 Shopping list defrag completed!")
+    
+    def _get_broader_search_terms(self, search_query: str) -> List[str]:
+        """
+        Generate broader search terms when the original search fails.
+        
+        Args:
+            search_query: Original search query
+            
+        Returns:
+            List of broader search terms to try
+        """
+        terms = []
+        
+        # Remove common prefixes/suffixes
+        query = search_query.lower()
+        
+        # Remove brand names
+        brand_removals = ["meijer", "fresh from meijer", "hunt's", "sargento", "polar"]
+        for brand in brand_removals:
+            if brand in query:
+                query = query.replace(brand, "").strip()
+        
+        # Remove common descriptors
+        descriptor_removals = ["st. louis style", "sliced", "watermelon", "3 lb bag", "5 lb bag", "8 oz", "1 gallon"]
+        for desc in descriptor_removals:
+            if desc in query:
+                query = query.replace(desc, "").strip()
+        
+        # Add the cleaned query
+        if query and len(query) > 2:
+            terms.append(query)
+        
+        # Add common food categories
+        if any(word in search_query.lower() for word in ["milk", "cheese", "yogurt"]):
+            terms.extend(["dairy", "milk"])
+        elif any(word in search_query.lower() for word in ["chicken", "beef", "pork", "spareribs"]):
+            terms.extend(["meat", "chicken", "beef"])
+        elif any(word in search_query.lower() for word in ["potato", "onion", "apple", "banana"]):
+            terms.extend(["produce", "vegetables", "fruit"])
+        elif any(word in search_query.lower() for word in ["toothpaste", "cream"]):
+            terms.extend(["personal care", "bathroom"])
+        
+        # Add the original query as fallback
+        if search_query not in terms:
+            terms.append(search_query)
+        
+        return terms
 
     def _map_api_response_to_listitem(
         self, item_data: Dict[str, Any]

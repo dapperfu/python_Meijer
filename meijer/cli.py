@@ -1612,6 +1612,360 @@ def version():
     click.echo("🔧 Enhanced with tabulate for beautiful tables")
 
 
+@cli.group()
+def cart():
+    """Manage shopping cart and fulfillment operations."""
+    pass
+
+
+@cart.command("show")
+@click.option("--refresh", is_flag=True, help="Force refresh cart data")
+@click.option("--store", default="217", help="Store ID for cart operations")
+def cart_show(refresh: bool, store: str):
+    """Show current shopping cart contents."""
+    client = get_meijer_client()
+    
+    try:
+        # Check if cart is available
+        if not client.cart:
+            raise click.ClickException("❌ Cart functionality not available")
+        
+        # Update store ID if different from default
+        if store != "217":
+            client.cart.store_id = store
+        
+        click.echo(f"🛒 Shopping Cart (Store: {store})")
+        click.echo("=" * 50)
+        
+        # Get cart data
+        cart_data = client.cart.get_current_cart(force_refresh=refresh)
+        
+        if not cart_data:
+            click.echo("❌ No cart data found")
+            return
+        
+        # Display cart summary
+        click.echo(f"Cart ID: {client.cart.cart_id or 'N/A'}")
+        click.echo(f"Total Items: {client.cart.item_count}")
+        click.echo(f"Total Price: ${client.cart.total_price:.2f}")
+        click.echo()
+        
+        # Display cart items
+        if "entries" in cart_data:
+            items = cart_data["entries"]
+            if items:
+                click.echo(f"📦 Cart Items ({len(items)}):")
+                
+                # Prepare table data
+                table_data = []
+                for i, item in enumerate(items, 1):
+                    # Extract item details
+                    product = item.get("product", {})
+                    name = product.get("name", "Unknown Product")
+                    code = product.get("code", "N/A")
+                    quantity = item.get("quantity", 1)
+                    
+                    # Extract price information
+                    price_info = item.get("basePrice", {})
+                    price = price_info.get("value", 0) if price_info else 0
+                    currency = price_info.get("currencyIso", "USD") if price_info else "USD"
+                    
+                    # Calculate total for this item
+                    total = price * quantity
+                    
+                    table_data.append([
+                        i,
+                        name[:40] + "..." if len(name) > 40 else name,
+                        code,
+                        quantity,
+                        f"${price:.2f}",
+                        f"${total:.2f}",
+                        currency
+                    ])
+                
+                headers = ["#", "Product", "Code", "Qty", "Unit Price", "Total", "Currency"]
+                
+                if TABULATE_AVAILABLE:
+                    click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+                else:
+                    click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
+                    click.echo(f"│ {'#':<3} {'Product':<40} {'Code':<10} {'Qty':<4} {'Unit Price':<10} {'Total':<10} {'Currency':<8} │")
+                    click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
+                    for row in table_data:
+                        click.echo(f"│ {row[0]:<3} {row[1]:<40} {row[2]:<10} {row[3]:<4} {row[4]:<10} {row[5]:<10} {row[6]:<8} │")
+                    click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
+            else:
+                click.echo("📦 Cart is empty")
+        else:
+            click.echo("📦 No items found in cart")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Cart operation failed: {e}")
+
+
+@cart.command("pickup-slots")
+@click.option("--date", help="Date for pickup slots (YYYY-MM-DD)")
+@click.option("--store", default="217", help="Store ID for cart operations")
+@click.option("--partner", default="SHIPT", help="Delivery partner (default: SHIPT)")
+def cart_pickup_slots(date: Optional[str], store: str, partner: str):
+    """Show available pickup time slots."""
+    client = get_meijer_client()
+    
+    try:
+        # Check if cart is available
+        if not client.cart:
+            raise click.ClickException("❌ Cart functionality not available")
+        
+        # Update store ID if different from default
+        if store != "217":
+            client.cart.store_id = store
+        
+        # Parse date if provided
+        pickup_date = None
+        if date:
+            try:
+                pickup_date = datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                raise click.ClickException("❌ Invalid date format. Use YYYY-MM-DD")
+        
+        click.echo(f"🕐 Pickup Slots (Store: {store}, Partner: {partner})")
+        if pickup_date:
+            click.echo(f"📅 Date: {pickup_date.strftime('%Y-%m-%d')}")
+        click.echo("=" * 60)
+        
+        # Get pickup slots
+        slots = client.cart.get_pickup_slots(
+            date=pickup_date,
+            delivery_partner=partner
+        )
+        
+        if not slots:
+            click.echo("❌ No pickup slots available")
+            return
+        
+        # Display slots
+        click.echo(f"📋 Available Pickup Slots ({len(slots)}):")
+        
+        # Prepare table data
+        table_data = []
+        for i, slot in enumerate(slots, 1):
+            start_time = slot.start_time.strftime("%H:%M")
+            end_time = slot.end_time.strftime("%H:%M")
+            availability = "✅ Available" if slot.is_available else "❌ Unavailable"
+            
+            table_data.append([
+                i,
+                slot.slot_id,
+                f"{start_time} - {end_time}",
+                availability,
+                slot.max_orders or "N/A",
+                slot.current_orders or "N/A"
+            ])
+        
+        headers = ["#", "Slot ID", "Time", "Status", "Max Orders", "Current Orders"]
+        
+        if TABULATE_AVAILABLE:
+            click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+        else:
+            click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
+            click.echo(f"│ {'#':<3} {'Slot ID':<15} {'Time':<15} {'Status':<15} {'Max Orders':<12} {'Current Orders':<15} │")
+            click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
+            for row in table_data:
+                click.echo(f"│ {row[0]:<3} {row[1]:<15} {row[2]:<15} {row[3]:<15} {row[4]:<12} {row[5]:<15} │")
+            click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Pickup slots operation failed: {e}")
+
+
+@cart.command("delivery-slots")
+@click.option("--date", help="Date for delivery slots (YYYY-MM-DD)")
+@click.option("--store", default="217", help="Store ID for cart operations")
+@click.option("--partner", default="SHIPT", help="Delivery partner (default: SHIPT)")
+def cart_delivery_slots(date: Optional[str], store: str, partner: str):
+    """Show available delivery time slots."""
+    client = get_meijer_client()
+    
+    try:
+        from .cart import MeijerCart
+        cart = MeijerCart(client.api_client, store)
+        
+        # Parse date if provided
+        delivery_date = None
+        if date:
+            try:
+                delivery_date = datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                raise click.ClickException("❌ Invalid date format. Use YYYY-MM-DD")
+        
+        click.echo(f"🚚 Delivery Slots (Store: {store}, Partner: {partner})")
+        if delivery_date:
+            click.echo(f"📅 Date: {delivery_date.strftime('%Y-%m-%d')}")
+        click.echo("=" * 60)
+        
+        # Get delivery slots
+        slots = cart.get_delivery_slots(
+            date=delivery_date,
+            delivery_partner=partner
+        )
+        
+        if not slots:
+            click.echo("❌ No delivery slots available")
+            return
+        
+        # Display slots
+        click.echo(f"📋 Available Delivery Slots ({len(slots)}):")
+        
+        # Prepare table data
+        table_data = []
+        for i, slot in enumerate(slots, 1):
+            start_time = slot.start_time.strftime("%H:%M")
+            end_time = slot.end_time.strftime("%H:%M")
+            availability = "✅ Available" if slot.is_available else "❌ Unavailable"
+            delivery_fee = f"${slot.delivery_fee:.2f}" if slot.delivery_fee else "N/A"
+            min_order = f"${slot.min_order_amount:.2f}" if slot.min_order_amount else "N/A"
+            
+            table_data.append([
+                i,
+                slot.slot_id,
+                f"{start_time} - {end_time}",
+                availability,
+                delivery_fee,
+                min_order,
+                slot.max_orders or "N/A",
+                slot.current_orders or "N/A"
+            ])
+        
+        headers = ["#", "Slot ID", "Time", "Status", "Delivery Fee", "Min Order", "Max Orders", "Current Orders"]
+        
+        if TABULATE_AVAILABLE:
+            click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+        else:
+            click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
+            click.echo(f"│ {'#':<3} {'Slot ID':<15} {'Time':<15} {'Status':<15} {'Delivery Fee':<12} {'Min Order':<10} {'Max Orders':<12} {'Current Orders':<15} │")
+            click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
+            for row in table_data:
+                click.echo(f"│ {row[0]:<3} {row[1]:<15} {row[2]:<15} {row[3]:<15} {row[4]:<12} {row[5]:<10} {row[6]:<12} {row[7]:<15} │")
+            click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Delivery slots operation failed: {e}")
+
+
+@cart.command("orders")
+@click.option("--page", default=0, help="Page number (0-based)")
+@click.option("--size", default=10, help="Orders per page")
+@click.option("--store", default="217", help="Store ID for cart operations")
+def cart_orders(page: int, size: int, store: str):
+    """Show order history."""
+    client = get_meijer_client()
+    
+    try:
+        from .cart import MeijerCart
+        cart = MeijerCart(client.api_client, store)
+        
+        click.echo(f"📋 Order History (Store: {store})")
+        click.echo(f"📄 Page {page + 1}, {size} orders per page")
+        click.echo("=" * 60)
+        
+        # Get order history
+        orders = cart.get_order_history(
+            current_page=page,
+            page_size=size
+        )
+        
+        if not orders:
+            click.echo("❌ No orders found")
+            return
+        
+        # Display orders
+        click.echo(f"📋 Orders ({len(orders)}):")
+        
+        # Prepare table data
+        table_data = []
+        for i, order in enumerate(orders, 1):
+            # Extract order details
+            code = order.get("code", "N/A")
+            status = order.get("status", "N/A")
+            total = order.get("totalPrice", {}).get("value", 0) if order.get("totalPrice") else 0
+            currency = order.get("totalPrice", {}).get("currencyIso", "USD") if order.get("totalPrice") else "USD"
+            
+            # Extract dates
+            created = order.get("created", "N/A")
+            if created and created != "N/A":
+                try:
+                    created_date = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                    created = created_date.strftime("%Y-%m-%d %H:%M")
+                except:
+                    pass
+            
+            table_data.append([
+                i,
+                code,
+                status,
+                f"${total:.2f}",
+                currency,
+                created
+            ])
+        
+        headers = ["#", "Order Code", "Status", "Total", "Currency", "Created"]
+        
+        if TABULATE_AVAILABLE:
+            click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+        else:
+            click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
+            click.echo(f"│ {'#':<3} {'Order Code':<15} {'Status':<15} {'Total':<10} {'Currency':<8} {'Created':<20} │")
+            click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
+            for row in table_data:
+                click.echo(f"│ {row[0]:<3} {row[1]:<15} {row[2]:<15} {row[3]:<10} {row[4]:<8} {row[5]:<20} │")
+            click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Order history operation failed: {e}")
+
+
+@cart.command("summary")
+@click.option("--store", default="217", help="Store ID for cart operations")
+def cart_summary(store: str):
+    """Show cart summary and status."""
+    client = get_meijer_client()
+    
+    try:
+        from .cart import MeijerCart
+        cart = MeijerCart(client.api_client, store)
+        
+        click.echo(f"🛒 Cart Summary (Store: {store})")
+        click.echo("=" * 50)
+        
+        # Get cart data
+        cart_data = cart.get_current_cart()
+        
+        if not cart_data:
+            click.echo("❌ No cart data found")
+            return
+        
+        # Display summary
+        click.echo(f"Cart ID: {cart.cart_id or 'N/A'}")
+        click.echo(f"Total Items: {cart.item_count}")
+        click.echo(f"Total Price: ${cart.total_price:.2f}")
+        
+        # Show store information
+        click.echo(f"Store ID: {cart.store_id}")
+        
+        # Show cart status
+        if cart.item_count == 0:
+            click.echo("Status: 🛒 Empty cart")
+        elif cart.item_count <= 5:
+            click.echo("Status: 🛒 Small order")
+        elif cart.item_count <= 15:
+            click.echo("Status: 🛒 Medium order")
+        else:
+            click.echo("Status: 🛒 Large order")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Cart summary operation failed: {e}")
+
+
 def extract_tokens_from_analysis_report(report_file_path: str) -> Optional[dict]:
     """Extract tokens from the analysis report JSON file."""
     try:
