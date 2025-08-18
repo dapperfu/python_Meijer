@@ -8,7 +8,7 @@ from the Meijer mobile app, based on analysis of the decompiled APK.
 from .base import ItemType, AuthTokens
 from .items import MeijerItem, ListItem
 from .coupons import MeijerCoupon
-from .stores import Store
+from .stores import Store, StoreHours
 from .search import SearchResult, create_meijer_items_from_search
 
 __all__ = [
@@ -18,6 +18,7 @@ __all__ = [
     "ListItem",
     "MeijerCoupon",
     "Store",
+    "StoreHours",
     "SearchResult",
     "create_meijer_items_from_search"
 ]

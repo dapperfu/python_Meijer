@@ -5,7 +5,70 @@ This module contains dataclasses for store locations and services.
 """
 
 from dataclasses import dataclass, field
+from datetime import time, datetime
 from typing import Any, Dict, List, Optional
+
+
+class StoreHours:
+    """Represents store operating hours."""
+
+    open_time: time
+    """Store opening time"""
+
+    close_time: time
+    """Store closing time"""
+
+    is_24_hours: bool = False
+    """Whether store is open 24 hours"""
+
+    days_open: List[str] = field(
+        default_factory=lambda: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+    )
+    """Days of the week the store is open"""
+
+    def is_open(
+        self, check_time: Optional[time] = None, check_day: Optional[str] = None
+    ) -> bool:
+        """
+        Check if store is currently open.
+
+        Parameters
+        ----------
+        check_time : time, optional
+            Time to check (defaults to current time)
+        check_day : str, optional
+            Day to check (defaults to current day)
+
+        Returns
+        -------
+        bool
+            True if store is open, False otherwise
+        """
+        if check_time is None:
+            check_time = datetime.now().time()
+
+        if self.is_24_hours:
+            return True
+
+        # Check if current day is in open days
+        if check_day and check_day not in self.days_open:
+            return False
+
+        # Check if current time is within operating hours
+        if self.open_time <= self.close_time:
+            # Normal case: open time is before close time
+            return self.open_time <= check_time <= self.close_time
+        else:
+            # Overnight case: open time is after close time (e.g., 6 PM to 6 AM)
+            return check_time >= self.open_time or check_time <= self.close_time
 
 
 @dataclass
