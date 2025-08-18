@@ -475,23 +475,19 @@ class MeijerList:
                     elif any(word in matched_name for word in original_name.split()):
                         match_confidence = "Medium"
 
-                    # Check if the result has location information
-                    # Note: Constructor.io search results may not have aisle info
-                    # We might need to use a different API for location data
-                    if hasattr(first_result, "aisle") and first_result.aisle:
-                        location_info = {
-                            "aisle": first_result.aisle,
-                            "section": getattr(first_result, "section", None),
-                            "zone": getattr(first_result, "zone", None),
-                            "zone_code": getattr(first_result, "zone_code", None),
-                        }
-                        self.logger.info(
-                            f"📍 Found location: Aisle {first_result.aisle}, Section {getattr(first_result, 'section', 'Unknown')}"
-                        )
-                    else:
-                        self.logger.info(
-                            f"📍 No aisle data in search result for {item.name}"
-                        )
+                    # Note: Constructor.io search results don't have aisle information
+                    # We'll use a placeholder location system based on search result order
+                    # This allows us to still organize items logically
+                    location_info = {
+                        "aisle": f"Search_{match_confidence}",
+                        "section": "Online",
+                        "zone": "Digital",
+                        "zone_code": "SEARCH",
+                    }
+                    
+                    self.logger.info(
+                        f"📍 Search result: {first_result.title[:50]}... (Confidence: {match_confidence})"
+                    )
 
                     # Store matched product details
                     matched_product = {
@@ -499,8 +495,8 @@ class MeijerList:
                         "price": getattr(first_result, "price", "N/A"),
                         "brand": getattr(first_result, "brand", "N/A"),
                         "category": getattr(first_result, "category", "N/A"),
-                        "aisle": getattr(first_result, "aisle", "Unknown"),
-                        "section": getattr(first_result, "section", "Unknown"),
+                        "aisle": "Search Result",
+                        "section": "Online",
                     }
                 else:
                     self.logger.warning(f"⚠️  No search results found for {item.name}")
@@ -625,84 +621,30 @@ class MeijerList:
 
                 self.logger.info("=" * 80)
 
-            # Step 3: Sort items by aisle number (handle non-numeric aisles gracefully)
-            def get_aisle_sort_key(item_data):
+            # Step 3: Sort items by search confidence and match quality
+            def get_search_sort_key(item_data):
                 location = item_data.get("location")
-                if not location or not location.get("aisle"):
-                    return (999, 0)  # Put items without aisle at the end
+                match_confidence = item_data.get("match_confidence", "Low")
+                
+                # Sort by confidence level first (High > Medium > Low)
+                confidence_score = {"High": 3, "Medium": 2, "Low": 1}.get(match_confidence, 0)
+                
+                # Then by whether we have a matched product
+                has_match = 1 if item_data.get("matched_product") else 0
+                
+                # Finally by original item name for consistent ordering
+                original_name = item_data["item"].name.lower()
+                
+                return (confidence_score, has_match, original_name)
 
-                aisle = location["aisle"]
-                try:
-                    # Try to extract numeric part for sorting
-                    numeric_part = int("".join(filter(str.isdigit, aisle)))
-                    return (0, numeric_part)
-                except (ValueError, TypeError):
-                    # If no numeric part, sort alphabetically
-                    return (1, aisle)
-
-            # Apply zig-zag sorting for B aisles if requested
+            # Apply zig-zag sorting for B aisles if requested (but we don't have real aisles)
             if zig:
-                # Group items by aisle
-                aisle_groups = {}
-                for item_data in items_with_locations:
-                    location = item_data.get("location")
-                    if location and location.get("aisle"):
-                        aisle = location["aisle"]
-                        if aisle not in aisle_groups:
-                            aisle_groups[aisle] = []
-                        aisle_groups[aisle].append(item_data)
-                    else:
-                        # Items without aisle info go to a special group
-                        if "no_aisle" not in aisle_groups:
-                            aisle_groups["no_aisle"] = []
-                        aisle_groups["no_aisle"].append(item_data)
-
-                # Sort items within each aisle group
-                for aisle, items in aisle_groups.items():
-                    if aisle == "no_aisle":
-                        # Keep items without aisle info in original order
-                        continue
-
-                    # Check if this is a B aisle
-                    if aisle.startswith("B") and len(aisle) > 1:
-                        try:
-                            aisle_num = int(aisle[1:])
-                            # Even B aisles (B2, B4, B6...) get reverse sorting
-                            if aisle_num % 2 == 0:
-                                items.sort(
-                                    key=lambda x: get_aisle_sort_key(x), reverse=True
-                                )
-                            else:
-                                # Odd B aisles (B1, B3, B5...) get normal sorting
-                                items.sort(
-                                    key=lambda x: get_aisle_sort_key(x), reverse=False
-                                )
-                        except (ValueError, TypeError):
-                            # If aisle number parsing fails, use normal sorting
-                            items.sort(
-                                key=lambda x: get_aisle_sort_key(x), reverse=False
-                            )
-                    else:
-                        # Non-B aisles use normal sorting
-                        items.sort(key=lambda x: get_aisle_sort_key(x), reverse=False)
-
-                # Flatten the groups back to a single list
-                sorted_items = []
-                # Sort aisles themselves
-                sorted_aisles = sorted(
-                    aisle_groups.keys(),
-                    key=lambda x: (0, int(x[1:]))
-                    if x.startswith("B") and len(x) > 1 and x[1:].isdigit()
-                    else (1, x)
-                    if x != "no_aisle"
-                    else (999, 0),
-                )
-
-                for aisle in sorted_aisles:
-                    sorted_items.extend(aisle_groups[aisle])
+                self.logger.info("⚠️  Zig-zag sorting requested but not applicable without real aisle data")
+                # Fall back to confidence-based sorting
+                sorted_items = sorted(items_with_locations, key=get_search_sort_key, reverse=True)
             else:
-                # Normal sorting without zig-zag
-                sorted_items = sorted(items_with_locations, key=get_aisle_sort_key)
+                # Normal sorting by search confidence
+                sorted_items = sorted(items_with_locations, key=get_search_sort_key, reverse=True)
 
             # Apply reverse sorting if requested
             if reverse:
@@ -729,60 +671,57 @@ class MeijerList:
                 matched_product = item_data.get("matched_product")
                 match_confidence = item_data.get("match_confidence", "Unknown")
 
-                # Create enhanced notes with detailed information
+                # Create enhanced notes with the format: "Search_High | Full Product Name"
                 notes_parts = []
 
-                # Add location information
-                if location:
-                    if location.get("aisle"):
-                        notes_parts.append(f"Aisle: {location['aisle']}")
-                    if location.get("section"):
-                        notes_parts.append(f"Section: {location['section']}")
-                    if location.get("zone"):
-                        notes_parts.append(f"Zone: {location['zone']}")
+                # Add location information FIRST (search confidence format)
+                if location and location.get("aisle"):
+                    aisle = location['aisle']
+                    section = location.get('section', '')
+                    if section and section != 'Unknown':
+                        notes_parts.append(f"{aisle}:{section}")
+                    else:
+                        notes_parts.append(aisle)
 
-                # Add matched product details
-                if matched_product:
-                    notes_parts.append(f"Matched: {matched_product['title']}")
-                    if matched_product.get("brand"):
-                        notes_parts.append(f"Brand: {matched_product['brand']}")
-                    if matched_product.get("price"):
-                        notes_parts.append(f"Price: {matched_product['price']}")
-                    notes_parts.append(f"Match Confidence: {match_confidence}")
+                # Add pipe separator if we have location info
+                if notes_parts:
+                    notes_parts.append("|")
 
-                # Preserve original notes if they exist
-                if item.notes:
-                    notes_parts.append(f"Original Notes: {item.notes}")
+                # Add the FULL searched product name (without "Matched: " prefix)
+                if matched_product and matched_product.get('title'):
+                    notes_parts.append(matched_product['title'])
 
-                enhanced_notes = " | ".join(notes_parts) if notes_parts else None
+                # Join notes with proper formatting
+                enhanced_notes = " ".join(notes_parts) if notes_parts else None
 
                 # Limit notes to 60 characters as required by the API
                 if enhanced_notes and len(enhanced_notes) > 60:
-                    enhanced_notes = enhanced_notes[:57] + "..."
+                    # Try to truncate intelligently
+                    if "|" in enhanced_notes:
+                        # Keep location and truncate product name
+                        location_part = enhanced_notes.split("|")[0].strip()
+                        if len(location_part) < 55:  # Leave room for " | ..."
+                            enhanced_notes = f"{location_part} | ..."
+                        else:
+                            enhanced_notes = enhanced_notes[:57] + "..."
+                    else:
+                        enhanced_notes = enhanced_notes[:57] + "..."
 
-                # Re-add the item with enhanced location information
+                # Re-add the item with the ORIGINAL name and enhanced location information
                 success = self.add_item_with_details(
                     upc=item.item_part_number or f"ITEM_{item.list_item_id}",
                     quantity=item.quantity,
-                    description=item.item_description,
+                    description=item.name,  # Use original item name, not description
                     notes=enhanced_notes,
                     display_order=idx,
                 )
 
                 if success:
                     added_count += 1
-                    aisle_info = (
-                        location.get("aisle", "Unknown") if location else "Unknown"
-                    )
-                    match_title = (
-                        matched_product["title"][:30] + "..."
-                        if matched_product and len(matched_product["title"]) > 30
-                        else matched_product.get("title", "No match")
-                        if matched_product
-                        else "No match"
-                    )
+                    location_display = location.get("aisle", "Unknown") if location else "Unknown"
+                    
                     self.logger.info(
-                        f"✅ Added: {item.name} (Aisle: {aisle_info}, Match: {match_title})"
+                        f"✅ Added: {item.name} (Location: {location_display})"
                     )
                 else:
                     self.logger.warning(f"⚠️  Failed to re-add item: {item.name}")
