@@ -35,6 +35,7 @@ class Search:
         results_per_page: int = 24,
         page: int = 1,
         sort_by: str = "relevance",
+        store_id: Optional[str] = None,
         **kwargs,
     ) -> SearchResult:
         """
@@ -45,6 +46,7 @@ class Search:
             results_per_page: Number of results per page
             page: Page number (1-based)
             sort_by: Sort method (relevance, price_asc, price_desc, etc.)
+            store_id: Store ID to filter results by availability
             **kwargs: Additional search parameters
 
         Returns:
@@ -61,11 +63,18 @@ class Search:
                 "sort_by": sort_by,
                 "fmt_options[groups_max_depth]": 2,
                 "fmt_options[groups_start]": "current",
-                **kwargs,
             }
+            
+            # Add store filter if provided (Constructor.io expects filters[availableInStores])
+            if store_id:
+                params["filters[availableInStores]"] = store_id
+            
+            # Add any additional kwargs (but filter out store_id to avoid duplication)
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k != "store_id"}
+            params.update(filtered_kwargs)
 
             self.logger.info(
-                f"Searching for: '{query}' (page {page}, {results_per_page} results)"
+                f"Searching for: '{query}' (page {page}, {results_per_page} results, store: {store_id or 'all'})"
             )
 
             response = self.meijer._make_request("GET", url, params=params)

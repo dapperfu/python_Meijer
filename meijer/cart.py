@@ -304,7 +304,7 @@ class MeijerCart:
                 raise
             raise CartError(f"Error retrieving delivery slots: {str(e)}")
 
-    async def reserve_pickup_slot(
+    def reserve_pickup_slot(
         self,
         slot_id: str,
         date: datetime,
@@ -341,7 +341,7 @@ class MeijerCart:
             "Pickup slot reservation not yet implemented - endpoint not found in logs"
         )
 
-    async def reserve_delivery_slot(
+    def reserve_delivery_slot(
         self, slot_id: str, date: datetime, delivery_partner: str = "SHIPT"
     ) -> bool:
         """
