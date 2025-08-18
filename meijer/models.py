@@ -255,6 +255,8 @@ class ListItem:
     promotion_end: Optional[date]
     coupon_id: int
     product_details: Optional[MeijerItem] = None
+    # Internal reference to list API for operations like marking complete/incomplete
+    _list_api: Optional[Any] = field(default=None, repr=False, compare=False)
 
     # Backward compatibility properties
     @property
@@ -271,6 +273,57 @@ class ListItem:
     def checked(self) -> bool:
         """Backward compatibility: checked -> is_complete."""
         return self.is_complete
+
+    @property
+    def complete(self) -> bool:
+        """Get or set the completion status of the list item.
+
+        Getting returns the same value as `is_complete`.
+        Setting will call the appropriate API via the attached list API if available,
+        otherwise it will only update the local field.
+
+        Returns
+        -------
+        bool
+            True if the item is marked complete, False otherwise
+        """
+        return self.is_complete
+
+    @complete.setter
+    def complete(self, value: bool) -> None:
+        """Set the completion status for the item.
+
+        When a list API reference is attached, this will invoke the remote API to
+        mark the item complete/incomplete and update the local state on success.
+        If no API is attached, only the local state is updated.
+
+        Parameters
+        ----------
+        value : bool
+            Desired completion status
+        """
+        # No-op if already desired state
+        if bool(self.is_complete) == bool(value):
+            return
+
+        if self._list_api is not None:
+            try:
+                if value:
+                    success = self._list_api.complete_item(str(self.list_item_id))
+                else:
+                    # Uses the MarkAsNotCompleted endpoint
+                    success = self._list_api.mark_as_not_completed(str(self.list_item_id))
+                if success:
+                    self.is_complete = bool(value)
+                else:
+                    raise RuntimeError(
+                        f"Failed to set completion to {value} for item {self.list_item_id} via API"
+                    )
+            except Exception as exc:  # pragma: no cover - passthrough for caller
+                raise
+        else:
+            # Fallback: update local state only
+            self.is_complete = bool(value)
 
     @property
     def upc(self) -> Optional[str]:

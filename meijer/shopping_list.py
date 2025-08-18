@@ -92,7 +92,10 @@ class MeijerList:
                     # Map API response keys to ListItem constructor parameters
                     mapped_data = self._map_api_response_to_listitem(item_data)
                     self.logger.info(f"🔍 MAPPED ITEM DATA: {mapped_data}")
-                    items.append(ListItem(**mapped_data))
+                    item = ListItem(**mapped_data)
+                    # Attach API handle so item.complete setter can call remote endpoints
+                    item._list_api = self
+                    items.append(item)
                 return items
             else:
                 self.logger.error(
@@ -349,7 +352,9 @@ class MeijerList:
                 for item_data in data.get("favoriteListItems", []):
                     # Map API response keys to ListItem constructor parameters
                     mapped_data = self._map_api_response_to_listitem(item_data)
-                    items.append(ListItem(**mapped_data))
+                    item = ListItem(**mapped_data)
+                    item._list_api = self
+                    items.append(item)
                 return items
             else:
                 self.logger.error(
@@ -903,11 +908,20 @@ class MeijerList:
                         if current_section and (current_section // 10) % 2 == 1:
                             aisle_groups[aisle][section_start:] = reversed(aisle_groups[aisle][section_start:])
             
-            # Combine sorted aisle groups
+            # Combine sorted aisle groups - sort aisles semantically (B1, B2, B10, B17, not B1, B10, B17, B2)
             sorted_real_items = []
-            for aisle in sorted(aisle_groups.keys(), key=lambda x: (
-                ord(x[0].upper()) - ord('A') + 1 if x[0].isalpha() else 999
-            )):
+            def _aisle_sort_key(aisle):
+                if not aisle or not aisle[0].isalpha():
+                    return (999, 999)
+                aisle_letter = ord(aisle[0].upper()) - ord('A') + 1
+                # Extract numeric part for semantic sorting (B1 -> 1, B17 -> 17)
+                if len(aisle) > 1 and aisle[1:].isdigit():
+                    aisle_num = int(aisle[1:])
+                else:
+                    aisle_num = 0
+                return (aisle_letter, aisle_num)
+            
+            for aisle in sorted(aisle_groups.keys(), key=_aisle_sort_key):
                 sorted_real_items.extend(aisle_groups[aisle])
             
             # Sort search-based items by confidence
