@@ -2371,20 +2371,19 @@ def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, li
                 product_name,
                 offer,
                 status,
-                f"{start_date} - {end_date}",
-                "Yes" if coupon.is_targeted else "No"
+                f"{start_date} - {end_date}"
             ])
 
-        headers = ["#", "ID", "Product", "Offer", "Status", "Valid Dates", "Targeted"]
+        headers = ["#", "ID", "Product", "Offer", "Status", "Valid Dates"]
 
         if TABULATE_AVAILABLE:
             click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         else:
             click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
-            click.echo(f"│ {'#':<3} {'ID':<8} {'Product':<40} {'Offer':<30} {'Status':<12} {'Valid Dates':<15} {'Targeted':<8} │")
+            click.echo(f"│ {'#':<3} {'ID':<8} {'Product':<40} {'Offer':<30} {'Status':<12} {'Valid Dates':<15} │")
             click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
             for row in table_data:
-                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<40} {row[3]:<30} {row[4]:<12} {row[5]:<15} {row[6]:<8} │")
+                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<40} {row[3]:<30} {row[4]:<12} {row[5]:<15} │")
             click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
 
         # Show summary
