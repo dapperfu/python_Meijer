@@ -28,8 +28,6 @@ except ImportError as e:
     exit(1)
 
 
-
-
 @dataclass
 class ConstructorAnalysis:
     """Analysis results for Constructor.io search API calls."""

@@ -22,7 +22,7 @@ meijer/
 ├── tests/           # Test suite
 ├── tools/           # Analysis and utility tools
 ├── demos/           # Example scripts and demonstrations
-├── meijer_cli.py    # Command-line interface
+# Command-line interface (available via package)
 ├── Makefile         # Development workflow automation
 └── requirements.txt # Python dependencies
 ```
@@ -222,16 +222,16 @@ gas_info = client.gas.get_gas_prices(store_id="217")
 
 ```bash
 # Add item to shopping list
-python meijer_cli.py list add "Milk, 2%" -q 2
+python -m meijer.cli list add "Milk, 2%" -q 2
 
 # View shopping list
-python meijer_cli.py list show
+python -m meijer.cli list show
 
 # Search for products
-python meijer_cli.py search "organic bananas"
+python -m meijer.cli search "organic bananas"
 
 # Get store information
-python meijer_cli.py stores --zip 48105
+python -m meijer.cli stores --zip 48105
 ```
 
 ## 🧪 Testing

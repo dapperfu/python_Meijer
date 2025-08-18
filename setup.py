@@ -6,7 +6,7 @@
  * Model: Anthropic Claude 3.5 Sonnet
  * Generation timestamp: 2024-12-19
  * Context: Create setup.py for CLI tool installation
- * 
+ *
  * Technical details:
  * - LLM: Claude 3.5 Sonnet (2024-10-22)
  * - IDE: Cursor (cursor.sh)
@@ -26,7 +26,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 # Read requirements
 with open("requirements.txt", "r", encoding="utf-8") as fh:
-    requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+    requirements = [
+        line.strip() for line in fh if line.strip() and not line.startswith("#")
+    ]
 
 setup(
     name="meijer-cli",
@@ -70,7 +72,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "meijer=meijer_cli:cli",
+            "meijer=meijer.cli:cli",
         ],
     },
     keywords="meijer, shopping, list, cli, grocery, retail",
@@ -79,4 +81,4 @@ setup(
         "Source": "https://github.com/dapperfu/python_Meijer",
         "Documentation": "https://github.com/dapperfu/python_Meijer#readme",
     },
-) 
+)

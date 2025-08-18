@@ -6,7 +6,7 @@
  * Model: Anthropic Claude 3.5 Sonnet
  * Generation timestamp: 2024-12-19
  * Context: Create specialized tool for analyzing feedback endpoints from mitmproxy logs
- * 
+ *
  * Technical details:
  * - LLM: Claude 3.5 Sonnet (2024-10-22)
  * - IDE: Cursor (cursor.sh)
@@ -42,7 +42,7 @@ except ImportError as e:
 @dataclass
 class FeedbackAnalysis:
     """Analysis results for a feedback submission."""
-    
+
     url: str
     method: str
     status_code: int
@@ -62,7 +62,7 @@ class FeedbackAnalysis:
 class FeedbackEndpointAnalyzer:
     """
     Analyzes feedback endpoints from Meijer mitmproxy logs.
-    
+
     This tool specifically looks for feedback submissions to understand:
     - Different feedback types (App, Shop & Scan, etc.)
     - Payload structures and component variations
@@ -87,7 +87,7 @@ class FeedbackEndpointAnalyzer:
             "custom_params": Counter(),
             "payload_sizes": [],
             "response_statuses": Counter(),
-            "detailed_flows": []
+            "detailed_flows": [],
         }
 
         # Setup logging
@@ -136,7 +136,9 @@ class FeedbackEndpointAnalyzer:
             except Exception as e:
                 self.logger.error(f"Error analyzing flow {i}: {e}")
 
-        self.logger.info(f"Feedback analysis completed. Found {len(self.feedback_flows)} feedback flows.")
+        self.logger.info(
+            f"Feedback analysis completed. Found {len(self.feedback_flows)} feedback flows."
+        )
 
     def _is_feedback_flow(self, flow_obj: flow.Flow) -> bool:
         """Check if a flow is a feedback submission."""
@@ -192,11 +194,11 @@ class FeedbackEndpointAnalyzer:
             self.logger.error(f"Error analyzing feedback flow {index}: {e}")
 
     def _create_feedback_analysis(
-        self, 
-        flow_obj: http.HTTPFlow, 
-        payload: Dict[str, Any], 
+        self,
+        flow_obj: http.HTTPFlow,
+        payload: Dict[str, Any],
         response_data: Optional[Dict[str, Any]],
-        raw_request: str
+        raw_request: str,
     ) -> Optional[FeedbackAnalysis]:
         """Create a FeedbackAnalysis object from flow data."""
         try:
@@ -209,14 +211,14 @@ class FeedbackEndpointAnalyzer:
             # Extract components and custom params
             components = []
             custom_params = []
-            
+
             if "dynamicData" in payload:
                 dynamic_data = payload["dynamicData"]
                 if "pages" in dynamic_data and dynamic_data["pages"]:
                     for page in dynamic_data["pages"]:
                         if "components" in page:
                             components.extend(page["components"])
-                
+
                 if "customParams" in dynamic_data:
                     custom_params = dynamic_data["customParams"]
 
@@ -242,7 +244,7 @@ class FeedbackEndpointAnalyzer:
                 device_data=device_data,
                 payload_size=len(raw_request),
                 response_uuid=response_uuid,
-                raw_payload=payload
+                raw_payload=payload,
             )
 
         except Exception as e:
@@ -259,14 +261,19 @@ class FeedbackEndpointAnalyzer:
                     for page in dynamic_data["pages"]:
                         if "components" in page:
                             for component in page["components"]:
-                                if (component.get("unique_name") == "S&S_APP_FEEDBACK" and 
-                                    component.get("value")):
+                                if component.get(
+                                    "unique_name"
+                                ) == "S&S_APP_FEEDBACK" and component.get("value"):
                                     return "Shop & Scan"
-                                if (component.get("unique_name") == "FEEDBACK_TOPICAPP" and 
-                                    component.get("value") == "C"):
+                                if (
+                                    component.get("unique_name") == "FEEDBACK_TOPICAPP"
+                                    and component.get("value") == "C"
+                                ):
                                     return "Shop & Scan"
-                                if (component.get("unique_name") == "FEEDBACK_TOPICAPP" and 
-                                    component.get("value") == "A"):
+                                if (
+                                    component.get("unique_name") == "FEEDBACK_TOPICAPP"
+                                    and component.get("value") == "A"
+                                ):
                                     return "App Feedback"
 
             # Default to general feedback
@@ -289,7 +296,7 @@ class FeedbackEndpointAnalyzer:
             device_model = analysis.device_data.get("deviceModel", "Unknown")
             app_version = analysis.device_data.get("appVersion", "Unknown")
             os_version = analysis.device_data.get("osVersion", "Unknown")
-            
+
             self.analysis_results["device_models"][device_model] += 1
             self.analysis_results["app_versions"][app_version] += 1
             self.analysis_results["os_versions"][os_version] += 1
@@ -343,11 +350,20 @@ class FeedbackEndpointAnalyzer:
             "custom_params": dict(self.analysis_results["custom_params"]),
             "response_statuses": dict(self.analysis_results["response_statuses"]),
             "payload_size_stats": {
-                "min": min(self.analysis_results["payload_sizes"]) if self.analysis_results["payload_sizes"] else 0,
-                "max": max(self.analysis_results["payload_sizes"]) if self.analysis_results["payload_sizes"] else 0,
-                "avg": sum(self.analysis_results["payload_sizes"]) / len(self.analysis_results["payload_sizes"]) if self.analysis_results["payload_sizes"] else 0,
+                "min": min(self.analysis_results["payload_sizes"])
+                if self.analysis_results["payload_sizes"]
+                else 0,
+                "max": max(self.analysis_results["payload_sizes"])
+                if self.analysis_results["payload_sizes"]
+                else 0,
+                "avg": sum(self.analysis_results["payload_sizes"])
+                / len(self.analysis_results["payload_sizes"])
+                if self.analysis_results["payload_sizes"]
+                else 0,
             },
-            "detailed_flows": self.analysis_results["detailed_flows"][:20],  # Limit to first 20
+            "detailed_flows": self.analysis_results["detailed_flows"][
+                :20
+            ],  # Limit to first 20
         }
 
         return report
@@ -412,7 +428,7 @@ class FeedbackEndpointAnalyzer:
 def main():
     """Main function to analyze feedback endpoints from the Meijer log file."""
     import sys
-    
+
     print("🚀 Meijer Feedback Endpoint Analyzer")
     print("=" * 60)
 
@@ -450,4 +466,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

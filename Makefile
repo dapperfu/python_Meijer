@@ -98,7 +98,7 @@ auth:
 		fi; \
 	fi; \
 	echo "🔄 Extracting authentication tokens from $$LOG_FILE..."; \
-	venv/bin/python meijer_cli.py auth "$$LOG_FILE" && \
+	venv/bin/python -m meijer.cli auth "$$LOG_FILE" && \
 	echo "✅ Authentication updated successfully from $$LOG_FILE"
 
 .PHONY: clean

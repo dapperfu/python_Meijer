@@ -177,22 +177,22 @@ def create_meijer_coupons_from_response(
 ) -> List[MeijerCoupon]:
     """
     Create MeijerCoupon objects from API response data.
-    
+
     Args:
         response_data: Raw API response data
         meijer_client: Meijer client instance for coupon operations
-    
+
     Returns:
         List of MeijerCoupon objects
     """
     if response_data is None:
         return []
-        
+
     coupons = []
-    
+
     # Try different possible field names for offers/coupons based on API response
     offers = []
-    
+
     # From APK debug: API returns 'listOfCoupons' with 473 coupons
     if "listOfCoupons" in response_data:
         offers = response_data["listOfCoupons"]
@@ -204,7 +204,7 @@ def create_meijer_coupons_from_response(
         offers = response_data["coupons"]
     elif "offerCollection" in response_data:
         offers = response_data["offerCollection"]
-    
+
     if meijer_client:
         meijer_client.logger.info(f"Parsing {len(offers)} coupons from API response")
 
@@ -217,10 +217,10 @@ def create_meijer_coupons_from_response(
                 is_suggested = offer_data.get("isSuggested", False)
                 is_targeted = offer_data.get("isTargeted", False)
                 is_hidden = offer_data.get("isHidden", False)
-                
+
                 # Get actual offer data
                 actual_offer = offer_data["offer"]
-                
+
                 # Also check inside the offer object for status flags
                 if not is_clipped:
                     is_clipped = actual_offer.get("isClipped", False)
@@ -241,15 +241,19 @@ def create_meijer_coupons_from_response(
             # Validate that we have the minimum required fields
             if not isinstance(actual_offer, dict):
                 if meijer_client:
-                    meijer_client.logger.debug(f"Skipping non-dict offer: {type(actual_offer)}")
+                    meijer_client.logger.debug(
+                        f"Skipping non-dict offer: {type(actual_offer)}"
+                    )
                 continue
-                
+
             meijer_offer_id = actual_offer.get("meijerOfferId", actual_offer.get("id"))
             if not meijer_offer_id or not isinstance(meijer_offer_id, (int, str)):
                 if meijer_client:
-                    meijer_client.logger.debug(f"Skipping invalid meijer_offer_id: {meijer_offer_id}")
+                    meijer_client.logger.debug(
+                        f"Skipping invalid meijer_offer_id: {meijer_offer_id}"
+                    )
                 continue
-                
+
             title = actual_offer.get("title", actual_offer.get("name"))
             if not title or not isinstance(title, str):
                 if meijer_client:
@@ -257,7 +261,9 @@ def create_meijer_coupons_from_response(
                 continue
 
             if meijer_client:
-                meijer_client.logger.debug(f"Creating coupon with id={meijer_offer_id}, title={title}")
+                meijer_client.logger.debug(
+                    f"Creating coupon with id={meijer_offer_id}, title={title}"
+                )
 
             # Extract core fields from actual offer data
             meijer_offer_id = int(meijer_offer_id)
@@ -292,7 +298,9 @@ def create_meijer_coupons_from_response(
                     meijer_offer_id=meijer_offer_id,
                     title=title,
                     description=description,
-                    image_url=actual_offer.get("imageUrl"),  # Fix: use "imageUrl" not "imageURL"
+                    image_url=actual_offer.get(
+                        "imageUrl"
+                    ),  # Fix: use "imageUrl" not "imageURL"
                     disclaimer=actual_offer.get("disclaimer"),
                     redemption_start_date=redemption_start,
                     redemption_end_date=redemption_end,
@@ -309,16 +317,18 @@ def create_meijer_coupons_from_response(
                     border_color=BorderColor(actual_offer.get("borderColor", 0)),
                     _meijer_client=meijer_client,
                 )
-                
+
                 if meijer_client:
                     meijer_client.logger.debug(f"Successfully created coupon: {coupon}")
-                
+
                 coupons.append(coupon)
-                
+
             except Exception as e:
                 if meijer_client:
                     meijer_client.logger.error(f"Failed to create MeijerCoupon: {e}")
-                    meijer_client.logger.error(f"Data: meijer_offer_id={meijer_offer_id}, title={title}, description={description}")
+                    meijer_client.logger.error(
+                        f"Data: meijer_offer_id={meijer_offer_id}, title={title}, description={description}"
+                    )
                 continue
 
         except Exception as e:
@@ -338,20 +348,22 @@ def clip_coupon(client: "Meijer", coupon_id: int) -> bool:
 
         url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Clip"
         headers = client._get_api_headers()
-        
+
         # Use APK-discovered headers from Zk/b.java
-        headers.update({
-            "Accept": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
-            "Content-Type": "application/vnd.meijer.digitalmperks.clip-v1.0+json"
-        })
+        headers.update(
+            {
+                "Accept": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
+                "Content-Type": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
+            }
+        )
 
         # Use APK-discovered request body structure (ClipUnclipCouponRequest)
         data = {
             "meijerOfferId": coupon_id,  # Long - the coupon's meijerOfferId (not offerId)
             "storeId": 0,  # Int - store ID, 0 for any store
-            "cartIsActive": False  # Boolean - whether shopping cart is active
+            "cartIsActive": False,  # Boolean - whether shopping cart is active
         }
-        
+
         response = client._make_request("POST", url, headers=headers, json_data=data)
 
         # Check for success based on APK-discovered response structure
@@ -363,7 +375,7 @@ def clip_coupon(client: "Meijer", coupon_id: int) -> bool:
             except Exception:
                 # Fallback to status code check
                 return True
-        
+
         return False
 
     except Exception as e:
@@ -379,20 +391,22 @@ def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
 
         url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Unclip"
         headers = client._get_api_headers()
-        
+
         # Use APK-discovered headers from Zk/b.java
-        headers.update({
-            "Accept": "application/vnd.meijer.digitalmperks.unclip-v1.0+json",
-            "Content-Type": "application/vnd.meijer.digitalmperks.unclip-v1.0+json"
-        })
+        headers.update(
+            {
+                "Accept": "application/vnd.meijer.digitalmperks.unclip-v1.0+json",
+                "Content-Type": "application/vnd.meijer.digitalmperks.unclip-v1.0+json",
+            }
+        )
 
         # Use APK-discovered request body structure (ClipUnclipCouponRequest)
         data = {
             "meijerOfferId": coupon_id,  # Long - the coupon's meijerOfferId (not offerId)
-            "storeId": 0,  # Int - store ID, 0 for any store  
-            "cartIsActive": False  # Boolean - whether shopping cart is active
+            "storeId": 0,  # Int - store ID, 0 for any store
+            "cartIsActive": False,  # Boolean - whether shopping cart is active
         }
-        
+
         response = client._make_request("POST", url, headers=headers, json_data=data)
 
         # Check for success based on APK-discovered response structure
@@ -404,7 +418,7 @@ def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
             except Exception:
                 # Fallback to status code check
                 return True
-        
+
         return False
 
     except Exception as e:
@@ -415,52 +429,54 @@ def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
 class MeijerCouponManager:
     """
     Manager class for Meijer coupon operations.
-    
+
     This class provides the interface that the main client expects
     for managing coupons and offers.
     """
-    
+
     def __init__(self, meijer_client: "Meijer"):
         """
         Initialize the coupon manager.
-        
+
         Args:
             meijer_client: The main Meijer client instance
         """
         self.meijer_client = meijer_client
         self.logger = meijer_client.logger
-    
-    def create_meijer_coupons_from_response(self, data: Dict[str, Any]) -> List["MeijerCoupon"]:
+
+    def create_meijer_coupons_from_response(
+        self, data: Dict[str, Any]
+    ) -> List["MeijerCoupon"]:
         """
         Create MeijerCoupon objects from API response data.
-        
+
         Args:
             data: API response data containing coupon information
-            
+
         Returns:
             List of MeijerCoupon objects
         """
         return create_meijer_coupons_from_response(data, self.meijer_client)
-    
+
     def clip_coupon(self, coupon_id: int) -> bool:
         """
         Clip a coupon by ID.
-        
+
         Args:
             coupon_id: The coupon ID to clip
-            
+
         Returns:
             True if successful, False otherwise
         """
         return clip_coupon(self.meijer_client, coupon_id)
-    
+
     def unclip_coupon(self, coupon_id: int) -> bool:
         """
         Unclip a coupon by ID.
-        
+
         Args:
             coupon_id: The coupon ID to unclip
-            
+
         Returns:
             True if successful, False otherwise
         """
