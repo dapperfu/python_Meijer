@@ -30,7 +30,6 @@ from typing import Dict, List, Optional, Any
 from urllib.parse import urlencode
 
 from meijer.exceptions import CartError
-from meijer.api_client import MeijerAPIClient
 
 
 @dataclass
@@ -86,7 +85,7 @@ class MeijerCart:
     not found in the current log analysis and may require additional investigation.
     """
 
-    def __init__(self, api_client: MeijerAPIClient, store_id: str = "217"):
+    def __init__(self, api_client: Any, store_id: str = "217"):
         """
         Initialize the MeijerCart instance.
 
@@ -148,10 +147,10 @@ class MeijerCart:
                 "retainOutOfStock": "true",
             }
 
-            url = f"/digital/occ/v3/carts/current?{urlencode(params)}"
+            url = f"{self.api_client.api_base_url}/digital/occ/v3/carts/current"
 
             self.logger.info(f"Retrieving current cart for store {self.store_id}")
-            response = await self.api_client.get(url)
+            response = self.api_client._make_request("GET", url, params=params)
 
             if response.status_code == 200:
                 self._cart_data = response.json()
@@ -166,7 +165,7 @@ class MeijerCart:
                 raise
             raise CartError(f"Error retrieving cart: {str(e)}")
 
-    async def get_pickup_slots(
+    def get_pickup_slots(
         self,
         date: Optional[datetime] = None,
         delivery_partner: str = "SHIPT",
@@ -219,11 +218,11 @@ class MeijerCart:
                 "curbsidepartner": curbside_partner,
             }
 
-            url = "/digital/hybris/v3/fulfillment/reservationslots"
+            url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
             self.logger.info(f"Retrieving pickup slots for store {self.store_id}")
-            response = await self.api_client.post(
-                url, json=request_data, headers=headers
+            response = self.api_client._make_request(
+                "POST", url, json_data=request_data, headers=headers
             )
 
             if response.status_code == 200:
@@ -239,7 +238,7 @@ class MeijerCart:
                 raise
             raise CartError(f"Error retrieving pickup slots: {str(e)}")
 
-    async def get_delivery_slots(
+    def get_delivery_slots(
         self, date: Optional[datetime] = None, delivery_partner: str = "SHIPT"
     ) -> List[DeliverySlot]:
         """
@@ -285,11 +284,11 @@ class MeijerCart:
                 "fulfillmenteligibility": "NORMAL",
             }
 
-            url = "/digital/hybris/v3/fulfillment/reservationslots"
+            url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
             self.logger.info(f"Retrieving delivery slots for store {self.store_id}")
-            response = await self.api_client.post(
-                url, json=request_data, headers=headers
+            response = self.api_client._make_request(
+                "POST", url, json_data=request_data, headers=headers
             )
 
             if response.status_code == 200:

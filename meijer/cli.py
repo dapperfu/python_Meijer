@@ -1787,8 +1787,13 @@ def cart_delivery_slots(date: Optional[str], store: str, partner: str):
     client = get_meijer_client()
     
     try:
-        from .cart import MeijerCart
-        cart = MeijerCart(client.api_client, store)
+        # Check if cart is available
+        if not client.cart:
+            raise click.ClickException("❌ Cart functionality not available")
+        
+        # Update store ID if different from default
+        if store != "217":
+            client.cart.store_id = store
         
         # Parse date if provided
         delivery_date = None
@@ -1804,7 +1809,7 @@ def cart_delivery_slots(date: Optional[str], store: str, partner: str):
         click.echo("=" * 60)
         
         # Get delivery slots
-        slots = cart.get_delivery_slots(
+        slots = client.cart.get_delivery_slots(
             date=delivery_date,
             delivery_partner=partner
         )
@@ -1861,15 +1866,20 @@ def cart_orders(page: int, size: int, store: str):
     client = get_meijer_client()
     
     try:
-        from .cart import MeijerCart
-        cart = MeijerCart(client.api_client, store)
+        # Check if cart is available
+        if not client.cart:
+            raise click.ClickException("❌ Cart functionality not available")
+        
+        # Update store ID if different from default
+        if store != "217":
+            client.cart.store_id = store
         
         click.echo(f"📋 Order History (Store: {store})")
         click.echo(f"📄 Page {page + 1}, {size} orders per page")
         click.echo("=" * 60)
         
         # Get order history
-        orders = cart.get_order_history(
+        orders = client.cart.get_order_history(
             current_page=page,
             page_size=size
         )
@@ -1931,33 +1941,38 @@ def cart_summary(store: str):
     client = get_meijer_client()
     
     try:
-        from .cart import MeijerCart
-        cart = MeijerCart(client.api_client, store)
+        # Check if cart is available
+        if not client.cart:
+            raise click.ClickException("❌ Cart functionality not available")
+        
+        # Update store ID if different from default
+        if store != "217":
+            client.cart.store_id = store
         
         click.echo(f"🛒 Cart Summary (Store: {store})")
         click.echo("=" * 50)
         
         # Get cart data
-        cart_data = cart.get_current_cart()
+        cart_data = client.cart.get_current_cart()
         
         if not cart_data:
             click.echo("❌ No cart data found")
             return
         
         # Display summary
-        click.echo(f"Cart ID: {cart.cart_id or 'N/A'}")
-        click.echo(f"Total Items: {cart.item_count}")
-        click.echo(f"Total Price: ${cart.total_price:.2f}")
+        click.echo(f"Cart ID: {client.cart.cart_id or 'N/A'}")
+        click.echo(f"Total Items: {client.cart.item_count}")
+        click.echo(f"Total Price: ${client.cart.total_price:.2f}")
         
         # Show store information
-        click.echo(f"Store ID: {cart.store_id}")
+        click.echo(f"Store ID: {client.cart.store_id}")
         
         # Show cart status
-        if cart.item_count == 0:
+        if client.cart.item_count == 0:
             click.echo("Status: 🛒 Empty cart")
-        elif cart.item_count <= 5:
+        elif client.cart.item_count <= 5:
             click.echo("Status: 🛒 Small order")
-        elif cart.item_count <= 15:
+        elif client.cart.item_count <= 15:
             click.echo("Status: 🛒 Medium order")
         else:
             click.echo("Status: 🛒 Large order")
