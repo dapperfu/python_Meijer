@@ -884,3 +884,217 @@ class Meijer:
         except Exception as e:
             self.logger.warning(f"Could not determine account ID: {e}")
             return 13266596
+
+    def get_product_detail(self, upc: str, store_id: Optional[str] = None) -> Optional[MeijerItem]:
+        """
+        Get detailed product information including location data.
+        
+        Args:
+            upc: Product UPC code
+            store_id: Store ID (defaults to current store)
+            
+        Returns:
+            MeijerItem with location information, or None if not found
+        """
+        if not store_id:
+            # Try to get store ID from current context
+            try:
+                stores = self.get_stores()
+                if stores:
+                    store_id = str(stores[0].store_id)
+                else:
+                    store_id = "217"  # Default store from logs
+            except Exception:
+                store_id = "217"  # Default store from logs
+        
+        try:
+            url = f"{self.api_base_url}/digital/occ/v3/products/{upc}"
+            params = {
+                "store": store_id,
+                "fields": "FULL",
+                "pageName": "pdp_app"
+            }
+            
+            self.logger.info(f"Fetching product detail for UPC: {upc} at store: {store_id}")
+            
+            response = self._make_request("GET", url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_product_detail_response(data, upc)
+            else:
+                self.logger.error(f"Product detail fetch failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error fetching product detail: {e}")
+            return None
+    
+    def _parse_product_detail_response(self, data: Dict[str, Any], upc: str) -> MeijerItem:
+        """
+        Parse product detail response and extract location information.
+        
+        Args:
+            data: Raw API response data
+            upc: Product UPC for reference
+            
+        Returns:
+            MeijerItem with location information
+        """
+        try:
+            # Extract basic product information
+            item = MeijerItem(
+                id=str(data.get("code", upc)),
+                title=data.get("name", ""),
+                description=data.get("summary", ""),
+                brand=data.get("brand", ""),
+                upc=upc,
+                price=float(data.get("price", {}).get("value", 0)) if data.get("price") else None,
+                sale_price=float(data.get("price", {}).get("formattedValue", "0").replace("$", "")) if data.get("price") else None,
+                image_url=data.get("images", [{}])[0].get("url", "") if data.get("images") else None,
+                raw_data=data
+            )
+            
+            # Extract location information
+            location_info = self._extract_location_from_product_detail(data)
+            if location_info:
+                item.aisle_primary = location_info.get("aisle")
+                item.aisle_locations = [location_info.get("formatted_location", "")]
+            
+            return item
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing product detail response: {e}")
+            # Return basic item if parsing fails
+            return MeijerItem(
+                id=upc,
+                title="Unknown Product",
+                upc=upc,
+                raw_data=data
+            )
+    
+    def _extract_location_from_product_detail(self, data: Dict[str, Any]) -> Optional[Dict[str, str]]:
+        """
+        Extract location information from product detail response.
+        
+        Args:
+            data: Raw API response data
+            
+        Returns:
+            Dictionary with location information or None
+        """
+        try:
+            # Try multiple possible location field structures
+            location_fields = [
+                "storeLocations",
+                "storeProductLocation", 
+                "location",
+                "aisle",
+                "section",
+                "bay"
+            ]
+            
+            # Look for structured location data
+            for field in location_fields:
+                if field in data:
+                    field_data = data[field]
+                    if isinstance(field_data, dict):
+                        aisle = field_data.get("aisle") or field_data.get("aisleName")
+                        section = field_data.get("section") or field_data.get("sectionNumber")
+                        bay = field_data.get("bay") or field_data.get("bayNumber")
+                        
+                        if aisle or section:
+                            formatted_location = self._format_location_string(aisle, section, bay)
+                            return {
+                                "aisle": aisle,
+                                "section": section,
+                                "bay": bay,
+                                "formatted_location": formatted_location
+                            }
+            
+            # Look for location in description or summary fields
+            description_fields = ["description", "summary", "longDescription"]
+            for field in description_fields:
+                if field in data and data[field]:
+                    text = str(data[field])
+                    # Look for patterns like "Aisle B | 16 Section: 35"
+                    location_match = self._extract_location_from_text(text)
+                    if location_match:
+                        return location_match
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting location: {e}")
+            return None
+    
+    def _format_location_string(self, aisle: Optional[str], section: Optional[str], bay: Optional[str]) -> str:
+        """
+        Format location information into a readable string.
+        
+        Args:
+            aisle: Aisle information
+            section: Section information  
+            bay: Bay information
+            
+        Returns:
+            Formatted location string
+        """
+        parts = []
+        
+        if aisle:
+            parts.append(f"Aisle {aisle}")
+        
+        if section:
+            if bay:
+                parts.append(f"{section} Section: {bay}")
+            else:
+                parts.append(f"Section: {section}")
+        elif bay:
+            parts.append(f"Bay: {bay}")
+        
+        return " | ".join(parts) if parts else "Location Unknown"
+    
+    def _extract_location_from_text(self, text: str) -> Optional[Dict[str, str]]:
+        """
+        Extract location information from text using regex patterns.
+        
+        Args:
+            text: Text to search for location patterns
+            
+        Returns:
+            Dictionary with location information or None
+        """
+        import re
+        
+        # Pattern for "Aisle B | 16 Section: 35"
+        pattern1 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*(\d+)\s*Section:\s*(\d+)"
+        match1 = re.search(pattern1, text, re.IGNORECASE)
+        if match1:
+            return {
+                "aisle": match1.group(1),
+                "section": match1.group(2),
+                "bay": match1.group(3),
+                "formatted_location": f"Aisle {match1.group(1)} | {match1.group(2)} Section: {match1.group(3)}"
+            }
+        
+        # Pattern for "Aisle B | Section 16"
+        pattern2 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*Section\s+(\d+)"
+        match2 = re.search(pattern2, text, re.IGNORECASE)
+        if match2:
+            return {
+                "aisle": match2.group(1),
+                "section": match2.group(2),
+                "formatted_location": f"Aisle {match2.group(1)} | Section {match2.group(2)}"
+            }
+        
+        # Pattern for just "Aisle B"
+        pattern3 = r"Aisle\s+([A-Z0-9]+)"
+        match3 = re.search(pattern3, text, re.IGNORECASE)
+        if match3:
+            return {
+                "aisle": match3.group(1),
+                "formatted_location": f"Aisle {match3.group(1)}"
+            }
+        
+        return None
