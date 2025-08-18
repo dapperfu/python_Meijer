@@ -118,3 +118,7 @@ dmypy.json
 *.json
 *.txt
 *.log
+
+/*.py
+!/*/
+venv/

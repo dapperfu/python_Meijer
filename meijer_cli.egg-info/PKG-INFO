@@ -1,0 +1,353 @@
+Metadata-Version: 2.2
+Name: meijer-cli
+Version: 1.0.0
+Summary: A comprehensive CLI tool for managing Meijer shopping lists
+Home-page: https://github.com/dapperfu/python_Meijer
+Author: Claude Sonnet 4
+Author-email: claude@anthropic.com
+Project-URL: Bug Reports, https://github.com/dapperfu/python_Meijer/issues
+Project-URL: Source, https://github.com/dapperfu/python_Meijer
+Project-URL: Documentation, https://github.com/dapperfu/python_Meijer#readme
+Keywords: meijer,shopping,list,cli,grocery,retail
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Topic :: Office/Business
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: click>=8.0.0
+Requires-Dist: tabulate>=0.9.0
+Requires-Dist: requests>=2.25.0
+Requires-Dist: urllib3>=1.26.0
+Provides-Extra: dev
+Requires-Dist: pytest>=6.0.0; extra == "dev"
+Requires-Dist: black>=21.0.0; extra == "dev"
+Requires-Dist: mypy>=0.910; extra == "dev"
+Requires-Dist: rich>=12.0.0; extra == "dev"
+Provides-Extra: interactive
+Requires-Dist: rich>=12.0.0; extra == "interactive"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: project-url
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# Meijer API Client
+
+A comprehensive Python client for the Meijer API, providing access to shopping lists, coupons, store information, gas prices, and more.
+
+## 🚀 Features
+
+- **Authentication**: OAuth2 Bearer token authentication with automatic refresh
+- **Shopping Lists**: Create, manage, and sync shopping lists
+- **Coupons**: Browse, clip, and manage digital coupons
+- **Store Information**: Find stores, get hours, and check gas prices
+- **Product Search**: Search products with barcode lookup support
+- **Shop & Scan**: Add items to cart and manage shopping trips
+- **mPerks**: Access loyalty rewards and earned points
+- **CLI Interface**: Command-line tools for quick operations
+
+## 📁 Project Structure
+
+```
+meijer/
+├── meijer/           # Core API client library
+├── notebooks/        # Jupyter notebooks and generators
+├── tests/           # Test suite
+├── tools/           # Analysis and utility tools
+├── demos/           # Example scripts and demonstrations
+# Command-line interface (available via package)
+├── Makefile         # Development workflow automation
+└── requirements.txt # Python dependencies
+```
+
+## 🛠️ Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd python_Meijer
+   ```
+
+2. **Create virtual environment:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   pip install -r requirements-test.txt  # For testing
+   ```
+
+4. **Install in development mode:**
+   ```bash
+   pip install -e .
+   ```
+
+## 📱 Usage & Authentication Setup
+
+### Prerequisites
+
+**⚠️ Important**: This client requires a device that can accept self-signed certificates for MITM (Man-in-the-Middle) traffic capture. This typically means:
+
+- **Rooted Android device** with certificate installation capabilities
+- **Jailbroken iOS device** with certificate management
+- **Emulator** with certificate bypass capabilities
+- **Development device** with custom certificate authority
+
+**Note**: OKTA OAuth2 authentication is still pending implementation. Currently, the client relies on Bearer token extraction from captured traffic.
+
+### Step-by-Step Authentication Setup
+
+#### 1. Install mitmproxy
+```bash
+# Install mitmproxy globally or in your virtual environment
+pip install mitmproxy
+
+# Or use the Makefile target (recommended)
+make venv
+```
+
+#### 2. Start Traffic Capture
+```bash
+make log
+```
+
+This command:
+- Starts `mitmweb` with multiple proxy modes (HTTP, SOCKS5, WireGuard)
+- Opens a web interface at `http://localhost:8081`
+- Creates a timestamped log file (e.g., `meijer_mitm_20241219_143022.log`)
+- Applies custom scripts for traffic analysis
+
+**What happens during capture:**
+- Your device connects to the proxy (configure network settings to use the proxy)
+- Install the mitmproxy certificate on your device
+- Use the Meijer mobile app normally - all traffic is logged
+- The proxy captures API calls, including authentication tokens
+
+#### 3. Extract Authentication Tokens
+```bash
+make auth
+```
+
+This command:
+- Automatically finds the most recent log file
+- Parses the log using specialized tools (not plain text analysis)
+- Extracts Bearer tokens and user credentials
+- Updates `~/.config/meijer.txt` with the extracted information
+
+**Manual file specification:**
+```bash
+make auth FILE=meijer_mitm_20241219_143022.log
+```
+
+#### 4. Verify Authentication
+```bash
+python -c "from meijer.client import Meijer; client = Meijer(); print('Auth status:', 'OK' if client._access_token else 'Failed')"
+```
+
+### How the Make Commands Work
+
+#### `make log` - Traffic Capture
+```bash
+make log
+```
+- **Purpose**: Captures Meijer app traffic for token extraction
+- **Process**: 
+  1. Generates timestamped log filename
+  2. Starts mitmweb with multiple proxy modes
+  3. Opens web interface for monitoring
+  4. Applies custom analysis scripts
+- **Output**: Creates `meijer_mitm_YYYYMMDD_HHMMSS.log`
+- **Duration**: Runs until manually stopped (Ctrl+C)
+
+#### `make auth` - Token Extraction
+```bash
+make auth
+```
+- **Purpose**: Extracts authentication tokens from captured logs
+- **Process**:
+  1. Automatically finds most recent log file
+  2. Uses specialized mitmproxy analysis tools (not grep/strings)
+  3. Parses authentication headers and responses
+  4. Updates `~/.config/meijer.txt` with extracted tokens
+- **Output**: Updates authentication configuration file
+- **Requirements**: Must have captured traffic first with `make log`
+
+#### `make logs` - Log Management
+```bash
+make logs
+```
+- **Purpose**: Lists available log files for analysis
+- **Output**: Shows recent log files with timestamps
+- **Use Case**: When you want to extract from a specific log file
+
+### Authentication File Format
+
+The client expects `~/.config/meijer.txt` in this format:
+```json
+{
+  "bearer": "your_bearer_token_here",
+  "user_agent": "Mozilla/5.0...",
+  "captured_at": "2024-12-19T14:30:22Z"
+}
+```
+
+### Troubleshooting Authentication
+
+#### Common Issues:
+1. **"No log files found"**: Run `make log` first to capture traffic
+2. **"Authentication failed"**: Check that your device accepted the mitmproxy certificate
+3. **"Token expired"**: Re-run the capture and extraction process
+4. **"Proxy connection failed"**: Ensure your device is configured to use the proxy
+
+#### Device Configuration Tips:
+- **Android**: Settings → Network & Internet → Wi-Fi → Advanced → Proxy
+- **iOS**: Settings → Wi-Fi → (i) → Configure Proxy
+- **Emulator**: Use `adb reverse` to forward proxy connections
+
+## 🔐 Authentication
+
+The client uses OAuth2 Bearer token authentication. Tokens are automatically loaded from `~/.config/meijer.txt`.
+
+### Setting up authentication:
+
+1. **Capture traffic** using mitmproxy:
+   ```bash
+   make log
+   ```
+
+2. **Extract authentication tokens:**
+   ```bash
+   make auth
+   ```
+
+3. **Verify authentication:**
+   ```bash
+   python -c "from meijer.client import Meijer; client = Meijer(); print('Auth status:', 'OK' if client._access_token else 'Failed')"
+   ```
+
+## 📖 Usage
+
+### Basic Client Usage
+
+```python
+from meijer.client import Meijer
+
+# Initialize client (automatically loads auth from ~/.config/meijer.txt)
+client = Meijer()
+
+# Get shopping list
+shopping_list = client.list.get()
+
+# Search for products
+results = client.search.search("milk")
+
+# Get store information
+stores = client.get_stores(zip_code="48105")
+
+# Check gas prices
+gas_info = client.gas.get_gas_prices(store_id="217")
+```
+
+### Command Line Interface
+
+```bash
+# Add item to shopping list
+python -m meijer.cli list add "Milk, 2%" -q 2
+
+# View shopping list
+python -m meijer.cli list show
+
+# Search for products
+python -m meijer.cli search "organic bananas"
+
+# Get store information
+python -m meijer.cli stores --zip 48105
+```
+
+## 🧪 Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+make test
+
+# Run specific test categories
+pytest tests/test_shopping_list.py
+pytest tests/test_coupons.py
+
+# Run with coverage
+make coverage
+```
+
+## 🔧 Development
+
+### Makefile Targets
+
+- `make test` - Run test suite
+- `make coverage` - Run tests with coverage report
+- `make log` - Start mitmproxy traffic capture
+- `make auth` - Extract authentication tokens from logs
+- `make clean` - Clean up temporary files
+
+### Code Quality
+
+- **Type Hints**: Full mypy typing support
+- **Documentation**: NumPy-style docstrings
+- **Testing**: Comprehensive pytest test suite
+- **Linting**: Ruff for code quality
+
+## 📚 API Coverage
+
+The client provides access to:
+
+- **Shopping Lists**: Create, read, update, delete items
+- **Coupons**: Browse, clip, unclip digital offers
+- **Stores**: Location search, hours, gas prices
+- **Products**: Search, barcode lookup, pricing
+- **mPerks**: Loyalty rewards and points
+- **Shop & Scan**: Cart management and barcode scanning
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with proper typing and documentation
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚠️ Security
+
+- **Never commit authentication tokens** to version control
+- **Use environment variables** for sensitive configuration
+- **Keep dependencies updated** for security patches
+- **Report security issues** via the [SECURITY.md](SECURITY.md) process
+
+## 🔗 Related
+
+- [API Discovery Summary](API_DISCOVERY_SUMMARY.md) - Comprehensive API endpoint analysis
+- [Security Policy](SECURITY.md) - Security reporting and guidelines
+- [Test Reports](htmlcov/) - Code coverage and test results

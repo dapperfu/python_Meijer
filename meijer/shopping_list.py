@@ -10,6 +10,7 @@ from typing import List, TYPE_CHECKING, Optional, Dict, Any
 from urllib.parse import urljoin
 from dataclasses import dataclass, asdict
 from datetime import datetime
+import re
 
 try:
     from tabulate import tabulate
@@ -81,10 +82,28 @@ class MeijerList:
 
             if response.status_code == 200:
                 data = response.json()
+                self.logger.info(f"🔍 RAW API RESPONSE for shopping list:")
+                self.logger.info(f"   - Response data: {data}")
+                
                 items = []
                 for item_data in data.get("listItems", []):
+                    self.logger.info(f"🔍 RAW ITEM DATA: {item_data}")
+                    
+                    # Clean up duplicated aisle values in notes if present
+                    if "notes" in item_data and item_data["notes"]:
+                        notes = item_data["notes"]
+                        # Fix pattern like "A4 A4 Section 12-0" -> "A4 Section 12-0"
+                        if isinstance(notes, str) and " Section " in notes:
+                            # Look for pattern: "A4 A4 Section" -> "A4 Section"
+                            pattern = r'([A-Z]\d+)\s+\1\s+Section'
+                            if re.search(pattern, notes):
+                                cleaned_notes = re.sub(pattern, r'\1 Section', notes)
+                                self.logger.info(f"🔧 Fixed duplicated aisle in notes: '{notes}' -> '{cleaned_notes}'")
+                                item_data["notes"] = cleaned_notes
+                    
                     # Map API response keys to ListItem constructor parameters
                     mapped_data = self._map_api_response_to_listitem(item_data)
+                    self.logger.info(f"🔍 MAPPED ITEM DATA: {mapped_data}")
                     items.append(ListItem(**mapped_data))
                 return items
             else:
@@ -890,7 +909,7 @@ class MeijerList:
             # Create enhanced notes with the format: "Aisle:Section | Full Product Name"
             notes_parts = []
             
-            # Add location information FIRST
+            # Add location information FIRST (but only for sorting, not for storage)
             if location and location.get("aisle"):
                 aisle = location['aisle']
                 section = location.get('section', '')
@@ -915,45 +934,22 @@ class MeijerList:
                 self.logger.info(f"   - Cleaned aisle: '{aisle}'")
                 self.logger.info(f"   - Cleaned section: '{section}'")
                 
-                if location.get("zone_code") == "STORE":
-                    # Real store location - format as "B16 Section 23 | Product Name"
-                    if section and section != 'Unknown':
-                        # Extract just the section number if it's formatted as "Section: 35"
-                        section_num = str(section).replace("Section:", "").strip()
-                        if section_num.isdigit():
-                            formatted_location = f"{aisle} Section {section_num}"
-                            notes_parts.append(formatted_location)
-                            self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
-                        else:
-                            # Check if section already contains "Section" text
-                            if "Section" in str(section):
-                                formatted_location = f"{aisle} {section}"
-                                notes_parts.append(formatted_location)
-                                self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
-                            else:
-                                formatted_location = f"{aisle} Section {section}"
-                                notes_parts.append(formatted_location)
-                                self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
-                    else:
-                        notes_parts.append(aisle)
-                        self.logger.info(f"📍 FINAL FORMAT: '{aisle}'")
-                else:
-                    # Search-based location - format as "Search_High | Product Name"
-                    if section and section != 'Unknown':
-                        formatted_location = f"{aisle}:{section}"
-                        notes_parts.append(formatted_location)
-                        self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
-                    else:
-                        notes_parts.append(aisle)
-                        self.logger.info(f"📍 FINAL FORMAT: '{aisle}'")
+                # Store location info for sorting but don't add to notes
+                # The location will be used only for organizing the list, not for display
+                self.logger.info(f"📍 Location info for sorting: {aisle} Section {section}")
             
-            # Add pipe separator if we have location info
+            # Don't add location information to notes - it's only for sorting
+            # The notes should remain clean for the user
+            
+            # Add pipe separator if we have other notes
             if notes_parts:
                 notes_parts.append("|")
             
-            # Add the FULL searched product name
+            # Add the FULL searched product name (but only if it's different from the original)
             if matched_product and matched_product.get('title'):
-                notes_parts.append(matched_product['title'])
+                # Only add the product name if it's different from the original item name
+                if matched_product['title'] != item.name:
+                    notes_parts.append(matched_product['title'])
             
             # Join notes with proper formatting
             enhanced_notes = " ".join(notes_parts) if notes_parts else None
