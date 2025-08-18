@@ -5,7 +5,6 @@ This module provides methods for looking up product information by barcode
 and managing Shop & Scan functionality.
 """
 
-import logging
 from typing import Any, Dict, List, Optional
 
 from .models import MeijerItem

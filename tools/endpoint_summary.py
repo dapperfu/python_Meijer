@@ -6,7 +6,7 @@ Displays a focused summary of key Meijer endpoints that need to be implemented.
 """
 
 import json
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 
 def load_meijer_endpoints(file_path: str) -> Dict[str, Any]:
@@ -39,8 +39,8 @@ def display_category_summary(category: str, data: Dict[str, Any]):
 
 def display_implementation_priority(endpoints_data: Dict[str, Any]):
     """Display endpoints organized by implementation priority."""
-    print(f"\n🚀 Implementation Priority Analysis")
-    print(f"=" * 50)
+    print("\n🚀 Implementation Priority Analysis")
+    print("=" * 50)
     
     # Priority 1: Core functionality (already implemented)
     priority_1 = ['Shopping Lists', 'Coupons & Offers', 'Product Search', 'Shop & Scan']
@@ -54,25 +54,25 @@ def display_implementation_priority(endpoints_data: Dict[str, Any]):
     # Priority 4: Advanced features
     priority_4 = ['Cart & Checkout', 'Feedback & Support', 'Analytics & Tracking']
     
-    print(f"\n🎯 Priority 1 (Core - Already Implemented):")
+    print("\n🎯 Priority 1 (Core - Already Implemented):")
     for category in priority_1:
         if category in endpoints_data['categories']:
             data = endpoints_data['categories'][category]
             print(f"   ✅ {category}: {data['total_count']} endpoints")
     
-    print(f"\n🔥 Priority 2 (High-Value - Implement Next):")
+    print("\n🔥 Priority 2 (High-Value - Implement Next):")
     for category in priority_2:
         if category in endpoints_data['categories']:
             data = endpoints_data['categories'][category]
             print(f"   🔥 {category}: {data['total_count']} endpoints")
     
-    print(f"\n⚡ Priority 3 (Enhanced - Implement Soon):")
+    print("\n⚡ Priority 3 (Enhanced - Implement Soon):")
     for category in priority_3:
         if category in endpoints_data['categories']:
             data = endpoints_data['categories'][category]
             print(f"   ⚡ {category}: {data['total_count']} endpoints")
     
-    print(f"\n🔧 Priority 4 (Advanced - Implement Later):")
+    print("\n🔧 Priority 4 (Advanced - Implement Later):")
     for category in priority_4:
         if category in endpoints_data['categories']:
             data = endpoints_data['categories'][category]
@@ -81,8 +81,8 @@ def display_implementation_priority(endpoints_data: Dict[str, Any]):
 
 def display_missing_endpoints(endpoints_data: Dict[str, Any]):
     """Display endpoints that are missing from our current implementation."""
-    print(f"\n❌ Missing Endpoints Analysis")
-    print(f"=" * 40)
+    print("\n❌ Missing Endpoints Analysis")
+    print("=" * 40)
     
     # Categories we currently have implemented
     implemented_categories = {
@@ -103,7 +103,7 @@ def display_missing_endpoints(endpoints_data: Dict[str, Any]):
         else:
             print(f"\n❌ {category} - NOT IMPLEMENTED")
             print(f"   Total endpoints: {data['total_count']}")
-            print(f"   Sample endpoints:")
+            print("   Sample endpoints:")
             for endpoint in data['endpoints'][:3]:
                 print(f"     {endpoint['method']} {endpoint['path']}")
 
@@ -137,7 +137,7 @@ def main():
     display_missing_endpoints(endpoints_data)
     
     print(f"\n🎯 Summary: We have {summary['total_meijer_endpoints']} endpoints to work with!")
-    print(f"   Focus on Priority 2 categories to expand functionality quickly.")
+    print("   Focus on Priority 2 categories to expand functionality quickly.")
 
 
 if __name__ == "__main__":

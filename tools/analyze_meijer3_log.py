@@ -6,7 +6,7 @@ Focus on mPerks earned rewards and related endpoints.
 
 import json
 import sys
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 from collections import defaultdict
 
 try:
@@ -68,7 +68,7 @@ class Meijer3LogAnalyzer:
         print("Analyzing flows...")
         
         # Show first few flows for debugging
-        print(f"\nExamining first 5 flows for structure:")
+        print("\nExamining first 5 flows for structure:")
         for i, flow_data in enumerate(self.flows[:5]):
             try:
                 print(f"\nFlow {i}:")

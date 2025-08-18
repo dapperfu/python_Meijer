@@ -7,7 +7,6 @@ import json
 from typing import Dict, List, Any, Optional
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow
-import re
 
 
 def load_flows(log_file: str) -> List[HTTPFlow]:
@@ -123,7 +122,7 @@ def find_valid_bearer_token(
 def save_bearer_token(token_info: Dict[str, Any], output_file: str = "bearer_auth.txt"):
     """Save the Bearer token to a file for use by other scripts."""
     with open(output_file, "w") as f:
-        f.write(f"# Bearer token extracted from meijer2.log\n")
+        f.write("# Bearer token extracted from meijer2.log\n")
         f.write(f"# Timestamp: {token_info['timestamp']}\n")
         f.write(f"# From URL: {token_info['url']}\n")
         f.write(f"# Status: {token_info.get('status_code', 'Unknown')}\n")
@@ -162,7 +161,7 @@ def main():
     )
 
     if bearer_requests:
-        print(f"\n📋 Bearer Token Summary (newest first):")
+        print("\n📋 Bearer Token Summary (newest first):")
         for i, request in enumerate(bearer_requests[:10]):  # Show first 10
             status = (
                 f" ({request.get('status_code')})" if request.get("status_code") else ""
@@ -179,7 +178,7 @@ def main():
         valid_token = find_valid_bearer_token(bearer_requests)
 
         if valid_token:
-            print(f"\n✅ Selected Bearer Token:")
+            print("\n✅ Selected Bearer Token:")
             print(f"   URL: {valid_token['url']}")
             print(f"   Status: {valid_token.get('status_code', 'Unknown')}")
             print(
@@ -189,9 +188,9 @@ def main():
 
             # Save the token
             save_bearer_token(valid_token)
-            print(f"\n💾 Bearer token saved to:")
-            print(f"   - bearer_auth.txt (human readable)")
-            print(f"   - bearer_auth.json (machine readable)")
+            print("\n💾 Bearer token saved to:")
+            print("   - bearer_auth.txt (human readable)")
+            print("   - bearer_auth.json (machine readable)")
 
         else:
             print("\n❌ No valid Bearer token found")
@@ -200,7 +199,7 @@ def main():
 
     # Show Meijer API call patterns
     if meijer_auth_calls:
-        print(f"\n📊 Recent Meijer API Calls with Auth (newest first):")
+        print("\n📊 Recent Meijer API Calls with Auth (newest first):")
         for i, call in enumerate(meijer_auth_calls[:5]):  # Show first 5
             status = f" ({call.get('status_code')})" if call.get("status_code") else ""
             print(
@@ -219,7 +218,7 @@ def main():
     with open("bearer_token_analysis.json", "w") as f:
         json.dump(analysis_data, f, indent=2)
 
-    print(f"\n📄 Detailed analysis saved to: bearer_token_analysis.json")
+    print("\n📄 Detailed analysis saved to: bearer_token_analysis.json")
 
 
 if __name__ == "__main__":

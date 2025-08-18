@@ -15,7 +15,7 @@ import hashlib
 import secrets
 import time
 from typing import Dict, Optional, Any
-from urllib.parse import urlencode, parse_qs, urlparse
+from urllib.parse import urlencode
 import requests
 from dataclasses import dataclass
 
@@ -364,7 +364,7 @@ def main():
             
             print("\nFetching shopping list...")
             shopping_list = client.get_shopping_list()
-            print(f"✓ Shopping list retrieved")
+            print("✓ Shopping list retrieved")
             
         except Exception as e:
             print(f"✗ API call failed: {e}")
@@ -380,7 +380,7 @@ def main():
         
         # Generate authorization URL for demonstration
         auth_url = client.get_authorization_url()
-        print(f"\nExample authorization URL:")
+        print("\nExample authorization URL:")
         print(f"{auth_url[:100]}...")
 
 

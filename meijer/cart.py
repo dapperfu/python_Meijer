@@ -23,14 +23,13 @@ including cart retrieval, pickup/delivery slot reservation, and fulfillment mana
 Based on actual API analysis from mitmproxy logs.
 """
 
-import asyncio
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, time
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 from urllib.parse import urlencode
 
-from meijer.exceptions import CartError, MeijerAPIError
+from meijer.exceptions import CartError
 from meijer.api_client import MeijerAPIClient
 
 

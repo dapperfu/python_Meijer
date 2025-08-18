@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
 from collections import defaultdict, Counter
 from dataclasses import dataclass, field
-from datetime import datetime
 from urllib.parse import urlparse, parse_qs
 
 # Import mitmproxy modules
@@ -28,11 +27,7 @@ except ImportError as e:
     print("Make sure you're in the virtual environment: source venv/bin/activate")
     exit(1)
 
-import json
-import logging
-from urllib.parse import urlencode
 
-from meijer import MeijerItem, create_meijer_items_from_search
 
 
 @dataclass

@@ -7,7 +7,6 @@ based on actual endpoint analysis from the decompiled APK and network logs.
 
 import json
 import logging
-import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -20,7 +19,7 @@ from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
 from .feedback import MeijerFeedback
 from .models import MeijerItem, ListItem, MeijerCoupon, Store, SearchResult
 from .stores import MeijerStore
-from .exceptions import MeijerError, MeijerAuthenticationError, MeijerAPIError, MeijerRateLimitError
+from .exceptions import MeijerAuthenticationError, MeijerAPIError
 
 
 class Meijer:
@@ -376,7 +375,7 @@ class Meijer:
                     try:
                         # Ensure UnitId is present and not empty
                         if not store_data.get("UnitId"):
-                            self.logger.warning(f"Failed to parse store data: Unit ID cannot be empty")
+                            self.logger.warning("Failed to parse store data: Unit ID cannot be empty")
                             continue
                         store = MeijerStore.from_api_data(store_data, self)
                         stores.append(store)

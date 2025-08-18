@@ -8,8 +8,6 @@ Tests different request structures and validates the API interaction.
 """
 
 import json
-import logging
-from typing import Dict, Any
 
 from meijer import Meijer
 
@@ -69,7 +67,7 @@ def debug_offers_api():
         if response.status_code == 200:
             try:
                 data = response.json()
-                print(f"   • Response structure:")
+                print("   • Response structure:")
                 print(f"     - Type: {type(data)}")
                 print(f"     - Keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
                 
@@ -99,13 +97,13 @@ def debug_offers_api():
                                 break
                 
                 if offers:
-                    print(f"\n   📋 Sample offer structure:")
+                    print("\n   📋 Sample offer structure:")
                     sample_offer = offers[0]
                     if isinstance(sample_offer, dict):
                         for key, value in sample_offer.items():
                             print(f"     - {key}: {type(value).__name__}")
                 else:
-                    print(f"   ⚠️  No offers found in response")
+                    print("   ⚠️  No offers found in response")
                     
             except Exception as e:
                 print(f"   ❌ Error parsing JSON: {e}")
@@ -118,7 +116,7 @@ def debug_offers_api():
         print(f"   ❌ Request failed: {e}")
     
     # Test 2: Try different parameters
-    print(f"\n2️⃣  Testing with different parameters...")
+    print("\n2️⃣  Testing with different parameters...")
     
     test_variants = [
         {"showClippedCoupons": False, "name": "Available only"},
@@ -158,7 +156,7 @@ def debug_offers_api():
 
 def test_clipped_offers_endpoint():
     """Test the ClippedOffers endpoint specifically."""
-    print(f"\n3️⃣  Testing ClippedOffers endpoint...")
+    print("\n3️⃣  Testing ClippedOffers endpoint...")
     
     client = Meijer()
     
@@ -219,7 +217,7 @@ def test_clipped_offers_endpoint():
 
 def analyze_response_structure():
     """Analyze the actual response structure from mitmproxy logs."""
-    print(f"\n4️⃣  Analyzing response from mitmproxy logs...")
+    print("\n4️⃣  Analyzing response from mitmproxy logs...")
     
     try:
         with open('meijer_analysis_report.json', 'r') as f:
@@ -265,7 +263,7 @@ def main():
     test_clipped_offers_endpoint()
     analyze_response_structure()
     
-    print(f"\n" + "=" * 60)
+    print("\n" + "=" * 60)
     print("🎯 DEBUG COMPLETE")
     print("Check the output above to understand the API response structure")
 

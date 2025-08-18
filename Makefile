@@ -20,6 +20,12 @@ help:
 	@echo "  make notebook     - Start Jupyter notebook"
 	@echo "  make clean        - Clean build artifacts"
 	@echo ""
+	@echo "🎨 Code Quality:"
+	@echo "  make ruff-format  - Format Python code with ruff"
+	@echo "  make ruff-check   - Check Python code with ruff"
+	@echo "  make ruff-lint    - Lint and fix Python code with ruff"
+	@echo "  make ruff-all     - Run all ruff operations"
+	@echo ""
 	@echo "⌨️  Bash Completion:"
 	@echo "  make completion   - Show completion installation instructions"
 	@echo "  make completion-install - Install completion in ~/.bashrc"
@@ -106,6 +112,28 @@ clean:
 	@rm -rf htmlcov/
 	@rm -rf .coverage
 	@echo "✅ Build artifacts cleaned up"
+
+.PHONY: ruff-format
+ruff-format:
+	@echo "🎨 Formatting Python code with ruff..."
+	@${VENV}/bin/ruff format meijer/ tools/ *.py
+	@echo "✅ Code formatting completed"
+
+.PHONY: ruff-check
+ruff-check:
+	@echo "🔍 Checking Python code with ruff..."
+	@${VENV}/bin/ruff check meijer/ tools/ *.py
+	@echo "✅ Code checking completed"
+
+.PHONY: ruff-lint
+ruff-lint:
+	@echo "🧹 Linting Python code with ruff..."
+	@${VENV}/bin/ruff check --fix meijer/ tools/ *.py
+	@echo "✅ Code linting completed"
+
+.PHONY: ruff-all
+ruff-all: ruff-format ruff-check ruff-lint
+	@echo "🚀 All ruff operations completed!"
 
 # Bash Completion Support
 .PHONY: completion

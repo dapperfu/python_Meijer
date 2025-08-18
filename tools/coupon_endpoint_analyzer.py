@@ -401,25 +401,25 @@ def main():
         
         # Display critical issues
         if report["validation_results"]["critical_issues"]:
-            print(f"\n🚨 CRITICAL ISSUES:")
+            print("\n🚨 CRITICAL ISSUES:")
             for issue in report["validation_results"]["critical_issues"]:
                 print(f"   • {issue}")
         
         # Display key recommendations
-        print(f"\n💡 KEY RECOMMENDATIONS:")
+        print("\n💡 KEY RECOMMENDATIONS:")
         for i, rec in enumerate(report["validation_results"]["recommendations"][:3], 1):
             print(f"   {i}. {rec}")
         
         # Display APK findings
-        print(f"\n🔍 APK FINDINGS:")
+        print("\n🔍 APK FINDINGS:")
         for name, endpoint in report["apk_findings"].items():
             print(f"   • {name.upper()}:")
             print(f"     - Method: {endpoint['method']}")
             print(f"     - Path: {endpoint['path']}")
             print(f"     - Content-Type: {endpoint['content_type_header']}")
         
-        print(f"\n✅ Analysis completed successfully!")
-        print(f"📄 Full report: coupon_endpoint_analysis_report.json")
+        print("\n✅ Analysis completed successfully!")
+        print("📄 Full report: coupon_endpoint_analysis_report.json")
         
         return 0
         

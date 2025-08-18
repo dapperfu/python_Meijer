@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
 from collections import defaultdict, Counter
 from dataclasses import dataclass, field
-from datetime import datetime
 
 # Import mitmproxy modules
 try:
@@ -532,7 +531,7 @@ class MeijerCoupon:
             field_type = report["field_data_types"].get(field, "Unknown")
             print(f"   {field} ({field_type}): appears in {count} offers")
 
-        print(f"\n📊 Endpoint Usage:")
+        print("\n📊 Endpoint Usage:")
         endpoint_analysis = report["endpoint_analysis"]
         for endpoint, count in endpoint_analysis.items():
             print(f"   {endpoint.replace('_', ' ').title()}: {count}")

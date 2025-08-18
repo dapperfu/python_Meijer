@@ -21,10 +21,9 @@ Represents Meijer store locations with comprehensive details including
 services, hours, gas station information, and location data.
 """
 
-from typing import Optional, Union, List, Dict, Any, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from dataclasses import dataclass, field
 from datetime import datetime, time
-import json
 import logging
 import math
 

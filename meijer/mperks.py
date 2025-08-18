@@ -4,14 +4,12 @@ mPerks earned rewards functionality for Meijer API client.
 Handles earned rewards, mCard info, and related mPerks operations.
 """
 
-import json
 import logging
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
-from .models import MeijerItem
-from .exceptions import MeijerError, MeijerAPIError
+from .exceptions import MeijerAPIError
 
 
 @dataclass
@@ -300,7 +298,7 @@ class MPerksEarnedRewards:
             Full image URL or None if failed
         """
         try:
-            endpoint = f"/loyalty/mPerks/api/cms/specialoffers/image"
+            endpoint = "/loyalty/mPerks/api/cms/specialoffers/image"
             response = self.meijer._make_request("GET", f"{self.meijer.api_base_url}{endpoint}")
             
             if response and response.status_code == 200:

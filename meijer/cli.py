@@ -25,7 +25,7 @@ import sys
 import os
 import json
 import re
-from typing import List, Optional, TextIO, Dict
+from typing import List, Optional, TextIO
 from pathlib import Path
 from datetime import datetime
 

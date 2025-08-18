@@ -201,15 +201,15 @@ def save_meijer_endpoints(meijer_data: Dict[str, Any], output_file: str):
 
 def display_summary(meijer_data: Dict[str, Any]):
     """Display a summary of discovered Meijer endpoints."""
-    print(f"\n🎯 Meijer API Endpoints Summary")
-    print(f"=" * 50)
+    print("\n🎯 Meijer API Endpoints Summary")
+    print("=" * 50)
     
     summary = meijer_data['summary']
     print(f"Total Meijer endpoints: {summary['total_meijer_endpoints']}")
     print(f"Categories: {summary['categories']}")
     print(f"Total endpoints analyzed: {summary['total_endpoints_analyzed']}")
     
-    print(f"\n📊 Endpoints by Category:")
+    print("\n📊 Endpoints by Category:")
     for category, data in meijer_data['categories'].items():
         print(f"  {category}: {data['total_count']} endpoints")
         print(f"    Methods: {', '.join(data['methods'])}")
@@ -232,7 +232,7 @@ def main():
         return
     
     # Extract Meijer endpoints
-    print(f"🔍 Extracting Meijer-specific endpoints...")
+    print("🔍 Extracting Meijer-specific endpoints...")
     meijer_data = extract_meijer_endpoints(report)
     
     # Display summary
@@ -242,7 +242,7 @@ def main():
     output_file = "meijer_api_endpoints.json"
     save_meijer_endpoints(meijer_data, output_file)
     
-    print(f"✅ Meijer endpoint extraction complete!")
+    print("✅ Meijer endpoint extraction complete!")
     print(f"📄 Results saved to: {output_file}")
 
 

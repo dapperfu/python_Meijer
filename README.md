@@ -1,342 +1,183 @@
-# 🛒 Meijer CLI Tool
+# Meijer API Client
 
-A comprehensive command-line interface for managing your Meijer shopping lists with powerful features like defrag organization, interactive TUI, and batch operations.
+A comprehensive Python client for the Meijer API, providing access to shopping lists, coupons, store information, gas prices, and more.
 
-## ✨ Features
+## 🚀 Features
 
-- **📋 Shopping List Management**: Add, remove, and organize items
-- **🔍 Product Search**: Automatic product matching with location data
-- **🏪 Aisle Organization**: Defrag functionality to organize by store layout
-- **⭐ Favorites Integration**: Add items from your favorites list
-- **📁 Batch Operations**: Add multiple items from files or stdin
-- **🎮 Interactive Mode**: Rich TUI for easy list management
-- **📊 Beautiful Tables**: Professional CLI output with tabulate
-- **🔐 Authentication**: Multiple auth methods (bearer token, OAuth, etc.)
+- **Authentication**: OAuth2 Bearer token authentication with automatic refresh
+- **Shopping Lists**: Create, manage, and sync shopping lists
+- **Coupons**: Browse, clip, and manage digital coupons
+- **Store Information**: Find stores, get hours, and check gas prices
+- **Product Search**: Search products with barcode lookup support
+- **Shop & Scan**: Add items to cart and manage shopping trips
+- **mPerks**: Access loyalty rewards and earned points
+- **CLI Interface**: Command-line tools for quick operations
 
-## 🚀 Quick Start
+## 📁 Project Structure
 
-### Installation
-
-```bash
-# Install the CLI tool
-pip install -e .
-
-# Verify installation
-meijer --version
+```
+meijer/
+├── meijer/           # Core API client library
+├── notebooks/        # Jupyter notebooks and generators
+├── tests/           # Test suite
+├── tools/           # Analysis and utility tools
+├── demos/           # Example scripts and demonstrations
+├── meijer_cli.py    # Command-line interface
+├── Makefile         # Development workflow automation
+└── requirements.txt # Python dependencies
 ```
 
-### Basic Usage
+## 🛠️ Installation
 
-```bash
-# Show your shopping list
-meijer list show
-
-# Add an item
-meijer list add "Milk"
-
-# Add by UPC
-meijer list add 0123456789
-
-# Organize by aisle (defrag)
-meijer list defrag
-```
-
-## 📖 Command Reference
-
-### Shopping List Commands
-
-#### `meijer list show`
-Display your current shopping list.
-
-**Options:**
-- `--completed`: Show only completed items
-- `--pending`: Show only pending items
-
-**Examples:**
-```bash
-meijer list show                    # Show all items
-meijer list show --completed        # Show only completed items
-meijer list show --pending          # Show only pending items
-```
-
-#### `meijer list add`
-Add items to your shopping list.
-
-**Usage:**
-```bash
-meijer list add "Item Name"         # Add by description
-meijer list add 0123456789          # Add by UPC
-meijer list add < items.txt         # Add from file
-echo "Milk" | meijer list add       # Add from stdin
-```
-
-**Options:**
-- `--quantity, -q`: Quantity to add (default: 1)
-- `--notes, -n`: Additional notes for the item
-- `--file, -f`: Read items from specified file
-
-**Examples:**
-```bash
-meijer list add "Organic Bananas" -q 2 -n "Get yellow ones"
-meijer list add -f grocery_list.txt
-cat items.txt | meijer list add
-```
-
-#### `meijer list favorites`
-Show your favorite items.
-
-**Example:**
-```bash
-meijer list favorites
-```
-
-#### `meijer list clear`
-Clear completed items from your shopping list.
-
-**Example:**
-```bash
-meijer list clear
-```
-
-#### `meijer list clearall`
-Clear ALL items from your shopping list (with confirmation).
-
-**Example:**
-```bash
-meijer list clearall
-```
-
-#### `meijer list defrag`
-Organize your shopping list by aisle number for efficient shopping.
-
-**Options:**
-- `--store-id`: Specific store ID for location lookup
-
-**Examples:**
-```bash
-meijer list defrag                   # Defrag with current store
-meijer list defrag --store-id 123    # Defrag for specific store
-```
-
-**What defrag does:**
-1. Searches for each item to find store location
-2. Sorts items by ascending aisle number
-3. Adds location information to item notes
-4. Creates efficient shopping route
-
-#### `meijer list interactive`
-Launch interactive TUI for shopping list management.
-
-**Features:**
-- Add/remove items
-- Mark items complete/incomplete
-- Add from favorites
-- Defrag list
-- Real-time updates
-
-**Requirements:**
-```bash
-pip install rich  # For enhanced TUI
-```
-
-### Utility Commands
-
-#### `meijer status`
-Show authentication and connection status.
-
-**Example:**
-```bash
-meijer status
-```
-
-#### `meijer version`
-Show version information.
-
-**Example:**
-```bash
-meijer version
-```
-
-## 📁 File Input Examples
-
-### Text File Format
-Create a file `grocery_list.txt`:
-```text
-Milk
-Bread
-Eggs
-Bananas
-# This is a comment
-Ground Beef
-```
-
-### Add from File
-```bash
-meijer list add < grocery_list.txt
-# or
-meijer list add -f grocery_list.txt
-```
-
-### Pipe from Command
-```bash
-echo "Milk\nBread\nEggs" | meijer list add
-cat grocery_list.txt | meijer list add
-```
-
-## 🔧 Configuration
-
-### Authentication
-The CLI tool supports multiple authentication methods:
-
-1. **Auth File** (`auth.txt`):
+1. **Clone the repository:**
    ```bash
-   bearer=your_bearer_token_here
+   git clone <repository-url>
+   cd python_Meijer
    ```
 
-2. **Config File** (`~/.config/meijer.txt`):
-   ```json
-   {
-     "bearer_token": "your_token_here",
-     "user_agent": "Meijer/101200000"
-   }
-   ```
-
-3. **Environment Variables**:
+2. **Create virtual environment:**
    ```bash
-   export MEIJER_BEARER_TOKEN="your_token_here"
-   export MEIJER_USER_AGENT="Meijer/101200000"
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-### Store ID
-For location-specific features like defrag, you can specify a store ID:
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   pip install -r requirements-test.txt  # For testing
+   ```
+
+4. **Install in development mode:**
+   ```bash
+   pip install -e .
+   ```
+
+## 🔐 Authentication
+
+The client uses OAuth2 Bearer token authentication. Tokens are automatically loaded from `~/.config/meijer.txt`.
+
+### Setting up authentication:
+
+1. **Capture traffic** using mitmproxy:
+   ```bash
+   make log
+   ```
+
+2. **Extract authentication tokens:**
+   ```bash
+   make auth
+   ```
+
+3. **Verify authentication:**
+   ```bash
+   python -c "from meijer.client import Meijer; client = Meijer(); print('Auth status:', 'OK' if client._access_token else 'Failed')"
+   ```
+
+## 📖 Usage
+
+### Basic Client Usage
+
+```python
+from meijer.client import Meijer
+
+# Initialize client (automatically loads auth from ~/.config/meijer.txt)
+client = Meijer()
+
+# Get shopping list
+shopping_list = client.list.get()
+
+# Search for products
+results = client.search.search("milk")
+
+# Get store information
+stores = client.get_stores(zip_code="48105")
+
+# Check gas prices
+gas_info = client.gas.get_gas_prices(store_id="217")
+```
+
+### Command Line Interface
+
 ```bash
-meijer list defrag --store-id 217
+# Add item to shopping list
+python meijer_cli.py list add "Milk, 2%" -q 2
+
+# View shopping list
+python meijer_cli.py list show
+
+# Search for products
+python meijer_cli.py search "organic bananas"
+
+# Get store information
+python meijer_cli.py stores --zip 48105
 ```
 
-## 📊 Output Examples
+## 🧪 Testing
 
-### Shopping List Display
-```
-📊 Shopping List (5 items):
-+---+----------------------------------------+-----+----------+------------------------------+
-| # | Item                                   | Qty | Status   | Notes                        |
-+===+========================================+=====+==========+==============================+
-| 1 | Milk                                   |   1 | ⏳ Pending| Aisle: 5 | Section: Dairy |
-| 2 | Bread                                  |   1 | ⏳ Pending| Aisle: 2 | Section: Bakery|
-| 3 | Cereal                                 |   1 | ⏳ Pending| Aisle: 4 | Section: Breakf|
-| 4 | Oreos                                  |   1 | ⏳ Pending| Aisle: 4 | Section: Cookie|
-| 5 | Ground Turkey                          |   1 | ⏳ Pending| Aisle: 8 | Section: Meat  |
-+---+----------------------------------------+-----+----------+------------------------------+
-```
+Run the test suite:
 
-### Defrag Process
-```
-🔧 Starting shopping list defrag...
-📊 Product Matching Results:
-+-----------------+----------------------------------+-----------+---------+---------+-----------+--------------+
-| Original Item   | Closest Match                    | Brand     | Price   |   Aisle | Section   | Confidence   |
-+=================+==================================+===========+=========+=========+===========+==============+
-| Milk            | Meijer Brand Milk, 2%            | Meijer    | $3.99   |       5 | Dairy     | High         |
-| Bread           | Wonder Bread, Classic White      | Wonder    | $2.49   |       2 | Bakery    | High         |
-| Cereal          | Kellogg's Frosted Flakes         | Kellogg's | $4.99   |       4 | Breakfast | Medium       |
-+-----------------+----------------------------------+-----------+---------+---------+-----------+--------------+
-```
-
-## 🛠️ Development
-
-### Installation for Development
 ```bash
-git clone https://github.com/dapperfu/python_Meijer.git
-cd python_Meijer
-pip install -e ".[dev]"
+# Run all tests
+make test
+
+# Run specific test categories
+pytest tests/test_shopping_list.py
+pytest tests/test_coupons.py
+
+# Run with coverage
+make coverage
 ```
 
-### Running Tests
-```bash
-python test_defrag.py
-python test_tabulate.py
-```
+## 🔧 Development
+
+### Makefile Targets
+
+- `make test` - Run test suite
+- `make coverage` - Run tests with coverage report
+- `make log` - Start mitmproxy traffic capture
+- `make auth` - Extract authentication tokens from logs
+- `make clean` - Clean up temporary files
 
 ### Code Quality
-```bash
-# Format code
-black meijer_cli.py
 
-# Type checking
-mypy meijer_cli.py
+- **Type Hints**: Full mypy typing support
+- **Documentation**: NumPy-style docstrings
+- **Testing**: Comprehensive pytest test suite
+- **Linting**: Ruff for code quality
 
-# Run tests
-pytest
-```
+## 📚 API Coverage
 
-## 📦 Dependencies
+The client provides access to:
 
-### Required
-- `click>=8.0.0`: CLI framework
-- `tabulate>=0.9.0`: Table formatting
-- `requests>=2.25.0`: HTTP requests
-- `urllib3>=1.26.0`: HTTP client
-
-### Optional
-- `rich>=12.0.0`: Enhanced TUI (interactive mode)
-- `pandas>=1.3.0`: Data analysis
-- `jupyter>=1.0.0`: Notebook support
-
-## 🎯 Use Cases
-
-### Daily Shopping
-```bash
-# Quick add items
-meijer list add "Milk"
-meijer list add "Bread"
-
-# Organize for shopping
-meijer list defrag
-
-# View organized list
-meijer list show
-```
-
-### Batch Operations
-```bash
-# Add from recipe
-meijer list add -f recipe.txt
-
-# Add from voice notes
-echo "Milk, Bread, Eggs" | tr ',' '\n' | meijer list add
-```
-
-### List Management
-```bash
-# Clear completed items
-meijer list clear
-
-# Start fresh
-meijer list clearall
-
-# Interactive management
-meijer list interactive
-```
+- **Shopping Lists**: Create, read, update, delete items
+- **Coupons**: Browse, clip, unclip digital offers
+- **Stores**: Location search, hours, gas prices
+- **Products**: Search, barcode lookup, pricing
+- **mPerks**: Loyalty rewards and points
+- **Shop & Scan**: Cart management and barcode scanning
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+3. Make your changes with proper typing and documentation
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## ⚠️ Security
 
-- Built with [Click](https://click.palletsprojects.com/) for CLI functionality
-- Enhanced with [Tabulate](https://pypi.org/project/tabulate/) for beautiful tables
-- Interactive mode powered by [Rich](https://rich.readthedocs.io/)
-- Meijer API integration for shopping list management
+- **Never commit authentication tokens** to version control
+- **Use environment variables** for sensitive configuration
+- **Keep dependencies updated** for security patches
+- **Report security issues** via the [SECURITY.md](SECURITY.md) process
 
----
+## 🔗 Related
 
-**Happy organized shopping! 🛒✨**
+- [API Discovery Summary](API_DISCOVERY_SUMMARY.md) - Comprehensive API endpoint analysis
+- [Security Policy](SECURITY.md) - Security reporting and guidelines
+- [Test Reports](htmlcov/) - Code coverage and test results

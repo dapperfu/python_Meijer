@@ -5,7 +5,7 @@ Looks for tokens in response bodies, different header patterns, and authenticati
 """
 
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow
 import re
@@ -232,7 +232,7 @@ def main():
     print(f"🔐 Found {len(auth_flows)} potential authentication flows")
     
     # Show authentication patterns
-    print(f"\n📋 Authentication Patterns Found:")
+    print("\n📋 Authentication Patterns Found:")
     pattern_counts = {}
     for flow in meijer_flows:
         for pattern in flow["auth_patterns"]:
@@ -253,7 +253,7 @@ def main():
     
     # Show authentication flows
     if auth_flows:
-        print(f"\n🔐 Authentication Flows (newest first):")
+        print("\n🔐 Authentication Flows (newest first):")
         for i, flow in enumerate(auth_flows[:5]):  # Show first 5
             print(f"   {i+1}. {flow['method']} {flow.get('path', 'N/A')}")
             print(f"      Status: {flow['status_code']}")
@@ -277,7 +277,7 @@ def main():
     print(f"\n📄 Detailed analysis saved to: {output_file}")
     
     # Summary
-    print(f"\n📊 Summary:")
+    print("\n📊 Summary:")
     print(f"   Total flows: {len(flows)}")
     print(f"   Meijer flows: {len(meijer_flows)}")
     print(f"   Auth flows: {len(auth_flows)}")

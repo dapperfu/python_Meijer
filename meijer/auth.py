@@ -10,13 +10,11 @@ import logging
 import os
 import pickle
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any
-from datetime import datetime
+from typing import Optional, Tuple, Dict
 
 from requests.auth import AuthBase
 
-from .models import AuthTokens, OAuthConfig
-from .exceptions import MeijerAuthenticationError
+from .models import AuthTokens
 
 
 class MeijerAuth(AuthBase):

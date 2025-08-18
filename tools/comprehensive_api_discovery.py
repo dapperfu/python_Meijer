@@ -10,11 +10,9 @@ The goal is to ensure 100% API coverage by finding every endpoint that was ever 
 
 import json
 import os
-import re
 from collections import defaultdict, Counter
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Set, Optional
+from typing import Dict, List, Any
 from urllib.parse import urlparse, parse_qs
 
 from mitmproxy import io
@@ -299,16 +297,16 @@ def main():
     for log_file in log_files:
         print(f"  - {log_file}")
     
-    print(f"\n🚀 Starting comprehensive analysis...")
+    print("\n🚀 Starting comprehensive analysis...")
     for log_file in log_files:
         analyzer.analyze_log_file(log_file)
     
     # Generate comprehensive report
-    print(f"\n📊 Generating comprehensive API discovery report...")
+    print("\n📊 Generating comprehensive API discovery report...")
     report = analyzer.generate_report()
     
     # Display summary
-    print(f"\n📈 Analysis Summary:")
+    print("\n📈 Analysis Summary:")
     print(f"  Total endpoints discovered: {report['summary']['total_endpoints']}")
     print(f"  Total hosts: {report['summary']['total_hosts']}")
     print(f"  Endpoints by method: {dict(report['summary']['endpoints_by_method'])}")
@@ -319,11 +317,11 @@ def main():
     analyzer.save_report(report, output_file)
     
     # Display key findings
-    print(f"\n🔑 Key Findings:")
+    print("\n🔑 Key Findings:")
     for recommendation in report['recommendations']:
         print(f"  • {recommendation}")
     
-    print(f"\n✅ Comprehensive API discovery complete!")
+    print("\n✅ Comprehensive API discovery complete!")
     print(f"📄 Detailed report saved to: {output_file}")
 
 

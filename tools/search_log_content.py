@@ -4,10 +4,8 @@ Search for specific content in mitmproxy log files.
 """
 
 import sys
-import json
 from mitmproxy import io
 from mitmproxy import http
-from mitmproxy import ctx
 
 
 def search_log_for_content(log_file_path: str, search_terms: list):
@@ -50,7 +48,7 @@ def search_log_for_content(log_file_path: str, search_terms: list):
                         response_body = flow.response.content.decode('utf-8', errors='ignore')
                         response_text += f"\nResponse Body: {response_body}"
                     except:
-                        response_text += f"\nResponse Body: [binary content]"
+                        response_text += "\nResponse Body: [binary content]"
                     
                     for term in search_terms:
                         if term.lower() in response_text.lower():
