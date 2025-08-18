@@ -25,6 +25,7 @@ import sys
 import os
 import json
 import re
+import time
 from typing import List, Optional, TextIO
 from pathlib import Path
 from datetime import datetime
@@ -672,6 +673,7 @@ def extract_tokens_from_mitmproxy_log(log_file: str) -> Optional[dict]:
             reader = FlowReader(f)
 
             for flow in reader.stream():
+                # Method 1: Look for OAuth2 token responses
                 if (
                     flow.response
                     and hasattr(flow.request, "url")
@@ -699,6 +701,48 @@ def extract_tokens_from_mitmproxy_log(log_file: str) -> Optional[dict]:
                     except (json.JSONDecodeError, UnicodeDecodeError):
                         continue
 
+                # Method 2: Look for Bearer tokens in request headers
+                if (
+                    hasattr(flow.request, "headers")
+                    and "authorization" in flow.request.headers
+                ):
+                    auth_header = flow.request.headers["authorization"]
+                    if auth_header.startswith("Bearer "):
+                        bearer_token = auth_header[7:]  # Remove "Bearer " prefix
+                        
+                        # Check if this is a Meijer API request
+                        if (
+                            hasattr(flow.request, "url")
+                            and "meijer.com" in flow.request.url
+                            and bearer_token
+                        ):
+                            # Extract additional info from the JWT token if possible
+                            try:
+                                import jwt
+                                # Decode without verification to get payload
+                                payload = jwt.decode(bearer_token, options={"verify_signature": False})
+                                
+                                return {
+                                    "access_token": bearer_token,
+                                    "refresh_token": "",  # Not available from request headers
+                                    "id_token": bearer_token,  # Use as ID token
+                                    "expires_in": payload.get("exp", 0) - int(time.time()) if payload.get("exp") else 28800,
+                                    "token_type": "Bearer",
+                                    "scope": " ".join(payload.get("scope", [])),
+                                    "user_id": payload.get("sub", ""),
+                                    "expires_at": payload.get("exp", 0),
+                                }
+                            except (ImportError, Exception):
+                                # Fallback if JWT decoding fails
+                                return {
+                                    "access_token": bearer_token,
+                                    "refresh_token": "",  # Not available from request headers
+                                    "id_token": bearer_token,  # Use as ID token
+                                    "expires_in": 28800,  # Default
+                                    "token_type": "Bearer",
+                                    "scope": "",
+                                }
+
     except Exception:
         pass
 
@@ -713,39 +757,65 @@ def extract_tokens_with_regex(log_file: str) -> Optional[dict]:
         with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
             for line_num, line in enumerate(f, 1):
                 try:
-                    if (
-                        "meijer.com" not in line.lower()
-                        and "meijer" not in line.lower()
-                    ):
-                        continue
+                    # Look for Meijer API requests with Bearer tokens
+                    if "meijer.com" in line.lower() and "authorization:" in line.lower():
+                        # Extract Bearer token from authorization header
+                        bearer_match = re.search(r"authorization:\s*Bearer\s+([A-Za-z0-9\-._~+/]+=*)", line, re.IGNORECASE)
+                        if bearer_match:
+                            bearer_token = bearer_match.group(1)
+                            
+                            # Extract timestamp if available
+                            timestamp = None
+                            timestamp_match = re.search(r"(\d{10,13})", line)
+                            if timestamp_match:
+                                timestamp_str = timestamp_match.group(1)
+                                try:
+                                    timestamp = int(timestamp_str)
+                                    if timestamp > 9999999999:
+                                        timestamp = timestamp / 1000
+                                except (ValueError, TypeError):
+                                    pass
 
-                    # Extract timestamp if available
-                    timestamp = None
-                    timestamp_match = re.search(r"(\d{10,13})", line)
-                    if timestamp_match:
-                        timestamp_str = timestamp_match.group(1)
-                        try:
-                            timestamp = int(timestamp_str)
-                            if timestamp > 9999999999:
-                                timestamp = timestamp / 1000
-                        except (ValueError, TypeError):
+                            meijer_requests.append(
+                                {
+                                    "line": line_num,
+                                    "timestamp": timestamp or 0,
+                                    "token": bearer_token,
+                                    "content": line[:200] + "..."
+                                    if len(line) > 200
+                                    else line,
+                                }
+                            )
                             continue
 
-                    # Look for Bearer token
-                    bearer_match = re.search(r"Bearer\s+([A-Za-z0-9\-._~+/]+=*)", line)
-                    if bearer_match:
-                        bearer_token = bearer_match.group(1)
+                    # Also look for any Bearer token in Meijer-related lines
+                    if "meijer.com" in line.lower() and "bearer" in line.lower():
+                        bearer_match = re.search(r"Bearer\s+([A-Za-z0-9\-._~+/]+=*)", line, re.IGNORECASE)
+                        if bearer_match:
+                            bearer_token = bearer_match.group(1)
 
-                        meijer_requests.append(
-                            {
-                                "line": line_num,
-                                "timestamp": timestamp or 0,
-                                "token": bearer_token,
-                                "content": line[:200] + "..."
-                                if len(line) > 200
-                                else line,
-                            }
-                        )
+                            # Extract timestamp if available
+                            timestamp = None
+                            timestamp_match = re.search(r"(\d{10,13})", line)
+                            if timestamp_match:
+                                timestamp_str = timestamp_match.group(1)
+                                try:
+                                    timestamp = int(timestamp_str)
+                                    if timestamp > 9999999999:
+                                        timestamp = timestamp / 1000
+                                except (ValueError, TypeError):
+                                    pass
+
+                            meijer_requests.append(
+                                {
+                                    "line": line_num,
+                                    "timestamp": timestamp or 0,
+                                    "token": bearer_token,
+                                    "content": line[:200] + "..."
+                                    if len(line) > 200
+                                    else line,
+                                }
+                            )
 
                 except Exception:
                     continue
@@ -757,11 +827,19 @@ def extract_tokens_with_regex(log_file: str) -> Optional[dict]:
         meijer_requests.sort(key=lambda x: x["timestamp"], reverse=True)
         latest_request = meijer_requests[0]
 
+        # Try to decode JWT to get expiration info
+        try:
+            import jwt
+            payload = jwt.decode(latest_request["token"], options={"verify_signature": False})
+            expires_in = payload.get("exp", 0) - int(time.time()) if payload.get("exp") else 28800
+        except (ImportError, Exception):
+            expires_in = 28800
+
         return {
             "access_token": latest_request["token"],
             "refresh_token": "",  # Not available with regex method
-            "id_token": "",  # Not available with regex method
-            "expires_in": 28800,  # Default
+            "id_token": latest_request["token"],  # Use as ID token
+            "expires_in": expires_in,
             "token_type": "Bearer",
             "scope": "",
         }
@@ -778,30 +856,65 @@ def auth(log_file: str):
         click.echo(f"🔍 Analyzing mitmproxy log: {log_file}")
         click.echo("⏳ This may take a moment for large log files...")
 
-        # Try to use mitmproxy tools first
-        tokens = None
-        try:
-            from mitmproxy.io import FlowReader
-
-            tokens = extract_tokens_from_mitmproxy_log(log_file)
-            if tokens:
-                click.echo("✅ Successfully extracted tokens using mitmproxy tools")
-        except ImportError:
-            click.echo("⚠️  mitmproxy not available, trying regex parsing...")
-            tokens = extract_tokens_with_regex(log_file)
-
-        # If that fails, try to extract from analysis report
-        if not tokens:
-            report_file = "meijer_analysis_report.json"
-            if Path(report_file).exists():
-                click.echo("📋 Trying analysis report...")
-                tokens = extract_tokens_from_analysis_report(report_file)
-                if tokens:
-                    click.echo("✅ Successfully extracted tokens from analysis report")
-
-        if not tokens:
+        # Use the existing extract_bearer_token.py tool
+        import subprocess
+        import sys
+        import os
+        
+        # Get the path to the tools directory
+        tools_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tools")
+        extract_script = os.path.join(tools_dir, "extract_bearer_token.py")
+        
+        if not os.path.exists(extract_script):
+            raise click.ClickException(f"❌ Tool not found: {extract_script}")
+        
+        # Run the extract_bearer_token.py tool
+        click.echo("🔧 Using extract_bearer_token.py tool...")
+        result = subprocess.run(
+            [sys.executable, extract_script, log_file],
+            capture_output=True,
+            text=True,
+            cwd=os.getcwd()
+        )
+        
+        if result.returncode != 0:
+            click.echo(f"⚠️  Tool output: {result.stderr}")
+            raise click.ClickException("❌ Failed to run extract_bearer_token.py tool")
+        
+        # Check if the tool created output files
+        bearer_auth_json = "bearer_auth.json"
+        if not os.path.exists(bearer_auth_json):
             raise click.ClickException("❌ No authentication tokens found in log file")
-
+        
+        # Load the extracted token
+        import json
+        with open(bearer_auth_json, "r") as f:
+            token_data = json.load(f)
+        
+        # Convert to the format expected by the client
+        tokens = {
+            "access_token": token_data["bearer_token"],
+            "refresh_token": "",  # Not available from request headers
+            "id_token": token_data["bearer_token"],  # Use as ID token
+            "expires_in": 28800,  # Default, could be extracted from JWT
+            "token_type": "Bearer",
+            "scope": "",
+            "user_agent": token_data.get("user_agent", ""),
+        }
+        
+        # Try to extract expiration from JWT if possible
+        try:
+            import jwt
+            payload = jwt.decode(tokens["access_token"], options={"verify_signature": False})
+            if payload.get("exp"):
+                import time
+                expires_in = payload.get("exp") - int(time.time())
+                if expires_in > 0:
+                    tokens["expires_in"] = expires_in
+                    tokens["expires_at"] = payload.get("exp")
+        except (ImportError, Exception):
+            pass  # Use default values if JWT decoding fails
+        
         # Save to ~/.config/meijer.txt
         config_path = os.path.expanduser("~/.config/meijer.txt")
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
@@ -819,8 +932,13 @@ def auth(log_file: str):
         click.echo(f"💾 Tokens saved to {config_path}")
         click.echo("✅ Authentication file updated successfully!")
         click.echo(f"🔑 Access token: {tokens['access_token'][:50]}...")
-        click.echo(f"🔄 Refresh token: {tokens['refresh_token']}")
         click.echo(f"⏰ Expires in: {tokens['expires_in']} seconds")
+        
+        # Clean up temporary files
+        for temp_file in ["bearer_auth.json", "bearer_auth.txt", "bearer_token_analysis.json"]:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                click.echo(f"🧹 Cleaned up {temp_file}")
 
     except Exception as e:
         raise click.ClickException(f"❌ Failed to extract authentication: {e}")
