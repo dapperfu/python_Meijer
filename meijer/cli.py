@@ -2357,29 +2357,37 @@ def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, li
             # Format discount
             discount = coupon.formatted_discount
             
-            # Truncate title for display
-            title = coupon.title[:50] + "..." if len(coupon.title) > 50 else coupon.title
+            # Format display title: description first, then title (discount info)
+            if coupon.description and coupon.description.strip():
+                # Show description (product name) first, then title (discount info)
+                display_title = f"{coupon.description.strip()}: {coupon.title}"
+            else:
+                # Fallback to just title if no description
+                display_title = coupon.title
+            
+            # Truncate display title for display
+            display_title = display_title[:60] + "..." if len(display_title) > 60 else display_title
             
             table_data.append([
                 i,
                 coupon.meijer_offer_id,
-                title,
+                display_title,
                 discount,
                 status,
                 f"{start_date} - {end_date}",
                 "Yes" if coupon.is_targeted else "No"
             ])
 
-        headers = ["#", "ID", "Title", "Discount", "Status", "Valid Dates", "Targeted"]
+        headers = ["#", "ID", "Product & Offer", "Discount", "Status", "Valid Dates", "Targeted"]
 
         if TABULATE_AVAILABLE:
             click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         else:
             click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
-            click.echo(f"│ {'#':<3} {'ID':<8} {'Title':<50} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} {'Targeted':<8} │")
+            click.echo(f"│ {'#':<3} {'ID':<8} {'Product & Offer':<60} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} {'Targeted':<8} │")
             click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
             for row in table_data:
-                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<50} {row[3]:<12} {row[4]:<12} {row[5]:<15} {row[6]:<8} │")
+                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<60} {row[3]:<12} {row[4]:<12} {row[5]:<15} {row[6]:<8} │")
             click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
 
         # Show summary
@@ -2477,7 +2485,13 @@ def coupons_clip_all(confirm: bool, limit: int):
         failed_count = 0
         
         for i, coupon in enumerate(unclipped_coupons, 1):
-            click.echo(f"  [{i}/{len(unclipped_coupons)}] Clipping: {coupon.title[:40]}...")
+            # Format display title for clipping message
+            if coupon.description and coupon.description.strip():
+                display_title = f"{coupon.description.strip()}: {coupon.title}"
+            else:
+                display_title = coupon.title
+            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
+            click.echo(f"  [{i}/{len(unclipped_coupons)}] Clipping: {display_title}...")
             
             try:
                 success = client.clip_coupon(coupon.meijer_offer_id)
@@ -2538,7 +2552,13 @@ def coupons_unclip_all(confirm: bool, limit: int):
         failed_count = 0
         
         for i, coupon in enumerate(clipped_coupons, 1):
-            click.echo(f"  [{i}/{len(clipped_coupons)}] Unclipping: {coupon.title[:40]}...")
+            # Format display title for unclipping message
+            if coupon.description and coupon.description.strip():
+                display_title = f"{coupon.description.strip()}: {coupon.title}"
+            else:
+                display_title = coupon.title
+            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
+            click.echo(f"  [{i}/{len(clipped_coupons)}] Unclipping: {display_title}...")
             
             try:
                 success = client.unclip_coupon(coupon.meijer_offer_id)
@@ -2698,28 +2718,36 @@ def coupons_search(query: str, clipped: bool, unclipped: bool, limit: int):
             # Format discount
             discount = coupon.formatted_discount
             
-            # Truncate title for display
-            title = coupon.title[:50] + "..." if len(coupon.title) > 50 else coupon.title
+            # Format display title: description first, then title (discount info)
+            if coupon.description and coupon.description.strip():
+                # Show description (product name) first, then title (discount info)
+                display_title = f"{coupon.description.strip()}: {coupon.title}"
+            else:
+                # Fallback to just title if no description
+                display_title = coupon.title
+            
+            # Truncate display title for display
+            display_title = display_title[:60] + "..." if len(display_title) > 60 else display_title
             
             table_data.append([
                 i,
                 coupon.meijer_offer_id,
-                title,
+                display_title,
                 discount,
                 status,
                 f"{start_date} - {end_date}"
             ])
 
-        headers = ["#", "ID", "Title", "Discount", "Status", "Valid Dates"]
+        headers = ["#", "ID", "Product & Offer", "Discount", "Status", "Valid Dates"]
 
         if TABULATE_AVAILABLE:
             click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         else:
             click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
-            click.echo(f"│ {'#':<3} {'ID':<8} {'Title':<50} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} │")
+            click.echo(f"│ {'#':<3} {'ID':<8} {'Product & Offer':<60} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} │")
             click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
             for row in table_data:
-                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<50} {row[3]:<12} {row[4]:<12} {row[5]:<15} │")
+                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<60} {row[3]:<12} {row[4]:<12} {row[5]:<15} │")
             click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
 
     except Exception as e:
@@ -2858,10 +2886,15 @@ def coupons_interactive():
                             if coupon.is_expired:
                                 status = "⏰ Expired"
                             
-                            title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                            # Format display title: description first, then title
+                            if coupon.description and coupon.description.strip():
+                                display_title = f"{coupon.description.strip()}: {coupon.title}"
+                            else:
+                                display_title = coupon.title
+                            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
                             discount = coupon.formatted_discount
                             
-                            table.add_row(str(i), str(coupon.meijer_offer_id), title, status, discount)
+                            table.add_row(str(i), str(coupon.meijer_offer_id), display_title, status, discount)
 
                         console.print(table)
                     else:
@@ -2884,10 +2917,15 @@ def coupons_interactive():
                         table.add_column("Discount", style="green")
 
                         for i, coupon in enumerate(clipped_coupons, 1):
-                            title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                            # Format display title: description first, then title
+                            if coupon.description and coupon.description.strip():
+                                display_title = f"{coupon.description.strip()}: {coupon.title}"
+                            else:
+                                display_title = coupon.title
+                            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
                             discount = coupon.formatted_discount
                             
-                            table.add_row(str(i), str(coupon.meijer_offer_id), title, discount)
+                            table.add_row(str(i), str(coupon.meijer_offer_id), display_title, discount)
 
                         console.print(table)
                     else:
@@ -2910,10 +2948,15 @@ def coupons_interactive():
                         table.add_column("Discount", style="green")
 
                         for i, coupon in enumerate(unclipped_coupons, 1):
-                            title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                            # Format display title: description first, then title
+                            if coupon.description and coupon.description.strip():
+                                display_title = f"{coupon.description.strip()}: {coupon.title}"
+                            else:
+                                display_title = coupon.title
+                            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
                             discount = coupon.formatted_discount
                             
-                            table.add_row(str(i), str(coupon.meijer_offer_id), title, discount)
+                            table.add_row(str(i), str(coupon.meijer_offer_id), display_title, discount)
 
                         table.add_row("", "", "[bold]Total Unclipped:[/bold]", f"[bold]{len(unclipped_coupons)}[/bold]")
                         console.print(table)
@@ -3022,9 +3065,14 @@ def coupons_interactive():
 
                             for i, coupon in enumerate(matching_coupons, 1):
                                 status = "✅ Clipped" if coupon.is_clipped else "⭕ Unclipped"
-                                title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                                # Format display title: description first, then title
+                                if coupon.description and coupon.description.strip():
+                                    display_title = f"{coupon.description.strip()}: {coupon.title}"
+                                else:
+                                    display_title = coupon.title
+                                display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
                                 
-                                table.add_row(str(i), str(coupon.meijer_offer_id), title, status)
+                                table.add_row(str(i), str(coupon.meijer_offer_id), display_title, status)
 
                             console.print(table)
                         else:
