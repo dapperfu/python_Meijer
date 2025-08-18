@@ -2357,37 +2357,34 @@ def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, li
             # Format discount
             discount = coupon.formatted_discount
             
-            # Format display title: description first, then title (discount info)
-            if coupon.description and coupon.description.strip():
-                # Show description (product name) first, then title (discount info)
-                display_title = f"{coupon.description.strip()}: {coupon.title}"
-            else:
-                # Fallback to just title if no description
-                display_title = coupon.title
+            # Extract product name and offer separately
+            product_name = coupon.description.strip() if coupon.description and coupon.description.strip() else "Unknown Product"
+            offer = coupon.title
             
-            # Truncate display title for display
-            display_title = display_title[:60] + "..." if len(display_title) > 60 else display_title
+            # Truncate for display
+            product_name = product_name[:40] + "..." if len(product_name) > 40 else product_name
+            offer = offer[:30] + "..." if len(offer) > 30 else offer
             
             table_data.append([
                 i,
                 coupon.meijer_offer_id,
-                display_title,
-                discount,
+                product_name,
+                offer,
                 status,
                 f"{start_date} - {end_date}",
                 "Yes" if coupon.is_targeted else "No"
             ])
 
-        headers = ["#", "ID", "Product & Offer", "Discount", "Status", "Valid Dates", "Targeted"]
+        headers = ["#", "ID", "Product", "Offer", "Status", "Valid Dates", "Targeted"]
 
         if TABULATE_AVAILABLE:
             click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         else:
             click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
-            click.echo(f"│ {'#':<3} {'ID':<8} {'Product & Offer':<60} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} {'Targeted':<8} │")
+            click.echo(f"│ {'#':<3} {'ID':<8} {'Product':<40} {'Offer':<30} {'Status':<12} {'Valid Dates':<15} {'Targeted':<8} │")
             click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
             for row in table_data:
-                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<60} {row[3]:<12} {row[4]:<12} {row[5]:<15} {row[6]:<8} │")
+                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<40} {row[3]:<30} {row[4]:<12} {row[5]:<15} {row[6]:<8} │")
             click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
 
         # Show summary
@@ -2718,36 +2715,33 @@ def coupons_search(query: str, clipped: bool, unclipped: bool, limit: int):
             # Format discount
             discount = coupon.formatted_discount
             
-            # Format display title: description first, then title (discount info)
-            if coupon.description and coupon.description.strip():
-                # Show description (product name) first, then title (discount info)
-                display_title = f"{coupon.description.strip()}: {coupon.title}"
-            else:
-                # Fallback to just title if no description
-                display_title = coupon.title
+            # Extract product name and offer separately
+            product_name = coupon.description.strip() if coupon.description and coupon.description.strip() else "Unknown Product"
+            offer = coupon.title
             
-            # Truncate display title for display
-            display_title = display_title[:60] + "..." if len(display_title) > 60 else display_title
+            # Truncate for display
+            product_name = product_name[:40] + "..." if len(product_name) > 40 else product_name
+            offer = offer[:30] + "..." if len(offer) > 30 else offer
             
             table_data.append([
                 i,
                 coupon.meijer_offer_id,
-                display_title,
-                discount,
+                product_name,
+                offer,
                 status,
                 f"{start_date} - {end_date}"
             ])
 
-        headers = ["#", "ID", "Product & Offer", "Discount", "Status", "Valid Dates"]
+        headers = ["#", "ID", "Product", "Offer", "Status", "Valid Dates"]
 
         if TABULATE_AVAILABLE:
             click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         else:
             click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
-            click.echo(f"│ {'#':<3} {'ID':<8} {'Product & Offer':<60} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} │")
+            click.echo(f"│ {'#':<3} {'ID':<8} {'Product':<40} {'Offer':<30} {'Status':<12} {'Valid Dates':<15} │")
             click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
             for row in table_data:
-                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<60} {row[3]:<12} {row[4]:<12} {row[5]:<15} │")
+                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<40} {row[3]:<30} {row[4]:<12} {row[5]:<15} │")
             click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
 
     except Exception as e:
@@ -2877,24 +2871,24 @@ def coupons_interactive():
                         table = Table(title="All Coupons")
                         table.add_column("#", style="cyan", no_wrap=True)
                         table.add_column("ID", style="cyan")
-                        table.add_column("Title", style="magenta")
+                        table.add_column("Product", style="magenta")
+                        table.add_column("Offer", style="green")
                         table.add_column("Status", style="yellow")
-                        table.add_column("Discount", style="green")
 
                         for i, coupon in enumerate(coupons, 1):
                             status = "✅ Clipped" if coupon.is_clipped else "⭕ Unclipped"
                             if coupon.is_expired:
                                 status = "⏰ Expired"
                             
-                            # Format display title: description first, then title
-                            if coupon.description and coupon.description.strip():
-                                display_title = f"{coupon.description.strip()}: {coupon.title}"
-                            else:
-                                display_title = coupon.title
-                            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
-                            discount = coupon.formatted_discount
+                            # Extract product name and offer separately
+                            product_name = coupon.description.strip() if coupon.description and coupon.description.strip() else "Unknown Product"
+                            offer = coupon.title
                             
-                            table.add_row(str(i), str(coupon.meijer_offer_id), display_title, status, discount)
+                            # Truncate for display
+                            product_name = product_name[:35] + "..." if len(product_name) > 35 else product_name
+                            offer = offer[:25] + "..." if len(offer) > 25 else offer
+                            
+                            table.add_row(str(i), str(coupon.meijer_offer_id), product_name, offer, status)
 
                         console.print(table)
                     else:
@@ -2913,19 +2907,19 @@ def coupons_interactive():
                         table = Table(title="Clipped Coupons")
                         table.add_column("#", style="cyan", no_wrap=True)
                         table.add_column("ID", style="cyan")
-                        table.add_column("Title", style="magenta")
-                        table.add_column("Discount", style="green")
+                        table.add_column("Product", style="magenta")
+                        table.add_column("Offer", style="green")
 
                         for i, coupon in enumerate(clipped_coupons, 1):
-                            # Format display title: description first, then title
-                            if coupon.description and coupon.description.strip():
-                                display_title = f"{coupon.description.strip()}: {coupon.title}"
-                            else:
-                                display_title = coupon.title
-                            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
-                            discount = coupon.formatted_discount
+                            # Extract product name and offer separately
+                            product_name = coupon.description.strip() if coupon.description and coupon.description.strip() else "Unknown Product"
+                            offer = coupon.title
                             
-                            table.add_row(str(i), str(coupon.meijer_offer_id), display_title, discount)
+                            # Truncate for display
+                            product_name = product_name[:35] + "..." if len(product_name) > 35 else product_name
+                            offer = offer[:25] + "..." if len(offer) > 25 else offer
+                            
+                            table.add_row(str(i), str(coupon.meijer_offer_id), product_name, offer)
 
                         console.print(table)
                     else:
@@ -2944,19 +2938,19 @@ def coupons_interactive():
                         table = Table(title="Unclipped Coupons")
                         table.add_column("#", style="cyan", no_wrap=True)
                         table.add_column("ID", style="cyan")
-                        table.add_column("Title", style="magenta")
-                        table.add_column("Discount", style="green")
+                        table.add_column("Product", style="magenta")
+                        table.add_column("Offer", style="green")
 
                         for i, coupon in enumerate(unclipped_coupons, 1):
-                            # Format display title: description first, then title
-                            if coupon.description and coupon.description.strip():
-                                display_title = f"{coupon.description.strip()}: {coupon.title}"
-                            else:
-                                display_title = coupon.title
-                            display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
-                            discount = coupon.formatted_discount
+                            # Extract product name and offer separately
+                            product_name = coupon.description.strip() if coupon.description and coupon.description.strip() else "Unknown Product"
+                            offer = coupon.title
                             
-                            table.add_row(str(i), str(coupon.meijer_offer_id), display_title, discount)
+                            # Truncate for display
+                            product_name = product_name[:35] + "..." if len(product_name) > 35 else product_name
+                            offer = offer[:25] + "..." if len(offer) > 25 else offer
+                            
+                            table.add_row(str(i), str(coupon.meijer_offer_id), product_name, offer)
 
                         table.add_row("", "", "[bold]Total Unclipped:[/bold]", f"[bold]{len(unclipped_coupons)}[/bold]")
                         console.print(table)
@@ -3060,19 +3054,21 @@ def coupons_interactive():
                             table = Table(title=f"Search Results for '{search_query}'")
                             table.add_column("#", style="cyan", no_wrap=True)
                             table.add_column("ID", style="cyan")
-                            table.add_column("Title", style="magenta")
+                            table.add_column("Product", style="magenta")
+                            table.add_column("Offer", style="green")
                             table.add_column("Status", style="yellow")
 
                             for i, coupon in enumerate(matching_coupons, 1):
                                 status = "✅ Clipped" if coupon.is_clipped else "⭕ Unclipped"
-                                # Format display title: description first, then title
-                                if coupon.description and coupon.description.strip():
-                                    display_title = f"{coupon.description.strip()}: {coupon.title}"
-                                else:
-                                    display_title = coupon.title
-                                display_title = display_title[:40] + "..." if len(display_title) > 40 else display_title
+                                # Extract product name and offer separately
+                                product_name = coupon.description.strip() if coupon.description and coupon.description.strip() else "Unknown Product"
+                                offer = coupon.title
                                 
-                                table.add_row(str(i), str(coupon.meijer_offer_id), display_title, status)
+                                # Truncate for display
+                                product_name = product_name[:35] + "..." if len(product_name) > 35 else product_name
+                                offer = offer[:25] + "..." if len(offer) > 25 else offer
+                                
+                                table.add_row(str(i), str(coupon.meijer_offer_id), product_name, offer, status)
 
                             console.print(table)
                         else:
