@@ -233,30 +233,49 @@ class MeijerList:
     
     def clear_list(self) -> bool:
         """
-        Clear all items from the shopping list.
+        Clear all items from the shopping list using the bulk delete endpoint.
 
         Returns:
             bool: True if clearing was successful, False otherwise
         """
         try:
-            # Get all current items
+            # Check if list is already empty
             items = self.get()
             if not items:
                 self.logger.info("ℹ️  Shopping list is already empty")
                 return True
             
-            self.logger.info(f"🗑️  Clearing {len(items)} items from shopping list...")
+            self.logger.info(f"🗑️  Clearing {len(items)} items from shopping list using bulk delete...")
             
-            # Delete each item
-            deleted_count = 0
-            for item in items:
-                if self.delete_item(str(item.list_item_id)):
-                    deleted_count += 1
-                else:
-                    self.logger.warning(f"⚠️  Failed to delete item: {item.name}")
+            # Use the bulk delete endpoint for efficiency
+            url = urljoin(self.meijer.api_base_url, self.endpoints["delete_all"])
+            headers = self.meijer._get_api_headers()
             
-            self.logger.info(f"✅ Cleared {deleted_count} items from shopping list")
-            return deleted_count == len(items)
+            # Use the appropriate content type for bulk operations
+            headers.update({
+                "Content-Type": "application/vnd.meijer.listManagement.list-v1.0+json",
+                "Accept": "application/vnd.meijer.listManagement.list-v1.0+json",
+            })
+            
+            # Send DELETE request to clear all items
+            response = self.meijer._make_request("DELETE", url, headers=headers)
+            
+            if response.status_code == 200:
+                self.logger.info(f"✅ Successfully cleared {len(items)} items from shopping list")
+                return True
+            else:
+                self.logger.warning(f"⚠️  Bulk clear failed with status {response.status_code}, falling back to individual deletion...")
+                
+                # Fallback to individual deletion if bulk clear fails
+                deleted_count = 0
+                for item in items:
+                    if self.delete_item(str(item.list_item_id)):
+                        deleted_count += 1
+                    else:
+                        self.logger.warning(f"⚠️  Failed to delete item: {item.name}")
+                
+                self.logger.info(f"✅ Cleared {deleted_count} items from shopping list (fallback method)")
+                return deleted_count == len(items)
             
         except Exception as e:
             self.logger.error(f"❌ Error clearing shopping list: {e}")
@@ -492,12 +511,19 @@ class MeijerList:
                         product_detail = self.meijer.get_product_detail(item.item_part_number, store_id)
                         if product_detail and product_detail.aisle_primary:
                             # We have real location data!
+                            self.logger.info(f"🔍 PRODUCT DETAIL LOCATION for {item.name}:")
+                            self.logger.info(f"   - aisle_primary: '{product_detail.aisle_primary}'")
+                            self.logger.info(f"   - aisle_locations: {product_detail.aisle_locations}")
+                            
                             location_info = {
                                 "aisle": product_detail.aisle_primary,
                                 "section": product_detail.aisle_locations[0] if product_detail.aisle_locations else "Unknown",
                                 "zone": "Store",
                                 "zone_code": "STORE",
                             }
+                            
+                            self.logger.info(f"🔍 CREATED location_info: {location_info}")
+                            
                             matched_product = {
                                 "title": product_detail.title,
                                 "price": product_detail.price,
@@ -869,17 +895,25 @@ class MeijerList:
                 aisle = location['aisle']
                 section = location.get('section', '')
                 
+                # Debug: Show the raw values before any processing
+                self.logger.info(f"🔍 RAW LOCATION DATA for {item.name}:")
+                self.logger.info(f"   - Raw aisle: '{aisle}' (type: {type(aisle)}, length: {len(str(aisle))})")
+                self.logger.info(f"   - Raw section: '{section}' (type: {type(section)})")
+                self.logger.info(f"   - Full location dict: {location}")
+                
                 # Fix duplicated aisle values (e.g., "A4A4" -> "A4")
                 if isinstance(aisle, str) and len(aisle) >= 4:
                     # Check for pattern like "A4A4" or "B17B17"
                     if aisle[0].isalpha() and aisle[1:3].isdigit() and aisle[3:5] == aisle[0:2]:
                         # Remove the duplicate part
+                        original_aisle = aisle
                         aisle = aisle[0:3]
-                        self.logger.info(f"🔧 Fixed duplicated aisle: '{location['aisle']}' -> '{aisle}'")
+                        self.logger.info(f"🔧 Fixed duplicated aisle: '{original_aisle}' -> '{aisle}'")
                 
-                # Debug logging to see what we're working with
-                self.logger.debug(f"🔍 Location data for {item.name}: aisle='{aisle}', section='{section}', full_location={location}")
-                self.logger.info(f"🔍 Processing location for {item.name}: aisle='{aisle}' (type: {type(aisle)}), section='{section}' (type: {type(section)})")
+                # Debug: Show the values after cleanup
+                self.logger.info(f"🔍 AFTER CLEANUP for {item.name}:")
+                self.logger.info(f"   - Cleaned aisle: '{aisle}'")
+                self.logger.info(f"   - Cleaned section: '{section}'")
                 
                 if location.get("zone_code") == "STORE":
                     # Real store location - format as "B16 Section 23 | Product Name"
@@ -887,27 +921,31 @@ class MeijerList:
                         # Extract just the section number if it's formatted as "Section: 35"
                         section_num = str(section).replace("Section:", "").strip()
                         if section_num.isdigit():
-                            notes_parts.append(f"{aisle} Section {section_num}")
-                            self.logger.info(f"📍 Formatted as: {aisle} Section {section_num}")
+                            formatted_location = f"{aisle} Section {section_num}"
+                            notes_parts.append(formatted_location)
+                            self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
                         else:
                             # Check if section already contains "Section" text
                             if "Section" in str(section):
-                                notes_parts.append(f"{aisle} {section}")
-                                self.logger.info(f"📍 Formatted as: {aisle} {section}")
+                                formatted_location = f"{aisle} {section}"
+                                notes_parts.append(formatted_location)
+                                self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
                             else:
-                                notes_parts.append(f"{aisle} Section {section}")
-                                self.logger.info(f"📍 Formatted as: {aisle} Section {section}")
+                                formatted_location = f"{aisle} Section {section}"
+                                notes_parts.append(formatted_location)
+                                self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
                     else:
                         notes_parts.append(aisle)
-                        self.logger.info(f"📍 Formatted as: {aisle}")
+                        self.logger.info(f"📍 FINAL FORMAT: '{aisle}'")
                 else:
                     # Search-based location - format as "Search_High | Product Name"
                     if section and section != 'Unknown':
-                        notes_parts.append(f"{aisle}:{section}")
-                        self.logger.info(f"📍 Formatted as: {aisle}:{section}")
+                        formatted_location = f"{aisle}:{section}"
+                        notes_parts.append(formatted_location)
+                        self.logger.info(f"📍 FINAL FORMAT: '{formatted_location}'")
                     else:
                         notes_parts.append(aisle)
-                        self.logger.info(f"📍 Formatted as: {aisle}")
+                        self.logger.info(f"📍 FINAL FORMAT: '{aisle}'")
             
             # Add pipe separator if we have location info
             if notes_parts:
