@@ -469,7 +469,17 @@ def cli():
     """
     🛒 Meijer Shopping List CLI Tool
 
-    Manage your Meijer shopping lists from the command line.
+    Manage your Meijer shopping lists, coupons, cart, and account from the command line.
+    
+    Available commands:
+    • list - Manage shopping list operations
+    • coupons - Manage coupons and offers
+    • cart - Manage shopping cart and fulfillment
+    • settings - Manage account settings and preferences
+    • auth - Extract authentication tokens
+    • status - Show authentication status
+    • ad - Browse weekly ad items
+    • gas - Show gas station information
     """
     pass
 
@@ -2280,6 +2290,765 @@ def extract_tokens_from_analysis_report(report_file_path: str) -> Optional[dict]
         pass
 
     return None
+
+
+@cli.group()
+def coupons():
+    """Manage Meijer coupons and offers."""
+    pass
+
+
+@coupons.command("list")
+@click.option("--clipped", is_flag=True, help="Show only clipped coupons")
+@click.option("--unclipped", is_flag=True, help="Show only unclipped coupons")
+@click.option("--expired", is_flag=True, help="Show only expired coupons")
+@click.option("--active", is_flag=True, help="Show only active (non-expired) coupons")
+@click.option("--limit", "-l", default=50, help="Maximum number of coupons to show")
+@click.option("--page", "-p", default=0, help="Page number for pagination")
+def coupons_list(clipped: bool, unclipped: bool, expired: bool, active: bool, limit: int, page: int):
+    """List available coupons and offers."""
+    client = get_meijer_client()
+
+    try:
+        click.echo("🎫 Fetching coupons and offers...")
+        
+        # Get coupons with pagination
+        coupons = client.get_coupons(limit=limit, page=page)
+        
+        if not coupons:
+            click.echo("❌ No coupons found")
+            return
+
+        # Apply filters
+        filtered_coupons = []
+        for coupon in coupons:
+            # Filter by clipped status
+            if clipped and not coupon.is_clipped:
+                continue
+            if unclipped and coupon.is_clipped:
+                continue
+            
+            # Filter by expiration status
+            if expired and not coupon.is_expired:
+                continue
+            if active and coupon.is_expired:
+                continue
+            
+            filtered_coupons.append(coupon)
+
+        if not filtered_coupons:
+            click.echo("❌ No coupons match the specified filters")
+            return
+
+        click.echo(f"🎫 Found {len(filtered_coupons)} coupons (page {page + 1})")
+        click.echo("=" * 80)
+
+        # Prepare table data
+        table_data = []
+        for i, coupon in enumerate(filtered_coupons, 1):
+            # Format dates
+            start_date = coupon.redemption_start_date.strftime("%m/%d") if coupon.redemption_start_date else "N/A"
+            end_date = coupon.redemption_end_date.strftime("%m/%d") if coupon.redemption_end_date else "N/A"
+            
+            # Format status
+            status = "✅ Clipped" if coupon.is_clipped else "⭕ Unclipped"
+            if coupon.is_expired:
+                status = "⏰ Expired"
+            
+            # Format discount
+            discount = coupon.formatted_discount
+            
+            # Truncate title for display
+            title = coupon.title[:50] + "..." if len(coupon.title) > 50 else coupon.title
+            
+            table_data.append([
+                i,
+                coupon.meijer_offer_id,
+                title,
+                discount,
+                status,
+                f"{start_date} - {end_date}",
+                "Yes" if coupon.is_targeted else "No"
+            ])
+
+        headers = ["#", "ID", "Title", "Discount", "Status", "Valid Dates", "Targeted"]
+
+        if TABULATE_AVAILABLE:
+            click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+        else:
+            click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
+            click.echo(f"│ {'#':<3} {'ID':<8} {'Title':<50} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} {'Targeted':<8} │")
+            click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
+            for row in table_data:
+                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<50} {row[3]:<12} {row[4]:<12} {row[5]:<15} {row[6]:<8} │")
+            click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
+
+        # Show summary
+        total_clipped = len([c for c in filtered_coupons if c.is_clipped])
+        total_unclipped = len([c for c in filtered_coupons if not c.is_clipped])
+        total_expired = len([c for c in filtered_coupons if c.is_expired])
+        total_active = len([c for c in filtered_coupons if not c.is_expired])
+
+        click.echo(f"\n📊 Summary:")
+        click.echo(f"  Total shown: {len(filtered_coupons)}")
+        click.echo(f"  Clipped: {total_clipped}")
+        click.echo(f"  Unclipped: {total_unclipped}")
+        click.echo(f"  Active: {total_active}")
+        click.echo(f"  Expired: {total_expired}")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to list coupons: {e}")
+
+
+@coupons.command("clip")
+@click.argument("coupon_id", type=int)
+def coupons_clip(coupon_id: int):
+    """Clip (activate) a specific coupon."""
+    client = get_meijer_client()
+
+    try:
+        click.echo(f"🎫 Clipping coupon {coupon_id}...")
+        
+        success = client.clip_coupon(coupon_id)
+        
+        if success:
+            click.echo(f"✅ Successfully clipped coupon {coupon_id}")
+        else:
+            click.echo(f"❌ Failed to clip coupon {coupon_id}")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to clip coupon: {e}")
+
+
+@coupons.command("unclip")
+@click.argument("coupon_id", type=int)
+def coupons_unclip(coupon_id: int):
+    """Unclip (deactivate) a specific coupon."""
+    client = get_meijer_client()
+
+    try:
+        click.echo(f"🎫 Unclipping coupon {coupon_id}...")
+        
+        success = client.unclip_coupon(coupon_id)
+        
+        if success:
+            click.echo(f"✅ Successfully unclipped coupon {coupon_id}")
+        else:
+            click.echo(f"❌ Failed to unclip coupon {coupon_id}")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to unclip coupon: {e}")
+
+
+@coupons.command("clip-all")
+@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
+@click.option("--limit", "-l", default=100, help="Maximum number of coupons to clip")
+def coupons_clip_all(confirm: bool, limit: int):
+    """Clip all available unclipped coupons."""
+    client = get_meijer_client()
+
+    try:
+        click.echo("🎫 Fetching all available coupons...")
+        
+        # Get all coupons
+        coupons = client.get_coupons(limit=limit)
+        
+        if not coupons:
+            click.echo("❌ No coupons found")
+            return
+
+        # Filter for unclipped coupons
+        unclipped_coupons = [c for c in coupons if not c.is_clipped and not c.is_expired]
+        
+        if not unclipped_coupons:
+            click.echo("✅ All available coupons are already clipped!")
+            return
+
+        click.echo(f"🎫 Found {len(unclipped_coupons)} unclipped coupons")
+        
+        # Confirm action unless --confirm flag is used
+        if not confirm:
+            if not click.confirm(f"⚠️  Clip all {len(unclipped_coupons)} unclipped coupons?"):
+                click.echo("❌ Operation cancelled")
+                return
+
+        # Clip coupons
+        click.echo("🎫 Clipping coupons...")
+        success_count = 0
+        failed_count = 0
+        
+        for i, coupon in enumerate(unclipped_coupons, 1):
+            click.echo(f"  [{i}/{len(unclipped_coupons)}] Clipping: {coupon.title[:40]}...")
+            
+            try:
+                success = client.clip_coupon(coupon.meijer_offer_id)
+                if success:
+                    success_count += 1
+                    click.echo(f"    ✅ Success")
+                else:
+                    failed_count += 1
+                    click.echo(f"    ❌ Failed")
+            except Exception as e:
+                failed_count += 1
+                click.echo(f"    ❌ Error: {e}")
+
+        click.echo(f"\n📊 Clipping Summary:")
+        click.echo(f"  Successfully clipped: {success_count}")
+        click.echo(f"  Failed: {failed_count}")
+        click.echo(f"  Total processed: {len(unclipped_coupons)}")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to clip all coupons: {e}")
+
+
+@coupons.command("unclip-all")
+@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
+@click.option("--limit", "-l", default=100, help="Maximum number of coupons to unclip")
+def coupons_unclip_all(confirm: bool, limit: int):
+    """Unclip all clipped coupons."""
+    client = get_meijer_client()
+
+    try:
+        click.echo("🎫 Fetching all clipped coupons...")
+        
+        # Get all coupons
+        coupons = client.get_coupons(limit=limit)
+        
+        if not coupons:
+            click.echo("❌ No coupons found")
+            return
+
+        # Filter for clipped coupons
+        clipped_coupons = [c for c in coupons if c.is_clipped]
+        
+        if not clipped_coupons:
+            click.echo("✅ No clipped coupons found")
+            return
+
+        click.echo(f"🎫 Found {len(clipped_coupons)} clipped coupons")
+        
+        # Confirm action unless --confirm flag is used
+        if not confirm:
+            if not click.confirm(f"⚠️  Unclip all {len(clipped_coupons)} clipped coupons?"):
+                click.echo("❌ Operation cancelled")
+                return
+
+        # Unclip coupons
+        click.echo("🎫 Unclipping coupons...")
+        success_count = 0
+        failed_count = 0
+        
+        for i, coupon in enumerate(clipped_coupons, 1):
+            click.echo(f"  [{i}/{len(clipped_coupons)}] Unclipping: {coupon.title[:40]}...")
+            
+            try:
+                success = client.unclip_coupon(coupon.meijer_offer_id)
+                if success:
+                    success_count += 1
+                    click.echo(f"    ✅ Success")
+                else:
+                    failed_count += 1
+                    click.echo(f"    ❌ Failed")
+            except Exception as e:
+                failed_count += 1
+                click.echo(f"    ❌ Error: {e}")
+
+        click.echo(f"\n📊 Unclipping Summary:")
+        click.echo(f"  Successfully unclipped: {success_count}")
+        click.echo(f"  Failed: {failed_count}")
+        click.echo(f"  Total processed: {len(clipped_coupons)}")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to unclip all coupons: {e}")
+
+
+@coupons.command("info")
+@click.argument("coupon_id", type=int)
+def coupons_info(coupon_id: int):
+    """Show detailed information about a specific coupon."""
+    client = get_meijer_client()
+
+    try:
+        click.echo(f"🎫 Fetching coupon information for ID {coupon_id}...")
+        
+        # Get all coupons to find the specific one
+        coupons = client.get_coupons(limit=1000)  # Get a large number to find the specific coupon
+        
+        target_coupon = None
+        for coupon in coupons:
+            if coupon.meijer_offer_id == coupon_id:
+                target_coupon = coupon
+                break
+        
+        if not target_coupon:
+            raise click.ClickException(f"❌ Coupon {coupon_id} not found")
+
+        # Display detailed information
+        click.echo(f"🎫 Coupon Details")
+        click.echo("=" * 60)
+        click.echo(f"ID: {target_coupon.meijer_offer_id}")
+        click.echo(f"Title: {target_coupon.title}")
+        
+        if target_coupon.description:
+            click.echo(f"Description: {target_coupon.description}")
+        
+        click.echo(f"Status: {'✅ Clipped' if target_coupon.is_clipped else '⭕ Unclipped'}")
+        click.echo(f"Targeted: {'Yes' if target_coupon.is_targeted else 'No'}")
+        click.echo(f"Suggested: {'Yes' if target_coupon.is_suggested else 'No'}")
+        click.echo(f"Hidden: {'Yes' if target_coupon.is_hidden else 'No'}")
+        
+        if target_coupon.redeem_amount:
+            click.echo(f"Discount Amount: ${target_coupon.redeem_amount:.2f}")
+        
+        if target_coupon.condition_value:
+            click.echo(f"Condition Value: {target_coupon.condition_value}")
+        
+        if target_coupon.redemption_start_date:
+            click.echo(f"Valid From: {target_coupon.redemption_start_date.strftime('%Y-%m-%d %H:%M')}")
+        
+        if target_coupon.redemption_end_date:
+            click.echo(f"Valid Until: {target_coupon.redemption_end_date.strftime('%Y-%m-%d %H:%M')}")
+            if target_coupon.is_expired:
+                click.echo("⚠️  This coupon has expired!")
+        
+        if target_coupon.image_url:
+            click.echo(f"Image URL: {target_coupon.image_url}")
+        
+        if target_coupon.disclaimer:
+            click.echo(f"Disclaimer: {target_coupon.disclaimer}")
+        
+        click.echo(f"Discount Type ID: {target_coupon.discount_type_id}")
+        click.echo(f"Discount Level ID: {target_coupon.discount_level_id}")
+        click.echo(f"Condition Type ID: {target_coupon.condition_type_id}")
+        
+        # Show departments if available
+        if target_coupon.departments:
+            click.echo(f"Departments: {len(target_coupon.departments)}")
+            for dept in target_coupon.departments:
+                click.echo(f"  - {dept.category_name}")
+                if dept.sub_category_name:
+                    click.echo(f"    Sub: {dept.sub_category_name}")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to get coupon info: {e}")
+
+
+@coupons.command("search")
+@click.argument("query", type=str)
+@click.option("--clipped", is_flag=True, help="Search only clipped coupons")
+@click.option("--unclipped", is_flag=True, help="Search only unclipped coupons")
+@click.option("--limit", "-l", default=50, help="Maximum number of results to show")
+def coupons_search(query: str, clipped: bool, unclipped: bool, limit: int):
+    """Search coupons by title or description."""
+    client = get_meijer_client()
+
+    try:
+        click.echo(f"🔍 Searching coupons for: '{query}'")
+        
+        # Get all coupons
+        coupons = client.get_coupons(limit=1000)  # Get a large number for searching
+        
+        if not coupons:
+            click.echo("❌ No coupons found")
+            return
+
+        # Search in titles and descriptions
+        matching_coupons = []
+        query_lower = query.lower()
+        
+        for coupon in coupons:
+            # Check if query matches title or description
+            title_match = query_lower in coupon.title.lower()
+            desc_match = False
+            if coupon.description:
+                desc_match = query_lower in coupon.description.lower()
+            
+            if title_match or desc_match:
+                # Apply filters
+                if clipped and not coupon.is_clipped:
+                    continue
+                if unclipped and coupon.is_clipped:
+                    continue
+                
+                matching_coupons.append(coupon)
+
+        if not matching_coupons:
+            click.echo(f"❌ No coupons found matching '{query}'")
+            return
+
+        # Limit results
+        if len(matching_coupons) > limit:
+            matching_coupons = matching_coupons[:limit]
+            click.echo(f"📋 Showing first {limit} results (total: {len(matching_coupons)})")
+
+        click.echo(f"🔍 Found {len(matching_coupons)} matching coupons")
+        click.echo("=" * 80)
+
+        # Prepare table data
+        table_data = []
+        for i, coupon in enumerate(matching_coupons, 1):
+            # Format dates
+            start_date = coupon.redemption_start_date.strftime("%m/%d") if coupon.redemption_start_date else "N/A"
+            end_date = coupon.redemption_end_date.strftime("%m/%d") if coupon.redemption_end_date else "N/A"
+            
+            # Format status
+            status = "✅ Clipped" if coupon.is_clipped else "⭕ Unclipped"
+            if coupon.is_expired:
+                status = "⏰ Expired"
+            
+            # Format discount
+            discount = coupon.formatted_discount
+            
+            # Truncate title for display
+            title = coupon.title[:50] + "..." if len(coupon.title) > 50 else coupon.title
+            
+            table_data.append([
+                i,
+                coupon.meijer_offer_id,
+                title,
+                discount,
+                status,
+                f"{start_date} - {end_date}"
+            ])
+
+        headers = ["#", "ID", "Title", "Discount", "Status", "Valid Dates"]
+
+        if TABULATE_AVAILABLE:
+            click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+        else:
+            click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════════╕")
+            click.echo(f"│ {'#':<3} {'ID':<8} {'Title':<50} {'Discount':<12} {'Status':<12} {'Valid Dates':<15} │")
+            click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════════╡")
+            for row in table_data:
+                click.echo(f"│ {row[0]:<3} {row[1]:<8} {row[2]:<50} {row[3]:<12} {row[4]:<12} {row[5]:<15} │")
+            click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════════╛")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to search coupons: {e}")
+
+
+@coupons.command("summary")
+def coupons_summary():
+    """Show a summary of all coupons."""
+    client = get_meijer_client()
+
+    try:
+        click.echo("🎫 Fetching coupon summary...")
+        
+        # Get all coupons
+        coupons = client.get_coupons(limit=1000)
+        
+        if not coupons:
+            click.echo("❌ No coupons found")
+            return
+
+        # Calculate statistics
+        total_coupons = len(coupons)
+        clipped_coupons = len([c for c in coupons if c.is_clipped])
+        unclipped_coupons = len([c for c in coupons if not c.is_clipped])
+        expired_coupons = len([c for c in coupons if c.is_expired])
+        active_coupons = len([c for c in coupons if not c.is_expired])
+        targeted_coupons = len([c for c in coupons if c.is_targeted])
+        suggested_coupons = len([c for c in coupons if c.is_suggested])
+
+        click.echo("🎫 Coupon Summary")
+        click.echo("=" * 50)
+        click.echo(f"Total Coupons: {total_coupons}")
+        click.echo(f"Active: {active_coupons}")
+        click.echo(f"Expired: {expired_coupons}")
+        click.echo(f"Clipped: {clipped_coupons}")
+        click.echo(f"Unclipped: {unclipped_coupons}")
+        click.echo(f"Targeted: {targeted_coupons}")
+        click.echo(f"Suggested: {suggested_coupons}")
+        
+        # Show clipping percentage
+        if total_coupons > 0:
+            clip_percentage = (clipped_coupons / total_coupons) * 100
+            click.echo(f"Clip Rate: {clip_percentage:.1f}%")
+        
+        # Show expiration status
+        if active_coupons > 0:
+            click.echo(f"Active Rate: {(active_coupons / total_coupons) * 100:.1f}%")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to get coupon summary: {e}")
+
+
+@coupons.command("interactive")
+def coupons_interactive():
+    """Interactive TUI for coupon management."""
+    try:
+        # Try to import rich for interactive TUI
+        from rich.console import Console
+        from rich.table import Table
+        from rich.prompt import Prompt, Confirm
+        from rich.panel import Panel
+        from rich.text import Text
+
+        RICH_AVAILABLE = True
+    except ImportError:
+        RICH_AVAILABLE = False
+        click.echo("❌ Rich library not available for interactive mode.")
+        click.echo("   Install with: pip install rich")
+        click.echo("   Falling back to basic interactive mode...")
+
+    client = get_meijer_client()
+
+    if RICH_AVAILABLE:
+        # Rich-based interactive mode
+        console = Console()
+
+        while True:
+            console.clear()
+            console.print(
+                Panel.fit(
+                    "🎫 Meijer Coupons - Interactive Mode", style="bold blue"
+                )
+            )
+
+            # Show coupon summary
+            try:
+                coupons = client.get_coupons(limit=100)
+                if coupons:
+                    clipped = len([c for c in coupons if c.is_clipped])
+                    unclipped = len([c for c in coupons if c.is_clipped == False])
+                    expired = len([c for c in coupons if c.is_expired])
+                    
+                    console.print(f"📊 Total Coupons: {len(coupons)}")
+                    console.print(f"✅ Clipped: {clipped}")
+                    console.print(f"⭕ Unclipped: {unclipped}")
+                    console.print(f"⏰ Expired: {expired}")
+                else:
+                    console.print("📝 No coupons found", style="dim")
+            except Exception as e:
+                console.print(f"❌ Error loading coupons: {e}", style="red")
+
+            # Show menu
+            console.print("\n[bold]Actions:[/bold]")
+            console.print("1. List all coupons")
+            console.print("2. List clipped coupons")
+            console.print("3. List unclipped coupons")
+            console.print("4. Clip a coupon")
+            console.print("5. Unclip a coupon")
+            console.print("6. Clip all unclipped")
+            console.print("7. Unclip all clipped")
+            console.print("8. Search coupons")
+            console.print("9. Refresh")
+            console.print("0. Exit")
+
+            choice = Prompt.ask(
+                "\n[bold cyan]Choose action[/bold cyan]",
+                choices=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            )
+
+            if choice == "0":
+                break
+            elif choice == "1":
+                try:
+                    coupons = client.get_coupons(limit=50)
+                    if coupons:
+                        table = Table(title="All Coupons")
+                        table.add_column("#", style="cyan", no_wrap=True)
+                        table.add_column("ID", style="cyan")
+                        table.add_column("Title", style="magenta")
+                        table.add_column("Status", style="yellow")
+                        table.add_column("Discount", style="green")
+
+                        for i, coupon in enumerate(coupons, 1):
+                            status = "✅ Clipped" if coupon.is_clipped else "⭕ Unclipped"
+                            if coupon.is_expired:
+                                status = "⏰ Expired"
+                            
+                            title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                            discount = coupon.formatted_discount
+                            
+                            table.add_row(str(i), str(coupon.meijer_offer_id), title, status, discount)
+
+                        console.print(table)
+                    else:
+                        console.print("📝 No coupons found", style="dim")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "2":
+                try:
+                    coupons = client.get_coupons(limit=100)
+                    clipped_coupons = [c for c in coupons if c.is_clipped]
+                    
+                    if clipped_coupons:
+                        table = Table(title="Clipped Coupons")
+                        table.add_column("#", style="cyan", no_wrap=True)
+                        table.add_column("ID", style="cyan")
+                        table.add_column("Title", style="magenta")
+                        table.add_column("Discount", style="green")
+
+                        for i, coupon in enumerate(clipped_coupons, 1):
+                            title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                            discount = coupon.formatted_discount
+                            
+                            table.add_row(str(i), str(coupon.meijer_offer_id), title, discount)
+
+                        console.print(table)
+                    else:
+                        console.print("📝 No clipped coupons found", style="dim")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "3":
+                try:
+                    coupons = client.get_coupons(limit=100)
+                    unclipped_coupons = [c for c in coupons if not c.is_clipped and not c.is_expired]
+                    
+                    if unclipped_coupons:
+                        table = Table(title="Unclipped Coupons")
+                        table.add_column("#", style="cyan", no_wrap=True)
+                        table.add_column("ID", style="cyan")
+                        table.add_column("Title", style="magenta")
+                        table.add_column("Discount", style="green")
+
+                        for i, coupon in enumerate(unclipped_coupons, 1):
+                            title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                            discount = coupon.formatted_discount
+                            
+                            table.add_row(str(i), str(coupon.meijer_offer_id), title, discount)
+
+                        table.add_row("", "", "[bold]Total Unclipped:[/bold]", f"[bold]{len(unclipped_coupons)}[/bold]")
+                        console.print(table)
+                    else:
+                        console.print("📝 No unclipped coupons found", style="dim")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "4":
+                try:
+                    coupon_id = Prompt.ask("Enter coupon ID to clip")
+                    if coupon_id.isdigit():
+                        success = client.clip_coupon(int(coupon_id))
+                        if success:
+                            console.print(f"✅ Successfully clipped coupon {coupon_id}", style="green")
+                        else:
+                            console.print(f"❌ Failed to clip coupon {coupon_id}", style="red")
+                    else:
+                        console.print("❌ Invalid coupon ID", style="red")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "5":
+                try:
+                    coupon_id = Prompt.ask("Enter coupon ID to unclip")
+                    if coupon_id.isdigit():
+                        success = client.unclip_coupon(int(coupon_id))
+                        if success:
+                            console.print(f"✅ Successfully unclipped coupon {coupon_id}", style="green")
+                        else:
+                            console.print(f"❌ Failed to unclip coupon {coupon_id}", style="red")
+                    else:
+                        console.print("❌ Invalid coupon ID", style="red")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "6":
+                try:
+                    if Confirm.ask("Clip all unclipped coupons?"):
+                        coupons = client.get_coupons(limit=100)
+                        unclipped_coupons = [c for c in coupons if not c.is_clipped and not c.is_expired]
+                        
+                        if unclipped_coupons:
+                            console.print(f"🎫 Clipping {len(unclipped_coupons)} coupons...")
+                            success_count = 0
+                            
+                            for coupon in unclipped_coupons:
+                                if client.clip_coupon(coupon.meijer_offer_id):
+                                    success_count += 1
+                            
+                            console.print(f"✅ Successfully clipped {success_count}/{len(unclipped_coupons)} coupons", style="green")
+                        else:
+                            console.print("✅ All coupons are already clipped!", style="green")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "7":
+                try:
+                    if Confirm.ask("Unclip all clipped coupons?"):
+                        coupons = client.get_coupons(limit=100)
+                        clipped_coupons = [c for c in coupons if c.is_clipped]
+                        
+                        if clipped_coupons:
+                            console.print(f"🎫 Unclipping {len(clipped_coupons)} coupons...")
+                            success_count = 0
+                            
+                            for coupon in clipped_coupons:
+                                if client.unclip_coupon(coupon.meijer_offer_id):
+                                    success_count += 1
+                            
+                            console.print(f"✅ Successfully unclipped {success_count}/{len(clipped_coupons)} coupons", style="green")
+                        else:
+                            console.print("✅ No clipped coupons found!", style="green")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "8":
+                try:
+                    search_query = Prompt.ask("Enter search term")
+                    if search_query:
+                        coupons = client.get_coupons(limit=100)
+                        matching_coupons = []
+                        query_lower = search_query.lower()
+                        
+                        for coupon in coupons:
+                            if (query_lower in coupon.title.lower() or 
+                                (coupon.description and query_lower in coupon.description.lower())):
+                                matching_coupons.append(coupon)
+                        
+                        if matching_coupons:
+                            table = Table(title=f"Search Results for '{search_query}'")
+                            table.add_column("#", style="cyan", no_wrap=True)
+                            table.add_column("ID", style="cyan")
+                            table.add_column("Title", style="magenta")
+                            table.add_column("Status", style="yellow")
+
+                            for i, coupon in enumerate(matching_coupons, 1):
+                                status = "✅ Clipped" if coupon.is_clipped else "⭕ Unclipped"
+                                title = coupon.title[:40] + "..." if len(coupon.title) > 40 else coupon.title
+                                
+                                table.add_row(str(i), str(coupon.meijer_offer_id), title, status)
+
+                            console.print(table)
+                        else:
+                            console.print(f"📝 No coupons found matching '{search_query}'", style="dim")
+                except Exception as e:
+                    console.print(f"❌ Error: {e}", style="red")
+
+                Prompt.ask("Press Enter to continue")
+
+            elif choice == "9":
+                # Just refresh the display
+                continue
+
+        console.print("👋 Goodbye!", style="bold green")
+
+    else:
+        # Basic interactive mode (fallback)
+        click.echo("🎫 Meijer Coupons - Basic Interactive Mode")
+        click.echo("📝 Rich library not available. Install with: pip install rich")
+        click.echo("💡 Use individual commands for better functionality:")
+        click.echo("   meijer coupons list")
+        click.echo("   meijer coupons clip <id>")
+        click.echo("   meijer coupons summary")
 
 
 if __name__ == "__main__":

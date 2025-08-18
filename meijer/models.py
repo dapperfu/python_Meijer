@@ -1,4 +1,4 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                """
+"""
 Data models for Meijer API responses.
 
 This module contains dataclasses that represent the structure of API responses
