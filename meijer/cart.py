@@ -576,7 +576,9 @@ class MeijerCart:
     @property
     def delivery_fee(self) -> float:
         """Get the delivery fee amount."""
-        if self._cart_data and "deliveryFee" in self._cart_data:
+        if self._cart_data and "deliveryCost" in self._cart_data:
+            return float(self._cart_data["deliveryCost"]["value"])
+        elif self._cart_data and "deliveryFee" in self._cart_data:
             return float(self._cart_data["deliveryFee"]["value"])
         elif self._cart_data and "delivery_fee" in self._cart_data:
             return float(self._cart_data["delivery_fee"]["value"])
@@ -585,7 +587,9 @@ class MeijerCart:
     @property
     def discount_amount(self) -> float:
         """Get the total discount amount."""
-        if self._cart_data and "totalDiscount" in self._cart_data:
+        if self._cart_data and "totalSavings" in self._cart_data:
+            return float(self._cart_data["totalSavings"]["value"])
+        elif self._cart_data and "totalDiscount" in self._cart_data:
             return float(self._cart_data["totalDiscount"]["value"])
         elif self._cart_data and "discount" in self._cart_data:
             return float(self._cart_data["discount"]["value"])
