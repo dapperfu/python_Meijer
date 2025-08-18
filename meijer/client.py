@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from .shopping_list import MeijerList
 from .coupons import MeijerCouponManager
+from .coupon_operations import CouponOperations
+from .product_operations import ProductOperations
 from .search import Search
 from .shop_scan import ShopNScan
 from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
@@ -52,9 +54,11 @@ class Meijer:
         self.api_base_url = "https://api.meijer.com"
         self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis
 
-        # Initialize component instances
+        # Initialize sub-components
         self.shopping_list = MeijerList(self)
         self.coupons = MeijerCouponManager(self)
+        self.coupon_ops = CouponOperations(self)
+        self.product_ops = ProductOperations(self)
         self.search = Search(self)
         self.shop_scan = ShopNScan(self)
         self.mperks = MPerksEarnedRewards(self)
@@ -565,157 +569,18 @@ class Meijer:
     def get_offers(
         self, store_id: Optional[str] = None, limit: int = 100
     ) -> List[MeijerCoupon]:
-        """
-        Get available offers/coupons.
-
-        Args:
-            store_id: Optional store ID for store-specific offers
-            limit: Maximum number of offers to return
-
-        Returns:
-            List of MeijerCoupon objects
-        """
-        try:
-            # Actual endpoint from APK analysis
-            url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
-
-            # Request body based on APK analysis
-            data = {
-                "sortType": "BySuggested",
-                "pageSize": min(limit, 9999),  # API limit from APK analysis
-                "currentPage": 1,
-                "offerClass": 1,
-                "searchCriteria": "",
-                "storeId": int(store_id) if store_id else 0,
-                "ceilingCount": 0,
-                "ceilingDuration": 0,
-                "rewardCouponId": 0,
-                "tagId": "",
-                "getOfferCountPerDepartment": True,
-                "upcList": [],
-                "showClippedCoupons": True,
-                "showOnlySpecialOffers": False,
-                "showRedeemedOffers": False,
-                "offerIds": [],
-                "displayReasonFilters": [],
-            }
-
-            headers = self._get_api_headers()
-            headers.update(
-                {
-                    "accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                    "content-type": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                }
-            )
-
-            response = self._make_request("POST", url, headers=headers, json_data=data)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self.coupons.create_meijer_coupons_from_response(data)
-            else:
-                self.logger.warning(f"Failed to get offers: {response.status_code}")
-                return []
-
-        except Exception as e:
-            self.logger.error(f"Error getting offers: {e}")
-            return []
+        """Get available offers/coupons using the coupon operations module."""
+        return self.coupon_ops.get_offers(store_id=store_id, limit=limit)
 
     def get_coupons(
         self, limit: int = 1000, use_pagination: bool = True
     ) -> List[MeijerCoupon]:
-        """
-        Get available coupons with pagination support.
+        """Get available coupons with pagination support using the coupon operations module."""
+        return self.coupon_ops.get_coupons(limit=limit, use_pagination=use_pagination)
 
-        Args:
-            limit: Maximum number of coupons to return
-            use_pagination: Whether to use pagination for large requests
-
-        Returns:
-            List of MeijerCoupon objects
-        """
-        try:
-            # Actual endpoint from APK analysis
-            url = f"{self.api_base_url}/loyalty/mPerks/api/offers"
-
-            if use_pagination and limit > 100:
-                # Use pagination for large requests
-                all_coupons = []
-                current_page = 1
-                page_size = min(100, limit)  # Reasonable page size
-
-                while len(all_coupons) < limit:
-                    data = {
-                        "sortType": "BySuggested",
-                        "pageSize": page_size,
-                        "currentPage": current_page,
-                        "offerClass": 1,
-                        "searchCriteria": "",
-                        "storeId": 0,
-                        "ceilingCount": 0,
-                        "ceilingDuration": 0,
-                        "rewardCouponId": 0,
-                        "tagId": "",
-                        "getOfferCountPerDepartment": True,
-                        "upcList": [],
-                        "showClippedCoupons": True,
-                        "showOnlySpecialOffers": False,
-                        "showRedeemedOffers": False,
-                        "offerIds": [],
-                        "displayReasonFilters": [],
-                    }
-
-                    headers = self._get_api_headers()
-                    headers.update(
-                        {
-                            "accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                            "content-type": "application/vnd.meijer.digitalmperks.offers-v1.0+json",
-                        }
-                    )
-
-                    response = self._make_request(
-                        "POST", url, headers=headers, json_data=data
-                    )
-
-                    if response.status_code == 200:
-                        page_data = response.json()
-                        page_coupons = self.coupons.create_meijer_coupons_from_response(
-                            page_data
-                        )
-
-                        if not page_coupons:
-                            break  # No more coupons
-
-                        all_coupons.extend(page_coupons)
-
-                        # Check if we've reached the limit
-                        if len(all_coupons) >= limit:
-                            all_coupons = all_coupons[:limit]
-                            break
-
-                        current_page += 1
-
-                        # Check if we've reached the end
-                        total_coupons = page_data.get("couponCount", 0)
-                        if len(all_coupons) >= total_coupons:
-                            break
-                    else:
-                        self.logger.warning(
-                            f"Failed to get coupons page {current_page}: {response.status_code}"
-                        )
-                        break
-
-                self.logger.info(
-                    f"Retrieved {len(all_coupons)} coupons using pagination"
-                )
-                return all_coupons
-            else:
-                # Single request for smaller limits
-                return self.get_offers(limit=limit)
-
-        except Exception as e:
-            self.logger.error(f"Error getting coupons: {e}")
-            return []
+    def get_all_coupons(self) -> List[MeijerCoupon]:
+        """Get all available coupons using the most effective method via coupon operations module."""
+        return self.coupon_ops.get_all_coupons()
 
     def lookup_barcode_price(
         self, barcode: str, store_id: Optional[str] = None
@@ -1031,221 +896,24 @@ class Meijer:
             return 13266596
 
     def get_product_detail(self, upc: str, store_id: Optional[str] = None) -> Optional[MeijerItem]:
-        """
-        Get detailed product information including location data.
-        
-        Args:
-            upc: Product UPC code
-            store_id: Store ID (defaults to current store)
-            
-        Returns:
-            MeijerItem with location information, or None if not found
-        """
-        if not store_id:
-            # Try to get store ID from current context
-            try:
-                stores = self.get_stores()
-                if stores:
-                    store_id = str(stores[0].store_id)
-                else:
-                    store_id = "217"  # Default store from logs
-            except Exception:
-                store_id = "217"  # Default store from logs
-        
-        try:
-            url = f"{self.api_base_url}/digital/occ/v3/products/{upc}"
-            params = {
-                "store": store_id,
-                "fields": "FULL",
-                "pageName": "pdp_app"
-            }
-            
-            self.logger.info(f"Fetching product detail for UPC: {upc} at store: {store_id}")
-            
-            response = self._make_request("GET", url, params=params)
-            
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_product_detail_response(data, upc)
-            else:
-                self.logger.error(f"Product detail fetch failed: {response.status_code} - {response.text}")
-                return None
-                
-        except Exception as e:
-            self.logger.error(f"Error fetching product detail: {e}")
-            return None
+        """Get detailed product information by UPC using the product operations module."""
+        return self.product_ops.get_product_detail(upc, store_id)
     
     def _parse_product_detail_response(self, data: Dict[str, Any], upc: str) -> MeijerItem:
-        """
-        Parse product detail response and extract location information.
-        
-        Args:
-            data: Raw API response data
-            upc: Product UPC for reference
-            
-        Returns:
-            MeijerItem with location information
-        """
-        try:
-            # Extract basic product information
-            item = MeijerItem(
-                id=str(data.get("code", upc)),
-                title=data.get("name", ""),
-                description=data.get("summary", ""),
-                brand=data.get("brand", ""),
-                upc=upc,
-                price=float(data.get("price", {}).get("value", 0)) if data.get("price") else None,
-                sale_price=float(data.get("price", {}).get("formattedValue", "0").replace("$", "")) if data.get("price") else None,
-                image_url=data.get("images", [{}])[0].get("url", "") if data.get("images") else None,
-                raw_data=data
-            )
-            
-            # Extract location information
-            location_info = self._extract_location_from_product_detail(data)
-            if location_info:
-                self.logger.info(f"🔍 Setting aisle_primary from location_info: {location_info}")
-                
-                item.aisle_primary = location_info.get("aisle")
-                # Store section portion (e.g., "35-4") for downstream use
-                item.aisle_locations = [location_info.get("section", "")]
-                self.logger.info(f"📍 Final aisle_primary: {item.aisle_primary}")
-            
-            return item
-            
-        except Exception as e:
-            self.logger.error(f"Error parsing product detail response: {e}")
-            # Return basic item if parsing fails
-            return MeijerItem(
-                id=upc,
-                title="Unknown Product",
-                upc=upc,
-                raw_data=data
-            )
+        """Parse product detail response using the product operations module."""
+        return self.product_ops._parse_product_detail_response(data, upc)
     
     def _extract_location_from_product_detail(self, data: Dict[str, Any]) -> Optional[Dict[str, str]]:
-        """
-        Extract location information from product detail response.
-        
-        Args:
-            data: Raw API response data
-            
-        Returns:
-            Dictionary with location information or None
-        """
-        try:
-            # Only use ilcPrimary/ilcs from stock; do not infer from text
-            if "stock" in data and isinstance(data["stock"], dict):
-                stock_data = data["stock"]
-
-                ilc_primary = stock_data.get("ilcPrimary")
-                if ilc_primary:
-                    self.logger.info(f"🔍 Found ilcPrimary: '{ilc_primary}'")
-                    parsed = self._parse_ilc_location(ilc_primary)
-                    if parsed:
-                        return parsed
-
-                ilcs = stock_data.get("ilcs")
-                if isinstance(ilcs, list):
-                    for ilc in ilcs:
-                        if isinstance(ilc, str) and ilc.strip():
-                            parsed = self._parse_ilc_location(ilc.strip())
-                            if parsed:
-                                return parsed
-
-            return None
-
-        except Exception as e:
-            self.logger.error(f"Error extracting location: {e}")
-            return None
+        """Extract aisle location information using the product operations module."""
+        return self.product_ops._extract_location_from_product_detail(data)
     
     def _parse_ilc_location(self, ilc_string: str) -> Optional[Dict[str, str]]:
-        """
-        Parse ILC (Inventory Location Code) string from stock.ilcPrimary.
-        
-        Args:
-            ilc_string: ILC string like "B-16-35" or "B16-35" or "B16-35-4"
-            
-        Returns:
-            Dictionary with location information or None
-        """
-        try:
-            # Debug logging to see what we're working with
-            self.logger.info(f"🔍 Parsing ILC string: '{ilc_string}'")
-            
-            # Handle different ILC formats strictly from ILC parts
-            
-            # First, try splitting by dash
-            parts = ilc_string.split("-")
-            self.logger.info(f"🔍 ILC parts (dash-split): {parts}")
-            
-            if len(parts) >= 3:
-                # Support formats like "B-16-35-4" and "B16-35-4"
-                if parts[0].isalpha() and parts[1].isdigit():
-                    aisle_letter = parts[0]
-                    section_num = parts[1]
-                    bay_num = parts[2]
-                    sub_bay = parts[3] if len(parts) > 3 else None
-                elif len(parts[0]) >= 2 and parts[0][0].isalpha() and parts[0][1:].isdigit():
-                    aisle_letter = parts[0][0]
-                    section_num = parts[0][1:]
-                    bay_num = parts[1]
-                    sub_bay = parts[2] if len(parts) > 2 else None
-                else:
-                    self.logger.warning(f"⚠️  Unknown ILC format: {ilc_string}")
-                    return None
-
-                combined_aisle = f"{aisle_letter}{section_num}"
-                section_combined = f"{bay_num}-{sub_bay}" if sub_bay else bay_num
-
-                result = {
-                    "aisle": combined_aisle,
-                    "section": section_combined,
-                    "bay": bay_num,
-                    "sub_bay": sub_bay,
-                    "formatted_location": f"{combined_aisle}:{section_combined}"
-                }
-                
-                self.logger.info(f"📍 Parsed ILC result: {result}")
-                return result
-            
-            self.logger.warning(f"⚠️  ILC string '{ilc_string}' doesn't have enough parts (expected 3+, got {len(parts)})")
-            return None
-            
-        except Exception as e:
-            self.logger.error(f"Error parsing ILC location '{ilc_string}': {e}")
-            return None
+        """Parse ILC location using the product operations module."""
+        return self.product_ops._parse_ilc_location(ilc_string)
     
     def _format_location_string(self, aisle: Optional[str], section: Optional[str], bay: Optional[str]) -> str:
-        """
-        Format location information into a readable string.
-        
-        Args:
-            aisle: Aisle information (may include section number like "B16")
-            section: Section information  
-            bay: Bay information
-            
-        Returns:
-            Formatted location string
-        """
-        parts = []
-        
-        if aisle:
-            # Check if aisle already contains section number (e.g., "B16")
-            if section and section.isdigit() and not aisle.endswith(section):
-                # Aisle is just the letter (e.g., "B"), section is separate (e.g., "16")
-                parts.append(f"{aisle}{section}")
-            else:
-                # Aisle already contains section number or no section
-                parts.append(aisle)
-        
-        if bay and bay != section:
-            # If we have a bay number that's different from section, show it
-            parts.append(f"Section {bay}")
-        elif section and (not aisle or not aisle.endswith(str(section))):
-            # Show section if it's not already part of the aisle
-            parts.append(f"Section {section}")
-        
-        return " ".join(parts) if parts else "Location Unknown"
+        """Format location string using the product operations module."""
+        return self.product_ops._format_location_string(aisle, section, bay)
     
     def _extract_location_from_text(self, text: str) -> Optional[Dict[str, str]]:
         """
