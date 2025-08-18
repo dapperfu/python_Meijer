@@ -17,6 +17,7 @@ from .search import Search
 from .shop_scan import ShopNScan
 from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
 from .feedback import MeijerFeedback
+from .settings import MeijerSettings
 from .models import MeijerItem, ListItem, MeijerCoupon, Store, SearchResult
 from .stores import MeijerStore
 from .exceptions import MeijerAuthenticationError, MeijerAPIError
@@ -58,6 +59,7 @@ class Meijer:
         self.shop_scan = ShopNScan(self)
         self.mperks = MPerksEarnedRewards(self)
         self.feedback = MeijerFeedback(self)
+        self.settings = MeijerSettings(self)
 
         # Add alias for CLI compatibility
         self.list = self.shopping_list

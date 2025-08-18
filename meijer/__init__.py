@@ -33,6 +33,7 @@ from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
 from .stores import MeijerStore, create_meijer_stores_from_response
 from .gas import MeijerGas
 from .feedback import MeijerFeedback, FeedbackFormData, MobileDeviceData
+from .settings import MeijerSettings, VehicleInformation, CustomerPreference, PreferenceDiscreteChoice
 
 # Import exceptions
 from .exceptions import (
@@ -70,6 +71,11 @@ __all__ = [
     "MeijerFeedback",
     "FeedbackFormData",
     "MobileDeviceData",
+    # Settings
+    "MeijerSettings",
+    "VehicleInformation",
+    "CustomerPreference",
+    "PreferenceDiscreteChoice",
     # Exceptions
     "MeijerError",
     "MeijerAuthenticationError",
