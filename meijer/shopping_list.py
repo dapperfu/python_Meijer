@@ -204,35 +204,62 @@ class MeijerList:
             return False
 
     def delete_item(self, item_id: str) -> bool:
-        """Delete item from shopping list using real APK-discovered endpoint."""
+        """
+        Delete an item from the shopping list.
+
+        Args:
+            item_id: ID of the item to delete
+
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
         try:
-            if not self.meijer._ensure_authenticated():
-                raise MeijerAuthenticationError("Authentication required")
-
-            # Use real endpoint with itemId path parameter from APK (Hq/d.java)
-            endpoint = self.endpoints["delete_item"].format(itemId=item_id)
-            url = urljoin(self.meijer.api_base_url, endpoint)
-            headers = self.meijer._get_api_headers()
-
-            # DELETE request with no body, itemId in path
-            response = self.meijer._make_request("DELETE", url, headers=headers)
-
-            if response.status_code in [
-                200,
-                201,
-                204,
-                205,
-            ]:  # 205 = Reset Content (success)
-                self.logger.info(f"Deleted item {item_id}")
+            # Use the correct endpoint format with path parameter
+            url = f"{self.meijer.api_base_url}/loyalty/shoppinglist/DeleteListItem/{item_id}"
+            
+            # DELETE request with no body (path parameter)
+            response = self.meijer._make_request("DELETE", url)
+            
+            if response.status_code == 200:
+                self.logger.info(f"✅ Deleted item {item_id}")
                 return True
             else:
-                self.logger.error(
-                    f"Failed to delete item: {response.status_code} - {response.text}"
-                )
+                self.logger.error(f"❌ Failed to delete item {item_id}: {response.status_code} - {response.text}")
                 return False
-
+                
         except Exception as e:
-            self.logger.error(f"Error deleting item: {e}")
+            self.logger.error(f"❌ Error deleting item {item_id}: {e}")
+            return False
+    
+    def clear_list(self) -> bool:
+        """
+        Clear all items from the shopping list.
+
+        Returns:
+            bool: True if clearing was successful, False otherwise
+        """
+        try:
+            # Get all current items
+            items = self.get()
+            if not items:
+                self.logger.info("ℹ️  Shopping list is already empty")
+                return True
+            
+            self.logger.info(f"🗑️  Clearing {len(items)} items from shopping list...")
+            
+            # Delete each item
+            deleted_count = 0
+            for item in items:
+                if self.delete_item(str(item.list_item_id)):
+                    deleted_count += 1
+                else:
+                    self.logger.warning(f"⚠️  Failed to delete item: {item.name}")
+            
+            self.logger.info(f"✅ Cleared {deleted_count} items from shopping list")
+            return deleted_count == len(items)
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error clearing shopping list: {e}")
             return False
 
     def get_favorites(self) -> List[ListItem]:

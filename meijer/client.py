@@ -425,6 +425,78 @@ class Meijer:
             self.logger.error(f"Error finding stores nearby: {e}")
             return []
 
+    def get_store_by_id(self, store_id: str) -> Optional[MeijerStore]:
+        """
+        Get detailed store information by UnitId (store ID).
+
+        This uses the storeInfo v2 endpoint which includes richer fields such
+        as gas station amenities and hours when available.
+
+        Parameters
+        ----------
+        store_id : str
+            Meijer UnitId for the store
+
+        Returns
+        -------
+        MeijerStore, optional
+            Parsed store information if found, None otherwise
+        """
+        try:
+            # Endpoint observed in APK traffic for store info
+            url = f"https://api.meijer.com/digital/storeInfo/v2/stores/{store_id}"
+
+            # Headers required by storeInfo APIs
+            headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Version": "9",
+                "ocp-apim-subscription-key": self.subscription_key,
+            }
+
+            if hasattr(self, "_access_token") and self._access_token:
+                headers["authorization"] = f"Bearer {self._access_token}"
+
+            response = self._make_request("GET", url, headers=headers)
+
+            if response.status_code != 200:
+                self.logger.warning(
+                    f"Failed to get store by id {store_id}: {response.status_code}"
+                )
+                return None
+
+            data = response.json()
+
+            # The API may return either a single store dict or a wrapper
+            if isinstance(data, dict):
+                # Single store
+                if "UnitId" in data:
+                    return MeijerStore.from_api_data(data, self)
+
+                # Wrapper forms
+                if "stores" in data and isinstance(data["stores"], list):
+                    for s in data["stores"]:
+                        if isinstance(s, dict) and str(s.get("UnitId")) == str(store_id):
+                            return MeijerStore.from_api_data(s, self)
+                    # Fall back to first store if id match not found
+                    if data["stores"]:
+                        return MeijerStore.from_api_data(data["stores"][0], self)
+
+                if "data" in data and isinstance(data["data"], list):
+                    for s in data["data"]:
+                        if isinstance(s, dict) and str(s.get("UnitId")) == str(store_id):
+                            return MeijerStore.from_api_data(s, self)
+                    if data["data"]:
+                        return MeijerStore.from_api_data(data["data"][0], self)
+
+            # Unrecognized format
+            self.logger.warning("Unexpected storeInfo response format")
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error getting store by id {store_id}: {e}")
+            return None
+
     def get_offers(
         self, store_id: Optional[str] = None, limit: int = 100
     ) -> List[MeijerCoupon]:

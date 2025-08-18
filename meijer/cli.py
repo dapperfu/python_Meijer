@@ -1618,6 +1618,91 @@ def cart():
     pass
 
 
+@cli.command("gas")
+@click.option("--store", "store_opt", "-s", help="Store ID (UnitId). Defaults to account home store if available")
+def gas(store_opt: Optional[str]):
+    """Show gas station info and prices for a store.
+
+    If no store is provided, attempts to use the account's home store when
+    available; otherwise falls back to the first store from a general stores
+    query.
+    """
+    client = get_meijer_client()
+
+    try:
+        # Determine target store id
+        target_store_id: Optional[str] = None
+
+        if store_opt:
+            target_store_id = str(store_opt)
+        else:
+            # Try account home store from settings
+            account = client.settings.get_account_details()
+            if account and account.get("storeId"):
+                target_store_id = str(account.get("storeId"))
+            else:
+                # Fallback: choose first store from list endpoint
+                stores_basic = client.get_stores()
+                if stores_basic:
+                    target_store_id = str(stores_basic[0].store_id)
+
+        if not target_store_id:
+            raise click.ClickException("❌ Could not determine a store. Use --store to specify UnitId.")
+
+        # Fetch detailed store info (includes gas details when present)
+        detailed_store = client.get_store_by_id(target_store_id)
+        if not detailed_store:
+            raise click.ClickException(f"❌ Store not found or unavailable: {target_store_id}")
+
+        click.echo(f"⛽ Gas info for store {detailed_store.display_name} (UnitId: {detailed_store.store_id})")
+
+        if not detailed_store.has_gas_station():
+            click.echo("⚠️  This store does not have a gas station.")
+            return
+
+        gas_station = detailed_store.get_gas_station()
+        if not gas_station:
+            click.echo("⚠️  Gas station details unavailable for this store.")
+            return
+
+        # Show basic gas station details
+        click.echo(f"Address: {gas_station.address}, {gas_station.city}, {gas_station.state} {gas_station.zip_code}")
+        if gas_station.phone_number:
+            click.echo(f"Phone: {gas_station.phone_number}")
+
+        # Show hours if available
+        if gas_station.hours:
+            open_time = gas_station.hours.open_time.strftime("%H:%M")
+            close_time = gas_station.hours.close_time.strftime("%H:%M")
+            days = ", ".join(gas_station.hours.days_open)
+            click.echo(f"Hours: {open_time} - {close_time} ({days})")
+        else:
+            click.echo("Hours: Not available")
+
+        # Show amenities
+        click.echo(f"Amenities: {gas_station.get_amenities_summary()}")
+
+        # Show prices if present
+        if gas_station.fuel_prices:
+            headers = ["Fuel", "Price", "Updated", "Available"]
+            rows = []
+            for p in gas_station.fuel_prices:
+                updated = p.last_updated.strftime("%Y-%m-%d %H:%M") if p.last_updated else "-"
+                rows.append([p.fuel_type, f"${p.price_per_gallon:.2f}", updated, "Yes" if p.is_available else "No"]) 
+
+            if TABULATE_AVAILABLE:
+                click.echo(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
+            else:
+                click.echo("Fuel Prices:")
+                for r in rows:
+                    click.echo(f"  {r[0]:<10} {r[1]:>8}  Updated: {r[2]}  Available: {r[3]}")
+        else:
+            click.echo("Fuel prices are not available from the storeInfo API.")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Gas command failed: {e}")
+
+
 @cart.command("show")
 @click.option("--refresh", is_flag=True, help="Force refresh cart data")
 @click.option("--store", default="217", help="Store ID for cart operations")
