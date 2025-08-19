@@ -181,7 +181,9 @@ class ProductOperations:
         try:
             # Extract basic product information
             product_id = data.get("productId", upc)
-            title = data.get("productName", data.get("title", "Unknown Product"))
+            title = data.get(
+                "name", data.get("productName", data.get("title", "Unknown Product"))
+            )
             description = data.get("description", "")
             brand = data.get("brand", "")
             category = data.get("category", "")

@@ -949,3 +949,363 @@ class ListItem:
         }
         # Remove None values
         return {k: v for k, v in result.items() if v is not None}
+
+
+# ============================================================================
+# Override dataclass methods for rich Jupyter representations
+# ============================================================================
+
+
+def meijer_item_repr(self) -> str:
+    """Clean, informative string representation for the class."""
+    # Extract key identifying information
+    name_parts = []
+
+    # Add title/brand info
+    if self.title:
+        # Clean up title for display (remove common prefixes, limit length)
+        clean_title = self.title
+        if clean_title.startswith("Meijer "):
+            clean_title = clean_title[7:]  # Remove "Meijer " prefix
+        if len(clean_title) > 30:
+            clean_title = clean_title[:27] + "..."
+        name_parts.append(clean_title)
+
+    # Add key descriptors
+    if self.description and len(self.description) < 20:
+        name_parts.append(self.description)
+
+    # Add price info
+    price_info = []
+    if self.price:
+        price_info.append(f"${self.price:.2f}")
+    if self.sale_price and self.sale_price != self.price:
+        price_info.append(f"sale:${self.sale_price:.2f}")
+
+    # Add location info
+    location_info = []
+    if self.aisle_primary:
+        location_info.append(f"aisle:{self.aisle_primary}")
+    if self.store_id:
+        location_info.append(f"store:{self.store_id}")
+
+    # Build the representation
+    result = f"MeijerItem<{', '.join(name_parts)}"
+    if price_info:
+        result += f", {', '.join(price_info)}"
+    if location_info:
+        result += f", {', '.join(location_info)}"
+    result += ">"
+
+    return result
+
+
+def meijer_item_str(self) -> str:
+    """String representation that matches __repr__."""
+    return self.__repr__()
+
+
+def meijer_item_html(self) -> str:
+    """Rich HTML representation for Jupyter notebooks."""
+    html_parts = []
+
+    # Header with product info
+    html_parts.append(
+        '<div style="border: 2px solid #0066cc; border-radius: 10px; padding: 15px; margin: 10px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">'
+    )
+
+    # Product title and brand
+    if self.title:
+        html_parts.append(
+            f'<h3 style="color: #0066cc; margin: 0 0 10px 0; font-size: 18px;">{self.title}</h3>'
+        )
+
+    if self.brand:
+        html_parts.append(
+            f'<p style="color: #6c757d; margin: 0 0 8px 0; font-style: italic;">Brand: {self.brand}</p>'
+        )
+
+    # Price information
+    if self.price or self.sale_price:
+        html_parts.append('<div style="margin: 10px 0;">')
+        if self.price:
+            price_style = "color: #28a745; font-weight: bold; font-size: 16px;"
+            if self.sale_price and self.sale_price != self.price:
+                price_style += "text-decoration: line-through; color: #6c757d;"
+            html_parts.append(f'<span style="{price_style}">${self.price:.2f}</span>')
+
+        if self.sale_price and self.sale_price != self.price:
+            html_parts.append(
+                f' <span style="color: #dc3545; font-weight: bold; font-size: 16px;">SALE: ${self.sale_price:.2f}</span>'
+            )
+        html_parts.append("</div>")
+
+    # Product details in a grid
+    html_parts.append(
+        '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">'
+    )
+
+    # Left column
+    left_details = []
+    if self.upc:
+        left_details.append(f"<strong>UPC:</strong> {self.upc}")
+    if self.category:
+        left_details.append(f"<strong>Category:</strong> {self.category}")
+    if self.aisle_primary:
+        left_details.append(f"<strong>Aisle:</strong> {self.aisle_primary}")
+    if self.store_id:
+        left_details.append(f"<strong>Store:</strong> {self.store_id}")
+
+    if left_details:
+        html_parts.append(
+            f'<div style="grid-column: 1;">{"<br>".join(left_details)}</div>'
+        )
+
+    # Right column
+    right_details = []
+    if self.description and len(self.description) < 100:
+        right_details.append(
+            f'<strong>Description:</strong> {self.description[:100]}{"..." if len(self.description) > 100 else ""}'
+        )
+    if self.unit_price:
+        right_details.append(f"<strong>Unit Price:</strong> {self.unit_price}")
+    if self.is_available is not None:
+        status = "✅ Available" if self.is_available else "❌ Unavailable"
+        right_details.append(f"<strong>Status:</strong> {status}")
+
+    if right_details:
+        html_parts.append(
+            f'<div style="grid-column: 2;">{"<br>".join(right_details)}</div>'
+        )
+
+    html_parts.append("</div>")
+
+    # Image if available
+    if self.image_url:
+        html_parts.append('<div style="text-align: center; margin: 10px 0;">')
+        html_parts.append(
+            f'<img src="{self.image_url}" style="max-width: 200px; max-height: 150px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" alt="Product Image">'
+        )
+        html_parts.append("</div>")
+
+    html_parts.append("</div>")
+
+    return "".join(html_parts)
+
+
+def meijer_item_markdown(self) -> str:
+    """Markdown representation for Jupyter notebooks."""
+    md_parts = []
+
+    # Header
+    if self.title:
+        md_parts.append(f"# {self.title}")
+
+    # Basic info
+    if self.brand:
+        md_parts.append(f"**Brand:** {self.brand}")
+
+    if self.price:
+        price_text = f"**Price:** ${self.price:.2f}"
+        if self.sale_price and self.sale_price != self.price:
+            price_text += f" (SALE: ${self.sale_price:.2f})"
+        md_parts.append(price_text)
+
+    # Details table
+    details = []
+    if self.upc:
+        details.append(["UPC", self.upc])
+    if self.category:
+        details.append(["Category", self.category])
+    if self.aisle_primary:
+        details.append(["Aisle", self.aisle_primary])
+    if self.store_id:
+        details.append(["Store", self.store_id])
+    if self.description:
+        details.append(
+            [
+                "Description",
+                self.description[:100] + "..."
+                if len(self.description) > 100
+                else self.description,
+            ]
+        )
+
+    if details:
+        md_parts.append("\n| Field | Value |")
+        md_parts.append("|-------|-------|")
+        for field, value in details:
+            md_parts.append(f"| {field} | {value} |")
+
+    # Image
+    if self.image_url:
+        md_parts.append(f"\n![Product Image]({self.image_url})")
+
+    return "\n\n".join(md_parts)
+
+
+def meijer_item_latex(self) -> str:
+    """LaTeX representation for mathematical documentation."""
+    latex_parts = []
+
+    # Product title
+    if self.title:
+        latex_parts.append(f"\\textbf{{{self.title}}}")
+
+    # Price equation
+    if self.price:
+        latex_parts.append(f"\\[\\text{{Price}} = \\${self.price:.2f}\\]")
+
+        if self.sale_price and self.sale_price != self.price:
+            discount = ((self.price - self.sale_price) / self.price) * 100
+            latex_parts.append(f"\\[\\text{{Discount}} = {discount:.1f}\\%\\]")
+            latex_parts.append(f"\\[\\text{{Sale Price}} = \\${self.sale_price:.2f}\\]")
+
+    # Product information
+    info_items = []
+    if self.upc:
+        info_items.append(f"\\text{{UPC}}: {self.upc}")
+    if self.category:
+        info_items.append(f"\\text{{Category}}: {self.category}")
+    if self.aisle_primary:
+        info_items.append(f"\\text{{Aisle}}: {self.aisle_primary}")
+
+    if info_items:
+        latex_parts.append("\\begin{align*}")
+        for i, item in enumerate(info_items):
+            if i > 0:
+                latex_parts.append("\\\\")
+            latex_parts.append(item)
+        latex_parts.append("\\end{align*}")
+
+    return "\n".join(latex_parts)
+
+
+def meijer_item_svg(self) -> Optional[str]:
+    """SVG representation - creates a simple SVG chart of product information."""
+    if not self.price:
+        return None
+
+    # Create a simple SVG bar chart showing price vs typical price
+    typical_price = 5.0  # Example typical price
+    price_ratio = min(self.price / typical_price, 2.0)  # Cap at 2x for display
+
+    svg = f"""<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="300" height="200" fill="#f8f9fa" stroke="#0066cc" stroke-width="2"/>
+        <text x="150" y="25" text-anchor="middle" font-family="Arial" font-size="16" fill="#0066cc">Price Comparison</text>
+
+        <!-- Typical price bar -->
+        <rect x="50" y="60" width="80" height="30" fill="#6c757d" opacity="0.7"/>
+        <text x="90" y="80" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${typical_price}</text>
+
+        <!-- Current price bar -->
+        <rect x="50" y="100" width="{80 * price_ratio}" height="30" fill="#28a745"/>
+        <text x="{90 + (40 * price_ratio)}" y="120" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${self.price:.2f}</text>
+
+        <!-- Labels -->
+        <text x="50" y="150" font-family="Arial" font-size="10" fill="#6c757d">Typical</text>
+        <text x="50" y="170" font-family="Arial" font-size="10" fill="#28a745">Current</text>
+    </svg>"""
+
+    return svg
+
+
+def meijer_item_png(self) -> Optional[bytes]:
+    """PNG representation - returns the product image as PNG bytes if available."""
+    if not self.image_url:
+        return None
+
+    try:
+        import io
+
+        import requests
+        from PIL import Image
+
+        # Download the image
+        response = requests.get(self.image_url, timeout=10)
+        response.raise_for_status()
+
+        # Convert to PNG
+        img = Image.open(io.BytesIO(response.content))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="PNG")
+        return img_bytes.getvalue()
+
+    except Exception:
+        return None
+
+
+def meijer_item_jpeg(self) -> Optional[bytes]:
+    """JPEG representation - returns the product image as JPEG bytes if available."""
+    if not self.image_url:
+        return None
+
+    try:
+        import io
+
+        import requests
+        from PIL import Image
+
+        # Download the image
+        response = requests.get(self.image_url, timeout=10)
+        response.raise_for_status()
+
+        # Convert to JPEG
+        img = Image.open(io.BytesIO(response.content))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="JPEG", quality=85)
+        return img_bytes.getvalue()
+
+    except Exception:
+        return None
+
+
+def meijer_item_display_info(self) -> None:
+    """Display comprehensive product information in a formatted way."""
+    print("=" * 60)
+    print("📦 PRODUCT INFORMATION")
+    print("=" * 60)
+
+    if self.title:
+        print(f"🏷️  Title: {self.title}")
+
+    if self.brand:
+        print(f"🏭 Brand: {self.brand}")
+
+    if self.price:
+        price_text = f"💰 Price: ${self.price:.2f}"
+        if self.sale_price and self.sale_price != self.price:
+            price_text += f" (SALE: ${self.sale_price:.2f})"
+        print(price_text)
+
+    if self.upc:
+        print(f"📊 UPC: {self.upc}")
+
+    if self.category:
+        print(f"📁 Category: {self.category}")
+
+    if self.aisle_primary:
+        print(f"📍 Aisle: {self.aisle_primary}")
+
+    if self.store_id:
+        print(f"🏪 Store: {self.store_id}")
+
+    if self.description:
+        print(f"📝 Description: {self.description}")
+
+    if self.image_url:
+        print(f"🖼️  Image: {self.image_url}")
+
+    print("=" * 60)
+
+
+# Override the dataclass methods
+MeijerItem.__repr__ = meijer_item_repr
+MeijerItem.__str__ = meijer_item_str
+MeijerItem._repr_html_ = meijer_item_html
+MeijerItem._repr_markdown_ = meijer_item_markdown
+MeijerItem._repr_latex_ = meijer_item_latex
+MeijerItem._repr_svg_ = meijer_item_svg
+MeijerItem._repr_png_ = meijer_item_png
+MeijerItem._repr_jpeg_ = meijer_item_jpeg
+MeijerItem.display_info = meijer_item_display_info

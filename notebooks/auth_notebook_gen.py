@@ -42,7 +42,7 @@ from meijer.auth import (
     MeijerAuth,
     TokenStorage,
     load_auth_from_config_file,
-    load_auth_file
+    load_auth_from_config_file
 )
 
 # Import additional utilities
