@@ -63,6 +63,8 @@ logs/
 bandit-report.json
 *.security-report.json
 *.vulnerability-report.json
+*_endpoints_report.json
+targeted_endpoints_report.json
 
 # APK and decompiled files - NEVER COMMIT THESE!
 *.apk
