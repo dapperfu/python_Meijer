@@ -1,4 +1,4 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: meijer-cli
 Version: 1.0.0
 Summary: A comprehensive CLI tool for managing Meijer shopping lists
@@ -40,6 +40,7 @@ Dynamic: description
 Dynamic: description-content-type
 Dynamic: home-page
 Dynamic: keywords
+Dynamic: license-file
 Dynamic: project-url
 Dynamic: provides-extra
 Dynamic: requires-dist

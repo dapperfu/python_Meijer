@@ -18,6 +18,8 @@ help:
 	@echo "🛠️  Development:"
 	@echo "  make venv         - Create/update virtual environment"
 	@echo "  make notebook     - Start Jupyter notebook"
+	@echo "  make notebooks-gen - Generate all notebooks from Python generators"
+	@echo "  make notebooks-execute - Execute all notebooks in-place"
 	@echo "  make demos        - Run all demo scripts in demos/ directory"
 	@echo "  make clean        - Clean build artifacts"
 	@echo ""
@@ -57,6 +59,32 @@ ${VENV}:
 .PHONY: notebook
 notebook:
 	@${VENV}/bin/jupyter-notebook
+
+.PHONY: notebooks-gen
+notebooks-gen: ${VENV}
+	@echo "📚 Generating all notebooks from Python generators..."
+	@echo "=================================================="
+	@cd notebooks && \
+	for gen_file in *_notebook_gen.py; do \
+		if [ -f "$$gen_file" ]; then \
+			echo "🔧 Generating from $$gen_file..."; \
+			../${VENV}/bin/python "$$gen_file"; \
+		fi; \
+	done
+	@echo "✅ All notebooks generated successfully!"
+
+.PHONY: notebooks-execute
+notebooks-execute: ${VENV}
+	@echo "🚀 Executing all notebooks in-place..."
+	@echo "======================================"
+	@cd notebooks && \
+	for notebook in *.ipynb; do \
+		if [ -f "$$notebook" ]; then \
+			echo "▶️  Executing $$notebook..."; \
+			../${VENV}/bin/jupyter nbconvert --to notebook --execute --inplace "$$notebook"; \
+		fi; \
+	done
+	@echo "✅ All notebooks executed successfully!"
 
 .PHONY: demos
 demos: ${VENV}
@@ -198,7 +226,7 @@ completion-bash:
 	@echo ""
 	@echo "    # Main make targets"
 	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
-	@echo "        opts=\"help venv notebook demos log logs auth clean completion completion-bash completion-install\""
+	@echo "        opts=\"help venv notebook notebooks-gen notebooks-execute demos log logs auth clean completion completion-bash completion-install\""
 	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
 	@echo "        return 0"
 	@echo "    fi"

@@ -947,7 +947,7 @@ class MeijerList:
                     }
                 )
 
-        # Sort items by location (real aisle data first, then search confidence)
+        # Sort items by location (real aisles first, then search confidence)
         def get_location_sort_key(item_data):
             location = item_data.get("location")
             match_confidence = item_data.get("match_confidence", "Low")
@@ -1185,6 +1185,43 @@ class MeijerList:
                     loc_str = aisle if not section else f"{aisle}:{section}"
 
                 enhanced_notes = loc_str
+                
+                # Add product description after the location with pipe separator
+                if item_data.get("matched_product") and item_data["matched_product"].get("title"):
+                    product_title = item_data["matched_product"]["title"]
+                    self.logger.debug(f"🔍 Found matched_product title: {product_title}")
+                    
+                    # Split by the last comma to get the most relevant part
+                    if "," in product_title:
+                        # Find the last comma and take everything after it
+                        last_comma_index = product_title.rfind(",")
+                        if last_comma_index != -1:
+                            # Take the part after the last comma and clean it up
+                            relevant_part = product_title[last_comma_index + 1:].strip()
+                            # Also include some context from before the last comma
+                            before_last_comma = product_title[:last_comma_index].strip()
+                            # Combine them intelligently
+                            if before_last_comma and relevant_part:
+                                # Take the last part of before_last_comma (after its last comma if it has one)
+                                if "," in before_last_comma:
+                                    before_last_comma = before_last_comma[before_last_comma.rfind(",") + 1:].strip()
+                                product_desc = f"{before_last_comma}, {relevant_part}"
+                            else:
+                                product_desc = relevant_part
+                        else:
+                            product_desc = product_title
+                    else:
+                        product_desc = product_title
+                    
+                    # Add the pipe separator and product description
+                    enhanced_notes = f"{loc_str} | {product_desc}"
+                    self.logger.debug(f"🔍 Enhanced notes: {enhanced_notes}")
+                else:
+                    self.logger.debug(f"🔍 No matched_product data found for {item.name}")
+                    self.logger.debug(f"🔍 item_data keys: {list(item_data.keys())}")
+                    if "matched_product" in item_data:
+                        self.logger.debug(f"🔍 matched_product content: {item_data['matched_product']}")
+
                 # Enforce API notes length limit conservatively
                 if len(enhanced_notes) > 60:
                     enhanced_notes = enhanced_notes[:60]

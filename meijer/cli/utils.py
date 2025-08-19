@@ -124,13 +124,18 @@ def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
 
     added_count = 0
     lines = file_input.readlines()
+    logger.debug(f"Processing {len(lines)} lines from file")
 
     for line_num, line in enumerate(lines, 1):
         line = line.strip()
         if not line or line.startswith("#"):
+            logger.debug(
+                f"Skipping line {line_num}: {'empty' if not line else 'comment'}"
+            )
             continue
 
         try:
+            logger.debug(f"Processing line {line_num}: {line}")
             # Parse line format: "Item Name [Qty] [Notes]"
             parts = line.split(" ", 1)
             if len(parts) == 1:
@@ -149,9 +154,11 @@ def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
                         qty_part = remaining[last_bracket + 1 : -1].strip()
                         try:
                             quantity = int(qty_part)
+                            logger.debug(f"Parsed quantity: {quantity}")
                         except ValueError:
                             quantity = 1
                             notes = remaining.strip()
+                            logger.debug("Failed to parse quantity, using default: 1")
                     else:
                         quantity = 1
                         notes = remaining.strip()
@@ -159,17 +166,24 @@ def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
                     quantity = 1
                     notes = remaining.strip()
 
+            logger.debug(
+                f"Adding item: {item_name}, quantity: {quantity}, notes: {notes}"
+            )
             # Add item to list
             success = client.list.add(item_name, quantity, notes)
             if success:
                 added_count += 1
+                logger.debug(f"Successfully added item: {item_name}")
                 click.echo(f"  ✅ Added: {item_name} (Qty: {quantity})")
             else:
+                logger.warning(f"Failed to add item: {item_name}")
                 click.echo(f"  ❌ Failed to add: {item_name}")
 
         except Exception as e:
+            logger.error(f"Error processing line {line_num}: {e}", exc_info=True)
             click.echo(f"  ❌ Error processing line {line_num}: {e}")
 
+    logger.debug(f"File processing complete. Added {added_count} items")
     return added_count
 
 
@@ -181,6 +195,9 @@ def export_to_text(items: List, file_path: Path) -> None:
         items: List of shopping list items
         file_path: Path to export file
     """
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Exporting {len(items)} items to text file: {file_path}")
+
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(
             f"# Meijer Shopping List - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -192,12 +209,16 @@ def export_to_text(items: List, file_path: Path) -> None:
             name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
             quantity = getattr(item, "quantity", 1)
             notes = getattr(item, "notes", "")
+            logger.debug(
+                f"Exporting item: {name}, quantity: {quantity}, notes: {notes}"
+            )
 
             if notes:
                 f.write(f"{name} [{quantity}] {notes}\n")
             else:
                 f.write(f"{name} [{quantity}]\n")
 
+    logger.debug("Text export completed successfully")
     click.echo(f"📄 Exported {len(items)} items to {file_path}")
 
 
@@ -209,24 +230,27 @@ def export_to_csv(items: List, file_path: Path) -> None:
         items: List of shopping list items
         file_path: Path to export file
     """
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Exporting {len(items)} items to CSV file: {file_path}")
+
     import csv
 
     with open(file_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["Item", "Quantity", "Notes", "Status", "Added Date"])
+        writer.writerow(["Item", "Quantity", "Notes", "Status"])
 
         for item in items:
             name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
             quantity = getattr(item, "quantity", 1)
             notes = getattr(item, "notes", "")
-            status = (
-                "Completed"
-                if getattr(item, "checked", getattr(item, "is_complete", False))
-                else "Pending"
+            status = "Completed" if getattr(item, "checked", False) else "Pending"
+            logger.debug(
+                f"Exporting CSV item: {name}, quantity: {quantity}, status: {status}"
             )
 
-            writer.writerow([name, quantity, notes, status, ""])
+            writer.writerow([name, quantity, notes, status])
 
+    logger.debug("CSV export completed successfully")
     click.echo(f"📊 Exported {len(items)} items to {file_path}")
 
 
@@ -238,10 +262,13 @@ def export_to_json(items: List, file_path: Path) -> None:
         items: List of shopping list items
         file_path: Path to export file
     """
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Exporting {len(items)} items to JSON file: {file_path}")
+
     import json
 
     export_data = {
-        "export_date": datetime.now().isoformat(),
+        "exported_at": datetime.now().isoformat(),
         "total_items": len(items),
         "items": [],
     }
@@ -251,125 +278,104 @@ def export_to_json(items: List, file_path: Path) -> None:
             "name": getattr(item, "name", getattr(item, "item_description", "Unknown")),
             "quantity": getattr(item, "quantity", 1),
             "notes": getattr(item, "notes", ""),
-            "status": "completed"
-            if getattr(item, "checked", getattr(item, "is_complete", False))
-            else "pending",
-            "upc": getattr(item, "upc", None),
-            "brand": getattr(item, "brand", None),
-            "category": getattr(item, "category", None),
+            "checked": getattr(item, "checked", False),
+            "item_id": getattr(item, "id", None),
         }
+        logger.debug(f"Exporting JSON item: {item_data['name']}")
         export_data["items"].append(item_data)
 
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(export_data, f, indent=2, ensure_ascii=False)
 
+    logger.debug("JSON export completed successfully")
     click.echo(f"📄 Exported {len(items)} items to {file_path}")
 
 
-def import_from_text(client: Meijer, file_path: Path) -> int:
+def import_from_text(file_path: Path) -> List[str]:
     """
     Import shopping list items from a text file.
 
     Args:
-        client: Meijer client instance
         file_path: Path to import file
 
     Returns:
-        int: Number of items successfully imported
+        List[str]: List of item names
     """
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return add_items_from_file(client, f)
-    except Exception as e:
-        raise click.ClickException(f"❌ Failed to read file {file_path}: {e}")
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Importing items from text file: {file_path}")
+
+    items = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+            if line and not line.startswith("#"):
+                logger.debug(f"Importing line {line_num}: {line}")
+                items.append(line)
+
+    logger.debug(f"Text import completed. Found {len(items)} items")
+    return items
 
 
-def import_from_csv(client: Meijer, file_path: Path) -> int:
+def import_from_csv(file_path: Path) -> List[tuple]:
     """
     Import shopping list items from a CSV file.
 
     Args:
-        client: Meijer client instance
         file_path: Path to import file
 
     Returns:
-        int: Number of items successfully imported
+        List[tuple]: List of (name, quantity, notes) tuples
     """
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Importing items from CSV file: {file_path}")
+
     import csv
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            imported_count = 0
+    items = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row_num, row in enumerate(reader, 1):
+            name = row.get("Item", "").strip()
+            quantity = int(row.get("Quantity", 1))
+            notes = row.get("Notes", "").strip()
 
-            for row_num, row in enumerate(reader, 1):
-                try:
-                    item_name = row.get("Item", "").strip()
-                    if not item_name:
-                        continue
+            if name:
+                logger.debug(
+                    f"Importing CSV row {row_num}: {name}, quantity: {quantity}"
+                )
+                items.append((name, quantity, notes))
 
-                    quantity = int(row.get("Quantity", 1))
-                    notes = row.get("Notes", "").strip()
-
-                    success = client.list.add(item_name, quantity, notes)
-                    if success:
-                        imported_count += 1
-                        click.echo(f"  ✅ Imported: {item_name} (Qty: {quantity})")
-                    else:
-                        click.echo(f"  ❌ Failed to import: {item_name}")
-
-                except Exception as e:
-                    click.echo(f"  ❌ Error processing row {row_num}: {e}")
-
-            return imported_count
-
-    except Exception as e:
-        raise click.ClickException(f"❌ Failed to read CSV file {file_path}: {e}")
+    logger.debug(f"CSV import completed. Found {len(items)} items")
+    return items
 
 
-def import_from_json(client: Meijer, file_path: Path) -> int:
+def import_from_json(file_path: Path) -> List[tuple]:
     """
     Import shopping list items from a JSON file.
 
     Args:
-        client: Meijer client instance
         file_path: Path to import file
 
     Returns:
-        int: Number of items successfully imported
+        List[tuple]: List of (name, quantity, notes) tuples
     """
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Importing items from JSON file: {file_path}")
+
     import json
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-            items = data.get("items", [])
-            if not items:
-                click.echo("⚠️  No items found in JSON file")
-                return 0
+    items = []
+    for item in data.get("items", []):
+        name = item.get("name", "").strip()
+        quantity = item.get("quantity", 1)
+        notes = item.get("notes", "").strip()
 
-            imported_count = 0
-            for item_data in items:
-                try:
-                    item_name = item_data.get("name", "").strip()
-                    if not item_name:
-                        continue
+        if name:
+            logger.debug(f"Importing JSON item: {name}, quantity: {quantity}")
+            items.append((name, quantity, notes))
 
-                    quantity = int(item_data.get("quantity", 1))
-                    notes = item_data.get("notes", "").strip()
-
-                    success = client.list.add(item_name, quantity, notes)
-                    if success:
-                        imported_count += 1
-                        click.echo(f"  ✅ Imported: {item_name} (Qty: {quantity})")
-                    else:
-                        click.echo(f"  ❌ Failed to import: {item_name}")
-
-                except Exception as e:
-                    click.echo(f"  ❌ Error processing item: {e}")
-
-            return imported_count
-
-    except Exception as e:
-        raise click.ClickException(f"❌ Failed to read JSON file {file_path}: {e}")
+    logger.debug(f"JSON import completed. Found {len(items)} items")
+    return items

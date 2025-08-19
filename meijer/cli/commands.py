@@ -655,15 +655,19 @@ def coupons_list(clipped: bool, available: bool):
 
         if clipped:
             logger.debug("Fetching clipped coupons")
-            coupons = client.coupons.get_clipped()
+            # For now, get all coupons and filter for clipped ones
+            coupons = client.get_coupons()
+            coupons = [c for c in coupons if getattr(c, "clipped", False)]
             title = "Clipped Coupons"
         elif available:
             logger.debug("Fetching available coupons")
-            coupons = client.coupons.get_available()
+            # For now, get all coupons and filter for non-clipped ones
+            coupons = client.get_coupons()
+            coupons = [c for c in coupons if not getattr(c, "clipped", False)]
             title = "Available Coupons"
         else:
             logger.debug("Fetching all coupons")
-            coupons = client.coupons.get_all()
+            coupons = client.get_coupons()
             title = "All Coupons"
 
         logger.debug(f"Retrieved {len(coupons)} coupons")
@@ -680,11 +684,11 @@ def coupons_list(clipped: bool, available: bool):
             status = (
                 "✅ Clipped" if getattr(coupon, "clipped", False) else "⭕ Available"
             )
-            click.echo(f"{i:2d}. {status} - {coupon.name}")
+            click.echo(f"{i:2d}. {status} - {coupon.title}")
             if hasattr(coupon, "description") and coupon.description:
                 click.echo(f"     {coupon.description}")
-            if hasattr(coupon, "expires") and coupon.expires:
-                click.echo(f"     Expires: {coupon.expires}")
+            if hasattr(coupon, "redemption_end_date") and coupon.redemption_end_date:
+                click.echo(f"     Expires: {coupon.redemption_end_date}")
             click.echo()
 
         logger.debug(f"Displayed {len(coupons)} coupons")

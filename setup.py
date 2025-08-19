@@ -72,7 +72,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "meijer=meijer.cli:cli",
+            "meijer=meijer.cli.main:cli",
         ],
     },
     keywords="meijer, shopping, list, cli, grocery, retail",
