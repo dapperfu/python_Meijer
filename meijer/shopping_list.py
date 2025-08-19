@@ -7,6 +7,7 @@ Shopping list functionality for the Meijer API client.
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from urllib.parse import urljoin
+import json
 
 try:
     from .search import Search
@@ -436,7 +437,7 @@ class MeijerList:
                 try:
                     response_data = response.json()
                     self.logger.info(f"Add favorite response: {response_data}")
-                except:
+                except (json.JSONDecodeError, ValueError):
                     self.logger.info(
                         f"Add favorite response (non-JSON): {response.text}"
                     )
@@ -1009,7 +1010,9 @@ class MeijerList:
 
         if zig and real_aisle_items:
             self.logger.info("🔄 Applying SMART zig-zag sorting for real aisle data...")
-            self.logger.info("   Pattern continues across empty aisles for optimal shopping route")
+            self.logger.info(
+                "   Pattern continues across empty aisles for optimal shopping route"
+            )
 
             # Group items by aisle
             aisle_groups = {}
@@ -1031,7 +1034,7 @@ class MeijerList:
 
             # Apply SMART zig-zag across aisles (pattern continues across empty aisles)
             sorted_real_items = []
-            
+
             def _aisle_sort_key(aisle):
                 if not aisle or not aisle[0].isalpha():
                     return (999, 999)
@@ -1049,32 +1052,40 @@ class MeijerList:
                 aisle = item_data["location"]["aisle"]
                 if aisle[0].isalpha() and aisle[1:].isdigit():
                     all_aisles.append(aisle)
-            
+
             # Remove duplicates and sort
             all_aisles = sorted(list(set(all_aisles)), key=_aisle_sort_key)
-            
+
             # Apply smart zig-zag pattern
             last_direction = "ascending"  # Start with ascending (section 1 -> 40)
-            
+
             for aisle in all_aisles:
                 if aisle in aisle_groups:
                     # This aisle has items - apply the current direction
                     items_in_aisle = aisle_groups[aisle].copy()
-                    
+
                     if last_direction == "descending":
                         # Reverse the items to go from high section to low section
                         items_in_aisle.reverse()
-                        self.logger.debug(f"🔄 Aisle {aisle}: Descending order (section high → low)")
+                        self.logger.debug(
+                            f"🔄 Aisle {aisle}: Descending order (section high → low)"
+                        )
                     else:
-                        self.logger.debug(f"🔄 Aisle {aisle}: Ascending order (section low → high)")
-                    
+                        self.logger.debug(
+                            f"🔄 Aisle {aisle}: Ascending order (section low → high)"
+                        )
+
                     sorted_real_items.extend(items_in_aisle)
-                    
+
                     # Toggle direction for next occupied aisle
-                    last_direction = "descending" if last_direction == "ascending" else "ascending"
+                    last_direction = (
+                        "descending" if last_direction == "ascending" else "ascending"
+                    )
                 else:
                     # Empty aisle - pattern continues, don't toggle direction
-                    self.logger.debug(f"⏭️  Aisle {aisle}: Empty, continuing {last_direction} pattern")
+                    self.logger.debug(
+                        f"⏭️  Aisle {aisle}: Empty, continuing {last_direction} pattern"
+                    )
 
             # Sort search-based items by confidence
             search_items = [
@@ -1257,6 +1268,255 @@ class MeijerList:
             self.logger.info(f"   {confidence}: {count} item(s)")
 
         return added_count > 0
+
+    # ============================================================================
+    # Jupyter Notebook Rich Representations
+    # ============================================================================
+
+    def _repr_html_(self) -> str:
+        """Rich HTML representation for Jupyter notebooks."""
+        try:
+            items = self.get()
+            item_count = len(items)
+            completed_count = sum(1 for item in items if item.is_complete)
+            favorite_count = sum(1 for item in items if item.is_favorite)
+            promotion_count = sum(1 for item in items if item.has_promotion)
+
+            if item_count == 0:
+                html = """
+                <div style="
+                    border: 2px solid #95a5a6;
+                    border-radius: 12px;
+                    padding: 24px;
+                    margin: 16px 0;
+                    background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+                    text-align: center;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                ">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📝</div>
+                    <h2 style="color: #2c3e50; margin: 0 0 8px 0;">Empty Shopping List</h2>
+                    <p style="color: #7f8c8d; margin: 0; font-size: 16px;">Your shopping list is currently empty</p>
+                </div>
+                """
+            else:
+                html = f"""
+                <div style="
+                    border: 2px solid #3498db;
+                    border-radius: 16px;
+                    padding: 24px;
+                    margin: 16px 0;
+                    background: linear-gradient(135deg, #ffffff 0%, #ecf0f1 100%);
+                    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                ">
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        margin-bottom: 24px;
+                        padding-bottom: 16px;
+                        border-bottom: 2px solid #ecf0f1;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="font-size: 36px;">📝</span>
+                            <div>
+                                <h1 style="margin: 0; color: #2c3e50; font-size: 28px;">Shopping List</h1>
+                                <p style="margin: 4px 0 0 0; color: #7f8c8d; font-size: 16px;">
+                                    {item_count} items • {completed_count} completed
+                                </p>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="
+                                color: #3498db;
+                                font-size: 32px;
+                                font-weight: 700;
+                                margin-bottom: 8px;
+                            ">{item_count}</div>
+                            <div style="color: #7f8c8d; font-size: 14px;">
+                                Total Items
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 16px;
+                        margin-bottom: 24px;
+                    ">
+                        <div style="
+                            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+                            color: white;
+                            padding: 20px;
+                            border-radius: 12px;
+                            text-align: center;
+                        ">
+                            <div style="font-size: 24px; margin-bottom: 8px;">📝</div>
+                            <div style="font-size: 20px; font-weight: 600; margin-bottom: 4px;">Total Items</div>
+                            <div style="font-size: 24px; font-weight: 700;">{item_count}</div>
+                        </div>
+
+                        <div style="
+                            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+                            color: white;
+                            padding: 20px;
+                            border-radius: 12px;
+                            text-align: center;
+                        ">
+                            <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+                            <div style="font-size: 20px; font-weight: 600; margin-bottom: 4px;">Completed</div>
+                            <div style="font-size: 24px; font-weight: 700;">{completed_count}</div>
+                        </div>
+
+                        <div style="
+                            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+                            color: white;
+                            padding: 20px;
+                            border-radius: 12px;
+                            text-align: center;
+                        ">
+                            <div style="font-size: 24px; margin-bottom: 8px;">⭐</div>
+                            <div style="font-size: 20px; font-weight: 600; margin-bottom: 4px;">Favorites</div>
+                            <div style="font-size: 24px; font-weight: 700;">{favorite_count}</div>
+                        </div>
+
+                        <div style="
+                            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                            color: white;
+                            padding: 20px;
+                            border-radius: 12px;
+                            text-align: center;
+                        ">
+                            <div style="font-size: 24px; margin-bottom: 8px;">🏷️</div>
+                            <div style="font-size: 20px; font-weight: 600; margin-bottom: 4px;">Promotions</div>
+                            <div style="font-size: 24px; font-weight: 700;">{promotion_count}</div>
+                        </div>
+                    </div>
+
+                    <div style="
+                        background: #2c3e50;
+                        color: white;
+                        padding: 16px;
+                        border-radius: 12px;
+                        text-align: center;
+                    ">
+                        <div style="font-size: 18px; font-weight: 600;">
+                            🎉 Shopping List Summary: {item_count} items • {completed_count} completed • {item_count - completed_count} remaining
+                        </div>
+                    </div>
+                </div>
+                """
+
+            return html
+
+        except Exception as e:
+            return f"""
+            <div style="
+                border: 2px solid #e74c3c;
+                border-radius: 12px;
+                padding: 24px;
+                margin: 16px 0;
+                background: linear-gradient(135deg, #fdf2f2 0%, #fde8e8 100%);
+                text-align: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            ">
+                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                <h2 style="color: #c53030; margin: 0 0 8px 0;">Error Loading List</h2>
+                <p style="color: #742a2a; margin: 0; font-size: 16px;">Unable to load shopping list: {str(e)}</p>
+            </div>
+            """
+
+    def _repr_markdown_(self) -> str:
+        """Rich Markdown representation for Jupyter notebooks."""
+        try:
+            items = self.get()
+            item_count = len(items)
+            completed_count = sum(1 for item in items if item.is_complete)
+            favorite_count = sum(1 for item in items if item.is_favorite)
+            promotion_count = sum(1 for item in items if item.has_promotion)
+
+            if item_count == 0:
+                return """
+## 📝 Empty Shopping List
+
+Your shopping list is currently empty.
+
+---
+*Ready to start shopping!*
+                """
+
+            md = f"""
+## 📝 Shopping List
+
+**Total Items:** {item_count} • **Completed:** {completed_count} • **Remaining:** {item_count - completed_count}
+
+### 📊 List Statistics
+- **Total Items:** {item_count}
+- **Completed Items:** {completed_count}
+- **Remaining Items:** {item_count - completed_count}
+- **Completion Rate:** {(completed_count / item_count * 100):.1f}%
+- **Favorites:** {favorite_count}
+- **Promotions:** {promotion_count}
+
+### 🎯 Quick Actions
+- **Add Item:** Use `add()` method
+- **Clear List:** Use `clear_list()` method
+- **Defrag List:** Use `defrag()` method for aisle organization
+- **Get Favorites:** Use `get_favorites()` method
+
+---
+*Shopping list contains {item_count} items with {completed_count} completed*
+            """
+
+            return md
+
+        except Exception as e:
+            return f"""
+## ⚠️ Error Loading List
+
+Unable to load shopping list: `{str(e)}`
+
+---
+*Please check your authentication and try again*
+            """
+
+    def _repr_pretty_(self, p, cycle):
+        """Rich text representation for IPython."""
+        if cycle:
+            p.text("MeijerList(...)")
+        else:
+            try:
+                items = self.get()
+                item_count = len(items)
+                completed_count = sum(1 for item in items if item.is_complete)
+
+                p.text(f"📝 Shopping List ({item_count} items)")
+                p.breakable()
+                p.text(f"  Completed: {completed_count}")
+                p.breakable()
+                p.text(f"  Remaining: {item_count - completed_count}")
+                p.breakable()
+                p.text(
+                    f"  Completion: {(completed_count / item_count * 100):.1f}%"
+                    if item_count > 0
+                    else "  Completion: 0%"
+                )
+
+                if item_count > 0:
+                    p.breakable()
+                    p.text("  Recent Items:")
+                    for i, item in enumerate(items[:3]):  # Show first 3 items
+                        p.breakable()
+                        status = "✅" if item.is_complete else "⏳"
+                        p.text(f"    {status} {item.name}")
+
+                    if item_count > 3:
+                        p.breakable()
+                        p.text(f"    ... and {item_count - 3} more items")
+
+            except Exception as e:
+                p.text(f"⚠️ Error loading list: {str(e)}")
 
     def _get_broader_search_terms(self, search_query: str) -> List[str]:
         """

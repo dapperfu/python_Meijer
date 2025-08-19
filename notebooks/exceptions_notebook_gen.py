@@ -110,7 +110,7 @@ except MeijerAuthenticationError as e:
 # Real authentication testing
 if client:
     print(f"Current auth status: {client.auth_status}")
-    
+
     if client.auth_status == "unauthenticated":
         try:
             shopping_lists = client.get_shopping_lists()
@@ -149,7 +149,7 @@ if client and client.is_authenticated():
 else:
     print("❌ Client not authenticated")""")
 
-    # Rate Limit Error section  
+    # Rate Limit Error section
     rate_limit_section = nbf.v4.new_markdown_cell("""## MeijerRateLimitError
 
 Raised when API rate limits are exceeded.
@@ -167,7 +167,7 @@ except MeijerRateLimitError as e:
 if client and client.is_authenticated():
     print("Testing rapid API calls...")
     import time
-    
+
     for i in range(3):
         try:
             stores = client.get_stores(zip_code="49508", limit=1)
@@ -248,36 +248,36 @@ Comprehensive error handling with real API calls.
 def handle_meijer_operation(operation_name, operation_func, *args, **kwargs):
     \"\"\"Generic error handler for Meijer operations.\"\"\"
     print(f"\\nExecuting: {operation_name}")
-    
+
     try:
         result = operation_func(*args, **kwargs)
         print(f"✅ {operation_name} succeeded")
         return result
-        
+
     except MeijerAuthenticationError as e:
         print(f"🔐 Authentication error: {e}")
         return None
-        
+
     except MeijerRateLimitError as e:
         print(f"⏱️ Rate limit error: {e}")
         return None
-        
+
     except CartError as e:
         print(f"🛒 Cart error: {e}")
         return None
-        
+
     except FeedbackError as e:
         print(f"💬 Feedback error: {e}")
         return None
-        
+
     except MeijerAPIError as e:
         print(f"🌐 API error: {e}")
         return None
-        
+
     except MeijerError as e:
         print(f"❌ General Meijer error: {e}")
         return None
-        
+
     except Exception as e:
         print(f"💥 Unexpected error: {type(e).__name__}: {e}")
         return None
@@ -291,10 +291,10 @@ if client and client.is_authenticated():
         zip_code="49508",
         limit=3
     )
-    
+
     # Test product search
     handle_meijer_operation(
-        "Product Search", 
+        "Product Search",
         client.search_products,
         "milk",
         limit=5
@@ -309,7 +309,7 @@ This notebook demonstrated all exception classes using **real API calls**:
 
 - **MeijerError**: Base exception for all Meijer errors
 - **MeijerAuthenticationError**: Authentication issues
-- **MeijerAPIError**: General API problems  
+- **MeijerAPIError**: General API problems
 - **MeijerRateLimitError**: Rate limiting issues
 - **CartError**: Shopping cart failures
 - **FeedbackError**: Feedback operation failures
@@ -343,7 +343,7 @@ All examples use actual Meijer API endpoints instead of mocked data.
         feedback_error_example,
         advanced_section,
         advanced_example,
-        summary_section
+        summary_section,
     ]
 
     return nb
@@ -352,8 +352,8 @@ All examples use actual Meijer API endpoints instead of mocked data.
 if __name__ == "__main__":
     # Create and write notebook
     nb = create_exceptions_notebook()
-    
+
     with open("exceptions.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ exceptions.ipynb generated successfully!")

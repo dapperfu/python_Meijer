@@ -11,11 +11,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from .auth import MeijerAuth, TokenStorage
 from .coupon_operations import CouponOperations
 from .coupons import MeijerCouponManager
 from .exceptions import MeijerAPIError, MeijerAuthenticationError
 from .feedback import MeijerFeedback
-from .models import ListItem, MeijerCoupon, MeijerItem, SearchResult
+from .models import AuthTokens, ListItem, MeijerCoupon, MeijerItem, SearchResult
 from .mperks import (
     EarnableOffer,
     EarnedReward,
@@ -36,7 +37,7 @@ class Meijer:
     Main client for Meijer API interactions.
 
     This class provides access to all Meijer API functionality including:
-    - Authentication and token management
+    - Authentication and token management with automatic refresh
     - Shopping lists and favorites
     - Coupons and offers
     - Product search
@@ -60,6 +61,12 @@ class Meijer:
         self.api_base_url = "https://api.meijer.com"
         self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis
 
+        # Initialize token storage
+        self.token_storage = TokenStorage()
+
+        # Initialize authentication
+        self.auth = MeijerAuth(self.token_storage)
+
         # Initialize sub-components
         self.shopping_list = MeijerList(self)
         self.coupons = MeijerCouponManager(self)
@@ -82,12 +89,6 @@ class Meijer:
 
         # Add alias for CLI compatibility
         self.list = self.shopping_list
-
-        # Authentication state
-        self._access_token = None
-        self._refresh_token = None
-        self._token_expires_at = None
-        self._user_credentials = None
 
         # Load authentication
         self._load_auth(auth)
@@ -128,21 +129,46 @@ class Meijer:
 
             # Use bearer token if found
             if bearer_token:
-                self._access_token = bearer_token
-                self.logger.info("Loaded bearer token from auth file")
+                # Create temporary tokens for bearer token
+                temp_tokens = AuthTokens(
+                    access_token=bearer_token,
+                    refresh_token="",  # No refresh token available
+                    expires_in=3600,  # Assume 1 hour expiry
+                    token_type="Bearer",
+                )
+
+                if self.token_storage.save_tokens(temp_tokens):
+                    self.logger.info("✅ Loaded bearer token from auth file")
+                else:
+                    self.logger.warning("⚠️ Failed to save bearer token")
                 return
 
             # Use user/password if found
             if user and password:
-                self._user_credentials = (user, password)
-                self.logger.info("Loaded user credentials from auth file")
+                self.logger.info("✅ Loaded user credentials from auth file")
+                # TODO: Implement login flow for user/password
                 return
 
             # If neither found, raise error
             raise ValueError("No valid authentication found in auth file")
 
         except Exception as e:
-            self.logger.error(f"Failed to load auth file: {e}")
+            self.logger.error(f"❌ Failed to load auth file: {e}")
+            raise
+
+    def _load_auth_from_log(self, log_file: str):
+        """Load authentication from mitmproxy log file."""
+        try:
+            tokens = self.token_storage.extract_tokens_from_log(log_file)
+            if tokens:
+                if self.token_storage.save_tokens(tokens):
+                    self.logger.info("✅ Tokens extracted and saved from log file")
+                else:
+                    self.logger.warning("⚠️ Failed to save extracted tokens")
+            else:
+                self.logger.warning("⚠️ No valid tokens found in log file")
+        except Exception as e:
+            self.logger.error(f"❌ Failed to load auth from log: {e}")
             raise
 
     def _load_auth_from_config(self):
@@ -153,48 +179,45 @@ class Meijer:
                 with open(config_path, "r") as f:
                     config = json.load(f)
 
-                self._access_token = config.get("access_token")
-                self._refresh_token = config.get("refresh_token")
+                # Check for new token format first
+                if "access_token" in config and "refresh_token" in config:
+                    tokens = AuthTokens(
+                        access_token=config["access_token"],
+                        refresh_token=config["refresh_token"],
+                        expires_in=config.get("expires_in", 28800),
+                        token_type=config.get("token_type", "Bearer"),
+                    )
 
-                if self._access_token:
-                    self.logger.info("Loaded authentication from config file")
-                    return
+                    if self.token_storage.save_tokens(tokens):
+                        self.logger.info("✅ Loaded authentication from config file")
+                        return
+                    else:
+                        self.logger.warning("⚠️ Failed to save tokens from config")
+
+                # Fallback to old format
+                elif "bearer" in config:
+                    temp_tokens = AuthTokens(
+                        access_token=config["bearer"],
+                        refresh_token="",
+                        expires_in=3600,
+                        token_type="Bearer",
+                    )
+
+                    if self.token_storage.save_tokens(temp_tokens):
+                        self.logger.info("✅ Loaded bearer token from config file")
+                        return
 
             except Exception as e:
-                self.logger.warning(f"Failed to load config file: {e}")
+                self.logger.warning(f"⚠️ Failed to load config file: {e}")
 
-        self.logger.info("No authentication found in config file")
+        self.logger.info("ℹ️ No authentication found in config file")
 
     def _ensure_authenticated(self) -> bool:
         """Ensure we have a valid access token."""
-        if not self._access_token:
-            raise MeijerAuthenticationError("No access token available")
-
-        # Check if token is expired or about to expire
-        if (
-            self._token_expires_at
-            and datetime.now() >= self._token_expires_at - timedelta(minutes=5)
-        ):
-            self.logger.info("Token expired or expiring soon, refreshing...")
-            if not self._refresh_token():
-                raise MeijerAuthenticationError("Failed to refresh token")
-
+        tokens = self.token_storage.get_valid_tokens()
+        if not tokens:
+            raise MeijerAuthenticationError("No valid access token available")
         return True
-
-    def _refresh_token(self) -> bool:
-        """Refresh the access token using refresh token."""
-        if not self._refresh_token:
-            self.logger.error("No refresh token available")
-            return False
-
-        try:
-            # This would require implementing the actual refresh endpoint
-            # For now, just log that we need to implement this
-            self.logger.info("Token refresh not yet implemented")
-            return False
-        except Exception as e:
-            self.logger.error(f"Failed to refresh token: {e}")
-            return False
 
     def _get_api_headers(self) -> Dict[str, str]:
         """Get headers required for API requests."""
@@ -204,8 +227,9 @@ class Meijer:
         }
 
         # Use Bearer token for authenticated endpoints
-        if self._access_token:
-            headers["Authorization"] = f"Bearer {self._access_token}"
+        tokens = self.token_storage.get_valid_tokens()
+        if tokens and tokens.access_token:
+            headers["Authorization"] = f"Bearer {tokens.access_token}"
 
         # Always include subscription key as some endpoints require both
         # This is the public key from APK analysis and is safe to include
@@ -335,8 +359,13 @@ class Meijer:
             }
 
             # Add authorization if available
-            if hasattr(self, "_access_token") and self._access_token:
-                headers["authorization"] = f"Bearer {self._access_token}"
+            if (
+                self.token_storage.get_valid_tokens()
+                and self.token_storage.get_valid_tokens().access_token
+            ):
+                headers["authorization"] = (
+                    f"Bearer {self.token_storage.get_valid_tokens().access_token}"
+                )
 
             response = self._make_request("GET", url, headers=headers, params=params)
 
@@ -412,8 +441,13 @@ class Meijer:
             }
 
             # Add authorization if available
-            if hasattr(self, "_access_token") and self._access_token:
-                headers["authorization"] = f"Bearer {self._access_token}"
+            if (
+                self.token_storage.get_valid_tokens()
+                and self.token_storage.get_valid_tokens().access_token
+            ):
+                headers["authorization"] = (
+                    f"Bearer {self.token_storage.get_valid_tokens().access_token}"
+                )
 
             # Use the client's request method with custom headers
             response = self._make_request("GET", url, headers=headers, params=params)
@@ -492,8 +526,13 @@ class Meijer:
                 "ocp-apim-subscription-key": self.subscription_key,
             }
 
-            if hasattr(self, "_access_token") and self._access_token:
-                headers["authorization"] = f"Bearer {self._access_token}"
+            if (
+                self.token_storage.get_valid_tokens()
+                and self.token_storage.get_valid_tokens().access_token
+            ):
+                headers["authorization"] = (
+                    f"Bearer {self.token_storage.get_valid_tokens().access_token}"
+                )
 
             response = self._make_request("GET", url, headers=headers, params=params)
 
@@ -769,8 +808,9 @@ class Meijer:
 
     def save_tokens(self):
         """Save current tokens to config file."""
-        if not self._access_token:
-            self.logger.warning("No access token to save")
+        tokens = self.token_storage.get_valid_tokens()
+        if not tokens:
+            self.logger.warning("No tokens to save")
             return
 
         try:
@@ -778,8 +818,10 @@ class Meijer:
             config_path.parent.mkdir(parents=True, exist_ok=True)
 
             config = {
-                "access_token": self._access_token,
-                "refresh_token": self._refresh_token,
+                "access_token": tokens.access_token,
+                "refresh_token": tokens.refresh_token,
+                "expires_in": tokens.expires_in,
+                "token_type": tokens.token_type,
                 "updated_at": datetime.now().isoformat(),
             }
 
@@ -793,18 +835,21 @@ class Meijer:
 
     def is_authenticated(self) -> bool:
         """Check if client is authenticated."""
-        return self._access_token is not None
+        return self.token_storage.get_valid_tokens() is not None
 
     @property
     def auth_status(self):
         """Get current authentication status."""
         from .enums import AuthenticationStatus
 
-        if not self._access_token:
+        tokens = self.token_storage.get_valid_tokens()
+        if not tokens:
             return AuthenticationStatus.UNAUTHENTICATED
 
         # Check if token is expired
-        if self._token_expires_at and datetime.now() > self._token_expires_at:
+        if tokens.expires_in and datetime.now() > datetime.now() + timedelta(
+            seconds=tokens.expires_in - 60
+        ):
             return AuthenticationStatus.EXPIRED
 
         return AuthenticationStatus.AUTHENTICATED
@@ -993,12 +1038,13 @@ class Meijer:
                 return int(account_details["accountId"])
 
             # Fallback: try to extract from token if it's a JWT
-            if self._access_token and "." in self._access_token:
+            tokens = self.token_storage.get_valid_tokens()
+            if tokens and tokens.access_token and "." in tokens.access_token:
                 try:
                     import jwt
 
                     payload = jwt.decode(
-                        self._access_token, options={"verify_signature": False}
+                        tokens.access_token, options={"verify_signature": False}
                     )
                     if payload.get("sub"):
                         return int(payload["sub"])

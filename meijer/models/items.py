@@ -668,337 +668,13 @@ class MeijerItem:
         # Remove None values
         return {k: v for k, v in result.items() if v is not None}
 
-    # ============================================================================
-    # Jupyter Notebook Rich Representations
-    # ============================================================================
 
-    def __repr__(self) -> str:
-        """Clean, informative string representation for the class."""
-        # Extract key identifying information
-        name_parts = []
+# ============================================================================
+# Jupyter Notebook Rich Representations
+# ============================================================================
 
-        # Add title/brand info
-        if self.title:
-            # Clean up title for display (remove common prefixes, limit length)
-            clean_title = self.title
-            if clean_title.startswith("Meijer "):
-                clean_title = clean_title[7:]  # Remove "Meijer " prefix
-            if len(clean_title) > 30:
-                clean_title = clean_title[:27] + "..."
-            name_parts.append(clean_title)
-
-        # Add key descriptors
-        if self.description and len(self.description) < 20:
-            name_parts.append(self.description)
-
-        # Add price info
-        price_info = []
-        if self.price:
-            price_info.append(f"${self.price:.2f}")
-        if self.sale_price and self.sale_price != self.price:
-            price_info.append(f"sale:${self.sale_price:.2f}")
-
-        # Add location info
-        location_info = []
-        if self.aisle_primary:
-            location_info.append(f"aisle:{self.aisle_primary}")
-        if self.store_id:
-            location_info.append(f"store:{self.store_id}")
-
-        # Build the representation
-        result = f"MeijerItem<{', '.join(name_parts)}"
-        if price_info:
-            result += f", {', '.join(price_info)}"
-        if location_info:
-            result += f", {', '.join(location_info)}"
-        result += ">"
-
-        return result
-
-    def __str__(self) -> str:
-        """String representation that matches __repr__."""
-        return self.__repr__()
-
-    def _repr_html_(self) -> str:
-        """Rich HTML representation for Jupyter notebooks."""
-        html_parts = []
-
-        # Header with product info
-        html_parts.append(
-            '<div style="border: 2px solid #0066cc; border-radius: 10px; padding: 15px; margin: 10px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">'
-        )
-
-        # Product title and brand
-        if self.title:
-            html_parts.append(
-                f'<h3 style="color: #0066cc; margin: 0 0 10px 0; font-size: 18px;">{self.title}</h3>'
-            )
-
-        if self.brand:
-            html_parts.append(
-                f'<p style="color: #6c757d; margin: 0 0 8px 0; font-style: italic;">Brand: {self.brand}</p>'
-            )
-
-        # Price information
-        if self.price or self.sale_price:
-            html_parts.append('<div style="margin: 10px 0;">')
-            if self.price:
-                price_style = "color: #28a745; font-weight: bold; font-size: 16px;"
-                if self.sale_price and self.sale_price != self.price:
-                    price_style += "text-decoration: line-through; color: #6c757d;"
-                html_parts.append(
-                    f'<span style="{price_style}">${self.price:.2f}</span>'
-                )
-
-            if self.sale_price and self.sale_price != self.price:
-                html_parts.append(
-                    f' <span style="color: #dc3545; font-weight: bold; font-size: 16px;">SALE: ${self.sale_price:.2f}</span>'
-                )
-            html_parts.append("</div>")
-
-        # Product details in a grid
-        html_parts.append(
-            '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">'
-        )
-
-        # Left column
-        left_details = []
-        if self.upc:
-            left_details.append(f"<strong>UPC:</strong> {self.upc}")
-        if self.category:
-            left_details.append(f"<strong>Category:</strong> {self.category}")
-        if self.aisle_primary:
-            left_details.append(f"<strong>Aisle:</strong> {self.aisle_primary}")
-        if self.store_id:
-            left_details.append(f"<strong>Store:</strong> {self.store_id}")
-
-        if left_details:
-            html_parts.append(
-                f'<div style="grid-column: 1;">{"<br>".join(left_details)}</div>'
-            )
-
-        # Right column
-        right_details = []
-        if self.description and len(self.description) < 100:
-            right_details.append(
-                f'<strong>Description:</strong> {self.description[:100]}{"..." if len(self.description) > 100 else ""}'
-            )
-        if self.unit_price:
-            right_details.append(f"<strong>Unit Price:</strong> {self.unit_price}")
-        if self.is_available is not None:
-            status = "✅ Available" if self.is_available else "❌ Unavailable"
-            right_details.append(f"<strong>Status:</strong> {status}")
-
-        if right_details:
-            html_parts.append(
-                f'<div style="grid-column: 2;">{"<br>".join(right_details)}</div>'
-            )
-
-        html_parts.append("</div>")
-
-        # Image if available
-        if self.image_url:
-            html_parts.append('<div style="text-align: center; margin: 10px 0;">')
-            html_parts.append(
-                f'<img src="{self.image_url}" style="max-width: 200px; max-height: 150px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" alt="Product Image">'
-            )
-            html_parts.append("</div>")
-
-        html_parts.append("</div>")
-
-        return "".join(html_parts)
-
-    def _repr_markdown_(self) -> str:
-        """Markdown representation for Jupyter notebooks."""
-        md_parts = []
-
-        # Header
-        if self.title:
-            md_parts.append(f"# {self.title}")
-
-        # Basic info
-        if self.brand:
-            md_parts.append(f"**Brand:** {self.brand}")
-
-        if self.price:
-            price_text = f"**Price:** ${self.price:.2f}"
-            if self.sale_price and self.sale_price != self.price:
-                price_text += f" (SALE: ${self.sale_price:.2f})"
-            md_parts.append(price_text)
-
-        # Details table
-        details = []
-        if self.upc:
-            details.append(["UPC", self.upc])
-        if self.category:
-            details.append(["Category", self.category])
-        if self.aisle_primary:
-            details.append(["Aisle", self.aisle_primary])
-        if self.store_id:
-            details.append(["Store", self.store_id])
-        if self.description:
-            details.append(
-                [
-                    "Description",
-                    self.description[:100] + "..."
-                    if len(self.description) > 100
-                    else self.description,
-                ]
-            )
-
-        if details:
-            md_parts.append("\n| Field | Value |")
-            md_parts.append("|-------|-------|")
-            for field, value in details:
-                md_parts.append(f"| {field} | {value} |")
-
-        # Image
-        if self.image_url:
-            md_parts.append(f"\n![Product Image]({self.image_url})")
-
-        return "\n\n".join(md_parts)
-
-    def _repr_latex_(self) -> str:
-        """LaTeX representation for mathematical documentation."""
-        latex_parts = []
-
-        # Product title
-        if self.title:
-            latex_parts.append(f"\\textbf{{{self.title}}}")
-
-        # Price equation
-        if self.price:
-            latex_parts.append(f"\\[\\text{{Price}} = \\${self.price:.2f}\\]")
-
-            if self.sale_price and self.sale_price != self.price:
-                discount = ((self.price - self.sale_price) / self.price) * 100
-                latex_parts.append(f"\\[\\text{{Discount}} = {discount:.1f}\\%\\]")
-                latex_parts.append(
-                    f"\\[\\text{{Sale Price}} = \\${self.sale_price:.2f}\\]"
-                )
-
-        # Product information
-        info_items = []
-        if self.upc:
-            info_items.append(f"\\text{{UPC}}: {self.upc}")
-        if self.category:
-            info_items.append(f"\\text{{Category}}: {self.category}")
-        if self.aisle_primary:
-            info_items.append(f"\\text{{Aisle}}: {self.aisle_primary}")
-
-        if info_items:
-            latex_parts.append("\\begin{align*}")
-            for i, item in enumerate(info_items):
-                if i > 0:
-                    latex_parts.append("\\\\")
-                latex_parts.append(item)
-            latex_parts.append("\\end{align*}")
-
-        return "\n".join(latex_parts)
-
-    def _repr_svg_(self) -> Optional[str]:
-        """SVG representation - creates a simple SVG chart of product information."""
-        if not self.price:
-            return None
-
-        # Create a simple SVG bar chart showing price vs typical price
-        typical_price = 5.0  # Example typical price
-        price_ratio = min(self.price / typical_price, 2.0)  # Cap at 2x for display
-
-        svg = f"""<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
-            <rect width="300" height="200" fill="#f8f9fa" stroke="#0066cc" stroke-width="2"/>
-            <text x="150" y="25" text-anchor="middle" font-family="Arial" font-size="16" fill="#0066cc">Price Comparison</text>
-
-            <!-- Typical price bar -->
-            <rect x="50" y="60" width="80" height="30" fill="#6c757d" opacity="0.7"/>
-            <text x="90" y="80" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${typical_price}</text>
-
-            <!-- Current price bar -->
-            <rect x="50" y="100" width="{80 * price_ratio}" height="30" fill="#28a745"/>
-            <text x="{90 + (40 * price_ratio)}" y="120" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${self.price:.2f}</text>
-
-            <!-- Labels -->
-            <text x="50" y="150" font-family="Arial" font-size="10" fill="#6c757d">Typical</text>
-            <text x="50" y="170" font-family="Arial" font-size="10" fill="#28a745">Current</text>
-        </svg>"""
-
-        return svg
-
-    def _repr_png_(self) -> Optional[bytes]:
-        """PNG representation - returns the product image as PNG bytes if available."""
-        if not self.image_url or not all([requests, Image, io]):
-            return None
-
-        try:
-            # Download the image
-            response = requests.get(self.image_url, timeout=10)
-            response.raise_for_status()
-
-            # Convert to PNG
-            img = Image.open(io.BytesIO(response.content))
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format="PNG")
-            return img_bytes.getvalue()
-
-        except Exception:
-            return None
-
-    def _repr_jpeg_(self) -> Optional[bytes]:
-        """JPEG representation - returns the product image as JPEG bytes if available."""
-        if not self.image_url or not all([requests, Image, io]):
-            return None
-
-        try:
-            # Download the image
-            response = requests.get(self.image_url, timeout=10)
-            response.raise_for_status()
-
-            # Convert to JPEG
-            img = Image.open(io.BytesIO(response.content))
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format="JPEG", quality=85)
-            return img_bytes.getvalue()
-
-        except Exception:
-            return None
-
-    def display_info(self) -> None:
-        """Display comprehensive product information in a formatted way."""
-        print("=" * 60)
-        print("📦 PRODUCT INFORMATION")
-        print("=" * 60)
-
-        if self.title:
-            print(f"🏷️  Title: {self.title}")
-
-        if self.brand:
-            print(f"🏭 Brand: {self.brand}")
-
-        if self.price:
-            price_text = f"💰 Price: ${self.price:.2f}"
-            if self.sale_price and self.sale_price != self.price:
-                price_text += f" (SALE: ${self.sale_price:.2f})"
-            print(price_text)
-
-        if self.upc:
-            print(f"📊 UPC: {self.upc}")
-
-        if self.category:
-            print(f"📁 Category: {self.category}")
-
-        if self.aisle_primary:
-            print(f"📍 Aisle: {self.aisle_primary}")
-
-        if self.store_id:
-            print(f"🏪 Store: {self.store_id}")
-
-        if self.description:
-            print(f"📝 Description: {self.description}")
-
-        if self.image_url:
-            print(f"🖼️  Image: {self.image_url}")
-
-        print("=" * 60)
+# Note: These methods are dynamically added to the MeijerItem class
+# to provide rich Jupyter Notebook representations
 
 
 @dataclass
@@ -1133,22 +809,22 @@ class ListItem:
         return None
 
     @property
-    def is_coupon(self) -> bool:
+    def coupon(self) -> bool:
         """Check if this item represents a coupon."""
         return self.list_item_type_id == ItemType.COUPON.value
 
     @property
-    def is_product(self) -> bool:
+    def product(self) -> bool:
         """Check if this item represents a product."""
         return self.list_item_type_id == ItemType.PRODUCT.value
 
     @property
-    def is_weekly_ad(self) -> bool:
+    def weekly_ad(self) -> bool:
         """Check if this item represents a weekly ad item."""
         return self.list_item_type_id == ItemType.WEEKLY_AD.value
 
     @property
-    def is_manual(self) -> bool:
+    def manual(self) -> bool:
         """Check if this item was manually added."""
         return self.list_item_type_id == ItemType.MANUAL.value
 
@@ -1223,52 +899,13 @@ class ListItem:
         """Check if the item can be marked as incomplete."""
         return self.is_complete
 
-    @property
-    def favorite_item(self) -> bool:
-        """Check if this item is marked as a favorite."""
-        return self.is_favorite
-
-    @favorite_item.setter
-    def favorite_item(self, value: bool) -> None:
-        """Set the favorite status for the item.
-        
-        When a list API reference is attached, this will invoke the remote API to
-        update the favorite status and update the local state on success.
-        If no API is attached, only the local state is updated.
-        
-        Parameters
-        ----------
-        value : bool
-            Desired favorite status
-        """
-        # No-op if already desired state
-        if bool(self.is_favorite) == bool(value):
-            return
-            
-        if self._list_api is not None:
-            try:
-                if value:
-                    # Add to favorites
-                    success = self._list_api.add_favorite(self.item_part_number or str(self.list_item_id))
-                else:
-                    # Remove from favorites
-                    success = self._list_api.delete_favorite(self.item_part_number or str(self.list_item_id))
-                    
-                if success:
-                    self.is_favorite = bool(value)
-                else:
-                    raise RuntimeError(
-                        f"Failed to set favorite status to {value} for item {self.list_item_id} via API"
-                    )
-            except Exception:  # pragma: no cover - passthrough for caller
-                raise
-        else:
-            # Fallback: update local state only
-            self.is_favorite = bool(value)
+    # ============================================================================
+    # Core Properties
+    # ============================================================================
 
     @property
     def quantity(self) -> int:
-        """Get the quantity of the item."""
+        """Get the current quantity."""
         return self._quantity if hasattr(self, '_quantity') else 1
 
     @quantity.setter
@@ -1282,18 +919,19 @@ class ListItem:
         Parameters
         ----------
         value : int
-            Desired quantity (must be positive)
+            Desired quantity (must be non-negative)
         """
         if value < 0:
             raise ValueError("Quantity must be non-negative")
             
         # No-op if already desired state
-        if self.quantity == value:
+        current_qty = self._quantity if hasattr(self, '_quantity') else 1
+        if current_qty == value:
             return
             
         if self._list_api is not None:
             try:
-                # Update the item with new quantity
+                # Update the item quantity
                 success = self._list_api.update_item_quantity(str(self.list_item_id), value)
                 if success:
                     self._quantity = value
@@ -1326,12 +964,13 @@ class ListItem:
             Desired notes text
         """
         # No-op if already desired state
-        if self.notes == value:
+        current_notes = self._notes if hasattr(self, '_notes') else None
+        if current_notes == value:
             return
             
         if self._list_api is not None:
             try:
-                # Update the item with new notes
+                # Update the item notes
                 success = self._list_api.update_item_notes(str(self.list_item_id), value)
                 if success:
                     self._notes = value
@@ -1387,6 +1026,55 @@ class ListItem:
             self.item_display_order = value
 
     @property
+    def favorite(self) -> bool:
+        """Check if this item is marked as a favorite."""
+        return self.is_favorite
+
+    @favorite.setter
+    def favorite(self, value: bool) -> None:
+        """Set the favorite status for the item.
+        
+        When a list API reference is attached, this will invoke the remote API to
+        update the favorite status and update the local state on success.
+        If no API is attached, only the local state is updated.
+        
+        Parameters
+        ----------
+        value : bool
+            Desired favorite status
+        """
+        # No-op if already desired state
+        if bool(self.is_favorite) == bool(value):
+            return
+            
+        if self._list_api is not None:
+            try:
+                if value:
+                    # Add to favorites
+                    success = self._list_api.add_favorite(self.item_part_number or str(self.list_item_id))
+                else:
+                    # Remove from favorites
+                    success = self._list_api.delete_favorite(self.item_part_number or str(self.list_item_id))
+                    
+                if success:
+                    self.is_favorite = bool(value)
+                else:
+                    raise RuntimeError(
+                        f"Failed to set favorite status to {value} for item {self.list_item_id} via API"
+                    )
+            except Exception:  # pragma: no cover - passthrough for caller
+                raise
+        else:
+            # Fallback: update local state only
+            self.is_favorite = bool(value)
+
+    @property
+    def age_restricted(self) -> bool:
+        """Check if this item requires age verification."""
+        # This would need to be implemented based on actual API data
+        return False
+
+    @property
     def can_be_deleted(self) -> bool:
         """Check if the item can be deleted from the list."""
         return self.list_item_id > 0  # Only real items can be deleted
@@ -1423,13 +1111,15 @@ class ListItem:
         """Get location information from notes if available."""
         if not self.notes:
             return None
-        
+
         # Look for location patterns in notes
         if ":" in self.notes:
             location_part = self.notes.split(":")[0]
-            if any(aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]):
+            if any(
+                aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]
+            ):
                 return location_part.strip()
-        
+
         return None
 
     @property
@@ -1437,12 +1127,12 @@ class ListItem:
         """Get product information from notes if available."""
         if not self.notes or "|" not in self.notes:
             return None
-        
+
         # Extract product info after the pipe separator
         parts = self.notes.split("|")
         if len(parts) > 1:
             return parts[1].strip()
-        
+
         return None
 
     @property
@@ -1485,35 +1175,273 @@ class ListItem:
             return self.product_details.primary_image_url
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API requests."""
-        result = {
-            "listItemId": self.list_item_id,
-            "listItemTypeId": self.list_item_type_id,
-            "itemDisplayOrder": self.item_display_order,
-            "itemPartNumber": self.item_part_number,
-            "itemDescription": self.item_description,
-            "quantity": self.quantity,
-            "storeId": self.store_id,
-            "notes": self.notes,
-            "isComplete": self.is_complete,
-            "isFavorite": self.is_favorite,
-            "listingId": self.listing_id,
-            "promotionStart": self.promotion_start.isoformat()
-            if self.promotion_start
-            else None,
-            "promotionEnd": self.promotion_end.isoformat()
-            if self.promotion_end
-            else None,
-            "couponId": self.coupon_id,
-        }
-        # Remove None values
-        return {k: v for k, v in result.items() if v is not None}
+    # ============================================================================
+    # Jupyter Notebook Rich Representations
+    # ============================================================================
 
+    def _repr_html_(self) -> str:
+        """Rich HTML representation for Jupyter notebooks."""
+        # Determine status color and icon
+        if self.is_complete:
+            status_color = "#27ae60"  # Green for completed
+            status_icon = "✅"
+            status_text = "Completed"
+        elif self.is_favorite:
+            status_color = "#f39c12"  # Orange for favorite
+            status_icon = "⭐"
+            status_text = "Favorite"
+        elif self.has_promotion:
+            status_color = "#e74c3c"  # Red for promotion
+            status_icon = "🏷️"
+            status_text = "Promotion"
+        else:
+            status_color = "#3498db"  # Blue for normal
+            status_icon = "⏳"
+            status_text = "Pending"
 
-# ============================================================================
-# Jupyter Notebook Rich Representations
-# ============================================================================
+        # Get location info from notes if available
+        location_info = None
+        if self.notes and ":" in self.notes:
+            location_part = self.notes.split(":")[0]
+            if any(
+                aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]
+            ):
+                location_info = location_part.strip()
 
-# Note: These methods are dynamically added to the MeijerItem class
-# to provide rich Jupyter Notebook representations
+        html = f"""
+        <div style="
+            border: 2px solid {status_color};
+            border-radius: 12px;
+            padding: 16px;
+            margin: 8px 0;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        ">
+            <div style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 12px;
+            ">
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                ">
+                    <span style="
+                        font-size: 24px;
+                        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+                    ">{status_icon}</span>
+                    <div>
+                        <h3 style="
+                            margin: 0 0 4px 0;
+                            color: #2c3e50;
+                            font-weight: 600;
+                            font-size: 18px;
+                        ">{self.name}</h3>
+                        <div style="
+                            color: #7f8c8d;
+                            font-size: 14px;
+                            font-weight: 500;
+                        ">{status_text} • Order: {self.item_display_order}</div>
+                    </div>
+                </div>
+                <div style="
+                    text-align: right;
+                    font-weight: 600;
+                ">
+                    <div style="
+                        color: #e74c3c;
+                        font-size: 20px;
+                        margin-bottom: 4px;
+                    ">Qty: {self.quantity}</div>
+                    <div style="
+                        color: #7f8c8d;
+                        font-size: 14px;
+                    ">ID: {self.list_item_id}</div>
+                </div>
+            </div>
+
+            <div style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+                margin-bottom: 16px;
+            ">
+                <div style="
+                    background: #ecf0f1;
+                    padding: 12px;
+                    border-radius: 8px;
+                    border-left: 4px solid {status_color};
+                ">
+                    <div style="
+                        font-weight: 600;
+                        color: #34495e;
+                        margin-bottom: 4px;
+                    ">Item Details</div>
+                    <div style="color: #7f8c8d; font-size: 14px;">
+                        <strong>Type:</strong> {ItemType(self.list_item_type_id).name}<br>
+                        <strong>Part Number:</strong> {self.item_part_number or 'N/A'}<br>
+                        <strong>Store ID:</strong> {self.store_id}
+                    </div>
+                </div>
+
+                <div style="
+                    background: #ecf0f1;
+                    padding: 12px;
+                    border-radius: 8px;
+                    border-left: 4px solid {status_color};
+                ">
+                    <div style="
+                        font-weight: 600;
+                        color: #34495e;
+                        margin-bottom: 4px;
+                    ">Properties</div>
+                    <div style="color: #7f8c8d; font-size: 14px;">
+                        <strong>Priority:</strong> {'High' if self.high_priority else 'Low' if self.low_priority else 'Medium'}<br>
+                        <strong>Notes:</strong> {self.has_notes and 'Yes' or 'No'}<br>
+                        <strong>Promotion:</strong> {self.has_promotion and 'Yes' or 'No'}
+                    </div>
+                </div>
+            </div>
+
+            {f'<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 12px; margin-bottom: 16px;"><div style="font-weight: 600; color: #856404; margin-bottom: 4px;">📍 Location</div><div style="color: #856404; font-size: 14px;">{location_info}</div></div>' if location_info else ''}
+
+            {f'<div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px;"><div style="font-weight: 600; color: #0c5460; margin-bottom: 4px;">📝 Notes</div><div style="color: #0c5460; font-size: 14px;">{self.notes}</div></div>' if self.notes else ''}
+
+            <div style="
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            ">
+                {'<span style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">✅ Complete</span>' if self.is_complete else ''}
+                {'<span style="background: #f39c12; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">⭐ Favorite</span>' if self.is_favorite else ''}
+                {'<span style="background: #e74c3c; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🏷️ Promotion</span>' if self.has_promotion else ''}
+                {'<span style="background: #9b59b6; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🎫 Coupon</span>' if self.coupon else ''}
+                {'<span style="background: #3498db; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">📰 Weekly Ad</span>' if self.weekly_ad else ''}
+                {'<span style="background: #1abc9c; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">✏️ Manual</span>' if self.manual else ''}
+                {'<span style="background: #5f27cd; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🔞 Age Restricted</span>' if self.age_restricted else ''}
+            </div>
+        </div>
+        """
+        return html
+
+    def _repr_markdown_(self) -> str:
+        """Rich Markdown representation for Jupyter notebooks."""
+        # Determine status icon and text
+        if self.is_complete:
+            status_icon = "✅"
+            status_text = "Completed"
+        elif self.is_favorite:
+            status_icon = "⭐"
+            status_text = "Favorite"
+        elif self.has_promotion:
+            status_icon = "🏷️"
+            status_text = "Promotion"
+        else:
+            status_icon = "⏳"
+            status_text = "Pending"
+
+        # Get location info from notes if available
+        location_info = None
+        if self.notes and ":" in self.notes:
+            location_part = self.notes.split(":")[0]
+            if any(
+                aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]
+            ):
+                location_info = location_part.strip()
+
+        md = f"""
+## {status_icon} {self.name}
+
+**Status:** {status_text} • **Quantity:** {self.quantity} • **Order:** {self.item_display_order}
+
+### Details
+- **Item ID:** {self.list_item_id}
+- **Type:** {ItemType(self.list_item_type_id).name}
+- **Part Number:** {self.item_part_number or 'N/A'}
+- **Store ID:** {self.store_id}
+- **Priority:** {'High' if self.high_priority else 'Low' if self.low_priority else 'Medium'}
+
+### Properties
+"""
+
+        if self.is_complete:
+            md += "- ✅ **Complete**\n"
+        if self.is_favorite:
+            md += "- ⭐ **Favorite**\n"
+        if self.has_promotion:
+            md += "- 🏷️ **Promotion**\n"
+        if self.coupon:
+            md += "- 🎫 **Coupon**\n"
+        if self.product:
+            md += "- 📦 **Product**\n"
+        if self.weekly_ad:
+            md += "- 📰 **Weekly Ad**\n"
+        if self.manual:
+            md += "- ✏️ **Manual Entry**\n"
+        if self.has_notes:
+            md += "- 📝 **Has Notes**\n"
+
+        if location_info:
+            md += f"\n### 📍 Location\n- **Aisle:** {location_info}\n"
+
+        if self.notes:
+            md += f"\n### 📝 Notes\n{self.notes}\n"
+
+        if self.has_promotion:
+            md += f"\n### 🏷️ Promotion\n- **Status:** {self.promotion_status}\n"
+
+        md += f"\n**Display Summary:** {self.display_summary}"
+        return md
+
+    def _repr_pretty_(self, p, cycle):
+        """Rich text representation for IPython."""
+        if cycle:
+            p.text("ListItem(...)")
+        else:
+            # Determine status icon
+            if self.is_complete:
+                status_icon = "✅"
+            elif self.is_favorite:
+                status_icon = "⭐"
+            elif self.has_promotion:
+                status_icon = "🏷️"
+            else:
+                status_icon = "⏳"
+
+            p.text(f"{status_icon} {self.name}")
+            p.breakable()
+            p.text(
+                f"  ID: {self.list_item_id} | Qty: {self.quantity} | Order: {self.item_display_order}"
+            )
+            p.breakable()
+            p.text(f"  Type: {ItemType(self.list_item_type_id).name}")
+            p.breakable()
+            p.text(f"  Part Number: {self.item_part_number or 'N/A'}")
+            p.breakable()
+            p.text(f"  Store ID: {self.store_id}")
+
+            if self.notes:
+                p.breakable()
+                p.text(f"  Notes: {self.notes}")
+
+            # Show special properties
+            special_props = []
+            if self.is_complete:
+                special_props.append("✅ Complete")
+            if self.is_favorite:
+                special_props.append("⭐ Favorite")
+            if self.has_promotion:
+                special_props.append("🏷️ Promotion")
+            if self.coupon:
+                special_props.append("🎫 Coupon")
+            if self.weekly_ad:
+                special_props.append("📰 Weekly Ad")
+            if self.manual:
+                special_props.append("✏️ Manual")
+
+            if special_props:
+                p.breakable()
+                p.text(f"  Special: {', '.join(special_props)}")
