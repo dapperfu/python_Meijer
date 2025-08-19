@@ -1,0 +1,564 @@
+#!/usr/bin/env python3
+"""
+Generate Jupyter notebook for mPerks reward coupons demo.
+
+This script creates a comprehensive notebook demonstrating the extended mPerks functionality.
+"""
+
+import os
+import sys
+
+# Add the parent directory to the path to import meijer module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from meijer import Meijer
+from meijer.mperks import MPerksEarnedRewards, RewardCoupon, PointBalance
+
+
+def generate_notebook():
+    """Generate the Jupyter notebook content."""
+    
+    notebook_content = {
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "# 🚀 mPerks Reward Coupons Demo\n",
+                    "\n",
+                    "This notebook demonstrates the extended mPerks functionality including:\n",
+                    "\n",
+                    "1. **Getting available reward coupons** - Browse all available coupons\n",
+                    "2. **Finding specific coupons by name** - Search for fuel rewards, etc.\n",
+                    "3. **Checking point balance** - View current points and expiring points\n",
+                    "4. **Purchasing reward coupons** - Buy coupons with points\n",
+                    "5. **Managing the complete reward coupon flow** - End-to-end process\n",
+                    "\n",
+                    "## 🎯 What We'll Cover\n",
+                    "\n",
+                    "- Available reward coupons (fuel, free items, total basket savings)\n",
+                    "- Point balance management\n",
+                    "- Coupon purchasing workflow\n",
+                    "- Specific fuel coupon analysis (Save $1.00/gal on fuel)\n",
+                    "- Error handling and best practices\n",
+                    "\n",
+                    "## ⚠️ Safety Note\n",
+                    "\n",
+                    "The purchase functionality is demonstrated but commented out for safety. Uncomment the relevant sections only when you're ready to make actual purchases."
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 📦 Setup and Imports\n",
+                    "\n",
+                    "First, let's import the necessary modules and initialize the Meijer client."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "import os\n",
+                    "import sys\n",
+                    "from typing import Optional\n",
+                    "from datetime import datetime\n",
+                    "\n",
+                    "# Add the parent directory to the path to import meijer module\n",
+                    "sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\n",
+                    "\n",
+                    "from meijer import Meijer\n",
+                    "from meijer.mperks import MPerksEarnedRewards, RewardCoupon, PointBalance\n",
+                    "\n",
+                    "print(\"✅ Imports completed successfully!\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 🔧 Initialize Meijer Client\n",
+                    "\n",
+                    "Now let's initialize the Meijer client and mPerks functionality."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "# Initialize Meijer client\n",
+                    "meijer = Meijer()\n",
+                    "mperks = MPerksEarnedRewards(meijer)\n",
+                    "\n",
+                    "print(\"✅ Meijer client initialized\")\n",
+                    "print(f\"   API Base URL: {meijer.api_base_url}\")\n",
+                    "print(f\"   mPerks endpoints: {list(mperks.endpoints.keys())}\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 📊 Check Current Point Balance\n",
+                    "\n",
+                    "Let's start by checking your current mPerks point balance."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "print(\"📊 Getting current point balance...\")\n",
+                    "point_balance = mperks.get_point_balance()\n",
+                    "\n",
+                    "if point_balance:\n",
+                    "    print(f\"✅ Current points: {point_balance.total_points:,}\")\n",
+    "    if point_balance.expiring_points:\n",
+    "        print(f\"   Points expiring in {point_balance.expiring_days} days: {point_balance.expiring_points:,}\")\n",
+    "    else:\n",
+    "        print(\"   No points expiring soon\")\n",
+    "        \n",
+    "    # Store for later use\n",
+    "    current_points = point_balance.total_points\n",
+    "else:\n",
+    "    print(\"❌ Failed to get point balance\")\n",
+    "    current_points = 0"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 🎫 Get Available Reward Coupons\n",
+                    "\n",
+                    "Now let's see what reward coupons are available for purchase."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "print(\"🎫 Getting available reward coupons...\")\n",
+                    "available_coupons = mperks.get_available_reward_coupons()\n",
+                    "\n",
+                    "if available_coupons:\n",
+                    "    print(f\"✅ Found {len(available_coupons)} available coupons\")\n",
+                    "    \n",
+                    "    # Display fuel rewards first (as they're commonly used)\n",
+                    "    fuel_coupons = [c for c in available_coupons if c.reward_coupon_type == \"Fuel\"]\n",
+                    "    if fuel_coupons:\n",
+                    "        print(f\"\\n🚗 Fuel Rewards ({len(fuel_coupons)} available):\")\n",
+                    "        for i, coupon in enumerate(fuel_coupons[:5], 1):  # Show first 5\n",
+                    "            print(f\"   {i}. {coupon.name} - {coupon.point_cost:,} points\")\n",
+                    "            print(f\"      {coupon.description}\")\n",
+                    "            if coupon.days_until_expiry is not None:\n",
+                    "                if coupon.days_until_expiry > 0:\n",
+                    "                    print(f\"      Expires in {coupon.days_until_expiry} days\")\n",
+                    "                else:\n",
+                    "                    print(f\"      Expired {abs(coupon.days_until_expiry)} days ago\")\n",
+                    "            print()\n",
+                    "    \n",
+                    "    # Display other reward types\n",
+                    "    other_coupons = [c for c in available_coupons if c.reward_coupon_type != \"Fuel\"]\n",
+                    "    if other_coupons:\n",
+                    "        print(f\"🎁 Other Rewards ({len(other_coupons)} available):\")\n",
+                    "        for i, coupon in enumerate(other_coupons[:5], 1):  # Show first 5\n",
+                    "            print(f\"   {i}. {coupon.name} - {coupon.point_cost:,} points\")\n",
+                    "            print(f\"      {coupon.description}\")\n",
+                    "            print()\n",
+                    "else:\n",
+                    "    print(\"❌ Failed to get available coupons\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 🔍 Find Specific Coupon by Name\n",
+                    "\n",
+                    "Let's search for a specific coupon, like a fuel reward."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "print(\"🔍 Finding specific coupon by name...\")\n",
+                    "fuel_coupon = mperks.find_reward_coupon_by_name(\"fuel\")\n",
+                    "\n",
+                    "if fuel_coupon:\n",
+                    "    print(f\"✅ Found fuel coupon: {fuel_coupon.name}\")\n",
+                    "    print(f\"   Coupon ID: {fuel_coupon.coupon_id}\")\n",
+                    "    print(f\"   Cost: {fuel_coupon.point_cost:,} points\")\n",
+                    "    print(f\"   Description: {fuel_coupon.description}\")\n",
+                    "    print(f\"   Type: {fuel_coupon.reward_coupon_type}\")\n",
+                    "    print(f\"   Available: {fuel_coupon.is_available}\")\n",
+                    "    \n",
+                    "    if fuel_coupon.display_start and fuel_coupon.display_end:\n",
+                    "        print(f\"   Display Period: {fuel_coupon.display_start.strftime('%Y-%m-%d')} to {fuel_coupon.display_end.strftime('%Y-%m-%d')}\")\n",
+                    "    \n",
+                    "    if fuel_coupon.terms_and_conditions:\n",
+                    "        print(f\"   Terms: {fuel_coupon.terms_and_conditions[:100]}...\")\n",
+                    "    \n",
+                    "    # Check if user has enough points\n",
+                    "    if current_points >= fuel_coupon.point_cost:\n",
+                    "        print(f\"\\n✅ Sufficient points available ({current_points:,} >= {fuel_coupon.point_cost:,})\")\n",
+                    "        can_purchase = True\n",
+                    "    else:\n",
+                    "        print(f\"\\n❌ Insufficient points ({current_points:,} < {fuel_coupon.point_cost:,})\")\n",
+                    "        can_purchase = False\n",
+                    "else:\n",
+                    "    print(\"❌ No fuel coupon found\")\n",
+                    "    can_purchase = False"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 💳 Purchase Simulation (Safe Mode)\n",
+                    "\n",
+                    "This section shows how to purchase a coupon, but the actual purchase is commented out for safety.\n",
+                    "\n",
+                    "**⚠️ Important**: Uncomment the purchase code only when you're ready to make actual purchases!"
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "if 'fuel_coupon' in locals() and fuel_coupon and can_purchase:\n",
+                    "    print(\"💳 Purchase Simulation (commented out for safety):\")\n",
+                    "    print(\"   To actually purchase this coupon, uncomment the following code:\")\n",
+                    "    print(\"   success = mperks.buy_reward_coupon(\")\n",
+                    "    print(f\"       coupon_id={fuel_coupon.coupon_id},\")\n",
+                    "    print(\"       store_id=71,  # Replace with actual store ID\")\n",
+                    "    print(\"       cart_is_active=True\")\n",
+                    "    print(\"   )\")\n",
+                    "    \n",
+                    "    # Uncomment the following lines to actually purchase the coupon:\n",
+                    "    # print(\"\\n🔄 Attempting to purchase fuel coupon...\")\n",
+                    "    # success = mperks.buy_reward_coupon(\n",
+                    "    #     coupon_id=fuel_coupon.coupon_id,\n",
+                    "    #     store_id=71,  # Replace with actual store ID\n",
+                    "    #     cart_is_active=True\n",
+                    "    # )\n",
+                    "    # \n",
+                    "    # if success:\n",
+                    "    #     print(\"   ✅ Successfully purchased fuel coupon!\")\n",
+                    "    #     \n",
+                    "    #     # Get updated point balance\n",
+                    "    #     new_balance = mperks.get_point_balance()\n",
+                    "    #     if new_balance:\n",
+                    "    #         print(f\"   New balance: {new_balance.total_points:,} points\")\n",
+                    "    #         print(f\"   Points spent: {current_points - new_balance.total_points:,}\")\n",
+                    "    # else:\n",
+                    "    #     print(\"   ❌ Failed to purchase fuel coupon\")\n",
+                    "    \n",
+                    "    print(\"\\n🔒 Purchase code is commented out for safety\")\n",
+                    "else:\n",
+                    "    print(\"💳 Purchase simulation skipped - no suitable coupon or insufficient points\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## ⏰ Check Expiring Points\n",
+                    "\n",
+                    "Let's see if you have any points expiring soon."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "print(\"⏰ Getting expiring points...\")\n",
+                    "expiring_points = mperks.get_points_expiring(days=30)\n",
+                    "\n",
+                    "if expiring_points is not None:\n",
+                    "    if expiring_points:\n",
+                    "        print(f\"✅ Found {len(expiring_points)} expiring point entries\")\n",
+                    "        for i, entry in enumerate(expiring_points[:5], 1):  # Show first 5\n",
+                    "            print(f\"   {i}. {entry}\")\n",
+                    "    else:\n",
+                    "        print(\"✅ No points expiring in the next 30 days\")\n",
+                    "else:\n",
+                    "    print(\"❌ Failed to get expiring points\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 📋 Coupon Analysis and Statistics\n",
+                    "\n",
+                    "Let's analyze the available coupons and provide some statistics."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "print(\"📋 Coupon Analysis:\")\n",
+                    "if 'available_coupons' in locals() and available_coupons:\n",
+                    "    coupon_types = {}\n",
+                    "    total_cost = 0\n",
+                    "    \n",
+                    "    for coupon in available_coupons:\n",
+                    "        coupon_type = coupon.reward_coupon_type or \"Unknown\"\n",
+                    "        if coupon_type not in coupon_types:\n",
+                    "            coupon_types[coupon_type] = []\n",
+                    "        coupon_types[coupon_type].append(coupon)\n",
+                    "        total_cost += coupon.point_cost\n",
+                    "    \n",
+                    "    print(f\"   Total coupons available: {len(available_coupons)}\")\n",
+                    "    print(f\"   Total points needed for all: {total_cost:,}\")\n",
+                    "    print(f\"   Coupon types: {', '.join(coupon_types.keys())}\")\n",
+                    "    \n",
+                    "    # Show breakdown by type\n",
+                    "    print(\"\\n   📊 Breakdown by type:\")\n",
+                    "    for coupon_type, coupons in sorted(coupon_types.items()):\n",
+                    "        type_cost = sum(c.point_cost for c in coupons)\n",
+                    "        print(f\"      {coupon_type}: {len(coupons)} coupons, {type_cost:,} points total\")\n",
+                    "    \n",
+                    "    # Show affordability analysis\n",
+                    "    if 'current_points' in locals() and current_points > 0:\n",
+                    "        affordable_coupons = [c for c in available_coupons if c.point_cost <= current_points]\n",
+                    "        print(f\"\\n   💰 Affordability Analysis:\")\n",
+                    "        print(f\"      With {current_points:,} points, you can afford {len(affordable_coupons)} out of {len(available_coupons)} coupons\")\n",
+                    "        \n",
+                    "        if affordable_coupons:\n",
+                    "            cheapest = min(affordable_coupons, key=lambda x: x.point_cost)\n",
+                    "            most_expensive = max(affordable_coupons, key=lambda x: x.point_cost)\n",
+                    "            print(f\"      Cheapest affordable: {cheapest.name} ({cheapest.point_cost:,} points)\")\n",
+                    "            print(f\"      Most expensive affordable: {most_expensive.name} ({most_expensive.point_cost:,} points)\")\n",
+                    "else:\n",
+                    "    print(\"   ❌ No coupon data available for analysis\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 🎯 Specific Fuel Coupon Analysis\n",
+                    "\n",
+                    "Let's look specifically for the fuel coupon mentioned in the user's request: \"Save $1.00/gal on fuel\"."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "print(\"🎯 Specific Fuel Coupon Analysis\")\n",
+                    "print(\"=\" * 40)\n",
+                    "\n",
+                    "# Find the specific fuel coupon mentioned: \"Save $1.00/gal on fuel\"\n",
+                    "print(\"🔍 Looking for 'Save $1.00/gal on fuel' coupon...\")\n",
+                    "specific_fuel_coupon = mperks.find_reward_coupon_by_name(\"Save $1.00/gal on fuel\")\n",
+                    "\n",
+                    "if specific_fuel_coupon:\n",
+                    "    print(f\"✅ Found coupon: {specific_fuel_coupon.name}\")\n",
+                    "    print(f\"   Coupon ID: {specific_fuel_coupon.coupon_id}\")\n",
+                    "    print(f\"   Description: {specific_fuel_coupon.description}\")\n",
+                    "    print(f\"   Point Cost: {specific_fuel_coupon.point_cost:,} points\")\n",
+                    "    print(f\"   Type: {specific_fuel_coupon.reward_coupon_type}\")\n",
+                    "    print(f\"   Available: {specific_fuel_coupon.is_available}\")\n",
+                    "    \n",
+                    "    if specific_fuel_coupon.display_start and specific_fuel_coupon.display_end:\n",
+                    "        print(f\"   Display Period: {specific_fuel_coupon.display_start.strftime('%Y-%m-%d')} to {specific_fuel_coupon.display_end.strftime('%Y-%m-%d')}\")\n",
+                    "    \n",
+                    "    if specific_fuel_coupon.terms_and_conditions:\n",
+                    "        print(f\"   Terms: {specific_fuel_coupon.terms_and_conditions[:150]}...\")\n",
+                    "    \n",
+                    "    # Check if this matches the coupon ID from the log (6521640)\n",
+                    "    if specific_fuel_coupon.coupon_id == 6521640:\n",
+                    "        print(\"\\n   🎯 This matches the coupon ID from the log analysis!\")\n",
+                    "    else:\n",
+                    "        print(f\"\\n   ⚠️  Coupon ID {specific_fuel_coupon.coupon_id} doesn't match expected 6521640\")\n",
+                    "    \n",
+                    "    # Show purchase simulation\n",
+                    "    print(f\"\\n💳 Purchase Simulation for Coupon {specific_fuel_coupon.coupon_id}:\")\n",
+                    "    print(\"   POST /digital/mperks40/customer/v1/rewardcoupons/available/6521640/buy\")\n",
+                    "    print(\"   Body: {'storeId': 71, 'cartIsActive': true}\")\n",
+                    "    print(\"   Headers: Authorization, Content-Type: application/json\")\n",
+                    "    \n",
+                    "else:\n",
+                    "    print(\"❌ Could not find the specific fuel coupon\")\n",
+    "    \n",
+    "    # Try to find any fuel-related coupons\n",
+    "    print(\"\\n🔍 Looking for any fuel-related coupons...\")\n",
+    "    if 'available_coupons' in locals() and available_coupons:\n",
+    "        fuel_coupons = [c for c in available_coupons if \"fuel\" in c.name.lower() or c.reward_coupon_type == \"Fuel\"]\n",
+    "        \n",
+    "        if fuel_coupons:\n",
+    "            print(f\"   Found {len(fuel_coupons)} fuel-related coupons:\")\n",
+    "            for coupon in fuel_coupons:\n",
+    "                print(f\"      • {coupon.name} (ID: {coupon.coupon_id}) - {coupon.point_cost:,} points\")\n",
+    "        else:\n",
+    "            print(\"   No fuel coupons found\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 🔍 Search and Filter Coupons\n",
+                    "\n",
+                    "Let's explore some advanced search and filtering capabilities."
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "if 'available_coupons' in locals() and available_coupons:\n",
+                    "    print(\"🔍 Advanced Coupon Search and Filtering\")\n",
+                    "    print(\"=\" * 40)\n",
+    "    \n",
+    "    # Filter by point cost range\n",
+    "    if 'current_points' in locals() and current_points > 0:\n",
+    "        affordable_coupons = [c for c in available_coupons if c.point_cost <= current_points]\n",
+    "        expensive_coupons = [c for c in available_coupons if c.point_cost > current_points]\n",
+    "        \n",
+    "        print(f\"💰 Point-based filtering:\")\n",
+    "        print(f\"   Affordable (≤{current_points:,} points): {len(affordable_coupons)} coupons\")\n",
+    "        print(f\"   Expensive (>{current_points:,} points): {len(expensive_coupons)} coupons\")\n",
+    "    \n",
+    "    # Filter by availability\n",
+    "    available_now = [c for c in available_coupons if c.is_available]\n",
+    "    expired = [c for c in available_coupons if not c.is_available]\n",
+    "    \n",
+    "    print(f\"\\n⏰ Availability filtering:\")\n",
+    "    print(f\"   Available now: {len(available_now)} coupons\")\n",
+    "    print(f\"   Expired: {len(expired)} coupons\")\n",
+    "    \n",
+    "    # Show some examples of each category\n",
+    "    if available_now:\n",
+    "        print(f\"\\n   📋 Examples of available coupons:\")\n",
+    "        for coupon in available_now[:3]:\n",
+    "            print(f\"      • {coupon.name} ({coupon.reward_coupon_type}) - {coupon.point_cost:,} points\")\n",
+    "    \n",
+    "    if expired:\n",
+    "        print(f\"\\n   ⏰ Examples of expired coupons:\")\n",
+    "        for coupon in expired[:3]:\n",
+    "            print(f\"      • {coupon.name} ({coupon.reward_coupon_type}) - {coupon.point_cost:,} points\")\n",
+    "else:\n",
+    "    print(\"🔍 Advanced search skipped - no coupon data available\")"
+                ]
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## 🎉 Summary and Next Steps\n",
+                    "\n",
+                    "Congratulations! You've successfully explored the extended mPerks functionality.\n",
+                    "\n",
+                    "### ✅ What We've Accomplished\n",
+                    "\n",
+                    "1. **Initialized the Meijer client** and mPerks functionality\n",
+                    "2. **Checked point balance** and expiring points\n",
+                    "3. **Browsed available reward coupons** by type and cost\n",
+                    "4. **Found specific coupons** by name and type\n",
+                    "5. **Analyzed coupon statistics** and affordability\n",
+                    "6. **Simulated purchase workflow** (safely)\n",
+                    "7. **Explored advanced filtering** and search capabilities\n",
+                    "\n",
+                    "### 🚀 Next Steps\n",
+                    "\n",
+                    "1. **Uncomment purchase code** when ready to make actual purchases\n",
+                    "2. **Customize store IDs** for your preferred locations\n",
+                    "3. **Set up automated monitoring** for expiring points\n",
+                    "4. **Create custom filters** for specific coupon types\n",
+                    "5. **Integrate with other systems** for automated coupon management\n",
+                    "\n",
+                    "### 🔒 Safety Reminders\n",
+                    "\n",
+                    "- Always verify coupon details before purchasing\n",
+                    "- Check point balance before making purchases\n",
+                    "- Review terms and conditions for each coupon\n",
+                    "- Test with small purchases first\n",
+                    "- Keep track of purchased coupons and their usage\n",
+                    "\n",
+                    "### 📚 Additional Resources\n",
+                    "\n",
+                    "- Review the `meijer.mperks` module for more methods\n",
+                    "- Check the main demo script for additional examples\n",
+                    "- Explore error handling and logging capabilities\n",
+                    "- Consider implementing retry logic for failed requests"
+                ]
+            }
+        ],
+        "metadata": {
+            "kernelspec": {
+                "display_name": "Python 3",
+                "language": "python",
+                "name": "python3"
+            },
+            "language_info": {
+                "codemirror_mode": {
+                    "name": "ipython",
+                    "version": 3
+                },
+                "file_extension": ".py",
+                "mimetype": "text/x-python",
+                "name": "python",
+                "nbconvert_exporter": "python",
+                "pygments_lexer": "ipython3",
+                "version": "3.8.0"
+            }
+        },
+        "nbformat": 4,
+        "nbformat_minor": 4
+    }
+    
+    return notebook_content
+
+
+def save_notebook(content, filename="demo_mperks_reward_coupons.ipynb"):
+    """Save the notebook content to a file."""
+    import json
+    
+    with open(filename, 'w') as f:
+        json.dump(content, f, indent=2)
+    
+    print(f"✅ Notebook saved to: {filename}")
+
+
+if __name__ == "__main__":
+    print("🚀 Generating mPerks Reward Coupons Demo Notebook")
+    print("=" * 50)
+    
+    # Generate the notebook content
+    notebook_content = generate_notebook()
+    
+    # Save to the notebooks directory
+    notebook_path = os.path.join(os.path.dirname(__file__), "demo_mperks_reward_coupons.ipynb")
+    save_notebook(notebook_content, notebook_path)
+    
+    print(f"📓 Notebook generated successfully!")
+    print(f"   Location: {notebook_path}")
+    print(f"   Cells: {len(notebook_content['cells'])}")
+    print(f"   Topics covered: Reward coupons, point management, purchasing workflow")

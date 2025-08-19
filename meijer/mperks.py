@@ -75,11 +75,11 @@ class RewardCoupon:
     coupon_id: int
     name: str
     description: str
+    point_cost: int
     image_url: Optional[str] = None
     display_start: Optional[datetime] = None
     display_end: Optional[datetime] = None
     terms_and_conditions: Optional[str] = None
-    point_cost: int
     sort_order: Optional[int] = None
     reward_coupon_type: Optional[str] = None
     raw_data: Optional[Dict[str, Any]] = None
@@ -109,7 +109,9 @@ class RewardCoupon:
             "name": self.name,
             "description": self.description,
             "imageUrl": self.image_url,
-            "displayStart": self.display_start.isoformat() if self.display_start else None,
+            "displayStart": self.display_start.isoformat()
+            if self.display_start
+            else None,
             "displayEnd": self.display_end.isoformat() if self.display_end else None,
             "termsAndConditions": self.terms_and_conditions,
             "pointCost": self.point_cost,
@@ -415,10 +417,7 @@ class MPerksEarnedRewards:
             headers.update({"Content-Type": "application/json; charset=UTF-8"})
 
             # Prepare request body
-            request_body = {
-                "storeId": store_id,
-                "cartIsActive": cart_is_active
-            }
+            request_body = {"storeId": store_id, "cartIsActive": cart_is_active}
             request_body.update(kwargs)
 
             response = self.meijer._make_request(
@@ -429,10 +428,14 @@ class MPerksEarnedRewards:
                 data = response.json()
                 success = data.get("success", False)
                 if success:
-                    self.logger.info(f"Successfully purchased reward coupon {coupon_id}")
+                    self.logger.info(
+                        f"Successfully purchased reward coupon {coupon_id}"
+                    )
                     return True
                 else:
-                    self.logger.warning(f"Failed to purchase reward coupon {coupon_id}: {data}")
+                    self.logger.warning(
+                        f"Failed to purchase reward coupon {coupon_id}: {data}"
+                    )
                     return False
             else:
                 raise MeijerAPIError(
@@ -476,7 +479,9 @@ class MPerksEarnedRewards:
             self.logger.error(f"Error getting point balance: {e}")
             return None
 
-    def get_points_expiring(self, days: int = 30, **kwargs) -> Optional[List[Dict[str, Any]]]:
+    def get_points_expiring(
+        self, days: int = 30, **kwargs
+    ) -> Optional[List[Dict[str, Any]]]:
         """
         Get points that are expiring soon.
 
@@ -774,9 +779,7 @@ class MPerksEarnedRewards:
                         display_start=self._parse_datetime(
                             coupon_data.get("displayStart")
                         ),
-                        display_end=self._parse_datetime(
-                            coupon_data.get("displayEnd")
-                        ),
+                        display_end=self._parse_datetime(coupon_data.get("displayEnd")),
                         terms_and_conditions=coupon_data.get("termsAndConditions"),
                         point_cost=int(coupon_data.get("pointCost", 0)),
                         sort_order=coupon_data.get("sortOrder"),
