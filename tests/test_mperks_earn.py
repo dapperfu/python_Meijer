@@ -7,8 +7,6 @@ Tests the new EarnableOffer and EarnTabData classes and related methods.
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
-import pytest
-
 from meijer.mperks import EarnableOffer, EarnTabData, MPerksEarnedRewards
 
 
@@ -324,9 +322,9 @@ class TestMPerksEarnedRewardsEarn:
         mock_response = Mock()
         mock_response.status_code = 404
         mock_response.text = "Not Found"
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         # Method should return empty EarnTabData on failure instead of raising
         result = self.mperks.get_earn_offers()
         assert isinstance(result, EarnTabData)

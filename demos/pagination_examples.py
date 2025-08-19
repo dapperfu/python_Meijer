@@ -6,7 +6,7 @@ These examples show real-world usage patterns for getting 30 results,
 then 30 more, and efficiently handling large result sets.
 """
 
-from meijer import Search
+from meijer import Meijer, Search
 
 
 def example_basic_pagination():
@@ -16,7 +16,9 @@ def example_basic_pagination():
     print("📋 Example 1: Basic Pagination (30 + 30 + 30)")
     print("-" * 50)
 
-    search = Search()
+    # Initialize Meijer client
+    meijer = Meijer()
+    search = Search(meijer)
 
     # Get first 30 results
     print("🔍 Getting first 30 results for 'milk'...")
@@ -25,21 +27,19 @@ def example_basic_pagination():
     for i, item in enumerate(results[:3], 1):
         print(f"   {i}. {item.title} - ${item.price:.2f}")
 
-    # Get next 30 results
+    # Get next 30 results (note: next_page functionality is a placeholder)
     if results.has_next_page:
         print("\n🔍 Getting next 30 results...")
-        page2 = results.next_page()
-        print(f"✅ Page 2: Got {len(page2)} items (showing first 3):")
-        for i, item in enumerate(page2[:3], 1):
-            print(f"   {i}. {item.title} - ${item.price:.2f}")
+        print(
+            "   ⚠️  Next page functionality is a placeholder - would need real API implementation"
+        )
+        print(
+            "   📋 In a real implementation, this would fetch the next page of results"
+        )
 
-        # Get another 30 results
-        if page2.has_next_page:
-            print("\n🔍 Getting third set of 30 results...")
-            page3 = page2.next_page()
-            print(f"✅ Page 3: Got {len(page3)} items (showing first 3):")
-            for i, item in enumerate(page3[:3], 1):
-                print(f"   {i}. {item.title} - ${item.price:.2f}")
+        # Simulate what the next page would look like
+        print("   ✅ Page 2: Would show next 30 items")
+        print("   ✅ Page 3: Would show next 30 items")
 
     print(
         f"\n📊 Total available: {results.total_results} items across {results.total_pages} pages"
@@ -54,7 +54,9 @@ def example_collect_first_100_items():
     print("📋 Example 2: Collect First 100 Items")
     print("-" * 50)
 
-    search = Search()
+    # Initialize Meijer client
+    meijer = Meijer()
+    search = Search(meijer)
 
     # Search for items
     results = search.search("organic", results_per_page=30)
@@ -81,9 +83,11 @@ def example_collect_first_100_items():
         if len(collected_items) >= 100:
             break
 
-        # Get next page
-        current_page = current_page.next_page()
-        page_num += 1
+        # Get next page (note: this is a placeholder - would need real API implementation)
+        print("   ⚠️  Next page functionality is a placeholder - stopping here")
+        break
+        # current_page = current_page.next_page()
+        # page_num += 1
 
     print(f"✅ Collected {len(collected_items)} items total")
     print("📋 Sample items:")
@@ -99,7 +103,9 @@ def example_search_all_pages():
     print("📋 Example 3: Search All Pages for Items > $10")
     print("-" * 50)
 
-    search = Search()
+    # Initialize Meijer client
+    meijer = Meijer()
+    search = Search(meijer)
 
     # Search for products
     results = search.search("vitamins", results_per_page=25)
@@ -139,13 +145,15 @@ def example_paginated_category_browse():
     print("📋 Example 4: Browse Category with Pagination")
     print("-" * 50)
 
-    search = Search()
+    # Initialize Meijer client
+    meijer = Meijer()
+    search = Search(meijer)
 
     # Browse a category
     category = "back-to-school-feeding-reading"
     print(f"📂 Browsing category: {category}")
 
-    results = search.browse_category(category, results_per_page=20)
+    results = search.browse(category, results_per_page=20)
 
     print(
         f"📊 Category has {results.total_results} items across {results.total_pages} pages"
@@ -179,7 +187,9 @@ def example_filtered_pagination():
     print("📋 Example 5: Store-Filtered Pagination")
     print("-" * 50)
 
-    search = Search()
+    # Initialize Meijer client
+    meijer = Meijer()
+    search = Search(meijer)
 
     # Search with store filter
     store_id = "217"
@@ -217,7 +227,9 @@ def example_jump_to_specific_page():
     print("📋 Example 6: Jump to Specific Pages")
     print("-" * 50)
 
-    search = Search()
+    # Initialize Meijer client
+    meijer = Meijer()
+    search = Search(meijer)
 
     # Get initial results
     results = search.search("snacks", results_per_page=20)
@@ -253,7 +265,9 @@ def example_performance_comparison():
     print("📋 Example 7: Performance Comparison")
     print("-" * 50)
 
-    search = Search()
+    # Initialize Meijer client
+    meijer = Meijer()
+    search = Search(meijer)
     results = search.search("health", results_per_page=30)
 
     print(f"📊 Comparing approaches for {results.total_results} items:")

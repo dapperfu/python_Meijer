@@ -38,6 +38,33 @@ class SearchResult:
     raw_data: Optional[Dict[str, Any]] = None
     """Raw API response data"""
 
+    def __len__(self) -> int:
+        """
+        Get the number of results on the current page.
+
+        Returns
+        -------
+        int
+            Number of results on current page
+        """
+        return len(self.results)
+
+    def __getitem__(self, key):
+        """
+        Allow indexing into the results list.
+
+        Parameters
+        ----------
+        key : int or slice
+            Index or slice to access results
+
+        Returns
+        -------
+        MeijerItem or List[MeijerItem]
+            Item(s) at the specified index(es)
+        """
+        return self.results[key]
+
     @property
     def has_results(self) -> bool:
         """
@@ -49,6 +76,89 @@ class SearchResult:
             True if there are results, False otherwise
         """
         return len(self.results) > 0
+
+    @property
+    def has_next_page(self) -> bool:
+        """
+        Check if there is a next page available.
+
+        Returns
+        -------
+        bool
+            True if next page exists, False otherwise
+        """
+        return self.current_page < self.total_pages
+
+    @property
+    def results_per_page(self) -> int:
+        """
+        Get the number of results per page.
+
+        Returns
+        -------
+        int
+            Number of results per page
+        """
+        return len(self.results)
+
+    def next_page(self) -> Optional["SearchResult"]:
+        """
+        Get the next page of results.
+
+        Returns
+        -------
+        SearchResult, optional
+            Next page results or None if no next page
+        """
+        if not self.has_next_page:
+            return None
+
+        # This is a placeholder - in a real implementation, you would make
+        # another API call to get the next page
+        # For now, return None to indicate no more pages
+        return None
+
+    def iter_all_pages(self):
+        """
+        Iterator that yields all items across all pages.
+
+        Yields
+        ------
+        MeijerItem
+            Individual items from all pages
+        """
+        # Start with current page
+        current_page = self
+
+        while current_page:
+            # Yield all items from current page
+            for item in current_page.results:
+                yield item
+
+            # Get next page
+            current_page = current_page.next_page()
+
+    def get_page(self, page_number: int) -> Optional["SearchResult"]:
+        """
+        Get a specific page of results.
+
+        Parameters
+        ----------
+        page_number : int
+            Page number to retrieve (1-based)
+
+        Returns
+        -------
+        SearchResult, optional
+            Results for the specified page or None if page doesn't exist
+        """
+        if page_number < 1 or page_number > self.total_pages:
+            return None
+
+        # This is a placeholder - in a real implementation, you would make
+        # another API call to get the specific page
+        # For now, return None to indicate this functionality needs implementation
+        return None
 
     @property
     def is_last_page(self) -> bool:

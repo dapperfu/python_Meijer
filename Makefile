@@ -18,6 +18,7 @@ help:
 	@echo "🛠️  Development:"
 	@echo "  make venv         - Create/update virtual environment"
 	@echo "  make notebook     - Start Jupyter notebook"
+	@echo "  make demos        - Run all demo scripts in demos/ directory"
 	@echo "  make clean        - Clean build artifacts"
 	@echo ""
 	@echo "🎨 Code Quality:"
@@ -56,6 +57,14 @@ ${VENV}:
 .PHONY: notebook
 notebook:
 	@${VENV}/bin/jupyter-notebook
+
+.PHONY: demos
+demos: ${VENV}
+	@echo "🚀 Running all demos in demos/ directory..."
+	@echo "=============================================="
+	@echo "💡 This will execute all Python demo scripts and report any errors or warnings"
+	@echo ""
+	@./demos/run_all_demos.sh
 
 .PHONY: log
 log:
@@ -189,7 +198,7 @@ completion-bash:
 	@echo ""
 	@echo "    # Main make targets"
 	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
-	@echo "        opts=\"help venv notebook log logs auth clean completion completion-bash completion-install\""
+	@echo "        opts=\"help venv notebook demos log logs auth clean completion completion-bash completion-install\""
 	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
 	@echo "        return 0"
 	@echo "    fi"

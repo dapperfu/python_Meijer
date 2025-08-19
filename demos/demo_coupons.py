@@ -31,6 +31,7 @@ def main():
 
     # Get available coupons
     print("🎫 Available Coupons:")
+    coupons = None
     try:
         coupons = m.get_available_coupons()
         print(f"   Found {len(coupons)} available coupons")

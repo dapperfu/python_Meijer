@@ -87,11 +87,11 @@ def demo_store_services():
 
     # Check individual services
     service_checks = [
-        ("Pharmacy", store.has_pharmacy()),
+        ("Pharmacy", store.has_pharmacy),
         ("Gas Station", store.has_gas_station()),
         ("24 Hours", store.is_24_hours()),
-        ("Curbside Pickup", store.has_curbside_pickup()),
-        ("Home Delivery", store.has_delivery()),
+        ("Curbside Pickup", store.has_curbside_pickup),
+        ("Home Delivery", store.has_delivery),
         ("Alcohol Sales", store.has_alcohol_sales()),
     ]
 
@@ -207,7 +207,7 @@ def demo_distance_calculation():
     print("🚗 Stores by distance:")
     for i, (store, distance) in enumerate(store_distances, 1):
         print(f"   {i}. {store.display_name}: {distance:.1f} miles")
-        print(f"      Location: {store.coordinates}")
+        print(f"      Location: ({store.latitude}, {store.longitude})")
 
     print()
 
@@ -267,7 +267,7 @@ def demo_proximity_search():
     }
 
     # Create stores from API response
-    stores = create_meijer_stores_from_response(api_response)
+    stores = MeijerStore.from_store_info_responses(api_response)
 
     print(f"🔍 Found {len(stores)} stores from proximity search:")
 
@@ -340,23 +340,20 @@ def demo_comprehensive_store():
 
     print("\n📋 Core Information:")
     print(f"   Store ID: {store.store_id}")
-    print(f"   Type: {store.unit_type}")
-    print(f"   Opened: {store.open_date}")
+    print(f"   Type: {store.store_type}")
+    print("   Opened: N/A (not available in current data)")
     print(f"   Timezone: {store.timezone}")
-    print(f"   Director: {store.store_dir_name}")
+    print("   Director: N/A (not available in current data)")
 
     print("\n📍 Location Details:")
     print(f"   Full Address: {store.full_address}")
-    print(f"   Coordinates: {store.coordinates}")
+    print(f"   Coordinates: ({store.latitude}, {store.longitude})")
 
     print("\n🛍️ Shopping Services:")
     shopping_features = [
-        ("Mobile Shopping", store.is_mobile_shopping_enabled),
-        ("Mobile Payment", store.is_mobile_payment_enabled),
-        ("Curbside Pickup", store.curbside_allow),
-        ("Pre-Orders", store.pre_order_service_allow),
-        ("Home Delivery", store.dlvry_order_service_allow),
-        ("Deli Orders", store.deli_order_service_allow),
+        ("Curbside Pickup", store.has_curbside_pickup),
+        ("Home Delivery", store.has_delivery),
+        ("Self Checkout", store.has_self_checkout),
     ]
 
     for feature, enabled in shopping_features:
@@ -365,9 +362,9 @@ def demo_comprehensive_store():
 
     print("\n👨‍⚕️ Healthcare Services:")
     healthcare_features = [
-        ("Pharmacy", store.has_pharmacy()),
-        ("Drive-Thru", store.drive_thru),
-        ("Clinic", store.clinic),
+        ("Pharmacy", store.has_pharmacy),
+        ("Optical", store.has_optical),
+        ("Bank", store.has_bank),
     ]
 
     for feature, available in healthcare_features:
@@ -375,13 +372,7 @@ def demo_comprehensive_store():
         print(f"   {feature}: {status}")
 
     print("\n🍷 Alcohol Services:")
-    print(f"   Pickup: {'✓ Yes' if store.is_alcohol_pickupable else '✗ No'}")
-    print(f"   Delivery: {'✓ Yes' if store.is_alcohol_deliverable else '✗ No'}")
-    print(f"   Restricted: {'Yes' if store.are_alcohol_sales_restricted else 'No'}")
-    if store.alcohol_sale_restricted_sun_start:
-        print(
-            f"   Sunday Hours: {store.alcohol_sale_restricted_sun_start} - {store.alcohol_sale_restricted_sun_end}"
-        )
+    print(f"   Alcohol Sales: {'✓ Yes' if store.has_alcohol_sales() else '✗ No'}")
 
     print("\n⛽ Additional Services:")
     print(
@@ -389,7 +380,7 @@ def demo_comprehensive_store():
     )
     print(f"   24 Hours: {'✓ Yes' if store.is_24_hours() else '✗ No'}")
 
-    print(f"\n📋 All Services: {', '.join(store.get_store_services())}")
+    print(f"\n📋 All Services: {', '.join(store.get_services_summary().split(', '))}")
 
     print()
 
@@ -439,7 +430,7 @@ print(f"Services: {store.get_store_services()}")
 distance = store.calculate_distance_to(42.0, -86.0)
 
 # Create multiple stores
-stores = create_meijer_stores_from_response(api_response)
+        stores = MeijerStore.from_store_info_responses(api_response)
         """)
 
         print("\n🏪 MeijerStore Features:")

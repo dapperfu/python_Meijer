@@ -182,6 +182,14 @@ class MeijerStore:
     store_size: Optional[str] = None
     """Store size classification"""
 
+    # Distance information (for proximity searches)
+    distance: Optional[float] = None
+    """Distance in miles from search location (if available)"""
+
+    # Store timezone
+    timezone: Optional[str] = None
+    """Store timezone (e.g., 'EST', 'PST')"""
+
     # Internal fields
     _meijer_client: Optional["Meijer"] = field(default=None, repr=False)
     """Reference to Meijer client instance"""
@@ -317,6 +325,25 @@ class MeijerStore:
         """
         return cls.from_api_data(data, meijer_client)
 
+    @classmethod
+    def from_store_info_responses(
+        cls, stores_data: List[Dict[str, Any]], meijer_client: Optional["Meijer"] = None
+    ) -> List["MeijerStore"]:
+        """
+        Create multiple MeijerStore instances from storeInfo API response data.
+
+        Parameters
+        ----------
+        stores_data : List[Dict[str, Any]]
+            List of raw storeInfo API response data for multiple stores
+        """
+        stores = []
+        for store_data in stores_data:
+            if isinstance(store_data, dict):
+                store = cls.from_store_info_response(store_data, meijer_client)
+                stores.append(store)
+        return stores
+
     def get_store_services(self) -> List[str]:
         """
         Get a list of available store services.
@@ -433,6 +460,65 @@ class MeijerStore:
 
         return R * c
 
+    def calculate_distance_to(self, lat: float, lon: float) -> Optional[float]:
+        """
+        Calculate distance to given coordinates (alias for get_distance_from).
+
+        Parameters
+        ----------
+        lat : float
+            Latitude coordinate
+        lon : float
+            Longitude coordinate
+
+        Returns
+        -------
+        float, optional
+            Distance in miles if coordinates available, None otherwise
+        """
+        return self.get_distance_from(lat, lon)
+
+    @classmethod
+    def create_meijer_stores_from_response(
+        cls, api_response: Dict[str, Any]
+    ) -> List["MeijerStore"]:
+        """
+        Create multiple MeijerStore instances from an API response.
+
+        Parameters
+        ----------
+        api_response : Dict[str, Any]
+            API response containing store data
+
+        Returns
+        -------
+        List[MeijerStore]
+            List of MeijerStore instances
+        """
+        stores = []
+
+        # Handle different response formats
+        if "store" in api_response:
+            store_data_list = api_response["store"]
+        elif "stores" in api_response:
+            store_data_list = api_response["stores"]
+        elif isinstance(api_response, list):
+            store_data_list = api_response
+        else:
+            # Single store response
+            store_data_list = [api_response]
+
+        for store_data in store_data_list:
+            try:
+                store = cls.from_store_info_response(store_data)
+                stores.append(store)
+            except Exception as e:
+                # Log error but continue processing other stores
+                print(f"Warning: Could not create store from data: {e}")
+                continue
+
+        return stores
+
     def is_currently_open(self) -> bool:
         """
         Check if store is currently open.
@@ -478,6 +564,62 @@ class MeijerStore:
             services.append("Auto Center")
 
         return ", ".join(services) if services else "Basic Grocery"
+
+    def get_contact_info(self) -> Dict[str, str]:
+        """
+        Get contact information for the store.
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary mapping contact types to phone numbers
+        """
+        contact_info = {}
+
+        if self.phone_number:
+            contact_info["main_phone"] = self.phone_number
+
+        if hasattr(self, "pharm_phone") and self.pharm_phone:
+            contact_info["pharmacy_phone"] = self.pharm_phone
+
+        if hasattr(self, "curbside_phone") and self.curbside_phone:
+            contact_info["curbside_phone"] = self.curbside_phone
+
+        if hasattr(self, "dlvry_order_phone") and self.dlvry_order_phone:
+            contact_info["delivery_phone"] = self.dlvry_order_phone
+
+        return contact_info
+
+    def get_hours_summary(self) -> Dict[str, str]:
+        """
+        Get store hours summary.
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary mapping time periods to hours
+        """
+        hours_summary = {}
+
+        if hasattr(self, "store_weekday_open") and hasattr(self, "store_weekday_close"):
+            hours_summary["weekday"] = (
+                f"{self.store_weekday_open} - {self.store_weekday_close}"
+            )
+
+        if hasattr(self, "store_sat_open") and hasattr(self, "store_sat_close"):
+            hours_summary["saturday"] = (
+                f"{self.store_sat_open} - {self.store_sat_close}"
+            )
+
+        if hasattr(self, "store_sun_open") and hasattr(self, "store_sun_close"):
+            hours_summary["sunday"] = f"{self.store_sun_open} - {self.store_sun_close}"
+
+        if hasattr(self, "pharm_daily_open") and hasattr(self, "pharm_daily_close"):
+            hours_summary["pharmacy"] = (
+                f"{self.pharm_daily_open} - {self.pharm_daily_close}"
+            )
+
+        return hours_summary
 
     def get_gas_station(self) -> Optional["MeijerGas"]:
         """
