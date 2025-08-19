@@ -37,8 +37,8 @@ def main():
         print(f"   Found {len(items)} items")
         if items:
             for item in items[:5]:
-                status = "✅" if item.isComplete else "⏳"
-                print(f"   {status} {item.itemDescription}")
+                status = "✅" if item.is_complete else "⏳"
+                print(f"   {status} {item.item_description}")
         else:
             print("   No items in list")
     except Exception as e:
@@ -73,8 +73,8 @@ def main():
         print(f"   Found {len(items)} items")
         if items:
             for item in items[:5]:
-                status = "✅" if item.isComplete else "⏳"
-                print(f"   {status} {item.itemDescription}")
+                status = "✅" if item.is_complete else "⏳"
+                print(f"   {status} {item.item_description}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
 
@@ -83,11 +83,11 @@ def main():
     # Test favorites
     print("⭐ Favorites:")
     try:
-        favorites = m.list.get_favorites()
+        favorites = m.get_favorites()
         print(f"   Found {len(favorites)} favorites")
         if favorites:
             for item in favorites[:3]:
-                print(f"   • {item.itemDescription}")
+                print(f"   • {item.item_description}")
         else:
             print("   No favorites yet")
     except Exception as e:

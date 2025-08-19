@@ -327,7 +327,7 @@ class MPerksEarnedRewards:
             headers.update(
                 {
                     "Accept": "application/vnd.meijer.digitalmperks.earnedrewards-v1.0+json",
-                    "Content-Type": "application/vnd.meijer.digitalmperks.earnedrewards-v1.0+json",
+                    "Content-Type": "application/json",
                 }
             )
 

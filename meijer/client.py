@@ -15,7 +15,7 @@ from .coupon_operations import CouponOperations
 from .coupons import MeijerCouponManager
 from .exceptions import MeijerAPIError, MeijerAuthenticationError
 from .feedback import MeijerFeedback
-from .models import ListItem, MeijerCoupon, MeijerItem, SearchResult, Store
+from .models import ListItem, MeijerCoupon, MeijerItem, SearchResult
 from .mperks import (
     EarnableOffer,
     EarnedReward,
@@ -311,42 +311,57 @@ class Meijer:
         if radius and latitude and longitude:
             return self.find_stores_nearby(latitude, longitude, radius)
 
-        # Otherwise, fall back to the basic store endpoint
+        # Otherwise, use the working storeInfo endpoint with default coordinates
         try:
-            # Actual endpoint from APK analysis
-            url = f"{self.api_base_url}/stores"
+            # Use the working storeInfo endpoint instead of the non-existent /stores
+            url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
 
-            params = {}
-            if zip_code:
-                params["zipCode"] = zip_code
-            if latitude and longitude:
-                params["latitude"] = latitude
-                params["longitude"] = longitude
+            # Use coordinates near the center of Michigan as a starting point
+            # This will return stores that can be filtered by zip_code if provided
+            params = {
+                "latitude": 44.3148,  # Center of Michigan
+                "longitude": -85.6024,
+                "miles": 500,  # Large radius to get stores across the region
+                "numToReturn": 100,  # Get more stores
+                "dataVariant": 2,
+            }
 
-            response = self._make_request("GET", url, params=params)
+            # Headers required by storeInfo APIs
+            headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Version": "9",
+                "ocp-apim-subscription-key": self.subscription_key,
+            }
+
+            # Add authorization if available
+            if hasattr(self, "_access_token") and self._access_token:
+                headers["authorization"] = f"Bearer {self._access_token}"
+
+            response = self._make_request("GET", url, headers=headers, params=params)
 
             if response.status_code == 200:
                 data = response.json()
                 stores = []
 
                 for store_data in data.get("stores", []):
-                    store = Store(
-                        store_id=store_data.get("storeId", ""),
-                        name=store_data.get("name", ""),
-                        address=store_data.get("address", ""),
-                        city=store_data.get("city", ""),
-                        state=store_data.get("state", ""),
-                        zip_code=store_data.get("zipCode", ""),
-                        phone=store_data.get("phone"),
-                        hours=store_data.get("hours"),
-                        latitude=store_data.get("latitude"),
-                        longitude=store_data.get("longitude"),
-                        distance=store_data.get("distance"),
-                        is_open=store_data.get("isOpen", True),
-                        services=store_data.get("services", []),
-                        raw_data=store_data,
-                    )
-                    stores.append(store)
+                    try:
+                        # Ensure UnitId is present and not empty
+                        if not store_data.get("UnitId"):
+                            self.logger.warning(
+                                "Failed to parse store data: Unit ID cannot be empty"
+                            )
+                            continue
+
+                        # Filter by zip_code if provided
+                        if zip_code and store_data.get("Zip") != zip_code:
+                            continue
+
+                        store = MeijerStore.from_api_data(store_data, self)
+                        stores.append(store)
+                    except Exception as e:
+                        self.logger.warning(f"Failed to parse store data: {e}")
+                        continue
 
                 return stores
             else:
