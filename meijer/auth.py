@@ -10,7 +10,7 @@ import logging
 import os
 import pickle
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 from requests.auth import AuthBase
 
@@ -102,80 +102,81 @@ def load_auth_from_config_file(
         with open(config_file_path, "r") as f:
             config_data = json.load(f)
 
-        # Extract tokens from JSON structure
-        tokens = config_data.get("tokens", {})
-        bearer_token = tokens.get("access_token")
-
-        # Get user agent from config or use default
-        user_agent = config_data.get("user_agent")
-        if not user_agent:
-            user_agent = "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
+        bearer_token = config_data.get("bearer")
+        user_agent = config_data.get("user_agent", "")
 
         if bearer_token:
-            logging.info(
-                f"✅ Loaded bearer token from JSON config: {bearer_token[:20]}..."
-            )
+            logging.info("✅ Loaded bearer token from config file")
             return bearer_token, user_agent
+        else:
+            logging.warning("⚠️ No bearer token found in config file")
+            return None
 
-        logging.warning(
-            f"No access token found in JSON config file: {config_file_path}"
-        )
-        return None
-
-    except json.JSONDecodeError as e:
-        logging.error(f"Invalid JSON in config file: {e}")
-        return None
     except Exception as e:
-        logging.error(f"Error loading JSON config file: {e}")
+        logging.error(f"❌ Failed to load config file: {e}")
         return None
 
 
-def load_auth_file(
-    auth_file: str,
-) -> Tuple[Optional[Dict[str, str]], Optional[Tuple[str, str]]]:
+def extract_bearer_token_from_mitmproxy(
+    log_file: str,
+) -> Optional[Tuple[str, str, float]]:
     """
-    Intelligently load auth file - detects bearer= or user=/password= format.
+    Extract bearer token from mitmproxy log file.
 
     Args:
-        auth_file: Path to auth file
+        log_file: Path to the mitmproxy log file
 
     Returns:
-        Tuple of (credentials_dict, bearer_tuple) where one or both may be None
+        Tuple of (bearer_token, user_agent, timestamp) if found, None otherwise
     """
-    if not auth_file or not os.path.exists(auth_file):
-        return None, None
-
     try:
-        data = {}
-        with open(auth_file, "r") as f:
-            for line in f:
-                line = line.strip()
-                if "=" in line:
-                    key, value = line.split("=", 1)
-                    data[key.strip()] = value.strip()
+        from mitmproxy import io
+        from mitmproxy.http import HTTPFlow
 
-        # Check for bearer token
-        bearer_token = data.get("bearer") or data.get("bearer_token")
-        user_agent = data.get("user_agent")
+        flows = []
+        with open(log_file, "rb") as f:
+            reader = io.FlowReader(f)
+            for flow in reader.stream():
+                if isinstance(flow, HTTPFlow):
+                    flows.append(flow)
 
-        if bearer_token:
-            if not user_agent:
-                user_agent = "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)"
-            bearer_info = (bearer_token, user_agent)
-        else:
-            bearer_info = None
+        # Find the most recent request with a bearer token
+        bearer_requests = []
+        for flow in flows:
+            if flow.request and hasattr(flow.request, "headers"):
+                headers = dict(flow.request.headers)
 
-        # Check for username/password credentials
-        username = data.get("username") or data.get("user") or data.get("email")
-        password = data.get("password") or data.get("pass") or data.get("pwd")
+                # Look for Authorization header with Bearer token
+                auth_header = None
+                for header_name, header_value in headers.items():
+                    if header_name.lower() == "authorization":
+                        auth_header = header_value
+                        break
 
-        if username and password:
-            credentials = {"username": username, "password": password}
-        else:
-            credentials = None
+                if auth_header and auth_header.startswith("Bearer "):
+                    bearer_token = auth_header[7:]  # Remove "Bearer " prefix
+                    user_agent = headers.get("user-agent", "")
+                    timestamp = flow.timestamp_start
 
-        return credentials, bearer_info
+                    bearer_requests.append(
+                        {
+                            "bearer_token": bearer_token,
+                            "user_agent": user_agent,
+                            "timestamp": timestamp,
+                        }
+                    )
 
+        if bearer_requests:
+            # Sort by timestamp (newest first) and return the most recent
+            bearer_requests.sort(key=lambda x: x["timestamp"], reverse=True)
+            latest = bearer_requests[0]
+            return latest["bearer_token"], latest["user_agent"], latest["timestamp"]
+
+        return None
+
+    except ImportError:
+        logging.error("mitmproxy not available for log parsing")
+        return None
     except Exception as e:
-        logging.error(f"Error loading auth file {auth_file}: {e}")
-        return None, None
+        logging.error(f"Failed to extract bearer token from log: {e}")
+        return None

@@ -22,7 +22,10 @@ vehicle information, and account details discovered through log analysis.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from .client import Meijer
 
 
 @dataclass

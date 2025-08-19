@@ -182,6 +182,105 @@ class PointBalance:
         return {k: v for k, v in result.items() if v is not None}
 
 
+@dataclass
+class EarnableOffer:
+    """Represents an offer that can be earned through mPerks."""
+
+    offer_id: str
+    title: str
+    description: str
+    category: str
+    points_required: int
+    points_earned: int
+    status: str  # "available", "in_progress", "completed"
+    progress_current: Optional[int] = None
+    progress_target: Optional[int] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    image_url: Optional[str] = None
+    terms_conditions: Optional[str] = None
+    is_active: bool = True
+    raw_data: Optional[Dict[str, Any]] = None
+
+    @property
+    def progress_percentage(self) -> Optional[float]:
+        """Get progress percentage if applicable."""
+        if self.progress_current is not None and self.progress_target is not None:
+            return (self.progress_current / self.progress_target) * 100
+        return None
+
+    @property
+    def is_expired(self) -> bool:
+        """Check if the offer is expired."""
+        if self.end_date is None:
+            return False
+        return datetime.now() > self.end_date
+
+    @property
+    def days_until_expiry(self) -> Optional[int]:
+        """Get days until expiry, negative if expired."""
+        if self.end_date is None:
+            return None
+        delta = self.end_date - datetime.now()
+        return delta.days
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API requests."""
+        result = {
+            "offerId": self.offer_id,
+            "title": self.title,
+            "description": self.description,
+            "category": self.category,
+            "pointsRequired": self.points_required,
+            "pointsEarned": self.points_earned,
+            "status": self.status,
+            "progressCurrent": self.progress_current,
+            "progressTarget": self.progress_target,
+            "startDate": self.start_date.isoformat() if self.start_date else None,
+            "endDate": self.end_date.isoformat() if self.end_date else None,
+            "imageUrl": self.image_url,
+            "termsConditions": self.terms_conditions,
+            "isActive": self.is_active,
+        }
+        return {k: v for k, v in result.items() if v is not None}
+
+
+@dataclass
+class EarnTabData:
+    """Represents the data for the Earn tab with its sub-tabs."""
+
+    in_progress_offers: List[EarnableOffer]
+    available_offers: List[EarnableOffer]
+    all_offers: List[EarnableOffer]
+    total_in_progress: int
+    total_available: int
+    total_all: int
+    last_updated: Optional[datetime] = None
+    raw_data: Optional[Dict[str, Any]] = None
+
+    def get_offers_by_category(self, category: str) -> List[EarnableOffer]:
+        """Get offers filtered by category."""
+        return [
+            offer
+            for offer in self.all_offers
+            if offer.category.lower() == category.lower()
+        ]
+
+    def get_offers_by_status(self, status: str) -> List[EarnableOffer]:
+        """Get offers filtered by status."""
+        return [
+            offer for offer in self.all_offers if offer.status.lower() == status.lower()
+        ]
+
+    def get_active_offers(self) -> List[EarnableOffer]:
+        """Get only active offers."""
+        return [
+            offer
+            for offer in self.all_offers
+            if offer.is_active and not offer.is_expired
+        ]
+
+
 class MPerksEarnedRewards:
     """Handles mPerks earned rewards operations."""
 
@@ -200,6 +299,11 @@ class MPerksEarnedRewards:
             "reward_coupon_buy": "/digital/mperks40/customer/v1/rewardcoupons/available/{coupon_id}/buy",
             "point_balance": "/digital/mperks40/customer/v1/pointbalance",
             "points_expiring": "/digital/mperks40/customer/v1/points/expiring",
+            # Earn tab endpoints
+            "earn_offers": "/digital/mperks40/customer/v1/earn/offers",
+            "earn_offers_in_progress": "/digital/mperks40/customer/v1/earn/offers/in-progress",
+            "earn_offers_available": "/digital/mperks40/customer/v1/earn/offers/available",
+            "earn_offers_all": "/digital/mperks40/customer/v1/earn/offers/all",
         }
 
     def get_earned_rewards(self, **kwargs) -> List[EarnedReward]:
@@ -871,3 +975,235 @@ class MPerksEarnedRewards:
         except Exception as e:
             self.logger.warning(f"Error parsing datetime {date_string}: {e}")
             return None
+
+    def get_earn_offers(self, **kwargs) -> EarnTabData:
+        """
+        Get all earn offers data including in-progress, available, and all offers.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            EarnTabData object containing all earn tab information
+
+        Raises:
+            MeijerAPIError: If the API request fails
+        """
+        try:
+            url = f"{self.meijer.api_base_url}{self.endpoints['earn_offers']}"
+
+            headers = self.meijer._get_api_headers()
+            headers.update(
+                {
+                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
+                    "Content-Type": "application/json",
+                }
+            )
+
+            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
+
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_earn_offers_response(data)
+            else:
+                raise MeijerAPIError(
+                    f"Failed to get earn offers: {response.status_code} - {response.text}"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Error getting earn offers: {e}")
+            # Return empty EarnTabData on failure
+            return EarnTabData(
+                in_progress_offers=[],
+                available_offers=[],
+                all_offers=[],
+                total_in_progress=0,
+                total_available=0,
+                total_all=0,
+            )
+
+    def get_earn_offers_in_progress(self, **kwargs) -> List[EarnableOffer]:
+        """
+        Get only in-progress earn offers.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of EarnableOffer objects that are in progress
+
+        Raises:
+            MeijerAPIError: If the API request fails
+        """
+        try:
+            url = (
+                f"{self.meijer.api_base_url}{self.endpoints['earn_offers_in_progress']}"
+            )
+
+            headers = self.meijer._get_api_headers()
+            headers.update(
+                {
+                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
+                    "Content-Type": "application/json",
+                }
+            )
+
+            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
+
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_earnable_offers_response(data)
+            else:
+                raise MeijerAPIError(
+                    f"Failed to get in-progress earn offers: {response.status_code} - {response.text}"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Error getting in-progress earn offers: {e}")
+            return []
+
+    def get_earn_offers_available(self, **kwargs) -> List[EarnableOffer]:
+        """
+        Get only available earn offers.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of EarnableOffer objects that are available
+
+        Raises:
+            MeijerAPIError: If the API request fails
+        """
+        try:
+            url = f"{self.meijer.api_base_url}{self.endpoints['earn_offers_available']}"
+
+            headers = self.meijer._get_api_headers()
+            headers.update(
+                {
+                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
+                    "Content-Type": "application/json",
+                }
+            )
+
+            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
+
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_earnable_offers_response(data)
+            else:
+                raise MeijerAPIError(
+                    f"Failed to get available earn offers: {response.status_code} - {response.text}"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Error getting available earn offers: {e}")
+            return []
+
+    def get_earn_offers_all(self, **kwargs) -> List[EarnableOffer]:
+        """
+        Get all earn offers regardless of status.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of all EarnableOffer objects
+
+        Raises:
+            MeijerAPIError: If the API request fails
+        """
+        try:
+            url = f"{self.meijer.api_base_url}{self.endpoints['earn_offers_all']}"
+
+            headers = self.meijer._get_api_headers()
+            headers.update(
+                {
+                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
+                    "Content-Type": "application/json",
+                }
+            )
+
+            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
+
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_earnable_offers_response(data)
+            else:
+                raise MeijerAPIError(
+                    f"Failed to get all earn offers: {response.status_code} - {response.text}"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Error getting all earn offers: {e}")
+            return []
+
+    def _parse_earn_offers_response(self, data: Dict[str, Any]) -> EarnTabData:
+        """Parse earn offers response from API."""
+        try:
+            # Handle different response structures
+            in_progress = self._parse_earnable_offers_response(
+                data.get("inProgressOffers", [])
+            )
+            available = self._parse_earnable_offers_response(
+                data.get("availableOffers", [])
+            )
+            all_offers = self._parse_earnable_offers_response(data.get("allOffers", []))
+
+            return EarnTabData(
+                in_progress_offers=in_progress,
+                available_offers=available,
+                all_offers=all_offers,
+                total_in_progress=len(in_progress),
+                total_available=len(available),
+                total_all=len(all_offers),
+                last_updated=self._parse_datetime(data.get("lastUpdated")),
+                raw_data=data,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error parsing earn offers response: {e}")
+            return EarnTabData(
+                in_progress_offers=[],
+                available_offers=[],
+                all_offers=[],
+                total_in_progress=0,
+                total_available=0,
+                total_all=0,
+            )
+
+    def _parse_earnable_offers_response(
+        self, data: List[Dict[str, Any]]
+    ) -> List[EarnableOffer]:
+        """Parse earnable offers response from API."""
+        offers = []
+
+        try:
+            for offer_data in data:
+                try:
+                    offer = EarnableOffer(
+                        offer_id=str(offer_data.get("offerId", "")),
+                        title=offer_data.get("title", ""),
+                        description=offer_data.get("description", ""),
+                        category=offer_data.get("category", ""),
+                        points_required=int(offer_data.get("pointsRequired", 0)),
+                        points_earned=int(offer_data.get("pointsEarned", 0)),
+                        status=offer_data.get("status", "available"),
+                        progress_current=offer_data.get("progressCurrent"),
+                        progress_target=offer_data.get("progressTarget"),
+                        start_date=self._parse_datetime(offer_data.get("startDate")),
+                        end_date=self._parse_datetime(offer_data.get("endDate")),
+                        image_url=offer_data.get("imageUrl"),
+                        terms_conditions=offer_data.get("termsConditions"),
+                        is_active=offer_data.get("isActive", True),
+                        raw_data=offer_data,
+                    )
+                    offers.append(offer)
+                except Exception as e:
+                    self.logger.warning(f"Error parsing earnable offer: {e}")
+                    continue
+
+        except Exception as e:
+            self.logger.error(f"Error parsing earnable offers response: {e}")
+
+        return offers

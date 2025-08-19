@@ -16,7 +16,13 @@ from .coupons import MeijerCouponManager
 from .exceptions import MeijerAPIError, MeijerAuthenticationError
 from .feedback import MeijerFeedback
 from .models import ListItem, MeijerCoupon, MeijerItem, SearchResult, Store
-from .mperks import EarnedReward, MCardInfo, MPerksEarnedRewards
+from .mperks import (
+    EarnableOffer,
+    EarnedReward,
+    EarnTabData,
+    MCardInfo,
+    MPerksEarnedRewards,
+)
 from .product_operations import ProductOperations
 from .search import Search
 from .settings import MeijerSettings
@@ -867,6 +873,54 @@ class Meijer:
             List of category names
         """
         return self.mperks.get_reward_categories(clip_filter, **kwargs)
+
+    def get_earn_offers(self, **kwargs) -> EarnTabData:
+        """
+        Get all earn offers data including in-progress, available, and all offers.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            EarnTabData object containing all earn tab information
+        """
+        return self.mperks.get_earn_offers(**kwargs)
+
+    def get_earn_offers_in_progress(self, **kwargs) -> List[EarnableOffer]:
+        """
+        Get only in-progress earn offers.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of EarnableOffer objects that are in progress
+        """
+        return self.mperks.get_earn_offers_in_progress(**kwargs)
+
+    def get_earn_offers_available(self, **kwargs) -> List[EarnableOffer]:
+        """
+        Get only available earn offers.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of EarnableOffer objects that are available
+        """
+        return self.mperks.get_earn_offers_available(**kwargs)
+
+    def get_earn_offers_all(self, **kwargs) -> List[EarnableOffer]:
+        """
+        Get only available earn offers.
+
+        Args:
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of all EarnableOffer objects
+        """
+        return self.mperks.get_earn_offers_all(**kwargs)
 
     def feedback(self, feedback_type: str, **kwargs) -> Dict[str, Any]:
         """

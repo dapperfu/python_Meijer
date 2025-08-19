@@ -21,70 +21,187 @@ class MeijerItem:
     """
 
     id: str
+    """Unique product identifier"""
+
     title: str
+    """Product title/name"""
+
     description: Optional[str] = None
+    """Product description"""
+
     brand: Optional[str] = None
+    """Product brand name"""
+
     category: Optional[str] = None
+    """Product category"""
+
     subcategory: Optional[str] = None
+    """Product subcategory"""
+
     upc: Optional[str] = None
+    """Universal Product Code"""
+
     sku: Optional[str] = None
+    """Stock Keeping Unit"""
+
     image_url: Optional[str] = None
+    """URL to product image"""
+
     large_image_url: Optional[str] = None
+    """URL to large product image"""
+
     price: Optional[float] = None
+    """Current product price"""
+
     sale_price: Optional[float] = None
+    """Sale price if on sale"""
+
     unit_price: Optional[str] = None
+    """Price per unit (e.g., per ounce)"""
+
     is_weighted: bool = False
+    """Whether product is sold by weight"""
+
     weight_unit: Optional[str] = None
+    """Unit of weight measurement"""
+
     weight_amount: Optional[float] = None
+    """Weight amount"""
+
     is_available: bool = True
+    """Whether product is currently available"""
+
     store_id: Optional[str] = None
+    """Store ID where product is located"""
+
     department_id: Optional[str] = None
+    """Department ID"""
+
     sub_department_id: Optional[str] = None
+    """Sub-department ID"""
+
     tags: List[str] = field(default_factory=list)
+    """List of product tags"""
+
     raw_data: Optional[Dict[str, Any]] = None
+    """Raw API response data"""
 
     # Constructor.io specific fields
     data_id: Optional[str] = None
+    """Constructor.io data ID"""
+
     data_ean: Optional[int] = None
+    """European Article Number"""
+
     data_isbopas: Optional[bool] = None
+    """Buy One, Get One at Same Price flag"""
+
     data_isbuyable: Optional[bool] = None
+    """Whether product can be purchased"""
+
     data_isalcohol: Optional[bool] = None
+    """Whether product contains alcohol"""
+
     data_hasmperks: Optional[bool] = None
+    """Whether product has mPerks offers"""
+
     data_specialbuy: Optional[bool] = None
+    """Whether product is a special buy"""
+
     data_deactivated: Optional[bool] = None
+    """Whether product is deactivated"""
+
     data_productunit: Optional[str] = None
+    """Product unit description"""
+
     data_qtyincrement: Optional[int] = None
+    """Quantity increment for ordering"""
+
     data_chokinghazard: Optional[bool] = None
+    """Whether product is a choking hazard"""
+
     data_ispurchasable: Optional[bool] = None
+    """Whether product can be purchased"""
+
     data_pricebyweight: Optional[bool] = None
+    """Whether product is priced by weight"""
+
     data_mperksofferid: Optional[List[Any]] = None
+    """List of mPerks offer IDs"""
+
     data_isagerestricted: Optional[bool] = None
+    """Whether product has age restrictions"""
+
     data_ebtfoodstampable: Optional[bool] = None
+    """Whether product can be purchased with EBT"""
+
     data_pickupavailableflag: Optional[bool] = None
+    """Whether pickup is available"""
+
     data_homedeliverynotavailable: Optional[bool] = None
+    """Whether home delivery is not available"""
+
     data_requiresdiscreteinventorytracking: Optional[bool] = None
+    """Whether product requires discrete inventory tracking"""
+
     data_ismap: Optional[bool] = None
+    """Whether product has MAP pricing"""
+
     data_variation_id: Optional[str] = None
+    """Product variation ID"""
+
     data_pricegoodthrough: Optional[str] = None
+    """Date until which price is valid"""
+
     data_stocklevelstatus: Optional[str] = None
+    """Current stock level status"""
+
     data_discountsalepricevalue: Optional[Union[float, int]] = None
+    """Discounted sale price value"""
+
     data_discountvalue: Optional[float] = None
+    """Discount amount"""
+
     data_discountsavingstext: Optional[str] = None
+    """Text describing discount savings"""
+
     data_discountsalepricetype: Optional[str] = None
+    """Type of discount sale price"""
+
     data_depositvalue: Optional[float] = None
+    """Deposit amount if applicable"""
+
     data_maxorderquantity: Optional[int] = None
+    """Maximum order quantity"""
+
     data_discountsalepricetext: Optional[str] = None
+    """Text describing discount sale price"""
+
     data_packagesize: Optional[str] = None
+    """Package size description"""
+
     data_group_ids: Optional[List[Any]] = None
+    """List of group IDs"""
+
     data_ingredients: Optional[str] = None
+    """Product ingredients list"""
+
     matched_terms: Optional[List[Any]] = field(default_factory=list)
+    """Search terms that matched this product"""
 
     # Aisle location fields for defragging
     aisle_primary: Optional[str] = None
+    """Primary aisle location"""
+
     aisle_locations: List[str] = field(default_factory=list)
+    """List of all aisle locations"""
 
     def __post_init__(self):
-        """Validate and set default values."""
+        """
+        Validate and set default values.
+
+        Sets default title if none provided.
+        """
         if not self.title:
             self.title = self.description or "Unknown Product"
 
@@ -177,51 +294,109 @@ class MeijerItem:
 
     @property
     def display_name(self) -> str:
-        """Get a display-friendly name for the item."""
-        if self.brand and self.brand not in self.title:
-            return f"{self.brand} {self.title}"
-        return self.title
+        """
+        Get the display name for the item.
+
+        Returns
+        -------
+        str
+            Display name (title or description)
+        """
+        return self.title or self.description or "Unknown Product"
 
     @property
     def best_price(self) -> Optional[float]:
-        """Get the best available price (sale price if available, otherwise regular price)."""
-        if self.sale_price is not None:
+        """
+        Get the best available price (sale price or regular price).
+
+        Returns
+        -------
+        float, optional
+            Best available price or None if no price available
+        """
+        if self.sale_price is not None and self.sale_price < (
+            self.price or float("inf")
+        ):
             return self.sale_price
         return self.price
 
     @property
     def on_sale(self) -> bool:
-        """Check if the item is currently on sale."""
-        return self.sale_price is not None and self.sale_price < (self.price or 0)
+        """
+        Check if the item is currently on sale.
+
+        Returns
+        -------
+        bool
+            True if item is on sale, False otherwise
+        """
+        return self.sale_price is not None and self.sale_price < (
+            self.price or float("inf")
+        )
 
     @property
     def has_image(self) -> bool:
-        """Check if the item has an image available."""
+        """
+        Check if the item has an image available.
+
+        Returns
+        -------
+        bool
+            True if image is available, False otherwise
+        """
         return bool(self.image_url or self.large_image_url)
 
     @property
     def primary_image_url(self) -> Optional[str]:
-        """Get the primary image URL (large image preferred, fallback to regular)."""
+        """
+        Get the primary image URL for the item.
+
+        Returns
+        -------
+        str, optional
+            Primary image URL or None if no image available
+        """
         return self.large_image_url or self.image_url
 
     @property
     def discount_amount(self) -> Optional[float]:
-        """Get the discount amount if the item is on sale."""
-        if self.on_sale and self.price and self.sale_price:
+        """
+        Calculate the discount amount if item is on sale.
+
+        Returns
+        -------
+        float, optional
+            Discount amount or None if not on sale
+        """
+        if self.on_sale and self.price is not None:
             return self.price - self.sale_price
         return None
 
     @property
     def discount_percentage(self) -> Optional[float]:
-        """Get the discount percentage if the item is on sale."""
-        if self.on_sale and self.price and self.sale_price:
+        """
+        Calculate the discount percentage if item is on sale.
+
+        Returns
+        -------
+        float, optional
+            Discount percentage or None if not on sale
+        """
+        if self.on_sale and self.price is not None and self.price > 0:
             return ((self.price - self.sale_price) / self.price) * 100
         return None
 
     @property
     def dairy(self) -> bool:
-        """Check if the item is in the dairy category."""
-        dairy_keywords = ["milk", "cheese", "yogurt", "cream", "butter", "dairy"]
+        """
+        Check if the item is in the dairy category.
+
+        Returns
+        -------
+        bool
+            True if item is dairy, False otherwise
+        """
+        dairy_keywords = ["milk", "cheese", "yogurt", "butter", "cream", "dairy"]
         return any(
             keyword in (self.category or "").lower()
             or keyword in (self.title or "").lower()
@@ -230,7 +405,14 @@ class MeijerItem:
 
     @property
     def produce(self) -> bool:
-        """Check if the item is in the produce category."""
+        """
+        Check if the item is in the produce category.
+
+        Returns
+        -------
+        bool
+            True if item is produce, False otherwise
+        """
         produce_keywords = ["fruit", "vegetable", "produce", "fresh"]
         return any(
             keyword in (self.category or "").lower()
@@ -240,7 +422,14 @@ class MeijerItem:
 
     @property
     def meat(self) -> bool:
-        """Check if the item is in the meat category."""
+        """
+        Check if the item is in the meat category.
+
+        Returns
+        -------
+        bool
+            True if item is meat, False otherwise
+        """
         meat_keywords = ["meat", "chicken", "beef", "pork", "fish", "steak", "ground"]
         return any(
             keyword in (self.category or "").lower()
@@ -250,7 +439,14 @@ class MeijerItem:
 
     @property
     def frozen(self) -> bool:
-        """Check if the item is frozen."""
+        """
+        Check if the item is frozen.
+
+        Returns
+        -------
+        bool
+            True if item is frozen, False otherwise
+        """
         frozen_keywords = ["frozen", "ice cream", "frozen food"]
         return any(
             keyword in (self.category or "").lower()
@@ -260,7 +456,14 @@ class MeijerItem:
 
     @property
     def organic(self) -> bool:
-        """Check if the item is organic."""
+        """
+        Check if the item is organic.
+
+        Returns
+        -------
+        bool
+            True if item is organic, False otherwise
+        """
         organic_keywords = ["organic", "organically grown"]
         return any(
             keyword in (self.title or "").lower()
@@ -270,7 +473,14 @@ class MeijerItem:
 
     @property
     def gluten_free(self) -> bool:
-        """Check if the item is gluten-free."""
+        """
+        Check if the item is gluten-free.
+
+        Returns
+        -------
+        bool
+            True if item is gluten-free, False otherwise
+        """
         gluten_free_keywords = ["gluten free", "gluten-free", "no gluten"]
         return any(
             keyword in (self.title or "").lower()
@@ -280,7 +490,14 @@ class MeijerItem:
 
     @property
     def vegan(self) -> bool:
-        """Check if the item is vegan."""
+        """
+        Check if the item is vegan.
+
+        Returns
+        -------
+        bool
+            True if item is vegan, False otherwise
+        """
         vegan_keywords = ["vegan", "plant-based", "no animal products"]
         return any(
             keyword in (self.title or "").lower()
@@ -290,7 +507,14 @@ class MeijerItem:
 
     @property
     def alcoholic(self) -> bool:
-        """Check if the item contains alcohol."""
+        """
+        Check if the item contains alcohol.
+
+        Returns
+        -------
+        bool
+            True if item contains alcohol, False otherwise
+        """
         return self.data_isalcohol or any(
             keyword in (self.title or "").lower()
             for keyword in ["wine", "beer", "liquor", "alcohol"]
@@ -298,37 +522,86 @@ class MeijerItem:
 
     @property
     def requires_age_verification(self) -> bool:
-        """Check if the item requires age verification."""
+        """
+        Check if the item requires age verification.
+
+        Returns
+        -------
+        bool
+            True if age verification required, False otherwise
+        """
         return self.data_isagerestricted or self.alcoholic
 
     @property
     def available_for_pickup(self) -> bool:
-        """Check if the item is available for pickup."""
+        """
+        Check if the item is available for pickup.
+
+        Returns
+        -------
+        bool
+            True if pickup is available, False otherwise
+        """
         return self.data_pickupavailableflag and self.is_available
 
     @property
     def available_for_delivery(self) -> bool:
-        """Check if the item is available for home delivery."""
+        """
+        Check if the item is available for home delivery.
+
+        Returns
+        -------
+        bool
+            True if delivery is available, False otherwise
+        """
         return not self.data_homedeliverynotavailable and self.is_available
 
     @property
     def has_mperks_offer(self) -> bool:
-        """Check if the item has an mPerks offer."""
+        """
+        Check if the item has an mPerks offer.
+
+        Returns
+        -------
+        bool
+            True if mPerks offer exists, False otherwise
+        """
         return bool(self.data_hasmperks and self.data_mperksofferid)
 
     @property
     def special_buy(self) -> bool:
-        """Check if the item is a special buy."""
+        """
+        Check if the item is a special buy.
+
+        Returns
+        -------
+        bool
+            True if item is a special buy, False otherwise
+        """
         return self.data_specialbuy
 
     @property
     def deactivated(self) -> bool:
-        """Check if the item is deactivated."""
+        """
+        Check if the item is deactivated.
+
+        Returns
+        -------
+        bool
+            True if item is deactivated, False otherwise
+        """
         return self.data_deactivated
 
     @property
     def purchasable(self) -> bool:
-        """Check if the item can be purchased."""
+        """
+        Check if the item can be purchased.
+
+        Returns
+        -------
+        bool
+            True if item can be purchased, False otherwise
+        """
         return self.data_ispurchasable and self.is_available and not self.deactivated
 
     @property
@@ -388,20 +661,49 @@ class ListItem:
     """
 
     list_item_id: int
+    """Unique identifier for the list item"""
+
     list_item_type_id: int
+    """Type of item (e.g., PRODUCT, COUPON, WEEKLY_AD, MANUAL)"""
+
     item_display_order: int
+    """Order in which the item appears in the list"""
+
     item_part_number: Optional[str]
+    """Part number of the item"""
+
     item_description: str
+    """Description of the item"""
+
     quantity: int
+    """Quantity of the item"""
+
     store_id: int
+    """Store ID where the item is located"""
+
     notes: Optional[str]
+    """Notes for the item"""
+
     is_complete: bool
+    """Whether the item is marked as complete"""
+
     is_favorite: bool
+    """Whether the item is marked as a favorite"""
+
     listing_id: Optional[str]
+    """ID of the listing this item belongs to"""
+
     promotion_start: Optional[date]
+    """Start date of the promotion"""
+
     promotion_end: Optional[date]
+    """End date of the promotion"""
+
     coupon_id: int
+    """ID of the coupon associated with the item"""
+
     product_details: Optional[MeijerItem] = None
+    """Detailed product information for the item"""
     # Internal reference to list API for operations like marking complete/incomplete
     _list_api: Optional[Any] = field(default=None, repr=False, compare=False)
 

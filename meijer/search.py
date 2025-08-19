@@ -5,7 +5,10 @@ This module provides methods for searching products using Constructor.io
 and other search APIs based on APK analysis.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from .client import Meijer
 
 from .models import MeijerItem, SearchResult
 

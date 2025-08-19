@@ -10,8 +10,17 @@ __author__ = "Meijer API Client Contributors"
 
 # Import main client
 # Import CLI functionality
+# Import auth utilities
+from .auth import (
+    MeijerAuth,
+    extract_bearer_token_from_mitmproxy,
+    load_auth_from_config_file,
+)
 from .cli import cli
 from .client import Meijer
+
+# Import enums
+from .enums import AuthenticationStatus
 
 # Import exceptions
 from .exceptions import (
@@ -37,7 +46,13 @@ from .models import (
     StoreHours,
     create_meijer_items_from_search,
 )
-from .mperks import EarnedReward, MCardInfo, MPerksEarnedRewards
+from .mperks import (
+    EarnableOffer,
+    EarnedReward,
+    EarnTabData,
+    MCardInfo,
+    MPerksEarnedRewards,
+)
 from .search import Search
 from .settings import (
     CustomerPreference,
@@ -56,6 +71,8 @@ __all__ = [
     "Meijer",
     # CLI functionality
     "cli",
+    # Enums
+    "AuthenticationStatus",
     # Data models
     "MeijerItem",
     "ListItem",
@@ -73,6 +90,8 @@ __all__ = [
     "MPerksEarnedRewards",
     "EarnedReward",
     "MCardInfo",
+    "EarnableOffer",
+    "EarnTabData",
     "MeijerStore",
     "create_meijer_stores_from_response",
     "MeijerGas",
@@ -91,4 +110,8 @@ __all__ = [
     "MeijerRateLimitError",
     "CartError",
     "FeedbackError",
+    # Auth utilities
+    "MeijerAuth",
+    "extract_bearer_token_from_mitmproxy",
+    "load_auth_from_config_file",
 ]

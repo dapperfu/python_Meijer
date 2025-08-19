@@ -15,126 +15,295 @@ class SearchResult:
     """Represents a search result from Meijer's product search."""
 
     total_results: int
+    """Total number of results across all pages"""
+
     results: List[MeijerItem]
+    """List of MeijerItem objects for current page"""
+
     current_page: int
+    """Current page number (1-based)"""
+
     total_pages: int
+    """Total number of pages available"""
+
     query: str
+    """Original search query string"""
+
     filters: Dict[str, Any] = field(default_factory=dict)
+    """Applied search filters and their values"""
+
     sort_by: str = "relevance"
+    """Current sort order for results"""
+
     raw_data: Optional[Dict[str, Any]] = None
+    """Raw API response data"""
 
     @property
     def has_results(self) -> bool:
-        """Check if there are any search results."""
+        """
+        Check if there are any search results.
+
+        Returns
+        -------
+        bool
+            True if there are results, False otherwise
+        """
         return len(self.results) > 0
 
     @property
     def is_last_page(self) -> bool:
-        """Check if this is the last page of results."""
+        """
+        Check if this is the last page of results.
+
+        Returns
+        -------
+        bool
+            True if on last page, False otherwise
+        """
         return self.current_page >= self.total_pages
 
     @property
     def first_page(self) -> bool:
-        """Check if this is the first page of results."""
+        """
+        Check if this is the first page of results.
+
+        Returns
+        -------
+        bool
+            True if on first page, False otherwise
+        """
         return self.current_page == 1
 
     @property
     def has_multiple_pages(self) -> bool:
-        """Check if there are multiple pages of results."""
+        """
+        Check if there are multiple pages of results.
+
+        Returns
+        -------
+        bool
+            True if multiple pages exist, False otherwise
+        """
         return self.total_pages > 1
 
     @property
     def next_page_number(self) -> Optional[int]:
-        """Get the next page number, or None if on last page."""
+        """
+        Get the next page number, or None if on last page.
+
+        Returns
+        -------
+        int, optional
+            Next page number or None if on last page
+        """
         if self.is_last_page:
             return None
         return self.current_page + 1
 
     @property
     def previous_page_number(self) -> Optional[int]:
-        """Get the previous page number, or None if on first page."""
+        """
+        Get the previous page number, or None if on first page.
+
+        Returns
+        -------
+        int, optional
+            Previous page number or None if on first page
+        """
         if self.first_page:
             return None
         return self.current_page - 1
 
     @property
     def results_count(self) -> int:
-        """Get the number of results on the current page."""
+        """
+        Get the number of results on the current page.
+
+        Returns
+        -------
+        int
+            Number of results on current page
+        """
         return len(self.results)
 
     @property
     def has_filters(self) -> bool:
-        """Check if any filters are applied to the search."""
+        """
+        Check if any filters are applied to the search.
+
+        Returns
+        -------
+        bool
+            True if filters are applied, False otherwise
+        """
         return len(self.filters) > 0
 
     @property
     def filter_count(self) -> int:
-        """Get the number of active filters."""
+        """
+        Get the number of active filters.
+
+        Returns
+        -------
+        int
+            Number of active filters
+        """
         return len(self.filters)
 
     @property
     def sorted_by_relevance(self) -> bool:
-        """Check if results are sorted by relevance."""
+        """
+        Check if results are sorted by relevance.
+
+        Returns
+        -------
+        bool
+            True if sorted by relevance, False otherwise
+        """
         return self.sort_by.lower() == "relevance"
 
     @property
     def sorted_by_price(self) -> bool:
-        """Check if results are sorted by price."""
+        """
+        Check if results are sorted by price.
+
+        Returns
+        -------
+        bool
+            True if sorted by price, False otherwise
+        """
         return "price" in self.sort_by.lower()
 
     @property
     def sorted_by_name(self) -> bool:
-        """Check if results are sorted by name."""
+        """
+        Check if results are sorted by name.
+
+        Returns
+        -------
+        bool
+            True if sorted by name, False otherwise
+        """
         return "name" in self.sort_by.lower() or "title" in self.sort_by.lower()
 
     @property
     def sorted_by_popularity(self) -> bool:
-        """Check if results are sorted by popularity."""
+        """
+        Check if results are sorted by popularity.
+
+        Returns
+        -------
+        bool
+            True if sorted by popularity, False otherwise
+        """
         return "popular" in self.sort_by.lower() or "trending" in self.sort_by.lower()
 
     @property
     def has_price_range(self) -> bool:
-        """Check if there's a price range filter applied."""
+        """
+        Check if there's a price range filter applied.
+
+        Returns
+        -------
+        bool
+            True if price filter is applied, False otherwise
+        """
         return "price" in self.filters or "price_range" in self.filters
 
     @property
     def has_category_filter(self) -> bool:
-        """Check if there's a category filter applied."""
+        """
+        Check if there's a category filter applied.
+
+        Returns
+        -------
+        bool
+            True if category filter is applied, False otherwise
+        """
         return "category" in self.filters or "department" in self.filters
 
     @property
     def has_brand_filter(self) -> bool:
-        """Check if there's a brand filter applied."""
+        """
+        Check if there's a brand filter applied.
+
+        Returns
+        -------
+        bool
+            True if brand filter is applied, False otherwise
+        """
         return "brand" in self.filters
 
     @property
     def has_availability_filter(self) -> bool:
-        """Check if there's an availability filter applied."""
+        """
+        Check if there's an availability filter applied.
+
+        Returns
+        -------
+        bool
+            True if availability filter is applied, False otherwise
+        """
         return "availability" in self.filters or "in_stock" in self.filters
 
     @property
     def results_with_prices(self) -> List["MeijerItem"]:
-        """Get results that have price information."""
+        """
+        Get results that have price information.
+
+        Returns
+        -------
+        List[MeijerItem]
+            List of items with price information
+        """
         return [item for item in self.results if item.price is not None]
 
     @property
     def results_on_sale(self) -> List["MeijerItem"]:
-        """Get results that are currently on sale."""
+        """
+        Get results that are currently on sale.
+
+        Returns
+        -------
+        List[MeijerItem]
+            List of items currently on sale
+        """
         return [item for item in self.results if item.on_sale]
 
     @property
     def results_with_images(self) -> List["MeijerItem"]:
-        """Get results that have images available."""
+        """
+        Get results that have images available.
+
+        Returns
+        -------
+        List[MeijerItem]
+            List of items with images
+        """
         return [item for item in self.results if item.has_image]
 
     @property
     def results_in_stock(self) -> List["MeijerItem"]:
-        """Get results that are currently in stock."""
+        """
+        Get results that are currently in stock.
+
+        Returns
+        -------
+        List[MeijerItem]
+            List of items currently in stock
+        """
         return [item for item in self.results if item.is_available]
 
     @property
     def price_range(self) -> tuple[Optional[float], Optional[float]]:
-        """Get the min and max prices from current results."""
+        """
+        Get the min and max prices from current results.
+
+        Returns
+        -------
+        tuple[Optional[float], Optional[float]]
+            Tuple of (min_price, max_price) or (None, None) if no prices
+        """
         prices = [item.price for item in self.results if item.price is not None]
         if not prices:
             return (None, None)
@@ -142,7 +311,14 @@ class SearchResult:
 
     @property
     def average_price(self) -> Optional[float]:
-        """Get the average price of current results."""
+        """
+        Get the average price of current results.
+
+        Returns
+        -------
+        float, optional
+            Average price or None if no prices available
+        """
         prices = [item.price for item in self.results if item.price is not None]
         if not prices:
             return None
@@ -150,19 +326,40 @@ class SearchResult:
 
     @property
     def categories_represented(self) -> List[str]:
-        """Get unique categories represented in current results."""
+        """
+        Get unique categories represented in current results.
+
+        Returns
+        -------
+        List[str]
+            List of unique category names
+        """
         categories = [item.category for item in self.results if item.category]
         return list(set(categories))
 
     @property
     def brands_represented(self) -> List[str]:
-        """Get unique brands represented in current results."""
+        """
+        Get unique brands represented in current results.
+
+        Returns
+        -------
+        List[str]
+            List of unique brand names
+        """
         brands = [item.brand for item in self.results if item.brand]
         return list(set(brands))
 
     @property
     def search_summary(self) -> str:
-        """Get a human-readable summary of the search results."""
+        """
+        Get a human-readable summary of the search results.
+
+        Returns
+        -------
+        str
+            Human-readable summary string
+        """
         if not self.has_results:
             return f"No results found for '{self.query}'"
 
@@ -173,7 +370,14 @@ class SearchResult:
 
     @property
     def pagination_info(self) -> str:
-        """Get pagination information as a string."""
+        """
+        Get pagination information as a string.
+
+        Returns
+        -------
+        str
+            Human-readable pagination information
+        """
         if not self.has_multiple_pages:
             return "Single page of results"
 
@@ -181,7 +385,14 @@ class SearchResult:
 
     @property
     def sort_description(self) -> str:
-        """Get a human-readable description of the current sort order."""
+        """
+        Get a human-readable description of the current sort order.
+
+        Returns
+        -------
+        str
+            Human-readable sort description
+        """
         sort_descriptions = {
             "relevance": "Most relevant first",
             "price": "Price: low to high",
@@ -197,7 +408,14 @@ class SearchResult:
 
     @property
     def filter_summary(self) -> str:
-        """Get a summary of applied filters."""
+        """
+        Get a summary of applied filters.
+
+        Returns
+        -------
+        str
+            Human-readable filter summary
+        """
         if not self.has_filters:
             return "No filters applied"
 
@@ -210,7 +428,14 @@ class SearchResult:
             return f"Filtered by {len(filter_names)} criteria"
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API requests."""
+        """
+        Convert to dictionary for API requests.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary representation of the search result
+        """
         return {
             "totalResults": self.total_results,
             "results": [item.to_dict() for item in self.results],

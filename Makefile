@@ -26,6 +26,12 @@ help:
 	@echo "  make ruff-lint    - Lint and fix Python code with ruff"
 	@echo "  make ruff-all     - Run all ruff operations"
 	@echo ""
+	@echo "📚 Documentation:"
+	@echo "  make docs         - Generate documentation with pdoc"
+	@echo "  make docs-serve   - Serve documentation locally"
+	@echo "  make docs-deploy  - Deploy documentation to GitHub Pages"
+	@echo "  make docs-validate - Validate documentation standards"
+	@echo ""
 	@echo "⌨️  Bash Completion:"
 	@echo "  make completion   - Show completion installation instructions"
 	@echo "  make completion-install - Install completion in ~/.bashrc"
@@ -134,6 +140,30 @@ ruff-lint:
 .PHONY: ruff-all
 ruff-all: ruff-format ruff-check ruff-lint
 	@echo "🚀 All ruff operations completed!"
+
+# Documentation targets
+.PHONY: docs
+docs:
+	@echo "📚 Generating documentation with pdoc..."
+	@${VENV}/bin/pdoc -o docs meijer/
+	@echo "✅ Documentation generated in docs/ directory"
+
+.PHONY: docs-serve
+docs-serve:
+	@echo "🌐 Serving documentation locally..."
+	@echo "📖 Open http://localhost:9999 in your browser"
+	@echo "⏹️  Press Ctrl+C to stop"
+	@${VENV}/bin/pdoc -p 9999 meijer/
+
+.PHONY: docs-deploy
+docs-deploy:
+	@echo "🚀 Deploying documentation to GitHub Pages..."
+	@./scripts/deploy_docs.sh
+
+.PHONY: docs-validate
+docs-validate:
+	@echo "🔍 Validating documentation standards..."
+	@${VENV}/bin/python tools/doc_validator.py --verbose
 
 # Bash Completion Support
 .PHONY: completion

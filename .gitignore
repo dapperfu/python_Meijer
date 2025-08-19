@@ -125,3 +125,8 @@ dmypy.json
 # Git
 .git/
 .gitignore.bak
+
+# Generated documentation
+docs/
+*.html
+search.js
