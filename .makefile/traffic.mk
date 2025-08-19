@@ -33,20 +33,5 @@ logs:
 
 .PHONY: auth
 auth:
-	@if [ -n "$(FILE)" ]; then \
-		LOG_FILE="$(FILE)"; \
-		echo "📋 Using specified log file: $$LOG_FILE"; \
-	else \
-		echo "🔍 Finding most recent log file..."; \
-		LATEST_LOG=$$(ls -t meijer_mitm_*.log 2>/dev/null | head -1); \
-		if [ -n "$$LATEST_LOG" ]; then \
-			LOG_FILE="$$LATEST_LOG"; \
-			echo "📋 Using most recent log: $$LOG_FILE"; \
-		else \
-			echo "❌ No log files found. Run 'make log' first to capture traffic."; \
-			exit 1; \
-		fi; \
-	fi; \
-	echo "🔄 Extracting authentication tokens from $$LOG_FILE..."; \
-	venv/bin/meijer auth --log-file "$$LOG_FILE" && \
-	echo "✅ Authentication updated successfully from $$LOG_FILE"
+	@echo "🔄 Extracting authentication tokens..."
+	@venv/bin/meijer auth
