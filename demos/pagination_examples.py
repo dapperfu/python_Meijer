@@ -6,8 +6,7 @@ These examples show real-world usage patterns for getting 30 results,
 then 30 more, and efficiently handling large result sets.
 """
 
-from typing import List
-from meijer import Search, MeijerItem
+from meijer import Search
 
 
 def example_basic_pagination():
@@ -28,7 +27,7 @@ def example_basic_pagination():
 
     # Get next 30 results
     if results.has_next_page:
-        print(f"\n🔍 Getting next 30 results...")
+        print("\n🔍 Getting next 30 results...")
         page2 = results.next_page()
         print(f"✅ Page 2: Got {len(page2)} items (showing first 3):")
         for i, item in enumerate(page2[:3], 1):
@@ -36,7 +35,7 @@ def example_basic_pagination():
 
         # Get another 30 results
         if page2.has_next_page:
-            print(f"\n🔍 Getting third set of 30 results...")
+            print("\n🔍 Getting third set of 30 results...")
             page3 = page2.next_page()
             print(f"✅ Page 3: Got {len(page3)} items (showing first 3):")
             for i, item in enumerate(page3[:3], 1):
@@ -87,7 +86,7 @@ def example_collect_first_100_items():
         page_num += 1
 
     print(f"✅ Collected {len(collected_items)} items total")
-    print(f"📋 Sample items:")
+    print("📋 Sample items:")
     for i, item in enumerate(collected_items[:5], 1):
         print(f"   {i}. {item.title} - ${item.price:.2f}")
     print()
@@ -106,7 +105,7 @@ def example_search_all_pages():
     results = search.search("vitamins", results_per_page=25)
     expensive_items = []
 
-    print(f"🔍 Searching all pages for items over $10.00...")
+    print("🔍 Searching all pages for items over $10.00...")
     print(f"📊 Total results to check: {results.total_results} items")
 
     # Use memory-efficient iteration
@@ -127,7 +126,7 @@ def example_search_all_pages():
     print(
         f"✅ Found {len(expensive_items)} items over $10.00 from {items_checked} total items"
     )
-    print(f"📋 Expensive items found:")
+    print("📋 Expensive items found:")
     for i, item in enumerate(expensive_items[:5], 1):
         print(f"   {i}. {item.title} - ${item.price:.2f}")
     print()
@@ -260,29 +259,29 @@ def example_performance_comparison():
     print(f"📊 Comparing approaches for {results.total_results} items:")
 
     # Approach 1: Load all at once (memory intensive)
-    print(f"\n⚠️  Approach 1: get_all_items() - Memory Intensive")
+    print("\n⚠️  Approach 1: get_all_items() - Memory Intensive")
     print(f"   Would load ALL {results.total_results} items into memory at once")
     print(f"   Memory usage: High ({results.total_results} items)")
     print(f"   API calls: {results.total_pages} calls")
-    print(f"   Use case: When you need all data for processing")
+    print("   Use case: When you need all data for processing")
 
     # Approach 2: Sequential pagination (moderate)
-    print(f"\n✅ Approach 2: next_page() - Sequential Processing")
+    print("\n✅ Approach 2: next_page() - Sequential Processing")
     print(f"   Process one page ({results.results_per_page} items) at a time")
     print(f"   Memory usage: Low ({results.results_per_page} items)")
-    print(f"   API calls: 1 per page (as needed)")
-    print(f"   Use case: UI pagination, user browsing")
+    print("   API calls: 1 per page (as needed)")
+    print("   Use case: UI pagination, user browsing")
 
     # Approach 3: Streaming iteration (efficient)
-    print(f"\n🚀 Approach 3: iter_all_pages() - Streaming")
-    print(f"   Stream through all items without loading in memory")
-    print(f"   Memory usage: Minimal (1 item at a time)")
+    print("\n🚀 Approach 3: iter_all_pages() - Streaming")
+    print("   Stream through all items without loading in memory")
+    print("   Memory usage: Minimal (1 item at a time)")
     print(f"   API calls: {results.total_pages} calls (lazy loading)")
-    print(f"   Use case: Data processing, filtering, analysis")
+    print("   Use case: Data processing, filtering, analysis")
 
     print(
-        f"\n💡 Recommendation: Use streaming for large datasets, "
-        f"pagination for UI, get_all for small sets"
+        "\n💡 Recommendation: Use streaming for large datasets, "
+        "pagination for UI, get_all for small sets"
     )
     print()
 

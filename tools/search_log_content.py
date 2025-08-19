@@ -4,8 +4,8 @@ Search for specific content in mitmproxy log files.
 """
 
 import sys
-from mitmproxy import io
-from mitmproxy import http
+
+from mitmproxy import http, io
 
 
 def search_log_for_content(log_file_path: str, search_terms: list):

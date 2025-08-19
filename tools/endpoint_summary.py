@@ -6,7 +6,7 @@ Displays a focused summary of key Meijer endpoints that need to be implemented.
 """
 
 import json
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def load_meijer_endpoints(file_path: str) -> Dict[str, Any]:

@@ -8,12 +8,13 @@ and all its functionality with practical examples.
 
 import nbformat as nbf
 
+
 def create_client_notebook():
     """Create the client notebook."""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer Main Client
 
@@ -46,7 +47,7 @@ The `client.py` module contains the main `Meijer` class that serves as the centr
 
 First, let's import the necessary modules:
 """)
-    
+
     # Import cell
     import_cell = nbf.v4.new_code_cell("""# Import the main Meijer client
 from meijer.client import Meijer
@@ -69,7 +70,7 @@ print("  - mPerks and rewards")
 print("  - Feedback system")
 print("  - Product details and location")
 print("  - Account management")""")
-    
+
     # Client initialization section
     init_section = nbf.v4.new_markdown_cell("""## Client Initialization
 
@@ -81,7 +82,7 @@ The `Meijer` client can be initialized with different authentication methods:
 
 ### Basic Initialization
 """)
-    
+
     init_example = nbf.v4.new_code_cell("""# Client initialization examples
 print("🚀 Meijer Client Initialization Demo")
 print("=" * 45)
@@ -117,7 +118,7 @@ except Exception as e:
 client = Meijer()
 print(f"\\n🎯 Demo client created for examples")
 print(f"  Authentication Status: {client.auth_status}")""")
-    
+
     # Authentication methods section
     auth_methods_section = nbf.v4.new_markdown_cell("""## Authentication Methods
 
@@ -125,7 +126,7 @@ The client provides several methods for managing authentication and tokens.
 
 ### Authentication Status and Validation
 """)
-    
+
     auth_methods_example = nbf.v4.new_code_cell("""# Authentication methods demonstration
 print("🔐 Authentication Methods Demo")
 print("=" * 40)
@@ -139,7 +140,7 @@ try:
     print(f"  Auth Status: {client.auth_status}")
     print(f"  Has Access Token: {client._access_token is not None}")
     print(f"  Has Refresh Token: {client._refresh_token is not None}")
-    
+
 except Exception as e:
     print(f"Authentication status check failed: {e}")
 
@@ -166,7 +167,7 @@ try:
             print(f"  {key}: Bearer {value[:20]}...")
         else:
             print(f"  {key}: {value}")
-            
+
 except Exception as e:
     print(f"API headers generation failed: {e}")
 
@@ -178,21 +179,21 @@ try:
     # Set mock tokens for demonstration
     client._access_token = "mock_access_token_12345"
     client._refresh_token = "mock_refresh_token_67890"
-    
+
     print("Mock tokens set:")
     print(f"  Access Token: {client._access_token}")
     print(f"  Refresh Token: {client._refresh_token}")
-    
+
     # Check authentication status
     print(f"\\nUpdated Status:")
     print(f"  Is Authenticated: {client.is_authenticated()}")
     print(f"  Auth Status: {client.auth_status}")
-    
+
     # Test headers with token
     headers_with_token = client._get_api_headers()
     print(f"\\nHeaders with token:")
     print(f"  Authorization: {headers_with_token.get('Authorization', 'Not set')}")
-    
+
 except Exception as e:
     print(f"Mock token testing failed: {e}")
 
@@ -203,14 +204,14 @@ print("-" * 35)
 try:
     client._access_token = None
     client._refresh_token = None
-    
+
     print("Mock tokens cleared")
     print(f"Final authentication status: {client.auth_status}")
     print(f"Final is_authenticated: {client.is_authenticated()}")
-    
+
 except Exception as e:
     print(f"Token cleanup failed: {e}")""")
-    
+
     # Store methods section
     store_methods_section = nbf.v4.new_markdown_cell("""## Store Management Methods
 
@@ -218,7 +219,7 @@ The client provides comprehensive store management functionality including locat
 
 ### Store Search and Discovery
 """)
-    
+
     store_methods_example = nbf.v4.new_code_cell("""# Store management methods demonstration
 print("🏪 Store Management Demo")
 print("=" * 35)
@@ -231,7 +232,7 @@ try:
     # Search by ZIP code
     stores_by_zip = client.get_stores(zip_code="49508")
     print(f"Stores found by ZIP 49508: {len(stores_by_zip)}")
-    
+
     # Search by coordinates
     stores_by_coords = client.get_stores(
         latitude=42.9634,
@@ -239,11 +240,11 @@ try:
         zip_code="49508"
     )
     print(f"Stores found by coordinates: {len(stores_by_coords)}")
-    
+
     if stores_by_coords:
         store = stores_by_coords[0]
         print(f"First store: {store.name} - {store.address}")
-        
+
 except Exception as e:
     print(f"Basic store search failed: {e}")
 
@@ -259,15 +260,15 @@ try:
         radius_miles=50,
         max_results=20
     )
-    
+
     print(f"Stores found within 50 miles: {len(nearby_stores)}")
-    
+
     if nearby_stores:
         # Show first few stores with distance
         for i, store in enumerate(nearby_stores[:5]):
             distance = getattr(store, 'distance', 'Unknown')
             print(f"  {i+1}. {store.name} - {distance} miles away")
-            
+
         # Show store details for first store
         first_store = nearby_stores[0]
         print(f"\\nFirst store details:")
@@ -280,7 +281,7 @@ try:
         print(f"  Phone: {getattr(first_store, 'phone', 'N/A')}")
         print(f"  Hours: {getattr(first_store, 'hours', 'N/A')}")
         print(f"  Services: {getattr(first_store, 'services', [])}")
-        
+
 except Exception as e:
     print(f"Proximity store search failed: {e}")
 
@@ -299,7 +300,7 @@ try:
         print(f"  State: {store_info.state}")
     else:
         print("Store not found by ID (expected for mock ID)")
-        
+
 except Exception as e:
     print(f"Store lookup by ID failed: {e}")
 
@@ -311,12 +312,12 @@ try:
     # This would use the store search component if available
     search_results = client.search_stores("Grand Rapids")
     print(f"Store search results: {len(search_results) if search_results else 0}")
-    
+
 except Exception as e:
     print(f"Store search functionality not available: {e}")
 
 print(f"\\n✅ Store management methods demonstrated successfully!")""")
-    
+
     # Coupon methods section
     coupon_methods_section = nbf.v4.new_markdown_cell("""## Coupon and Offer Methods
 
@@ -324,7 +325,7 @@ The client provides comprehensive coupon management including offers, clipping, 
 
 ### Coupon Retrieval and Management
 """)
-    
+
     coupon_methods_example = nbf.v4.new_code_cell("""# Coupon methods demonstration
 print("🎫 Coupon Management Demo")
 print("=" * 35)
@@ -336,7 +337,7 @@ print("-" * 20)
 try:
     offers = client.get_offers(limit=10)
     print(f"Offers retrieved: {len(offers)}")
-    
+
     if offers:
         # Show first few offers
         for i, offer in enumerate(offers[:3]):
@@ -345,7 +346,7 @@ try:
             print(f"     Expires: {offer.expires_at}")
             print(f"     Is Clipped: {offer.is_clipped}")
             print()
-            
+
 except Exception as e:
     print(f"Getting offers failed: {e}")
 
@@ -356,7 +357,7 @@ print("-" * 35)
 try:
     coupons = client.get_coupons(limit=50, use_pagination=True)
     print(f"Coupons retrieved: {len(coupons)}")
-    
+
     if coupons:
         # Show first few coupons
         for i, coupon in enumerate(coupons[:3]):
@@ -365,7 +366,7 @@ try:
             print(f"     Expires: {coupon.expires_at}")
             print(f"     Is Clipped: {coupon.is_clipped}")
             print()
-            
+
 except Exception as e:
     print(f"Getting coupons failed: {e}")
 
@@ -376,10 +377,10 @@ print("-" * 25)
 try:
     all_coupons = client.get_all_coupons()
     print(f"All coupons retrieved: {len(all_coupons)}")
-    
+
     if all_coupons:
         print(f"First coupon: {all_coupons[0].title}")
-        
+
 except Exception as e:
     print(f"Getting all coupons failed: {e}")
 
@@ -391,10 +392,10 @@ try:
     # These would fail with mock IDs but demonstrate the interface
     clip_result = client.clip_coupon(12345)  # Mock coupon ID
     print(f"Clip coupon result: {clip_result}")
-    
+
     unclip_result = client.unclip_coupon(12345)  # Mock coupon ID
     print(f"Unclip coupon result: {unclip_result}")
-    
+
 except Exception as e:
     print(f"Coupon clipping operations failed: {e}")
 
@@ -405,12 +406,12 @@ print("-" * 30)
 try:
     store_offers = client.get_offers(store_id="12345", limit=5)  # Mock store ID
     print(f"Store-specific offers: {len(store_offers)}")
-    
+
 except Exception as e:
     print(f"Store-specific offers failed: {e}")
 
 print(f"\\n✅ Coupon management methods demonstrated successfully!")""")
-    
+
     # Shopping list section
     shopping_list_section = nbf.v4.new_markdown_cell("""## Shopping List and Favorites Methods
 
@@ -418,7 +419,7 @@ The client provides comprehensive shopping list and favorites management functio
 
 ### Shopping List Operations
 """)
-    
+
     shopping_list_example = nbf.v4.new_code_cell("""# Shopping list methods demonstration
 print("🛒 Shopping List Management Demo")
 print("=" * 40)
@@ -430,7 +431,7 @@ print("-" * 25)
 try:
     shopping_list = client.get_shopping_list()
     print(f"Shopping list items: {len(shopping_list)}")
-    
+
     if shopping_list:
         # Show first few items
         for i, item in enumerate(shopping_list[:3]):
@@ -438,7 +439,7 @@ try:
             print(f"     Quantity: {item.quantity}")
             print(f"     UPC: {item.upc}")
             print()
-            
+
 except Exception as e:
     print(f"Getting shopping list failed: {e}")
 
@@ -449,14 +450,14 @@ print("-" * 20)
 try:
     favorites = client.get_favorites()
     print(f"Favorite items: {len(favorites)}")
-    
+
     if favorites:
         # Show first few favorites
         for i, item in enumerate(favorites[:3]):
             print(f"  {i+1}. {item.title}")
             print(f"     UPC: {item.upc}")
             print()
-            
+
 except Exception as e:
     print(f"Getting favorites failed: {e}")
 
@@ -468,7 +469,7 @@ try:
     # Add string item
     add_string_result = client.add_to_shopping_list("Organic Bananas", 2)
     print(f"Add string item result: {add_string_result}")
-    
+
     # Add MeijerItem (mock)
     from meijer.models import MeijerItem
     mock_item = MeijerItem(
@@ -479,7 +480,7 @@ try:
     )
     add_item_result = client.add_to_shopping_list(mock_item, 1)
     print(f"Add MeijerItem result: {add_item_result}")
-    
+
 except Exception as e:
     print(f"Adding items to shopping list failed: {e}")
 
@@ -491,11 +492,11 @@ try:
     # Add string item
     add_fav_string_result = client.add_to_favorites("Favorite Product")
     print(f"Add string to favorites result: {add_fav_string_result}")
-    
+
     # Add MeijerItem
     add_fav_item_result = client.add_to_favorites(mock_item)
     print(f"Add MeijerItem to favorites result: {add_fav_item_result}")
-    
+
 except Exception as e:
     print(f"Adding items to favorites failed: {e}")
 
@@ -507,11 +508,11 @@ try:
     # Remove from shopping list
     remove_list_result = client.remove_from_shopping_list(12345)  # Mock item ID
     print(f"Remove from shopping list result: {remove_list_result}")
-    
+
     # Remove from favorites
     remove_fav_result = client.remove_from_favorites(12345)  # Mock item ID
     print(f"Remove from favorites result: {remove_fav_result}")
-    
+
 except Exception as e:
     print(f"Removing items failed: {e}")
 
@@ -522,12 +523,12 @@ print("-" * 35)
 try:
     complete_result = client.complete_shopping_list_item(12345)  # Mock item ID
     print(f"Complete item result: {complete_result}")
-    
+
 except Exception as e:
     print(f"Completing items failed: {e}")
 
 print(f"\\n✅ Shopping list methods demonstrated successfully!")""")
-    
+
     # Search section
     search_section = nbf.v4.new_markdown_cell("""## Product Search and Barcode Methods
 
@@ -535,7 +536,7 @@ The client provides comprehensive product search and barcode lookup functionalit
 
 ### Product Search
 """)
-    
+
     search_example = nbf.v4.new_code_cell("""# Product search methods demonstration
 print("🔍 Product Search Demo")
 print("=" * 30)
@@ -547,7 +548,7 @@ print("-" * 20)
 try:
     search_results = client.search_products("milk", results_per_page=10, page=1)
     print(f"Search results for 'milk': {len(search_results.results)}")
-    
+
     if hasattr(search_results, 'results') and search_results.results:
         # Show first few results
         for i, result in enumerate(search_results.results[:3]):
@@ -555,7 +556,7 @@ try:
             print(f"     Price: ${result.price}")
             print(f"     UPC: {result.upc}")
             print()
-            
+
 except Exception as e:
     print(f"Product search failed: {e}")
 
@@ -572,7 +573,7 @@ try:
         print(f"  UPC: {barcode_result.upc}")
     else:
         print("Barcode not found (expected for mock UPC)")
-        
+
 except Exception as e:
     print(f"Barcode lookup failed: {e}")
 
@@ -584,13 +585,13 @@ try:
     barcodes = ["1234567890123", "9876543210987", "5555555555555"]  # Mock UPCs
     bulk_results = client.bulk_lookup_barcodes(barcodes)
     print(f"Bulk lookup results: {len(bulk_results)}")
-    
+
     for upc, result in bulk_results.items():
         if result:
             print(f"  {upc}: {result.title} - ${result.price}")
         else:
             print(f"  {upc}: Not found")
-            
+
 except Exception as e:
     print(f"Bulk barcode lookup failed: {e}")
 
@@ -601,15 +602,15 @@ print("-" * 25)
 try:
     page1_results = client.search_products("bread", results_per_page=5, page=1)
     page2_results = client.search_products("bread", results_per_page=5, page=2)
-    
+
     print(f"Page 1 results: {len(page1_results.results) if hasattr(page1_results, 'results') else 0}")
     print(f"Page 2 results: {len(page2_results.results) if hasattr(page2_results, 'results') else 0}")
-    
+
 except Exception as e:
     print(f"Search pagination failed: {e}")
 
 print(f"\\n✅ Product search methods demonstrated successfully!")""")
-    
+
     # mPerks section
     mperks_section = nbf.v4.new_markdown_cell("""## mPerks and Rewards Methods
 
@@ -617,7 +618,7 @@ The client provides comprehensive mPerks integration including rewards, mCard in
 
 ### mPerks Functionality
 """)
-    
+
     mperks_example = nbf.v4.new_code_cell("""# mPerks methods demonstration
 print("🎁 mPerks Integration Demo")
 print("=" * 35)
@@ -629,7 +630,7 @@ print("-" * 20)
 try:
     earned_rewards = client.get_earned_rewards()
     print(f"Earned rewards: {len(earned_rewards)}")
-    
+
     if earned_rewards:
         # Show first few rewards
         for i, reward in enumerate(earned_rewards[:3]):
@@ -637,7 +638,7 @@ try:
             print(f"     Description: {reward.description}")
             print(f"     Value: {reward.value}")
             print()
-            
+
 except Exception as e:
     print(f"Getting earned rewards failed: {e}")
 
@@ -648,10 +649,10 @@ print("-" * 25)
 try:
     mcard_info = client.get_mcard_info()
     print(f"mCard info retrieved: {mcard_info is not None}")
-    
+
     if mcard_info:
         print(f"mCard details available")
-        
+
 except Exception as e:
     print(f"Getting mCard info failed: {e}")
 
@@ -662,7 +663,7 @@ print("-" * 25)
 try:
     available_rewards = client.get_available_rewards()
     print(f"Available rewards: {len(available_rewards)}")
-    
+
 except Exception as e:
     print(f"Getting available rewards failed: {e}")
 
@@ -673,15 +674,15 @@ print("-" * 25)
 try:
     unclipped_categories = client.get_reward_categories("unclippedonly")
     print(f"Unclipped categories: {len(unclipped_categories)}")
-    
+
     clipped_categories = client.get_reward_categories("clippedonly")
     print(f"Clipped categories: {len(clipped_categories)}")
-    
+
 except Exception as e:
     print(f"Getting reward categories failed: {e}")
 
 print(f"\\n✅ mPerks methods demonstrated successfully!")""")
-    
+
     # Feedback section
     feedback_section = nbf.v4.new_markdown_cell("""## Feedback System Methods
 
@@ -689,7 +690,7 @@ The client provides a comprehensive feedback system for various feedback types.
 
 ### Feedback Submission
 """)
-    
+
     feedback_example = nbf.v4.new_code_cell("""# Feedback methods demonstration
 print("💬 Feedback System Demo")
 print("=" * 30)
@@ -705,7 +706,7 @@ try:
         rating=9
     )
     print(f"App feedback submitted: {app_feedback is not None}")
-    
+
 except Exception as e:
     print(f"App feedback failed: {e}")
 
@@ -721,7 +722,7 @@ try:
         rating=10
     )
     print(f"Store feedback submitted: {store_feedback is not None}")
-    
+
 except Exception as e:
     print(f"Store feedback failed: {e}")
 
@@ -737,7 +738,7 @@ try:
         rating=8
     )
     print(f"Shop & scan feedback submitted: {shop_scan_feedback is not None}")
-    
+
 except Exception as e:
     print(f"Shop & scan feedback failed: {e}")
 
@@ -752,7 +753,7 @@ try:
         rating=9
     )
     print(f"General feedback submitted: {general_feedback is not None}")
-    
+
 except Exception as e:
     print(f"General feedback failed: {e}")
 
@@ -772,12 +773,12 @@ try:
         }
     )
     print(f"Custom feedback submitted: {custom_feedback is not None}")
-    
+
 except Exception as e:
     print(f"Custom feedback failed: {e}")
 
 print(f"\\n✅ Feedback methods demonstrated successfully!")""")
-    
+
     # Order history section
     order_section = nbf.v4.new_markdown_cell("""## Order History Methods
 
@@ -785,7 +786,7 @@ The client provides comprehensive order history retrieval with pagination and fi
 
 ### Order History Retrieval
 """)
-    
+
     order_example = nbf.v4.new_code_cell("""# Order history methods demonstration
 print("📦 Order History Demo")
 print("=" * 30)
@@ -801,12 +802,12 @@ try:
         fields="FULL"
     )
     print(f"Orders retrieved (page 1): {len(orders_page1)}")
-    
+
     if orders_page1:
         # Show first order details
         first_order = orders_page1[0]
         print(f"First order details available")
-        
+
 except Exception as e:
     print(f"Getting order history failed: {e}")
 
@@ -821,7 +822,7 @@ try:
         fields="FULL"
     )
     print(f"Orders retrieved (page 2): {len(orders_page2)}")
-    
+
 except Exception as e:
     print(f"Order pagination failed: {e}")
 
@@ -836,14 +837,14 @@ try:
         fields="BASIC"
     )
     print(f"Basic fields orders: {len(basic_orders)}")
-    
+
     full_orders = client.get_order_history(
         current_page=0,
         page_size=5,
         fields="FULL"
     )
     print(f"Full fields orders: {len(full_orders)}")
-    
+
 except Exception as e:
     print(f"Field selection testing failed: {e}")
 
@@ -854,15 +855,15 @@ print("-" * 25)
 try:
     small_page = client.get_order_history(current_page=0, page_size=5)
     large_page = client.get_order_history(current_page=0, page_size=20)
-    
+
     print(f"Small page (5 items): {len(small_page)} orders")
     print(f"Large page (20 items): {len(large_page)} orders")
-    
+
 except Exception as e:
     print(f"Page size testing failed: {e}")
 
 print(f"\\n✅ Order history methods demonstrated successfully!")""")
-    
+
     # Product detail section
     product_detail_section = nbf.v4.new_markdown_cell("""## Product Detail and Location Methods
 
@@ -870,7 +871,7 @@ The client provides comprehensive product detail lookup and location parsing fun
 
 ### Product Detail Lookup
 """)
-    
+
     product_detail_example = nbf.v4.new_code_cell("""# Product detail methods demonstration
 print("📦 Product Detail Demo")
 print("=" * 30)
@@ -889,7 +890,7 @@ try:
         print(f"  Description: {product_detail.description}")
     else:
         print("Product detail not found (expected for mock UPC)")
-        
+
 except Exception as e:
     print(f"Product detail lookup failed: {e}")
 
@@ -906,7 +907,7 @@ try:
         "Aisle B | Section 16",
         "Aisle B"
     ]
-    
+
     for text in location_texts:
         location_info = client._extract_location_from_text(text)
         if location_info:
@@ -914,7 +915,7 @@ try:
             print(f"  Parsed: {location_info}")
         else:
             print(f"\\nText: '{text}' - No location info extracted")
-            
+
 except Exception as e:
     print(f"Location parsing failed: {e}")
 
@@ -925,11 +926,11 @@ print("-" * 35)
 try:
     formatted_location = client._format_location_string("B16", "23", "23")
     print(f"Formatted location: {formatted_location}")
-    
+
     # Test with missing components
     partial_location = client._format_location_string("B16", None, None)
     print(f"Partial location: {partial_location}")
-    
+
 except Exception as e:
     print(f"Location string formatting failed: {e}")
 
@@ -943,12 +944,12 @@ try:
         print(f"ILC location parsed: {ilc_location}")
     else:
         print("ILC location parsing failed")
-        
+
 except Exception as e:
     print(f"ILC location parsing failed: {e}")
 
 print(f"\\n✅ Product detail methods demonstrated successfully!")""")
-    
+
     # Account management section
     account_section = nbf.v4.new_markdown_cell("""## Account Management Methods
 
@@ -956,7 +957,7 @@ The client provides account information and management functionality.
 
 ### Account Information
 """)
-    
+
     account_example = nbf.v4.new_code_cell("""# Account management methods demonstration
 print("👤 Account Management Demo")
 print("=" * 35)
@@ -968,7 +969,7 @@ print("-" * 30)
 try:
     account_id = client._get_account_id()
     print(f"Account ID: {account_id}")
-    
+
 except Exception as e:
     print(f"Getting account ID failed: {e}")
 
@@ -987,12 +988,12 @@ try:
                 print(f"  {key}: {value}")
     else:
         print("No account details available")
-        
+
 except Exception as e:
     print(f"Getting account details failed: {e}")
 
 print(f"\\n✅ Account management methods demonstrated successfully!")""")
-    
+
     # Token management section
     token_section = nbf.v4.new_markdown_cell("""## Token Management Methods
 
@@ -1000,7 +1001,7 @@ The client provides methods for saving and managing authentication tokens.
 
 ### Token Persistence
 """)
-    
+
     token_example = nbf.v4.new_code_cell("""# Token management methods demonstration
 print("🔑 Token Management Demo")
 print("=" * 35)
@@ -1013,15 +1014,15 @@ try:
     # Set mock tokens for demonstration
     client._access_token = "demo_access_token_12345"
     client._refresh_token = "demo_refresh_token_67890"
-    
+
     print("Mock tokens set:")
     print(f"  Access Token: {client._access_token}")
     print(f"  Refresh Token: {client._refresh_token}")
-    
+
     # Save tokens
     client.save_tokens()
     print("✅ Tokens saved to config file")
-    
+
 except Exception as e:
     print(f"Token saving failed: {e}")
 
@@ -1032,12 +1033,12 @@ print("-" * 30)
 try:
     print(f"Current Status: {client.auth_status}")
     print(f"Is Authenticated: {client.is_authenticated()}")
-    
+
     # Check token availability
     print(f"\\nToken Availability:")
     print(f"  Access Token: {'✅ Available' if client._access_token else '❌ Not Available'}")
     print(f"  Refresh Token: {'✅ Available' if client._refresh_token else '❌ Not Available'}")
-    
+
 except Exception as e:
     print(f"Authentication status check failed: {e}")
 
@@ -1049,17 +1050,17 @@ try:
     # Set future expiration
     from datetime import datetime, timedelta
     client._token_expires_at = datetime.now() + timedelta(hours=1)
-    
+
     print(f"Token expires at: {client._token_expires_at}")
     print(f"Current time: {datetime.now()}")
     print(f"Time until expiry: {client._token_expires_at - datetime.now()}")
-    
+
     # Test expiration check
     if client._token_expires_at and datetime.now() >= client._token_expires_at - timedelta(minutes=5):
         print("⚠️ Token expires soon or is expired")
     else:
         print("✅ Token is still valid")
-        
+
 except Exception as e:
     print(f"Token expiration testing failed: {e}")
 
@@ -1071,14 +1072,14 @@ try:
     client._access_token = None
     client._refresh_token = None
     client._token_expires_at = None
-    
+
     print("Mock tokens cleared")
     print(f"Final authentication status: {client.auth_status}")
     print(f"Final is_authenticated: {client.is_authenticated()}")
-    
+
 except Exception as e:
     print(f"Token cleanup failed: {e}")""")
-    
+
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
@@ -1132,7 +1133,7 @@ Meijer Client
 
 The main client provides a powerful and comprehensive interface for building Meijer API applications! 🚀
 """)
-    
+
     # Add all cells to notebook
     nb.cells = [
         title_cell,
@@ -1161,14 +1162,15 @@ The main client provides a powerful and comprehensive interface for building Mei
         account_example,
         token_section,
         token_example,
-        summary_section
+        summary_section,
     ]
-    
+
     # Save notebook
-    with open('client.ipynb', 'w') as f:
+    with open("client.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ client.ipynb created successfully!")
 
+
 if __name__ == "__main__":
-    create_client_notebook() 
+    create_client_notebook()

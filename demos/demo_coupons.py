@@ -13,21 +13,22 @@ Assumes ~/.config/meijer.txt exists with valid authentication.
 
 from meijer import Meijer
 
+
 def main():
     print("Coupons Demo")
     print("=" * 40)
-    
+
     # Initialize client (auto-loads from ~/.config/meijer.txt)
     print("Initializing Meijer client...")
     m = Meijer()
-    
+
     if not m.is_authenticated():
         print("❌ Not authenticated. Please check ~/.config/meijer.txt")
         return
-    
+
     print("✅ Authenticated successfully!")
     print()
-    
+
     # Get available coupons
     print("🎫 Available Coupons:")
     try:
@@ -40,9 +41,9 @@ def main():
             print("   No coupons available")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Get clipped coupons
     print("📎 Clipped Coupons:")
     try:
@@ -55,9 +56,9 @@ def main():
             print("   No clipped coupons")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Get offers
     print("🎯 Offers:")
     try:
@@ -70,9 +71,9 @@ def main():
             print("   No offers available")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Test clipping a coupon (if available)
     if coupons:
         first_coupon = coupons[0]
@@ -84,9 +85,10 @@ def main():
             print(f"   ❌ Error: {e}")
     else:
         print("📎 No coupons available to clip")
-    
+
     print()
     print("✅ Coupons demo completed!")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

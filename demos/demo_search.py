@@ -12,21 +12,22 @@ Assumes ~/.config/meijer.txt exists with valid authentication.
 
 from meijer import Meijer
 
+
 def main():
     print("Search Demo")
     print("=" * 40)
-    
+
     # Initialize client (auto-loads from ~/.config/meijer.txt)
     print("Initializing Meijer client...")
     m = Meijer()
-    
+
     if not m.is_authenticated():
         print("❌ Not authenticated. Please check ~/.config/meijer.txt")
         return
-    
+
     print("✅ Authenticated successfully!")
     print()
-    
+
     # Product search
     print("🔍 Searching for 'milk':")
     try:
@@ -40,9 +41,9 @@ def main():
             print("   No results found")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Barcode lookup
     print("📱 Looking up Coca-Cola barcode (049000050103):")
     try:
@@ -56,9 +57,9 @@ def main():
             print("   ❌ Product not found")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Store search
     print("🏪 Searching for stores near ZIP 48104:")
     try:
@@ -71,9 +72,10 @@ def main():
             print("   No stores found")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
     print("✅ Search demo completed!")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

@@ -11,18 +11,18 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from .shopping_list import MeijerList
-from .coupons import MeijerCouponManager
 from .coupon_operations import CouponOperations
+from .coupons import MeijerCouponManager
+from .exceptions import MeijerAPIError, MeijerAuthenticationError
+from .feedback import MeijerFeedback
+from .models import ListItem, MeijerCoupon, MeijerItem, SearchResult, Store
+from .mperks import EarnedReward, MCardInfo, MPerksEarnedRewards
 from .product_operations import ProductOperations
 from .search import Search
-from .shop_scan import ShopNScan
-from .mperks import MPerksEarnedRewards, EarnedReward, MCardInfo
-from .feedback import MeijerFeedback
 from .settings import MeijerSettings
-from .models import MeijerItem, ListItem, MeijerCoupon, Store, SearchResult
+from .shop_scan import ShopNScan
+from .shopping_list import MeijerList
 from .stores import MeijerStore
-from .exceptions import MeijerAuthenticationError, MeijerAPIError
 
 
 class Meijer:
@@ -64,10 +64,11 @@ class Meijer:
         self.mperks = MPerksEarnedRewards(self)
         self.feedback = MeijerFeedback(self)
         self.settings = MeijerSettings(self)
-        
+
         # Initialize cart instance
         try:
             from .cart import MeijerCart
+
             self.cart = MeijerCart(self, store_id="217")
         except ImportError:
             self.logger.warning("Cart module not available")
@@ -451,7 +452,7 @@ class Meijer:
             # Use the proximity endpoint with a large radius to find the store
             # This approach is more reliable than direct store ID lookup
             url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
-            
+
             # Use coordinates near the center of Michigan as a starting point
             # The API will return stores within the radius, and we'll filter by ID
             params = {
@@ -482,7 +483,7 @@ class Meijer:
                 return None
 
             data = response.json()
-            
+
             # Handle different response formats
             if isinstance(data, dict):
                 # Check for 'stores' key (plural) - proximity search response
@@ -491,23 +492,29 @@ class Meijer:
                     self.logger.info(f"Found {len(stores_data)} stores in response")
                     if isinstance(stores_data, list):
                         for store_data in stores_data:
-                            if isinstance(store_data, dict) and str(store_data.get("UnitId")) == str(store_id):
+                            if isinstance(store_data, dict) and str(
+                                store_data.get("UnitId")
+                            ) == str(store_id):
                                 self.logger.info(f"Found target store {store_id}")
                                 return MeijerStore.from_api_data(store_data, self)
-                        
+
                         # If we didn't find the exact store, log what we did find
-                        found_ids = [str(s.get("UnitId")) for s in stores_data if s.get("UnitId")]
-                        self.logger.warning(f"Store {store_id} not found. Available store IDs: {found_ids[:10]}...")
+                        found_ids = [
+                            str(s.get("UnitId")) for s in stores_data if s.get("UnitId")
+                        ]
+                        self.logger.warning(
+                            f"Store {store_id} not found. Available store IDs: {found_ids[:10]}..."
+                        )
                         return None
                     else:
                         self.logger.warning("Unexpected stores data format in response")
                         return None
-                
+
                 # Check for 'store' key (singular) - direct store lookup response
                 elif "store" in data:
                     store_data = data["store"]
-                    self.logger.info(f"Found 'store' key in response")
-                    
+                    self.logger.info("Found 'store' key in response")
+
                     # Handle case where 'store' is a list
                     if isinstance(store_data, list):
                         for store_item in store_data:
@@ -516,12 +523,18 @@ class Meijer:
                                 if store_id_from_response == str(store_id):
                                     self.logger.info(f"Found target store {store_id}")
                                     return MeijerStore.from_api_data(store_item, self)
-                        
+
                         # If we didn't find the exact store, log what we did find
-                        found_ids = [str(s.get("UnitId")) for s in store_data if isinstance(s, dict) and s.get("UnitId")]
-                        self.logger.warning(f"Store {store_id} not found in list. Available store IDs: {found_ids[:10]}...")
+                        found_ids = [
+                            str(s.get("UnitId"))
+                            for s in store_data
+                            if isinstance(s, dict) and s.get("UnitId")
+                        ]
+                        self.logger.warning(
+                            f"Store {store_id} not found in list. Available store IDs: {found_ids[:10]}..."
+                        )
                         return None
-                    
+
                     # Handle case where 'store' is a single dict
                     elif isinstance(store_data, dict):
                         store_id_from_response = str(store_data.get("UnitId"))
@@ -529,21 +542,25 @@ class Meijer:
                             self.logger.info(f"Found target store {store_id}")
                             return MeijerStore.from_api_data(store_data, self)
                         else:
-                            self.logger.warning(f"Store ID mismatch. Expected: {store_id}, Got: {store_id_from_response}")
+                            self.logger.warning(
+                                f"Store ID mismatch. Expected: {store_id}, Got: {store_id_from_response}"
+                            )
                             return None
                     else:
                         self.logger.warning("Unexpected store data format in response")
                         return None
-                
+
                 # Check for other wrapper formats
                 elif "data" in data and isinstance(data["data"], list):
                     stores_data = data["data"]
                     for store_data in stores_data:
-                        if isinstance(store_data, dict) and str(store_data.get("UnitId")) == str(store_id):
+                        if isinstance(store_data, dict) and str(
+                            store_data.get("UnitId")
+                        ) == str(store_id):
                             self.logger.info(f"Found target store {store_id}")
                             return MeijerStore.from_api_data(store_data, self)
                     return None
-                
+
                 # Check if the data itself is a store
                 elif "UnitId" in data:
                     if str(data.get("UnitId")) == str(store_id):
@@ -551,7 +568,7 @@ class Meijer:
                         return MeijerStore.from_api_data(data, self)
                     else:
                         return None
-                
+
                 else:
                     self.logger.warning("Unexpected storeInfo response format")
                     self.logger.info(f"Response structure: {type(data)}")
@@ -771,6 +788,34 @@ class Meijer:
 
         return AuthenticationStatus.AUTHENTICATED
 
+    @property
+    def user_id(self) -> str:
+        """Get the current user ID."""
+        try:
+            account_details = self.settings.get_account_details()
+            if account_details and account_details.get("accountId"):
+                return str(account_details["accountId"])
+
+            # Fallback to account ID from token
+            return str(self._get_account_id())
+        except Exception as e:
+            self.logger.warning(f"Could not determine user ID: {e}")
+            return "unknown"
+
+    @property
+    def home_store_id(self) -> str:
+        """Get the home store ID."""
+        try:
+            account_details = self.settings.get_account_details()
+            if account_details and account_details.get("homeStoreId"):
+                return str(account_details["homeStoreId"])
+
+            # Fallback to default store
+            return "217"
+        except Exception as e:
+            self.logger.warning(f"Could not determine home store ID: {e}")
+            return "217"
+
     # mPerks convenience methods
     def get_earned_rewards(self, **kwargs) -> List[EarnedReward]:
         """
@@ -861,14 +906,14 @@ class Meijer:
 
         # Submit feedback using the generic method
         return self.feedback.submit_feedback_generic(feedback_type, **kwargs)
-    
+
     def _get_account_id(self) -> int:
         """
         Get the current account ID.
-        
+
         This method extracts the account ID from the authentication token
         or returns a default value if not available.
-        
+
         Returns:
             int: Account ID
         """
@@ -877,126 +922,137 @@ class Meijer:
             account_details = self.settings.get_account_details()
             if account_details and account_details.get("accountId"):
                 return int(account_details["accountId"])
-            
+
             # Fallback: try to extract from token if it's a JWT
             if self._access_token and "." in self._access_token:
                 try:
                     import jwt
-                    payload = jwt.decode(self._access_token, options={"verify_signature": False})
+
+                    payload = jwt.decode(
+                        self._access_token, options={"verify_signature": False}
+                    )
                     if payload.get("sub"):
                         return int(payload["sub"])
                 except (ImportError, Exception):
                     pass
-            
+
             # Final fallback: return default from log analysis
             return 13266596
-            
+
         except Exception as e:
             self.logger.warning(f"Could not determine account ID: {e}")
             return 13266596
 
-    def get_product_detail(self, upc: str, store_id: Optional[str] = None) -> Optional[MeijerItem]:
+    def get_product_detail(
+        self, upc: str, store_id: Optional[str] = None
+    ) -> Optional[MeijerItem]:
         """Get detailed product information by UPC using the product operations module."""
         return self.product_ops.get_product_detail(upc, store_id)
-    
-    def _parse_product_detail_response(self, data: Dict[str, Any], upc: str) -> MeijerItem:
+
+    def _parse_product_detail_response(
+        self, data: Dict[str, Any], upc: str
+    ) -> MeijerItem:
         """Parse product detail response using the product operations module."""
         return self.product_ops._parse_product_detail_response(data, upc)
-    
-    def _extract_location_from_product_detail(self, data: Dict[str, Any]) -> Optional[Dict[str, str]]:
+
+    def _extract_location_from_product_detail(
+        self, data: Dict[str, Any]
+    ) -> Optional[Dict[str, str]]:
         """Extract aisle location information using the product operations module."""
         return self.product_ops._extract_location_from_product_detail(data)
-    
+
     def _parse_ilc_location(self, ilc_string: str) -> Optional[Dict[str, str]]:
         """Parse ILC location using the product operations module."""
         return self.product_ops._parse_ilc_location(ilc_string)
-    
-    def _format_location_string(self, aisle: Optional[str], section: Optional[str], bay: Optional[str]) -> str:
+
+    def _format_location_string(
+        self, aisle: Optional[str], section: Optional[str], bay: Optional[str]
+    ) -> str:
         """Format location string using the product operations module."""
         return self.product_ops._format_location_string(aisle, section, bay)
-    
+
     def _extract_location_from_text(self, text: str) -> Optional[Dict[str, str]]:
         """
         Extract location information from text using regex patterns.
-        
+
         Args:
             text: Text to search for location patterns
-            
+
         Returns:
             Dictionary with location information or None
         """
         import re
-        
+
         # Pattern for "B16 Section 23" (direct format)
         pattern1 = r"([A-Z])(\d+)\s+Section\s+(\d+)"
         match1 = re.search(pattern1, text, re.IGNORECASE)
         if match1:
             aisle_letter = match1.group(1)  # "B"
-            section_num = match1.group(2)   # "16"
-            bay_num = match1.group(3)       # "23"
-            
+            section_num = match1.group(2)  # "16"
+            bay_num = match1.group(3)  # "23"
+
             # Combine aisle letter and section number for the aisle field
             combined_aisle = f"{aisle_letter}{section_num}"
-            
+
             return {
                 "aisle": combined_aisle,  # "B16"
-                "section": bay_num,       # "23" (the bay number)
-                "bay": bay_num,           # "23" (for backward compatibility)
-                "formatted_location": f"{combined_aisle} Section {bay_num}"
+                "section": bay_num,  # "23" (the bay number)
+                "bay": bay_num,  # "23" (for backward compatibility)
+                "formatted_location": f"{combined_aisle} Section {bay_num}",
             }
-        
+
         # Pattern for "Aisle B | 16 Section: 35" (API format)
         pattern2 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*(\d+)\s*Section:\s*(\d+)"
         match2 = re.search(pattern2, text, re.IGNORECASE)
         if match2:
             aisle_letter = match2.group(1)  # "B"
-            section_num = match2.group(2)   # "16"
-            bay_num = match2.group(3)       # "35"
-            
+            section_num = match2.group(2)  # "16"
+            bay_num = match2.group(3)  # "35"
+
             # Combine aisle letter and section number for the aisle field
             combined_aisle = f"{aisle_letter}{section_num}"
-            
+
             return {
                 "aisle": combined_aisle,  # "B16"
-                "section": bay_num,       # "35" (the bay number)
-                "bay": bay_num,           # "35" (for backward compatibility)
-                "formatted_location": f"{combined_aisle} Section {bay_num}"
+                "section": bay_num,  # "35" (the bay number)
+                "bay": bay_num,  # "35" (for backward compatibility)
+                "formatted_location": f"{combined_aisle} Section {bay_num}",
             }
-        
+
         # Pattern for "B | 16 Section: 35" (alternative API format)
         pattern3 = r"([A-Z0-9]+)\s*\|\s*(\d+)\s*Section:\s*(\d+)"
         match3 = re.search(pattern3, text, re.IGNORECASE)
         if match3:
             aisle_letter = match3.group(1)  # "B"
-            section_num = match3.group(2)   # "16"
-            bay_num = match3.group(3)       # "35"
-            
+            section_num = match3.group(2)  # "16"
+            bay_num = match3.group(3)  # "35"
+
             # Combine aisle letter and section number for the aisle field
             combined_aisle = f"{aisle_letter}{section_num}"
-            
+
             return {
                 "aisle": combined_aisle,  # "B16"
-                "section": bay_num,       # "35" (the bay number)
-                "bay": bay_num,           # "35" (for backward compatibility)
-                "formatted_location": f"{combined_aisle} Section {bay_num}"
+                "section": bay_num,  # "35" (the bay number)
+                "bay": bay_num,  # "35" (for backward compatibility)
+                "formatted_location": f"{combined_aisle} Section {bay_num}",
             }
-        
+
         # Pattern for "Aisle B | Section 16" (simplified format)
         pattern4 = r"Aisle\s+([A-Z0-9]+)\s*\|\s*Section\s+(\d+)"
         match4 = re.search(pattern4, text, re.IGNORECASE)
         if match4:
             aisle_letter = match4.group(1)  # "B"
-            section_num = match4.group(2)   # "16"
-            
+            section_num = match4.group(2)  # "16"
+
             # Combine aisle letter and section number
             combined_aisle = f"{aisle_letter}{section_num}"
-            
+
             return {
                 "aisle": combined_aisle,  # "B16"
-                "section": section_num,   # "16"
-                "formatted_location": f"{combined_aisle} Section {section_num}"
+                "section": section_num,  # "16"
+                "formatted_location": f"{combined_aisle} Section {section_num}",
             }
-        
+
         # Pattern for just "Aisle B" (basic format)
         pattern5 = r"Aisle\s+([A-Z0-9]+)"
         match5 = re.search(pattern5, text, re.IGNORECASE)
@@ -1004,7 +1060,7 @@ class Meijer:
             aisle_letter = match5.group(1)  # "B"
             return {
                 "aisle": aisle_letter,  # "B"
-                "formatted_location": f"Aisle {aisle_letter}"
+                "formatted_location": f"Aisle {aisle_letter}",
             }
-        
+
         return None

@@ -12,33 +12,32 @@ from pathlib import Path
 def check_file_length(file_path: str, max_lines: int = 1024) -> bool:
     """
     Check if a file exceeds the maximum line count using wc -l.
-    
+
     Args:
         file_path: Path to the file to check
         max_lines: Maximum allowed lines (default: 1024)
-        
+
     Returns:
         True if file is within limit, False if it exceeds limit
     """
     try:
         # Use wc -l to count lines
         result = subprocess.run(
-            ['wc', '-l', file_path],
-            capture_output=True,
-            text=True,
-            check=True
+            ["wc", "-l", file_path], capture_output=True, text=True, check=True
         )
-        
+
         # Parse the output: wc -l returns "line_count filename"
         line_count = int(result.stdout.strip().split()[0])
-        
+
         if line_count > max_lines:
-            print(f"❌ {file_path}: {line_count} lines (exceeds {max_lines} line limit)")
+            print(
+                f"❌ {file_path}: {line_count} lines (exceeds {max_lines} line limit)"
+            )
             return False
         else:
             print(f"✅ {file_path}: {line_count} lines (within {max_lines} line limit)")
             return True
-            
+
     except subprocess.CalledProcessError as e:
         print(f"⚠️  Error checking {file_path}: {e}")
         return True  # Allow commit if we can't check the file
@@ -53,23 +52,23 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: check_file_length.py <file1> [file2] ...")
         sys.exit(1)
-    
+
     files_to_check = sys.argv[1:]
     failed_files = []
-    
+
     print("🔍 Checking file line counts...")
-    print(f"📏 Maximum allowed lines: 1024")
+    print("📏 Maximum allowed lines: 1024")
     print("-" * 50)
-    
+
     for file_path in files_to_check:
         if Path(file_path).exists():
             if not check_file_length(file_path):
                 failed_files.append(file_path)
         else:
             print(f"⚠️  File not found: {file_path}")
-    
+
     print("-" * 50)
-    
+
     if failed_files:
         print(f"❌ {len(failed_files)} file(s) exceed the 1024 line limit:")
         for file_path in failed_files:

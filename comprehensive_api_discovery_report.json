@@ -1,0 +1,17 @@
+{
+  "summary": {
+    "total_endpoints": 0,
+    "total_hosts": 0,
+    "analysis_timestamp": "2025-08-18T23:43:58.888280",
+    "endpoints_by_method": {},
+    "endpoints_by_host": {},
+    "status_code_distribution": {},
+    "content_type_distribution": {}
+  },
+  "endpoints": {},
+  "hosts": {},
+  "auth_patterns": {},
+  "content_type_patterns": {},
+  "error_patterns": {},
+  "recommendations": []
+}

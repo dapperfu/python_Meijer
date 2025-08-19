@@ -5,15 +5,21 @@ This module contains all the Click command groups and individual commands.
 """
 
 import sys
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
 import click
 
 from .utils import (
-    get_meijer_client, display_items_table, add_items_from_file,
-    export_to_text, export_to_csv, export_to_json,
-    import_from_text, import_from_csv, import_from_json
+    add_items_from_file,
+    display_items_table,
+    export_to_csv,
+    export_to_json,
+    export_to_text,
+    get_meijer_client,
+    import_from_csv,
+    import_from_json,
+    import_from_text,
 )
 
 
@@ -80,8 +86,12 @@ def list_favorites():
         for i, item in enumerate(favorites, 1):
             # Check if item is in active list by looking at list_item_id
             # If it's a favorite item, it might not have the same structure as regular list items
-            in_list_status = "✅ In List" if hasattr(item, 'list_item_id') and item.list_item_id else "⭕ Not in List"
-            
+            in_list_status = (
+                "✅ In List"
+                if hasattr(item, "list_item_id") and item.list_item_id
+                else "⭕ Not in List"
+            )
+
             table_data.append(
                 [
                     i,
@@ -95,16 +105,23 @@ def list_favorites():
 
         try:
             from tabulate import tabulate
+
             click.echo(f"\n📊 Favorites ({len(favorites)} items):")
             click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         except ImportError:
             click.echo(f"\n📊 Favorites ({len(favorites)} items):")
-            click.echo("╒══════════════════════════════════════════════════════════════════════════════════════════════════╕")
+            click.echo(
+                "╒══════════════════════════════════════════════════════════════════════════════════════════════════╕"
+            )
             click.echo(f"│ {'#':<3} {'Favorite Item':<40} {'Qty':<4} {'Status':<15} │")
-            click.echo("╞══════════════════════════════════════════════════════════════════════════════════════════════════╡")
+            click.echo(
+                "╞══════════════════════════════════════════════════════════════════════════════════════════════════╡"
+            )
             for row in table_data:
                 click.echo(f"│ {row[0]:<3} {row[1]:<40} {row[2]:<4} {row[3]:<15} │")
-            click.echo("╘══════════════════════════════════════════════════════════════════════════════════════════════════╛")
+            click.echo(
+                "╘══════════════════════════════════════════════════════════════════════════════════════════════════╛"
+            )
 
     except Exception as e:
         raise click.ClickException(f"❌ Failed to show favorites: {e}")
@@ -278,7 +295,13 @@ def list_defrag(store_id: Optional[str], reverse: bool, zig: bool):
 
 @list_group.command("export")
 @click.argument("filename", type=click.Path(), default="shopping_list.txt")
-@click.option("--format", "-f", type=click.Choice(["text", "csv", "json"]), default="text", help="Export format")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["text", "csv", "json"]),
+    default="text",
+    help="Export format",
+)
 def list_export(filename: str, format: str):
     """Export shopping list to a file with full details for round-trip import."""
     client = get_meijer_client()
@@ -311,14 +334,20 @@ def list_export(filename: str, format: str):
 @list_group.command("import")
 @click.argument("filename", type=click.Path(exists=True))
 @click.option("--clear", "-c", is_flag=True, help="Clear existing list before import")
-@click.option("--format", "-f", type=click.Choice(["auto", "text", "csv", "json"]), default="auto", help="Import format (auto-detect if not specified)")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["auto", "text", "csv", "json"]),
+    default="auto",
+    help="Import format (auto-detect if not specified)",
+)
 def list_import(filename: str, clear: bool, format: str):
     """Import shopping list from a file with full details."""
     client = get_meijer_client()
 
     try:
         file_path = Path(filename)
-        
+
         # Clear existing list if requested
         if clear:
             click.echo("🗑️  Clearing existing shopping list...")
@@ -363,11 +392,11 @@ def list_interactive():
     try:
         click.echo("🔄 Starting interactive mode...")
         click.echo("📝 Type 'help' for available commands, 'quit' to exit")
-        
+
         while True:
             try:
                 command = input("\n🛒 meijer> ").strip().lower()
-                
+
                 if command in ["quit", "exit", "q"]:
                     click.echo("👋 Goodbye!")
                     break
@@ -394,7 +423,7 @@ def list_interactive():
                             upc=f"ITEM_{hash(item_name) % 10000}",
                             description=item_name,
                             quantity=1,
-                            notes=""
+                            notes="",
                         )
                         if success:
                             click.echo(f"✅ Added '{item_name}' to shopping list")
@@ -406,17 +435,21 @@ def list_interactive():
                     items = client.list.get()
                     completed_items = [item for item in items if item.checked]
                     if completed_items:
-                        click.echo(f"🗑️  Clearing {len(completed_items)} completed items...")
+                        click.echo(
+                            f"🗑️  Clearing {len(completed_items)} completed items..."
+                        )
                         for item in completed_items:
                             client.list.delete_item(str(item.list_item_id))
                         click.echo("✅ Completed items cleared")
                     else:
                         click.echo("📝 No completed items to clear")
                 elif command == "export":
-                    filename = input("📁 Enter filename (default: shopping_list.txt): ").strip()
+                    filename = input(
+                        "📁 Enter filename (default: shopping_list.txt): "
+                    ).strip()
                     if not filename:
                         filename = "shopping_list.txt"
-                    
+
                     file_path = Path(filename)
                     items = client.list.get()
                     if items:
@@ -427,13 +460,13 @@ def list_interactive():
                 else:
                     click.echo(f"❌ Unknown command: {command}")
                     click.echo("💡 Type 'help' for available commands")
-                    
+
             except KeyboardInterrupt:
                 click.echo("\n👋 Goodbye!")
                 break
             except Exception as e:
                 click.echo(f"❌ Error: {e}")
-                
+
     except Exception as e:
         raise click.ClickException(f"❌ Interactive mode failed: {e}")
 
@@ -444,10 +477,10 @@ def ad_command():
     """Browse weekly ad items and add them to your shopping list."""
     try:
         from ..ad_browser import browse_weekly_ad
-        
+
         client = get_meijer_client()
         browse_weekly_ad(client)
-        
+
     except ImportError as e:
         raise click.ClickException(f"❌ Failed to import ad browser module: {e}")
     except Exception as e:
@@ -463,16 +496,16 @@ def gas_command():
         # Get account info to find home store
         account_info = client.account.get()
         home_store_id = account_info.get("homeStoreId") if account_info else None
-        
+
         if home_store_id:
             click.echo(f"🏠 Home Store: {home_store_id}")
         else:
             click.echo("🏠 No home store configured")
-            
+
         # Show gas prices for default store (217)
         store_id = "217"
         click.echo(f"⛽ Checking gas prices for store {store_id}...")
-        
+
         try:
             gas_info = client.gas.get_prices(store_id)
             if gas_info:
@@ -483,7 +516,7 @@ def gas_command():
                 click.echo("❌ No gas price information available")
         except Exception as e:
             click.echo(f"❌ Failed to get gas prices: {e}")
-            
+
     except Exception as e:
         raise click.ClickException(f"❌ Failed to get gas information: {e}")
 
@@ -496,19 +529,20 @@ def status_command():
         click.echo(f"🔐 Authentication Status: {client.auth_status.name}")
         click.echo(f"👤 User ID: {client.user_id}")
         click.echo(f"🏪 Home Store: {client.home_store_id}")
-        
+
         # Check token expiry
-        if hasattr(client, 'token_expires_at') and client.token_expires_at:
+        if hasattr(client, "token_expires_at") and client.token_expires_at:
             from datetime import datetime
+
             now = datetime.now()
             expires = client.token_expires_at
-            
+
             if isinstance(expires, str):
                 try:
-                    expires = datetime.fromisoformat(expires.replace('Z', '+00:00'))
+                    expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
                 except:
                     expires = None
-            
+
             if expires:
                 if expires > now:
                     time_left = expires - now
@@ -519,7 +553,7 @@ def status_command():
                 click.echo("⏰ Token expiry: Unknown")
         else:
             click.echo("⏰ Token expiry: Not available")
-            
+
     except Exception as e:
         raise click.ClickException(f"❌ Failed to get status: {e}")
 
@@ -530,17 +564,19 @@ def settings_command():
     try:
         client = get_meijer_client()
         click.echo("⚙️  Account Settings:")
-        
+
         # Get account info
         account_info = client.account.get()
         if account_info:
-            click.echo(f"  👤 Name: {account_info.get('firstName', 'N/A')} {account_info.get('lastName', 'N/A')}")
+            click.echo(
+                f"  👤 Name: {account_info.get('firstName', 'N/A')} {account_info.get('lastName', 'N/A')}"
+            )
             click.echo(f"  📧 Email: {account_info.get('email', 'N/A')}")
             click.echo(f"  🏠 Home Store: {account_info.get('homeStoreId', 'N/A')}")
             click.echo(f"  📱 Phone: {account_info.get('phoneNumber', 'N/A')}")
         else:
             click.echo("  ❌ Failed to get account information")
-            
+
     except Exception as e:
         raise click.ClickException(f"❌ Failed to get settings: {e}")
 
@@ -552,7 +588,7 @@ def coupons_group():
     pass
 
 
-# Cart Commands  
+# Cart Commands
 @click.group()
 def cart_group():
     """Manage shopping cart and fulfillment."""
@@ -576,61 +612,65 @@ def auth_command(log_file: str = None):
         if not log_file:
             import glob
             import os
-            
+
             # Find all meijer_mitm_*.log files
             log_pattern = "meijer_mitm_*.log"
             log_files = glob.glob(log_pattern)
-            
+
             if not log_files:
-                raise click.ClickException("❌ No mitmproxy log files found. Expected pattern: meijer_mitm_*.log")
-            
+                raise click.ClickException(
+                    "❌ No mitmproxy log files found. Expected pattern: meijer_mitm_*.log"
+                )
+
             # Sort by modification time and get the latest
             log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
             log_file = log_files[0]
-            
+
             click.echo(f"🔍 Automatically found latest log file: {log_file}")
         else:
             click.echo(f"🔍 Using specified log file: {log_file}")
-        
+
         click.echo("⏳ This may take a moment for large log files...")
 
         # Use the existing extract_bearer_token.py tool
+        import os
         import subprocess
         import sys
-        import os
-        
+
         # Get the path to the tools directory
-        tools_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tools")
+        tools_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tools"
+        )
         extract_script = os.path.join(tools_dir, "extract_bearer_token.py")
-        
+
         if not os.path.exists(extract_script):
             raise click.ClickException(f"❌ Tool not found: {extract_script}")
-        
+
         # Run the extract_bearer_token.py tool
         click.echo("🔧 Using extract_bearer_token.py tool...")
         result = subprocess.run(
             [sys.executable, extract_script, log_file],
             capture_output=True,
             text=True,
-            cwd=os.getcwd()
+            cwd=os.getcwd(),
         )
-        
+
         if result.returncode != 0:
             click.echo(f"⚠️  Tool output: {result.stderr}")
             raise click.ClickException("❌ Failed to run extract_bearer_token.py tool")
-        
+
         # Check if the tool created output files
         bearer_auth_json = "bearer_auth.json"
         if not os.path.exists(bearer_auth_json):
             raise click.ClickException("❌ No authentication tokens found in log file")
-        
+
         # Load the extracted token
         import json
         from datetime import datetime
-        
+
         with open(bearer_auth_json, "r") as f:
             token_data = json.load(f)
-        
+
         # Convert to the format expected by the client
         tokens = {
             "access_token": token_data["bearer_token"],
@@ -641,20 +681,24 @@ def auth_command(log_file: str = None):
             "scope": "",
             "user_agent": token_data.get("user_agent", ""),
         }
-        
+
         # Try to extract expiration from JWT if possible
         try:
             import jwt
-            payload = jwt.decode(tokens["access_token"], options={"verify_signature": False})
+
+            payload = jwt.decode(
+                tokens["access_token"], options={"verify_signature": False}
+            )
             if payload.get("exp"):
                 import time
+
                 expires_in = payload.get("exp") - int(time.time())
                 if expires_in > 0:
                     tokens["expires_in"] = expires_in
                     tokens["expires_at"] = payload.get("exp")
         except (ImportError, Exception):
             pass  # Use default values if JWT decoding fails
-        
+
         # Save to ~/.config/meijer.txt
         config_path = os.path.expanduser("~/.config/meijer.txt")
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
@@ -673,7 +717,7 @@ def auth_command(log_file: str = None):
         click.echo("✅ Authentication file updated successfully!")
         click.echo(f"🔑 Access token: {tokens['access_token'][:50]}...")
         click.echo(f"⏰ Expires in: {tokens['expires_in']} seconds")
-        
+
         # Clean up temporary files
         for temp_file in ["bearer_auth.json", "bearer_token_analysis.json"]:
             if os.path.exists(temp_file):

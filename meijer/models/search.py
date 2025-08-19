@@ -165,7 +165,7 @@ class SearchResult:
         """Get a human-readable summary of the search results."""
         if not self.has_results:
             return f"No results found for '{self.query}'"
-        
+
         if self.has_multiple_pages:
             return f"Found {self.total_results} results for '{self.query}' (page {self.current_page} of {self.total_pages})"
         else:
@@ -176,7 +176,7 @@ class SearchResult:
         """Get pagination information as a string."""
         if not self.has_multiple_pages:
             return "Single page of results"
-        
+
         return f"Page {self.current_page} of {self.total_pages} ({self.results_count} results per page)"
 
     @property
@@ -190,9 +190,9 @@ class SearchResult:
             "name_desc": "Name: Z to A",
             "popularity": "Most popular first",
             "newest": "Newest first",
-            "rating": "Highest rated first"
+            "rating": "Highest rated first",
         }
-        
+
         return sort_descriptions.get(self.sort_by.lower(), f"Sorted by: {self.sort_by}")
 
     @property
@@ -200,7 +200,7 @@ class SearchResult:
         """Get a summary of applied filters."""
         if not self.has_filters:
             return "No filters applied"
-        
+
         filter_names = list(self.filters.keys())
         if len(filter_names) == 1:
             return f"Filtered by: {filter_names[0]}"

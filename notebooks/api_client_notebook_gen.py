@@ -8,12 +8,13 @@ and their usage with practical examples.
 
 import nbformat as nbf
 
+
 def create_api_client_notebook():
     """Create the api_client notebook."""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer API Client
 
@@ -41,7 +42,7 @@ The `api_client.py` module provides a comprehensive client for secure Meijer API
 
 First, let's import the necessary modules:
 """)
-    
+
     # Import cell
     import_cell = nbf.v4.new_code_cell("""# Import the API client classes
 from meijer.api_client import (
@@ -68,7 +69,7 @@ print("  - MeijerTokens")
 print("  - MeijerAPIClient")
 print("  - load_tokens_from_env")
 print("  - save_tokens_to_env")""")
-    
+
     # MeijerAuthConfig section
     auth_config_section = nbf.v4.new_markdown_cell("""## MeijerAuthConfig Class
 
@@ -83,7 +84,7 @@ The `MeijerAuthConfig` class contains all the configuration needed for OAuth aut
 
 ### Configuration Details
 """)
-    
+
     auth_config_example = nbf.v4.new_code_cell("""# MeijerAuthConfig usage
 # Create default configuration
 default_config = MeijerAuthConfig()
@@ -130,7 +131,7 @@ print(f"API endpoints:")
 print(f"  - Main API: {default_config.api_base}")
 print(f"  - Digital: {default_config.digital_base}")
 print(f"  - Loyalty: {default_config.loyalty_base}")""")
-    
+
     # MeijerTokens section
     meijer_tokens_section = nbf.v4.new_markdown_cell("""## MeijerTokens Class
 
@@ -145,7 +146,7 @@ The `MeijerTokens` class manages authentication tokens with automatic expiration
 
 ### Token Management
 """)
-    
+
     meijer_tokens_example = nbf.v4.new_code_cell("""# MeijerTokens usage
 # Create sample tokens
 sample_tokens = MeijerTokens(
@@ -240,7 +241,7 @@ for token_name, token_value in [
     print(f"{token_name}:")
     for key, value in analysis.items():
         print(f"  {key}: {value}")""")
-    
+
     # MeijerAPIClient section
     api_client_section = nbf.v4.new_markdown_cell("""## MeijerAPIClient Class
 
@@ -256,7 +257,7 @@ The `MeijerAPIClient` class is the main client for interacting with the Meijer A
 
 ### Client Initialization
 """)
-    
+
     api_client_example = nbf.v4.new_code_cell("""# MeijerAPIClient usage
 # Create API client with default configuration
 client = MeijerAPIClient()
@@ -294,7 +295,7 @@ try:
     print(f"Code Challenge: {code_challenge[:20]}...")
     print(f"Verifier Length: {len(code_verifier)} characters")
     print(f"Challenge Length: {len(code_challenge)} characters")
-    
+
     # Verify PKCE challenge format
     print(f"\\n🔍 PKCE Format Validation:")
     print("=" * 30)
@@ -302,7 +303,7 @@ try:
     print(f"Challenge is base64url: {all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_' for c in code_challenge)}")
     print(f"Verifier no padding: {not code_verifier.endswith('=')}")
     print(f"Challenge no padding: {not code_challenge.endswith('=')}")
-    
+
 except Exception as e:
     print(f"❌ PKCE generation failed: {e}")
 
@@ -313,13 +314,13 @@ print("=" * 40)
 try:
     auth_url = client.get_authorization_url()
     print(f"Authorization URL: {auth_url[:100]}...")
-    
+
     # Parse URL components
     from urllib.parse import urlparse, parse_qs
-    
+
     parsed_url = urlparse(auth_url)
     query_params = parse_qs(parsed_url.query)
-    
+
     print(f"\\n🔍 URL Components:")
     print("=" * 20)
     print(f"Base URL: {parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}")
@@ -329,17 +330,17 @@ try:
             print(f"  {param}: {values[0][:20]}...")
         else:
             print(f"  {param}: {values[0]}")
-    
+
     # Verify required parameters
     required_params = ['code_challenge', 'code_challenge_method', 'client_id', 'scope', 'redirect_uri', 'response_type', 'state', 'nonce']
     missing_params = [param for param in required_params if param not in query_params]
-    
+
     print(f"\\n✅ Parameter Validation:")
     print("=" * 25)
     print(f"Required Parameters: {required_params}")
     print(f"Missing Parameters: {missing_params}")
     print(f"All Required Present: {len(missing_params) == 0}")
-    
+
 except Exception as e:
     print(f"❌ Authorization URL generation failed: {e}")
 
@@ -350,18 +351,18 @@ print("=" * 30)
 try:
     custom_state = "custom_state_12345"
     auth_url_with_state = client.get_authorization_url(state=custom_state)
-    
+
     parsed_url_with_state = urlparse(auth_url_with_state)
     query_params_with_state = parse_qs(parsed_url_with_state.query)
-    
+
     actual_state = query_params_with_state.get('state', [None])[0]
     print(f"Requested State: {custom_state}")
     print(f"Actual State: {actual_state}")
     print(f"State Match: {custom_state == actual_state}")
-    
+
 except Exception as e:
     print(f"❌ Custom state test failed: {e}")""")
-    
+
     # API methods section
     api_methods_section = nbf.v4.new_markdown_cell("""## API Methods
 
@@ -377,7 +378,7 @@ The `MeijerAPIClient` provides several pre-built methods for common API endpoint
 
 ### Method Implementation
 """)
-    
+
     api_methods_example = nbf.v4.new_code_cell("""# API methods demonstration
 # Note: These methods require valid authentication tokens
 # We'll demonstrate the structure and error handling
@@ -388,7 +389,7 @@ print("=" * 30)
 # List available methods
 api_methods = [
     'get_offers',
-    'get_shopping_list', 
+    'get_shopping_list',
     'get_home_cards',
     'get_departments',
     'get_user_settings'
@@ -434,7 +435,7 @@ def demonstrate_token_validation():
     print("3. Refresh tokens if needed")
     print("4. Get authorization header")
     print("5. Make API request")
-    
+
     print(f"\\nCurrent Token Status:")
     print(f"  Has Tokens: {client.tokens is not None}")
     if client.tokens:
@@ -489,7 +490,7 @@ for method_name, details in api_response_examples.items():
     print(f"  Base URL: {details['base_url']}")
     print(f"  Response: {details['response_type']}")
     print()""")
-    
+
     # Utility functions section
     utility_section = nbf.v4.new_markdown_cell("""## Utility Functions
 
@@ -504,7 +505,7 @@ The module provides utility functions for managing tokens through environment va
 
 These functions are primarily for development and testing. In production, use proper secure storage solutions.
 """)
-    
+
     utility_example = nbf.v4.new_code_cell("""# Utility functions demonstration
 print("🛠️ Utility Functions Demo:")
 print("=" * 30)
@@ -578,14 +579,14 @@ if loaded_tokens:
     print(f"  ID Token: {loaded_tokens.id_token}")
     print(f"  Expires In: {loaded_tokens.expires_in} seconds")
     print(f"  Is Expired: {loaded_tokens.is_expired()}")
-    
+
     # Verify data integrity
     print(f"\\n🔍 Data Integrity Check:")
     access_match = demo_tokens.access_token == loaded_tokens.access_token
     refresh_match = demo_tokens.refresh_token == loaded_tokens.refresh_token
     id_match = demo_tokens.id_token == loaded_tokens.id_token
     expires_match = demo_tokens.expires_in == loaded_tokens.expires_in
-    
+
     print(f"  Access Token Match: {'✅' if access_match else '❌'}")
     print(f"  Refresh Token Match: {'✅' if refresh_match else '❌'}")
     print(f"  ID Token Match: {'✅' if id_match else '❌'}")
@@ -602,7 +603,7 @@ for var in env_vars:
         print(f"  Removed {var}")
 
 print(f"\\n✅ Environment cleanup completed")""")
-    
+
     # Best practices section
     best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
 
@@ -636,7 +637,7 @@ print(f"\\n✅ Environment cleanup completed")""")
 - Use HTTPS for all API communications
 - Implement proper logging and monitoring
 """)
-    
+
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
@@ -675,7 +676,7 @@ This notebook has demonstrated the comprehensive Meijer API client system:
 
 The API client provides a secure and robust foundation for building Meijer API applications! 🚀
 """)
-    
+
     # Add all cells to notebook
     nb.cells = [
         title_cell,
@@ -691,14 +692,15 @@ The API client provides a secure and robust foundation for building Meijer API a
         utility_section,
         utility_example,
         best_practices_section,
-        summary_section
+        summary_section,
     ]
-    
+
     # Save notebook
-    with open('api_client.ipynb', 'w') as f:
+    with open("api_client.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ api_client.ipynb created successfully!")
 
+
 if __name__ == "__main__":
-    create_api_client_notebook() 
+    create_api_client_notebook()

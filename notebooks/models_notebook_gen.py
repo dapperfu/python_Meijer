@@ -8,12 +8,13 @@ and their usage with practical examples.
 
 import nbformat as nbf
 
+
 def create_models_notebook():
     """Create the models notebook."""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer Data Models
 
@@ -26,7 +27,7 @@ The `models.py` module contains dataclasses that represent the structure of API 
 ## Models Available
 
 - **MeijerItem**: Represents products/items from Meijer's system
-- **ListItem**: Represents items in shopping lists or favorites lists  
+- **ListItem**: Represents items in shopping lists or favorites lists
 - **MeijerCoupon**: Represents coupons/offers from Meijer
 - **Store**: Represents Meijer store locations
 - **SearchResult**: Represents search results from product search
@@ -36,15 +37,15 @@ The `models.py` module contains dataclasses that represent the structure of API 
 
 First, let's import the necessary modules:
 """)
-    
+
     # Import cell
     import_cell = nbf.v4.new_code_cell("""# Import the models
 from meijer.models import (
-    MeijerItem, 
-    ListItem, 
-    MeijerCoupon, 
-    Store, 
-    SearchResult, 
+    MeijerItem,
+    ListItem,
+    MeijerCoupon,
+    Store,
+    SearchResult,
     ItemType,
     create_meijer_items_from_search
 )
@@ -57,7 +58,7 @@ import json
 print("✅ All models imported successfully!")
 print(f"Available item types: {[t.name for t in ItemType]}")
 print(f"ItemType values: {[t.value for t in ItemType]}")""")
-    
+
     # MeijerItem section
     meijer_item_section = nbf.v4.new_markdown_cell("""## MeijerItem Class
 
@@ -73,7 +74,7 @@ The `MeijerItem` class represents a product/item from Meijer's system. It's base
 
 ### Basic Usage
 """)
-    
+
     meijer_item_example = nbf.v4.new_code_cell("""# Create a basic MeijerItem
 basic_item = MeijerItem(
     id="12345",
@@ -107,13 +108,13 @@ print(f"\\nComputed Properties:")
 print(f"Display Name: {basic_item.display_name}")
 print(f"Best Price: ${basic_item.best_price}")
         print(f"On Sale: {basic_item.on_sale}")""")
-    
+
     # Constructor.io example
     constructor_example = nbf.v4.new_markdown_cell("""### Constructor.io Integration
 
 The `MeijerItem` class can be created from Constructor.io search API responses using the `from_constructor_response` class method:
 """)
-    
+
     constructor_code = nbf.v4.new_code_cell("""# Example Constructor.io response data
 constructor_data = {
     "id": "67890",
@@ -165,7 +166,7 @@ print(f"Home Delivery: {constructor_item.data_homedeliverynotavailable}")
 print(f"MAP Item: {constructor_item.data_ismap}")
 print(f"Ingredients: {constructor_item.data_ingredients}")
 print(f"Matched Terms: {constructor_item.matched_terms}")""")
-    
+
     # ListItem section
     list_item_section = nbf.v4.new_markdown_cell("""## ListItem Class
 
@@ -181,7 +182,7 @@ The `ListItem` class represents an item in a shopping list or favorites list. It
 
 ### Basic Usage
 """)
-    
+
     list_item_example = nbf.v4.new_code_cell("""# Create a ListItem for a product
 product_list_item = ListItem(
     list_item_id=1001,
@@ -240,7 +241,7 @@ print(f"\\nCoupon List Item:")
 print(f"Type: {ItemType(coupon_list_item.list_item_type_id).name}")
 print(f"Is Coupon: {coupon_list_item.is_coupon}")
 print(f"Coupon ID: {coupon_list_item.coupon_id}")""")
-    
+
     # MeijerCoupon section
     coupon_section = nbf.v4.new_markdown_cell("""## MeijerCoupon Class
 
@@ -256,7 +257,7 @@ The `MeijerCoupon` class represents a coupon/offer from Meijer. It's based on th
 
 ### Basic Usage
 """)
-    
+
     coupon_example = nbf.v4.new_code_cell("""# Create a MeijerCoupon
 coupon = MeijerCoupon(
     meijer_offer_id=1001,
@@ -329,7 +330,7 @@ print(f"\\nExpired Coupon:")
 print(f"Is Expired: {expired_coupon.is_expired}")
 print(f"Is Active: {expired_coupon.is_active}")
 print(f"Days Until Expiry: {expired_coupon.days_until_expiry}")""")
-    
+
     # Store section
     store_section = nbf.v4.new_markdown_cell("""## Store Class
 
@@ -345,7 +346,7 @@ The `Store` class represents a Meijer store location with all relevant informati
 
 ### Basic Usage
 """)
-    
+
     store_example = nbf.v4.new_code_cell("""# Create a Meijer store
 store = Store(
     store_id="12345",
@@ -385,7 +386,7 @@ print(f"Full Address: {store.full_address}")
 store_dict = store.to_dict()
 print(f"\\nDictionary Representation:")
 print(json.dumps(store_dict, indent=2))""")
-    
+
     # SearchResult section
     search_result_section = nbf.v4.new_markdown_cell("""## SearchResult Class
 
@@ -400,7 +401,7 @@ The `SearchResult` class represents the results from a product search operation,
 
 ### Basic Usage
 """)
-    
+
     search_result_example = nbf.v4.new_code_cell("""# Create sample items for search results
 item1 = MeijerItem(
     id="001",
@@ -412,7 +413,7 @@ item1 = MeijerItem(
 )
 
 item2 = MeijerItem(
-    id="002", 
+    id="002",
     title="Conventional Bananas",
     description="Regular bananas",
     brand="Dole",
@@ -462,7 +463,7 @@ for i, item in enumerate(search_result.results, 1):
 result_dict = search_result.to_dict()
 print(f"\\nDictionary Representation:")
 print(json.dumps(result_dict, indent=2, default=str))""")
-    
+
     # Utility functions section
     utility_section = nbf.v4.new_markdown_cell("""## Utility Functions
 
@@ -472,7 +473,7 @@ The models module provides utility functions for creating objects from API respo
 
 This function creates a list of `MeijerItem` objects from Constructor.io search response data.
 """)
-    
+
     utility_example = nbf.v4.new_code_cell("""# Example search response data
 search_response = {
     "results": [
@@ -489,7 +490,7 @@ search_response = {
         },
         {
             "id": "002",
-            "value": "Conventional Bananas", 
+            "value": "Conventional Bananas",
             "data": {
                 "data_id": "002",
                 "data_description": "Regular bananas",
@@ -517,13 +518,13 @@ print(f"\\nEmpty response created {len(empty_items)} items")
 malformed_response = {"results": [{"invalid": "data"}]}
 malformed_items = create_meijer_items_from_search(malformed_response)
 print(f"Malformed response created {len(malformed_items)} items")""")
-    
+
     # Advanced usage section
     advanced_section = nbf.v4.new_markdown_cell("""## Advanced Usage Examples
 
 ### Working with Multiple Item Types
 """)
-    
+
     advanced_example = nbf.v4.new_code_cell("""# Create a comprehensive shopping scenario
 from datetime import date
 
@@ -556,7 +557,7 @@ store_location = Store(
     store_id="67890",
     name="Meijer Lansing",
     address="5678 Saginaw Highway",
-    city="Lansing", 
+    city="Lansing",
     state="MI",
     zip_code="48917",
     is_open=True
@@ -623,7 +624,7 @@ print(f"\\n💵 Total Cost:")
 print(f"Original Price: ${grocery_item.price}")
 print(f"Coupon Savings: ${total_savings}")
 print(f"Final Price: ${final_price}")""")
-    
+
     # Best practices section
     best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
 
@@ -642,7 +643,7 @@ Use the `to_dict()` method when sending data back to APIs to ensure proper forma
 ### 5. Extensibility
 The models include `raw_data` fields for storing additional information that might not fit the standard schema.
 """)
-    
+
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
@@ -673,7 +674,7 @@ This notebook has demonstrated all the data models available in the Meijer API c
 
 The models provide a solid foundation for building robust Meijer API applications! 🚀
 """)
-    
+
     # Add all cells to notebook
     nb.cells = [
         title_cell,
@@ -695,14 +696,15 @@ The models provide a solid foundation for building robust Meijer API application
         advanced_section,
         advanced_example,
         best_practices_section,
-        summary_section
+        summary_section,
     ]
-    
+
     # Save notebook
-    with open('models.ipynb', 'w') as f:
+    with open("models.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ models.ipynb created successfully!")
 
+
 if __name__ == "__main__":
-    create_models_notebook() 
+    create_models_notebook()

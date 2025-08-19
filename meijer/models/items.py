@@ -222,56 +222,79 @@ class MeijerItem:
     def dairy(self) -> bool:
         """Check if the item is in the dairy category."""
         dairy_keywords = ["milk", "cheese", "yogurt", "cream", "butter", "dairy"]
-        return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
-                  for keyword in dairy_keywords)
+        return any(
+            keyword in (self.category or "").lower()
+            or keyword in (self.title or "").lower()
+            for keyword in dairy_keywords
+        )
 
     @property
     def produce(self) -> bool:
         """Check if the item is in the produce category."""
         produce_keywords = ["fruit", "vegetable", "produce", "fresh"]
-        return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
-                  for keyword in produce_keywords)
+        return any(
+            keyword in (self.category or "").lower()
+            or keyword in (self.title or "").lower()
+            for keyword in produce_keywords
+        )
 
     @property
     def meat(self) -> bool:
         """Check if the item is in the meat category."""
         meat_keywords = ["meat", "chicken", "beef", "pork", "fish", "steak", "ground"]
-        return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
-                  for keyword in meat_keywords)
+        return any(
+            keyword in (self.category or "").lower()
+            or keyword in (self.title or "").lower()
+            for keyword in meat_keywords
+        )
 
     @property
     def frozen(self) -> bool:
         """Check if the item is frozen."""
         frozen_keywords = ["frozen", "ice cream", "frozen food"]
-        return any(keyword in (self.category or "").lower() or keyword in (self.title or "").lower() 
-                  for keyword in frozen_keywords)
+        return any(
+            keyword in (self.category or "").lower()
+            or keyword in (self.title or "").lower()
+            for keyword in frozen_keywords
+        )
 
     @property
     def organic(self) -> bool:
         """Check if the item is organic."""
         organic_keywords = ["organic", "organically grown"]
-        return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
-                  for keyword in organic_keywords)
+        return any(
+            keyword in (self.title or "").lower()
+            or keyword in (self.description or "").lower()
+            for keyword in organic_keywords
+        )
 
     @property
     def gluten_free(self) -> bool:
         """Check if the item is gluten-free."""
         gluten_free_keywords = ["gluten free", "gluten-free", "no gluten"]
-        return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
-                  for keyword in gluten_free_keywords)
+        return any(
+            keyword in (self.title or "").lower()
+            or keyword in (self.description or "").lower()
+            for keyword in gluten_free_keywords
+        )
 
     @property
     def vegan(self) -> bool:
         """Check if the item is vegan."""
         vegan_keywords = ["vegan", "plant-based", "no animal products"]
-        return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
-                  for keyword in vegan_keywords)
+        return any(
+            keyword in (self.title or "").lower()
+            or keyword in (self.description or "").lower()
+            for keyword in vegan_keywords
+        )
 
     @property
     def alcoholic(self) -> bool:
         """Check if the item contains alcohol."""
-        return self.data_isalcohol or any(keyword in (self.title or "").lower() 
-                                         for keyword in ["wine", "beer", "liquor", "alcohol"])
+        return self.data_isalcohol or any(
+            keyword in (self.title or "").lower()
+            for keyword in ["wine", "beer", "liquor", "alcohol"]
+        )
 
     @property
     def requires_age_verification(self) -> bool:
@@ -436,14 +459,16 @@ class ListItem:
                     success = self._list_api.complete_item(str(self.list_item_id))
                 else:
                     # Uses the MarkAsNotCompleted endpoint
-                    success = self._list_api.mark_as_not_completed(str(self.list_item_id))
+                    success = self._list_api.mark_as_not_completed(
+                        str(self.list_item_id)
+                    )
                 if success:
                     self.is_complete = bool(value)
                 else:
                     raise RuntimeError(
                         f"Failed to set completion to {value} for item {self.list_item_id} via API"
                     )
-            except Exception as exc:  # pragma: no cover - passthrough for caller
+            except Exception:  # pragma: no cover - passthrough for caller
                 raise
         else:
             # Fallback: update local state only
@@ -487,6 +512,7 @@ class ListItem:
         if not self.promotion_start or not self.promotion_end:
             return False
         from datetime import date
+
         today = date.today()
         return self.promotion_start <= today <= self.promotion_end
 
@@ -495,10 +521,11 @@ class ListItem:
         """Get the current promotion status."""
         if not self.promotion_start or not self.promotion_end:
             return "No Promotion"
-        
+
         from datetime import date
+
         today = date.today()
-        
+
         if today < self.promotion_start:
             days_until = (self.promotion_start - today).days
             return f"Starts in {days_until} days"

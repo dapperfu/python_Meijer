@@ -13,31 +13,30 @@ This script searches for specific checkout operations mentioned by the user:
 
 import re
 import sys
-from typing import List, Dict, Any
 
 
 def search_checkout_operations(log_file_path: str) -> None:
     """Search for specific checkout operations in the log file."""
     print(f"🔍 Searching for checkout operations in: {log_file_path}")
     print("=" * 80)
-    
+
     try:
-        with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
             content = f.read()
-            
+
             print("📋 Searching for specific checkout operations...")
             print()
-            
+
             # 1. Store change operations
             print("1️⃣ STORE CHANGE OPERATIONS:")
             print("-" * 40)
             store_change_patterns = [
-                r'store.*change|change.*store',
-                r'pickup.*store|store.*pickup',
-                r'fulfillment.*store|store.*fulfillment',
-                r'store.*71|store.*72|store.*73',
+                r"store.*change|change.*store",
+                r"pickup.*store|store.*pickup",
+                r"fulfillment.*store|store.*fulfillment",
+                r"store.*71|store.*72|store.*73",
             ]
-            
+
             store_change_count = 0
             for pattern in store_change_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
@@ -53,17 +52,17 @@ def search_checkout_operations(log_file_path: str) -> None:
                     break
             print(f"   Total store change operations found: {store_change_count}")
             print()
-            
+
             # 2. Out of stock operations
             print("2️⃣ OUT OF STOCK OPERATIONS:")
             print("-" * 40)
             out_of_stock_patterns = [
-                r'out.*stock|stock.*out',
-                r'not.*stock|stock.*not',
-                r'unavailable|unavailable.*item',
-                r'continue.*out.*stock',
+                r"out.*stock|stock.*out",
+                r"not.*stock|stock.*not",
+                r"unavailable|unavailable.*item",
+                r"continue.*out.*stock",
             ]
-            
+
             out_of_stock_count = 0
             for pattern in out_of_stock_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
@@ -79,17 +78,17 @@ def search_checkout_operations(log_file_path: str) -> None:
                     break
             print(f"   Total out of stock operations found: {out_of_stock_count}")
             print()
-            
+
             # 3. Backup item operations
             print("3️⃣ BACKUP ITEM OPERATIONS:")
             print("-" * 40)
             backup_patterns = [
-                r'backup.*item|item.*backup',
-                r'add.*backup|backup.*add',
-                r'backup.*milk|milk.*backup',
-                r'substitution|substitute',
+                r"backup.*item|item.*backup",
+                r"add.*backup|backup.*add",
+                r"backup.*milk|milk.*backup",
+                r"substitution|substitute",
             ]
-            
+
             backup_count = 0
             for pattern in backup_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
@@ -105,18 +104,18 @@ def search_checkout_operations(log_file_path: str) -> None:
                     break
             print(f"   Total backup item operations found: {backup_count}")
             print()
-            
+
             # 4. Pickup time operations
             print("4️⃣ PICKUP TIME OPERATIONS:")
             print("-" * 40)
             pickup_time_patterns = [
-                r'pickup.*time|time.*pickup',
-                r'8am.*9am|8.*9.*am',
-                r'saturday.*august|august.*saturday',
-                r'fulfillment.*time|time.*slot',
-                r'8:00.*9:00|8-9|8am-9am',
+                r"pickup.*time|time.*pickup",
+                r"8am.*9am|8.*9.*am",
+                r"saturday.*august|august.*saturday",
+                r"fulfillment.*time|time.*slot",
+                r"8:00.*9:00|8-9|8am-9am",
             ]
-            
+
             pickup_time_count = 0
             for pattern in pickup_time_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
@@ -132,17 +131,17 @@ def search_checkout_operations(log_file_path: str) -> None:
                     break
             print(f"   Total pickup time operations found: {pickup_time_count}")
             print()
-            
+
             # 5. Pickup person operations
             print("5️⃣ PICKUP PERSON OPERATIONS:")
             print("-" * 40)
             pickup_person_patterns = [
-                r'pickup.*person|person.*pickup',
-                r'john.*doe|doe.*john',
-                r'pickup.*name|name.*pickup',
-                r'contact.*pickup|pickup.*contact',
+                r"pickup.*person|person.*pickup",
+                r"john.*doe|doe.*john",
+                r"pickup.*name|name.*pickup",
+                r"contact.*pickup|pickup.*contact",
             ]
-            
+
             pickup_person_count = 0
             for pattern in pickup_person_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
@@ -158,17 +157,17 @@ def search_checkout_operations(log_file_path: str) -> None:
                     break
             print(f"   Total pickup person operations found: {pickup_person_count}")
             print()
-            
+
             # 6. Add card operations
             print("6️⃣ ADD CARD OPERATIONS:")
             print("-" * 40)
             add_card_patterns = [
-                r'add.*card|card.*add',
-                r'payment.*method|method.*payment',
-                r'credit.*card|debit.*card',
-                r'checkout.*payment|payment.*checkout',
+                r"add.*card|card.*add",
+                r"payment.*method|method.*payment",
+                r"credit.*card|debit.*card",
+                r"checkout.*payment|payment.*checkout",
             ]
-            
+
             add_card_count = 0
             for pattern in add_card_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
@@ -184,17 +183,17 @@ def search_checkout_operations(log_file_path: str) -> None:
                     break
             print(f"   Total add card operations found: {add_card_count}")
             print()
-            
+
             # 7. Fulfillment operations
             print("7️⃣ FULFILLMENT OPERATIONS:")
             print("-" * 40)
             fulfillment_patterns = [
-                r'fulfillment.*pickup|pickup.*fulfillment',
-                r'hybris.*fulfillment|fulfillment.*hybris',
-                r'timeslot|time.*slot',
-                r'reservation.*slot|slot.*reservation',
+                r"fulfillment.*pickup|pickup.*fulfillment",
+                r"hybris.*fulfillment|fulfillment.*hybris",
+                r"timeslot|time.*slot",
+                r"reservation.*slot|slot.*reservation",
             ]
-            
+
             fulfillment_count = 0
             for pattern in fulfillment_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
@@ -210,7 +209,7 @@ def search_checkout_operations(log_file_path: str) -> None:
                     break
             print(f"   Total fulfillment operations found: {fulfillment_count}")
             print()
-            
+
             # Summary
             print("📊 SUMMARY:")
             print("=" * 40)
@@ -221,7 +220,7 @@ def search_checkout_operations(log_file_path: str) -> None:
             print(f"✅ Pickup person operations: {pickup_person_count}")
             print(f"✅ Add card operations: {add_card_count}")
             print(f"✅ Fulfillment operations: {fulfillment_count}")
-            
+
     except FileNotFoundError:
         print(f"❌ Error: File '{log_file_path}' not found")
         sys.exit(1)
@@ -235,7 +234,7 @@ def main():
     if len(sys.argv) != 2:
         print("Usage: python3 checkout_operations_finder.py <log_file_path>")
         sys.exit(1)
-    
+
     log_file_path = sys.argv[1]
     search_checkout_operations(log_file_path)
 

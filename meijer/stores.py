@@ -21,11 +21,11 @@ Represents Meijer store locations with comprehensive details including
 services, hours, gas station information, and location data.
 """
 
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
-from dataclasses import dataclass, field
-from datetime import datetime, time
 import logging
 import math
+from dataclasses import dataclass, field
+from datetime import datetime, time
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from .client import Meijer

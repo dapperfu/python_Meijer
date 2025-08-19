@@ -6,12 +6,11 @@ Focus on mPerks earned rewards and related endpoints.
 
 import json
 import sys
-from typing import Dict, Any
 from collections import defaultdict
+from typing import Any, Dict
 
 try:
-    from mitmproxy import flow
-    from mitmproxy import http
+    from mitmproxy import flow, http
     from mitmproxy.io import tnetstring
 
     print("Successfully imported mitmproxy modules")

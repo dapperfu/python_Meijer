@@ -121,7 +121,7 @@ python -c "from meijer.client import Meijer; client = Meijer(); print('Auth stat
 make log
 ```
 - **Purpose**: Captures Meijer app traffic for token extraction
-- **Process**: 
+- **Process**:
   1. Generates timestamped log filename
   2. Starts mitmweb with multiple proxy modes
   3. Opens web interface for monitoring

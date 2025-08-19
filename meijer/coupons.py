@@ -8,7 +8,7 @@ Coupon and offers functionality for the Meijer API client.
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .exceptions import MeijerAuthenticationError
 

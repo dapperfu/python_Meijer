@@ -10,10 +10,10 @@ The goal is to ensure 100% API coverage by finding every endpoint that was ever 
 
 import json
 import os
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from datetime import datetime
-from typing import Dict, List, Any
-from urllib.parse import urlparse, parse_qs
+from typing import Any, Dict, List
+from urllib.parse import parse_qs, urlparse
 
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow

@@ -16,8 +16,8 @@ This script implements the findings from APK analysis:
 
 import json
 import logging
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 # Configure logging
 logging.basicConfig(

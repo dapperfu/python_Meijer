@@ -23,8 +23,8 @@ feedback system. Based on actual API calls captured in mitmproxy logs.
 """
 
 import uuid
-from typing import Dict, Any, Optional, List, Union
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List, Optional, Union
 
 from .exceptions import FeedbackError
 

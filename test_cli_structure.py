@@ -7,7 +7,7 @@ This script demonstrates the improved CLI structure with cleaner command names.
 """
 
 import subprocess
-import sys
+
 
 def test_cli_help():
     """Test the CLI help command to show the improved structure."""
@@ -17,9 +17,9 @@ def test_cli_help():
             ["python3", "-m", "meijer.cli.main", "--help"],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
         )
-        
+
         if result.returncode == 0:
             print("✅ CLI help command works!")
             print("\n📋 Available Commands:")
@@ -27,13 +27,14 @@ def test_cli_help():
         else:
             print("❌ CLI help command failed")
             print(f"Error: {result.stderr}")
-            
+
     except subprocess.TimeoutExpired:
         print("❌ CLI command timed out")
     except FileNotFoundError:
         print("❌ CLI module not found")
     except Exception as e:
         print(f"❌ Error testing CLI: {e}")
+
 
 def show_improved_structure():
     """Show the improved CLI structure."""
@@ -62,20 +63,22 @@ def show_improved_structure():
     print("  meijer status                 # Account status")
     print("  meijer settings               # Account settings")
 
+
 def main():
     """Main function."""
     print("🧪 TESTING IMPROVED CLI STRUCTURE")
     print("=" * 50)
-    
+
     show_improved_structure()
-    
+
     print("\n" + "=" * 50)
     print("🔧 Testing CLI help command...")
     print("=" * 50)
-    
+
     test_cli_help()
-    
+
     return 0
+
 
 if __name__ == "__main__":
     exit(main())

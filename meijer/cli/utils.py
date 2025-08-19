@@ -5,9 +5,9 @@ This module contains helper functions used across the CLI commands.
 """
 
 import os
-from typing import List, TextIO
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from typing import List, TextIO
 
 import click
 
@@ -62,7 +62,9 @@ def display_items_table(items: List, title: str = "Shopping List Items") -> None
         table_data.append(
             [
                 i,
-                "✅" if getattr(item, "checked", getattr(item, "is_complete", False)) else "⏳",
+                "✅"
+                if getattr(item, "checked", getattr(item, "is_complete", False))
+                else "⏳",
                 getattr(item, "name", getattr(item, "item_description", "Unknown")),
                 getattr(item, "quantity", 1),
                 getattr(item, "notes", ""),
@@ -73,9 +75,10 @@ def display_items_table(items: List, title: str = "Shopping List Items") -> None
     headers = ["#", "Status", "Item", "Qty", "Notes"]
     click.echo(f"\n📋 {title}")
     click.echo("=" * 60)
-    
+
     try:
         from tabulate import tabulate
+
         click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
     except ImportError:
         # Fallback to simple formatting
@@ -114,13 +117,13 @@ def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
             else:
                 item_name = parts[0]
                 remaining = parts[1]
-                
+
                 # Check for quantity in brackets at end
                 if remaining.endswith("]") and "[" in remaining:
                     last_bracket = remaining.rfind("[")
                     if last_bracket > 0:
                         notes = remaining[:last_bracket].strip()
-                        qty_part = remaining[last_bracket + 1:-1].strip()
+                        qty_part = remaining[last_bracket + 1 : -1].strip()
                         try:
                             quantity = int(qty_part)
                         except ValueError:
@@ -156,20 +159,22 @@ def export_to_text(items: List, file_path: Path) -> None:
         file_path: Path to export file
     """
     with open(file_path, "w", encoding="utf-8") as f:
-        f.write(f"# Meijer Shopping List - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(
+            f"# Meijer Shopping List - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        )
         f.write("# Format: Item Name [Quantity] [Notes]\n")
         f.write("# Lines starting with # are comments\n\n")
-        
+
         for item in items:
             name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
             quantity = getattr(item, "quantity", 1)
             notes = getattr(item, "notes", "")
-            
+
             if notes:
                 f.write(f"{name} [{quantity}] {notes}\n")
             else:
                 f.write(f"{name} [{quantity}]\n")
-    
+
     click.echo(f"📄 Exported {len(items)} items to {file_path}")
 
 
@@ -182,19 +187,23 @@ def export_to_csv(items: List, file_path: Path) -> None:
         file_path: Path to export file
     """
     import csv
-    
+
     with open(file_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["Item", "Quantity", "Notes", "Status", "Added Date"])
-        
+
         for item in items:
             name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
             quantity = getattr(item, "quantity", 1)
             notes = getattr(item, "notes", "")
-            status = "Completed" if getattr(item, "checked", getattr(item, "is_complete", False)) else "Pending"
-            
+            status = (
+                "Completed"
+                if getattr(item, "checked", getattr(item, "is_complete", False))
+                else "Pending"
+            )
+
             writer.writerow([name, quantity, notes, status, ""])
-    
+
     click.echo(f"📊 Exported {len(items)} items to {file_path}")
 
 
@@ -207,28 +216,30 @@ def export_to_json(items: List, file_path: Path) -> None:
         file_path: Path to export file
     """
     import json
-    
+
     export_data = {
         "export_date": datetime.now().isoformat(),
         "total_items": len(items),
-        "items": []
+        "items": [],
     }
-    
+
     for item in items:
         item_data = {
             "name": getattr(item, "name", getattr(item, "item_description", "Unknown")),
             "quantity": getattr(item, "quantity", 1),
             "notes": getattr(item, "notes", ""),
-            "status": "completed" if getattr(item, "checked", getattr(item, "is_complete", False)) else "pending",
+            "status": "completed"
+            if getattr(item, "checked", getattr(item, "is_complete", False))
+            else "pending",
             "upc": getattr(item, "upc", None),
             "brand": getattr(item, "brand", None),
-            "category": getattr(item, "category", None)
+            "category": getattr(item, "category", None),
         }
         export_data["items"].append(item_data)
-    
+
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(export_data, f, indent=2, ensure_ascii=False)
-    
+
     click.echo(f"📄 Exported {len(items)} items to {file_path}")
 
 
@@ -262,33 +273,33 @@ def import_from_csv(client: Meijer, file_path: Path) -> int:
         int: Number of items successfully imported
     """
     import csv
-    
+
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             imported_count = 0
-            
+
             for row_num, row in enumerate(reader, 1):
                 try:
                     item_name = row.get("Item", "").strip()
                     if not item_name:
                         continue
-                    
+
                     quantity = int(row.get("Quantity", 1))
                     notes = row.get("Notes", "").strip()
-                    
+
                     success = client.list.add(item_name, quantity, notes)
                     if success:
                         imported_count += 1
                         click.echo(f"  ✅ Imported: {item_name} (Qty: {quantity})")
                     else:
                         click.echo(f"  ❌ Failed to import: {item_name}")
-                        
+
                 except Exception as e:
                     click.echo(f"  ❌ Error processing row {row_num}: {e}")
-            
+
             return imported_count
-            
+
     except Exception as e:
         raise click.ClickException(f"❌ Failed to read CSV file {file_path}: {e}")
 
@@ -305,37 +316,37 @@ def import_from_json(client: Meijer, file_path: Path) -> int:
         int: Number of items successfully imported
     """
     import json
-    
+
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-            
+
             items = data.get("items", [])
             if not items:
                 click.echo("⚠️  No items found in JSON file")
                 return 0
-            
+
             imported_count = 0
             for item_data in items:
                 try:
                     item_name = item_data.get("name", "").strip()
                     if not item_name:
                         continue
-                    
+
                     quantity = int(item_data.get("quantity", 1))
                     notes = item_data.get("notes", "").strip()
-                    
+
                     success = client.list.add(item_name, quantity, notes)
                     if success:
                         imported_count += 1
                         click.echo(f"  ✅ Imported: {item_name} (Qty: {quantity})")
                     else:
                         click.echo(f"  ❌ Failed to import: {item_name}")
-                        
+
                 except Exception as e:
                     click.echo(f"  ❌ Error processing item: {e}")
-            
+
             return imported_count
-            
+
     except Exception as e:
         raise click.ClickException(f"❌ Failed to read JSON file {file_path}: {e}")

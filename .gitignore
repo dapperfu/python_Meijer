@@ -59,6 +59,11 @@ logs/
 *.json.bak
 *.json.backup
 
+# Security and analysis reports - NEVER COMMIT THESE!
+bandit-report.json
+*.security-report.json
+*.vulnerability-report.json
+
 # APK and decompiled files - NEVER COMMIT THESE!
 *.apk
 *.dex
@@ -118,33 +123,3 @@ dmypy.json
 # Git
 .git/
 .gitignore.bak
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/

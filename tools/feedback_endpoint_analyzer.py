@@ -23,15 +23,14 @@ submissions, helping understand the complete feedback API structure.
 
 import json
 import logging
-from pathlib import Path
-from typing import Dict, List, Any, Optional
 from collections import Counter
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Import mitmproxy modules
 try:
-    from mitmproxy import flow
-    from mitmproxy import http
+    from mitmproxy import flow, http
     from mitmproxy.io import FlowReader
 except ImportError as e:
     print(f"Error importing mitmproxy modules: {e}")

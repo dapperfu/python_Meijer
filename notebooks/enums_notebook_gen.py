@@ -8,12 +8,13 @@ and their usage with practical examples.
 
 import nbformat as nbf
 
+
 def create_enums_notebook():
     """Create the enums notebook."""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer API Enumerations
 
@@ -32,7 +33,7 @@ The `enums.py` module contains enumeration classes that provide type-safe consta
 
 First, let's import the necessary modules:
 """)
-    
+
     # Import cell
     import_cell = nbf.v4.new_code_cell("""# Import the enums
 from meijer.enums import AuthenticationStatus
@@ -45,7 +46,7 @@ import json
 print("✅ All enums imported successfully!")
 print(f"AuthenticationStatus values: {[status.value for status in AuthenticationStatus]}")
 print(f"ItemType values: {[item_type.value for item_type in ItemType]}")""")
-    
+
     # AuthenticationStatus section
     auth_status_section = nbf.v4.new_markdown_cell("""## AuthenticationStatus Enum
 
@@ -60,7 +61,7 @@ The `AuthenticationStatus` enum represents the current authentication state of t
 
 ### Basic Usage
 """)
-    
+
     auth_status_example = nbf.v4.new_code_cell("""# Explore AuthenticationStatus enum
 print("AuthenticationStatus Enum Values:")
 print("=" * 40)
@@ -93,7 +94,7 @@ print(f"failed == 'failed': {failed == 'failed'}")
 print(f"\\nString Representations:")
 print(f"str(unauthenticated): {str(unauthenticated)}")
 print(f"repr(unauthenticated): {repr(unauthenticated)}")""")
-    
+
     # ItemType section
     item_type_section = nbf.v4.new_markdown_cell("""## ItemType Enum
 
@@ -108,7 +109,7 @@ The `ItemType` enum represents different types of items that can be added to sho
 
 ### Basic Usage
 """)
-    
+
     item_type_example = nbf.v4.new_code_cell("""# Explore ItemType enum
 print("ItemType Enum Values:")
 print("=" * 30)
@@ -141,7 +142,7 @@ print(f"manual == 4: {manual == 4}")
 print(f"\\nString Representations:")
 print(f"str(product): {str(product)}")
 print(f"repr(product): {repr(product)}")""")
-    
+
     # Practical examples section
     practical_section = nbf.v4.new_markdown_cell("""## Practical Examples
 
@@ -149,19 +150,19 @@ print(f"repr(product): {repr(product)}")""")
 
 Enums are particularly useful for managing application state and ensuring consistency across different parts of your code.
 """)
-    
+
     practical_example = nbf.v4.new_code_cell("""# Simulate authentication state management
 class AuthenticationManager:
     \"\"\"Example authentication manager using enums.\"\"\"
-    
+
     def __init__(self):
         self.status = AuthenticationStatus.UNAUTHENTICATED
         self.token = None
-    
+
     def authenticate(self, username: str, password: str) -> bool:
         \"\"\"Attempt to authenticate user.\"\"\"
         print(f"🔐 Attempting authentication for {username}...")
-        
+
         # Simulate authentication process
         if username == "valid_user" and password == "valid_pass":
             self.status = AuthenticationStatus.AUTHENTICATED
@@ -172,7 +173,7 @@ class AuthenticationManager:
             self.status = AuthenticationStatus.FAILED
             print("❌ Authentication failed!")
             return False
-    
+
     def check_token_expiry(self) -> bool:
         \"\"\"Check if authentication token has expired.\"\"\"
         if self.status == AuthenticationStatus.AUTHENTICATED:
@@ -183,15 +184,15 @@ class AuthenticationManager:
                 print("⚠️ Token has expired!")
                 return True
         return False
-    
+
     def get_status(self) -> AuthenticationStatus:
         \"\"\"Get current authentication status.\"\"\"
         return self.status
-    
+
     def is_authenticated(self) -> bool:
         \"\"\"Check if currently authenticated.\"\"\"
         return self.status == AuthenticationStatus.AUTHENTICATED
-    
+
     def logout(self):
         \"\"\"Logout and reset status.\"\"\"
         self.status = AuthenticationStatus.UNAUTHENTICATED
@@ -225,22 +226,22 @@ print(f"Status after logout: {auth_manager.get_status().value}")
 # Failed authentication
 auth_manager.authenticate("invalid_user", "wrong_pass")
 print(f"Status after failed auth: {auth_manager.get_status().value}")""")
-    
+
     # Item type usage section
     item_type_usage_section = nbf.v4.new_markdown_cell("""### Item Type Classification
 
 Enums are also useful for classifying different types of items in shopping lists and other data structures.
 """)
-    
+
     item_type_usage_example = nbf.v4.new_code_cell("""# Simulate shopping list item classification
 class ShoppingListItem:
     \"\"\"Example shopping list item using ItemType enum.\"\"\"
-    
+
     def __init__(self, name: str, item_type: ItemType, quantity: int = 1):
         self.name = name
         self.item_type = item_type
         self.quantity = quantity
-    
+
     def get_type_description(self) -> str:
         \"\"\"Get human-readable description of item type.\"\"\"
         type_descriptions = {
@@ -250,7 +251,7 @@ class ShoppingListItem:
             ItemType.MANUAL: "Manual Entry"
         }
         return type_descriptions.get(self.item_type, "Unknown")
-    
+
     def get_icon(self) -> str:
         \"\"\"Get appropriate icon for item type.\"\"\"
         icons = {
@@ -260,7 +261,7 @@ class ShoppingListItem:
             ItemType.MANUAL: "✏️"
         }
         return icons.get(self.item_type, "❓")
-    
+
     def __str__(self) -> str:
         return f"{self.get_icon()} {self.name} ({self.get_type_description()}) - Qty: {self.quantity}"
 
@@ -297,13 +298,13 @@ for item_type, items in items_by_type.items():
     for item in items:
         print(f"  - {item.name}")
     print()""")
-    
+
     # Enum comparison and validation section
     comparison_section = nbf.v4.new_markdown_cell("""### Enum Comparison and Validation
 
 Enums provide powerful comparison and validation capabilities that make your code more robust.
 """)
-    
+
     comparison_example = nbf.v4.new_code_cell("""# Enum comparison and validation examples
 def validate_authentication_status(status_value: str) -> bool:
     \"\"\"Validate that a status value is a valid AuthenticationStatus.\"\"\"
@@ -371,34 +372,34 @@ sorted_item_types = sorted(ItemType, key=lambda x: x.value)
 print("\\nItemType sorted by value:")
 for item_type in sorted_item_types:
     print(f"  {item_type.name}: {item_type.value}")""")
-    
+
     # Advanced enum usage section
     advanced_section = nbf.v4.new_markdown_cell("""### Advanced Enum Usage
 
 Enums can be used in more advanced scenarios like state machines, configuration management, and API response handling.
 """)
-    
+
     advanced_example = nbf.v4.new_code_cell("""# Advanced enum usage examples
 class APIResponseHandler:
     \"\"\"Example API response handler using enums for state management.\"\"\"
-    
+
     def __init__(self):
         self.current_status = AuthenticationStatus.UNAUTHENTICATED
         self.retry_count = 0
         self.max_retries = 3
-    
+
     def handle_api_response(self, response_data: dict) -> bool:
         \"\"\"Handle API response and update status accordingly.\"\"\"
         status_code = response_data.get('status_code', 200)
         auth_status = response_data.get('auth_status', 'unauthenticated')
-        
+
         # Update authentication status based on response
         try:
             self.current_status = AuthenticationStatus(auth_status)
         except ValueError:
             print(f"⚠️ Unknown auth status: {auth_status}")
             return False
-        
+
         # Handle different response scenarios
         if status_code == 200:
             if self.current_status == AuthenticationStatus.AUTHENTICATED:
@@ -422,7 +423,7 @@ class APIResponseHandler:
         else:
             print(f"❌ API error: {status_code}")
             return False
-    
+
     def refresh_authentication(self) -> bool:
         \"\"\"Attempt to refresh authentication.\"\"\"
         if self.retry_count < self.max_retries:
@@ -441,7 +442,7 @@ class APIResponseHandler:
             print("❌ Max retry attempts exceeded")
             self.current_status = AuthenticationStatus.FAILED
             return False
-    
+
     def get_status_summary(self) -> dict:
         \"\"\"Get current status summary.\"\"\"
         return {
@@ -470,13 +471,13 @@ for i, response in enumerate(test_responses, 1):
     print(f"\\n📡 Test Response {i}:")
     print(f"Status Code: {response['status_code']}")
     print(f"Auth Status: {response['auth_status']}")
-    
+
     success = handler.handle_api_response(response)
     print(f"Result: {'✅ Success' if success else '❌ Failed'}")
-    
+
     summary = handler.get_status_summary()
     print(f"Status Summary: {summary}")""")
-    
+
     # Best practices section
     best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
 
@@ -495,7 +496,7 @@ Use enums to group related constants together, making your code more organized.
 ### 5. Handle Invalid Values Gracefully
 Always handle cases where enum values might be invalid or unexpected.
 """)
-    
+
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
@@ -529,7 +530,7 @@ This notebook has demonstrated the enumeration classes available in the Meijer A
 
 Enums provide a solid foundation for building robust, maintainable Meijer API applications! 🚀
 """)
-    
+
     # Add all cells to notebook
     nb.cells = [
         title_cell,
@@ -547,14 +548,15 @@ Enums provide a solid foundation for building robust, maintainable Meijer API ap
         advanced_section,
         advanced_example,
         best_practices_section,
-        summary_section
+        summary_section,
     ]
-    
+
     # Save notebook
-    with open('enums.ipynb', 'w') as f:
+    with open("enums.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ enums.ipynb created successfully!")
 
+
 if __name__ == "__main__":
-    create_enums_notebook() 
+    create_enums_notebook()

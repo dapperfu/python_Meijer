@@ -4,8 +4,9 @@ Utility script for managing Meijer authentication configuration.
 Allows viewing, clearing, and testing saved tokens.
 """
 
-import sys
 import argparse
+import sys
+
 from meijer_comprehensive import MeijerComprehensiveClient
 
 

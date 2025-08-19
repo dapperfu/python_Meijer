@@ -14,21 +14,22 @@ Assumes ~/.config/meijer.txt exists with valid authentication.
 
 from meijer import Meijer
 
+
 def main():
     print("Shopping List Demo")
     print("=" * 40)
-    
+
     # Initialize client (auto-loads from ~/.config/meijer.txt)
     print("Initializing Meijer client...")
     m = Meijer()
-    
+
     if not m.is_authenticated():
         print("❌ Not authenticated. Please check ~/.config/meijer.txt")
         return
-    
+
     print("✅ Authenticated successfully!")
     print()
-    
+
     # Get current shopping list
     print("🛒 Current Shopping List:")
     try:
@@ -42,9 +43,9 @@ def main():
             print("   No items in list")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Add a string item
     print("➕ Adding 'Milk' to shopping list:")
     try:
@@ -52,9 +53,9 @@ def main():
         print(f"   {'✅ Added successfully' if success else '❌ Failed to add'}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Add a UPC item
     print("➕ Adding Coca-Cola (UPC: 049000050103) to shopping list:")
     try:
@@ -62,9 +63,9 @@ def main():
         print(f"   {'✅ Added successfully' if success else '❌ Failed to add'}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Get updated list
     print("🔄 Updated Shopping List:")
     try:
@@ -76,9 +77,9 @@ def main():
                 print(f"   {status} {item.itemDescription}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Test favorites
     print("⭐ Favorites:")
     try:
@@ -91,9 +92,10 @@ def main():
             print("   No favorites yet")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
     print("✅ Shopping list demo completed!")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

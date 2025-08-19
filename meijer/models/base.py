@@ -35,10 +35,10 @@ class AuthTokens:
     def is_expired(self, buffer_seconds: int = 60) -> bool:
         """
         Check if tokens are expired.
-        
+
         Args:
             buffer_seconds: Buffer time before actual expiration
-            
+
         Returns:
             True if expired, False otherwise
         """
@@ -71,7 +71,7 @@ class AuthTokens:
                 expires_at = datetime.fromisoformat(data["expires_at"])
             except ValueError:
                 pass
-        
+
         return cls(
             access_token=data["access_token"],
             refresh_token=data["refresh_token"],

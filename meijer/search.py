@@ -64,11 +64,11 @@ class Search:
                 "fmt_options[groups_max_depth]": 2,
                 "fmt_options[groups_start]": "current",
             }
-            
+
             # Add store filter if provided (Constructor.io expects filters[availableInStores])
             if store_id:
                 params["filters[availableInStores]"] = store_id
-            
+
             # Add any additional kwargs (but filter out store_id to avoid duplication)
             filtered_kwargs = {k: v for k, v in kwargs.items() if k != "store_id"}
             params.update(filtered_kwargs)

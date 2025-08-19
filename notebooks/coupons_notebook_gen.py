@@ -8,12 +8,13 @@ and their usage with practical examples.
 
 import nbformat as nbf
 
+
 def create_coupons_notebook():
     """Create the coupons notebook."""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer Coupon Management
 
@@ -43,7 +44,7 @@ The `coupons.py` module provides a complete system for managing Meijer coupons a
 
 First, let's import the necessary modules:
 """)
-    
+
     # Import cell
     import_cell = nbf.v4.new_code_cell("""# Import the coupon classes
 from meijer.coupons import (
@@ -73,7 +74,7 @@ print("  - CouponCondition & CouponReward")
 print("  - MeijerCoupon (main class)")
 print("  - MeijerCouponManager")
 print("  - Utility functions")""")
-    
+
     # Enums section
     enums_section = nbf.v4.new_markdown_cell("""## Visual Element Enums
 
@@ -81,7 +82,7 @@ The module provides enums for managing the visual appearance of coupons, includi
 
 ### HatColor and BorderColor
 """)
-    
+
     enums_example = nbf.v4.new_code_cell("""# Visual element enums demonstration
 print("🎨 Visual Element Enums Demo")
 print("=" * 35)
@@ -139,7 +140,7 @@ try:
     print(f"BorderColor(2): {border_from_value.name}")
 except ValueError as e:
     print(f"Error creating enum from value: {e}")""")
-    
+
     # CouponDepartment section
     department_section = nbf.v4.new_markdown_cell("""## CouponDepartment Class
 
@@ -147,7 +148,7 @@ The `CouponDepartment` class represents a department or category for organizing 
 
 ### Department Structure
 """)
-    
+
     department_example = nbf.v4.new_code_cell("""# CouponDepartment demonstration
 print("🏪 CouponDepartment Demo")
 print("=" * 30)
@@ -233,7 +234,7 @@ print(f"Total Departments: {len(departments)}")
 print(f"Departments with Sub-categories: {len(depts_with_subcats)}")
 print(f"Custom Departments: {len(custom_depts)}")
 print(f"Average Offers per Department: {total_offers / len(departments):.1f}")""")
-    
+
     # CouponCategory section
     category_section = nbf.v4.new_markdown_cell("""## CouponCategory Class
 
@@ -241,7 +242,7 @@ The `CouponCategory` class represents a coupon category or segment for organizin
 
 ### Category Structure
 """)
-    
+
     category_example = nbf.v4.new_code_cell("""# CouponCategory demonstration
 print("📂 CouponCategory Demo")
 print("=" * 30)
@@ -300,7 +301,7 @@ print(f"Categories with Names: {len([cat for cat in categories if cat.segment_na
 print(f"\\n📋 All Categories:")
 for i, category in enumerate(categories, 1):
     print(f"{i}. {category.segment_name} (ID: {category.segment_id})")""")
-    
+
     # CouponCondition section
     condition_section = nbf.v4.new_markdown_cell("""## CouponCondition Class
 
@@ -308,7 +309,7 @@ The `CouponCondition` class represents the earning conditions and requirements f
 
 ### Condition Structure
 """)
-    
+
     condition_example = nbf.v4.new_code_cell("""# CouponCondition demonstration
 print("📋 CouponCondition Demo")
 print("=" * 30)
@@ -378,7 +379,7 @@ print(f"\\n🔍 Condition Type Mapping:")
 for condition in conditions:
     type_name = condition_type_names.get(condition.condition_type_id, "Unknown")
     print(f"  Type {condition.condition_type_id} ({type_name}): {condition.condition_value}")""")
-    
+
     # CouponReward section
     reward_section = nbf.v4.new_markdown_cell("""## CouponReward Class
 
@@ -386,7 +387,7 @@ The `CouponReward` class represents the reward details and discount information 
 
 ### Reward Structure
 """)
-    
+
     reward_example = nbf.v4.new_code_cell("""# CouponReward demonstration
 print("🎁 CouponReward Demo")
 print("=" * 30)
@@ -468,7 +469,7 @@ for reward in rewards:
     type_name = discount_type_names.get(reward.discount_type_id, "Unknown")
     amount_str = f"${reward.redeem_amount}" if reward.redeem_amount is not None else "N/A"
     print(f"  {type_name}: {amount_str} (Type ID: {reward.discount_type_id})")""")
-    
+
     # MeijerCoupon section
     meijer_coupon_section = nbf.v4.new_markdown_cell("""## MeijerCoupon Class
 
@@ -476,7 +477,7 @@ The `MeijerCoupon` class is the main coupon class that provides comprehensive co
 
 ### Coupon Features
 """)
-    
+
     meijer_coupon_example = nbf.v4.new_code_cell("""# MeijerCoupon demonstration
 print("🎫 MeijerCoupon Demo")
 print("=" * 30)
@@ -628,7 +629,7 @@ border_colors = [c.border_color.name for c in coupons]
 
 print(f"Hat Colors: {', '.join(set(hat_colors))}")
 print(f"Border Colors: {', '.join(set(border_colors))}")""")
-    
+
     # Utility functions section
     utility_section = nbf.v4.new_markdown_cell("""## Utility Functions
 
@@ -636,7 +637,7 @@ The module provides utility functions for creating coupons from API responses an
 
 ### Coupon Creation and Management
 """)
-    
+
     utility_example = nbf.v4.new_code_cell("""# Utility functions demonstration
 print("🛠️ Utility Functions Demo")
 print("=" * 30)
@@ -699,7 +700,7 @@ try:
     # Create coupons from response
     created_coupons = create_meijer_coupons_from_response(sample_response)
     print(f"✅ Successfully created {len(created_coupons)} coupons from response")
-    
+
     # Display created coupons
     for i, coupon in enumerate(created_coupons, 1):
         print(f"\\nCoupon {i}:")
@@ -714,7 +715,7 @@ try:
         print(f"  Is Targeted: {coupon.is_targeted}")
         print(f"  Is Hidden: {coupon.is_hidden}")
         print(f"  Is Expired: {coupon.is_expired}")
-        
+
 except Exception as e:
     print(f"❌ Coupon creation failed: {e}")
 
@@ -797,7 +798,7 @@ print(f"None response: {len(none_coupons)} coupons created")
 invalid_response = {"invalid": "data"}
 invalid_coupons = create_meijer_coupons_from_response(invalid_response)
 print(f"Invalid response: {len(invalid_coupons)} coupons created")""")
-    
+
     # MeijerCouponManager section
     manager_section = nbf.v4.new_markdown_cell("""## MeijerCouponManager Class
 
@@ -805,7 +806,7 @@ The `MeijerCouponManager` class provides the interface that the main client expe
 
 ### Manager Functionality
 """)
-    
+
     manager_example = nbf.v4.new_code_cell("""# MeijerCouponManager demonstration
 print("👨‍💼 MeijerCouponManager Demo")
 print("=" * 35)
@@ -818,22 +819,22 @@ class MockMeijerClient:
             'debug': lambda msg: print(f"DEBUG: {msg}"),
             'error': lambda msg: print(f"ERROR: {msg}")
         })()
-    
+
     def _ensure_authenticated(self):
         return True
-    
+
     def _get_api_headers(self):
         return {"Authorization": "Bearer mock_token"}
-    
+
     def _make_request(self, method, url, headers=None, json_data=None):
         # Mock successful response
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
-            
+
             def json(self):
                 return {"result": "success"}
-        
+
         return MockResponse()
 
 # Create manager with mock client
@@ -902,24 +903,24 @@ try:
     print("1. Creating coupons from response...")
     test_coupons = coupon_manager.create_meijer_coupons_from_response(sample_response)
     print(f"   ✅ Created {len(test_coupons)} coupons")
-    
+
     print("2. Testing coupon operations...")
     for coupon in test_coupons[:2]:  # Test first 2 coupons
         print(f"   Testing coupon {coupon.meijer_offer_id}...")
-        
+
         # Test clip
         clip_success = coupon_manager.clip_coupon(coupon.meijer_offer_id)
         print(f"     Clip: {'✅ Success' if clip_success else '❌ Failed'}")
-        
+
         # Test unclip
         unclip_success = coupon_manager.unclip_coupon(coupon.meijer_offer_id)
         print(f"     Unclip: {'✅ Success' if unclip_success else '❌ Failed'}")
-    
+
     print("3. Integration test completed successfully!")
-    
+
 except Exception as e:
     print(f"❌ Integration test failed: {e}")""")
-    
+
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
@@ -962,7 +963,7 @@ This notebook has demonstrated the comprehensive Meijer coupon management system
 
 The coupon system provides a powerful and flexible foundation for managing Meijer offers and promotions! 🚀
 """)
-    
+
     # Add all cells to notebook
     nb.cells = [
         title_cell,
@@ -983,14 +984,15 @@ The coupon system provides a powerful and flexible foundation for managing Meije
         utility_example,
         manager_section,
         manager_example,
-        summary_section
+        summary_section,
     ]
-    
+
     # Save notebook
-    with open('coupons.ipynb', 'w') as f:
+    with open("coupons.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ coupons.ipynb created successfully!")
 
+
 if __name__ == "__main__":
-    create_coupons_notebook() 
+    create_coupons_notebook()

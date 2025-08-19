@@ -8,6 +8,7 @@ Demonstrates the complete authentication system including mitmproxy log parsing.
 import logging
 import os
 from pathlib import Path
+
 from meijer import (
     Meijer,
     extract_bearer_token_from_mitmproxy,
@@ -50,10 +51,10 @@ def test_authentication_methods():
                     keyword in content
                     for keyword in ["user=", "username=", "pass=", "password="]
                 ):
-                    print(f"   📧 Contains credentials for Selenium auth")
+                    print("   📧 Contains credentials for Selenium auth")
                     credentials_found = True
                 if any(keyword in content for keyword in ["bearer=", "bearer_token="]):
-                    print(f"   🎫 Contains bearer token")
+                    print("   🎫 Contains bearer token")
         else:
             print(f"❌ Auth file not found: {auth_file}")
 
@@ -230,7 +231,7 @@ bearer=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6...
 user_agent=Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)
 """
 
-    print(f"📄 Example ~/.config/meijer.txt:")
+    print("📄 Example ~/.config/meijer.txt:")
     print(example_config)
 
     print("💡 To use these examples:")

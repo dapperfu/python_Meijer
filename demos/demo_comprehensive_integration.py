@@ -16,12 +16,12 @@ This demo demonstrates:
 
 import logging
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 # Import from the modular package
 from meijer import (
-    Meijer,
     AuthenticationStatus,
+    Meijer,
     MeijerAuthenticationError,
 )
 
@@ -185,8 +185,8 @@ class MeijerWorkflowDemo:
 
             # Show modular imports
             print("2️⃣  Independent component imports:")
-            from meijer.models import AuthTokens
             from meijer.auth import TokenStorage
+            from meijer.models import AuthTokens
 
             print("   ✅ Successfully imported:")
             print("      • meijer.models.AuthTokens")

@@ -2,13 +2,11 @@
 Tests for the Meijer shopping list functionality.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import date
+from unittest.mock import Mock, patch
 
+from meijer.models import ListItem
 from meijer.shopping_list import MeijerList
-from meijer.models import ListItem, ItemType
-from meijer.exceptions import MeijerAuthenticationError
 
 
 class TestMeijerList:
@@ -20,9 +18,11 @@ class TestMeijerList:
         self.mock_client.logger = Mock()
         self.mock_client._ensure_authenticated.return_value = True
         self.mock_client.api_base_url = "https://api.meijer.com"
-        self.mock_client._get_api_headers.return_value = {"Authorization": "Bearer token"}
+        self.mock_client._get_api_headers.return_value = {
+            "Authorization": "Bearer token"
+        }
         self.mock_client._make_request = Mock()  # Add the missing method
-        
+
         self.shopping_list = MeijerList(self.mock_client)
 
     def test_init(self):
@@ -48,15 +48,15 @@ class TestMeijerList:
                     "storeId": 123,
                     "notes": "Organic",
                     "isComplete": False,
-                    "isFavorite": False
+                    "isFavorite": False,
                 }
             ]
         }
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.get()
-        
+
         assert len(result) == 1
         assert isinstance(result[0], ListItem)
         assert result[0].name == "Milk"
@@ -68,27 +68,27 @@ class TestMeijerList:
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.text = "Internal Server Error"
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.get()
-        
+
         assert result == []
         self.mock_client.logger.error.assert_called()
 
     def test_get_list_exception(self):
         """Test getting shopping list with exception."""
         self.mock_client._make_request.side_effect = Exception("Network error")
-        
+
         result = self.shopping_list.get()
-        
+
         assert result == []
         self.mock_client.logger.error.assert_called()
 
     def test_get_list_authentication_failure(self):
         """Test getting shopping list without authentication."""
         self.mock_client._ensure_authenticated.return_value = False
-        
+
         # The method should return an empty list when authentication fails
         result = self.shopping_list.get()
         assert result == []
@@ -97,33 +97,35 @@ class TestMeijerList:
         """Test adding item to shopping list successfully."""
         mock_response = Mock()
         mock_response.status_code = 201
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.add_item("123456789", 2)
-        
+
         assert result is True
         self.mock_client._make_request.assert_called_once()
         call_args = self.mock_client._make_request.call_args
         assert call_args[0][0] == "POST"  # method
         assert "AddListItem" in call_args[0][1]  # URL
-        assert call_args[1]["json_data"]["listItems"][0]["itemPartNumber"] == "123456789"
+        assert (
+            call_args[1]["json_data"]["listItems"][0]["itemPartNumber"] == "123456789"
+        )
 
     def test_add_item_with_details_success(self):
         """Test adding item with details successfully."""
         mock_response = Mock()
         mock_response.status_code = 200
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.add_item_with_details(
             upc="123456789",
             quantity=3,
             description="Organic Milk",
             notes="From local farm",
-            display_order=5
+            display_order=5,
         )
-        
+
         assert result is True
         call_args = self.mock_client._make_request.call_args
         json_data = call_args[1]["json_data"]["listItems"][0]
@@ -138,20 +140,20 @@ class TestMeijerList:
         mock_response = Mock()
         mock_response.status_code = 400
         mock_response.text = "Bad Request"
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.add_item("123456789")
-        
+
         assert result is False
         self.mock_client.logger.error.assert_called()
 
     def test_add_item_exception(self):
         """Test adding item with exception."""
         self.mock_client._make_request.side_effect = Exception("Network error")
-        
+
         result = self.shopping_list.add_item("123456789")
-        
+
         assert result is False
         self.mock_client.logger.error.assert_called()
 
@@ -159,11 +161,11 @@ class TestMeijerList:
         """Test completing item successfully."""
         mock_response = Mock()
         mock_response.status_code = 204
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.complete_item("123")
-        
+
         assert result is True
         call_args = self.mock_client._make_request.call_args
         assert call_args[0][0] == "PUT"  # method
@@ -174,11 +176,11 @@ class TestMeijerList:
         mock_response = Mock()
         mock_response.status_code = 404
         mock_response.text = "Not Found"
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.complete_item("123")
-        
+
         assert result is False
         self.mock_client.logger.error.assert_called()
 
@@ -186,11 +188,11 @@ class TestMeijerList:
         """Test deleting item successfully."""
         mock_response = Mock()
         mock_response.status_code = 200
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.delete_item("123")
-        
+
         assert result is True
         call_args = self.mock_client._make_request.call_args
         assert call_args[0][0] == "DELETE"  # method
@@ -201,11 +203,11 @@ class TestMeijerList:
         mock_response = Mock()
         mock_response.status_code = 404
         mock_response.text = "Not Found"
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.delete_item("123")
-        
+
         assert result is False
         self.mock_client.logger.error.assert_called()
 
@@ -225,15 +227,15 @@ class TestMeijerList:
                     "storeId": 123,
                     "notes": "Always buy this",
                     "isComplete": False,
-                    "isFavorite": True
+                    "isFavorite": True,
                 }
             ]
         }
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.get_favorites()
-        
+
         assert len(result) == 1
         assert isinstance(result[0], ListItem)
         assert result[0].name == "Favorite Milk"
@@ -244,11 +246,11 @@ class TestMeijerList:
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.text = "Internal Server Error"
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.get_favorites()
-        
+
         assert result == []
         self.mock_client.logger.error.assert_called()
 
@@ -257,11 +259,11 @@ class TestMeijerList:
         mock_response = Mock()
         mock_response.status_code = 201
         mock_response.json.return_value = {"success": True}
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.add_favorite("123456789")
-        
+
         assert result is True
         call_args = self.mock_client._make_request.call_args
         assert call_args[0][0] == "POST"  # method
@@ -272,11 +274,11 @@ class TestMeijerList:
         mock_response = Mock()
         mock_response.status_code = 400
         mock_response.text = "Bad Request"
-        
+
         self.mock_client._make_request.return_value = mock_response
-        
+
         result = self.shopping_list.add_favorite("123456789")
-        
+
         assert result is False
         self.mock_client.logger.error.assert_called()
 
@@ -287,15 +289,17 @@ class TestMeijerList:
         mock_item.list_item_id = 123
         mock_item.item_part_number = "123456789"
         mock_item.item_description = "Test Item"
-        
-        with patch.object(self.shopping_list, 'get_favorites', return_value=[mock_item]):
+
+        with patch.object(
+            self.shopping_list, "get_favorites", return_value=[mock_item]
+        ):
             mock_response = Mock()
             mock_response.status_code = 200
-            
+
             self.mock_client._make_request.return_value = mock_response
-            
+
             result = self.shopping_list.delete_favorite("123456789")
-            
+
             assert result is True
             call_args = self.mock_client._make_request.call_args
             assert call_args[0][0] == "POST"  # method
@@ -303,17 +307,19 @@ class TestMeijerList:
 
     def test_delete_favorite_not_found(self):
         """Test deleting favorite that doesn't exist."""
-        with patch.object(self.shopping_list, 'get_favorites', return_value=[]):
+        with patch.object(self.shopping_list, "get_favorites", return_value=[]):
             result = self.shopping_list.delete_favorite("123456789")
-            
+
             assert result is False
             self.mock_client.logger.warning.assert_called()
 
     def test_delete_favorite_exception(self):
         """Test deleting favorite with exception."""
-        with patch.object(self.shopping_list, 'get_favorites', side_effect=Exception("Error")):
+        with patch.object(
+            self.shopping_list, "get_favorites", side_effect=Exception("Error")
+        ):
             result = self.shopping_list.delete_favorite("123456789")
-            
+
             assert result is False
             self.mock_client.logger.error.assert_called()
 
@@ -333,11 +339,11 @@ class TestMeijerList:
             "listingId": 789,
             "promotionStart": "2024-01-01T00:00:00Z",
             "promotionEnd": "2024-12-31T23:59:59Z",
-            "couponId": 999
+            "couponId": 999,
         }
-        
+
         result = self.shopping_list._map_api_response_to_listitem(api_data)
-        
+
         assert result["list_item_id"] == 123
         assert result["item_description"] == "Test Item"
         assert result["quantity"] == 2
@@ -355,12 +361,10 @@ class TestMeijerList:
 
     def test_map_api_response_to_listitem_with_defaults(self):
         """Test mapping API response with missing fields uses defaults."""
-        api_data = {
-            "itemDescription": "Test Item"
-        }
-        
+        api_data = {"itemDescription": "Test Item"}
+
         result = self.shopping_list._map_api_response_to_listitem(api_data)
-        
+
         assert result["list_item_id"] == 0
         assert result["list_item_type_id"] == 1
         assert result["item_display_order"] == 1
@@ -377,33 +381,34 @@ class TestMeijerList:
         api_data = {
             "itemDescription": "Test Item",
             "promotionStart": "invalid-date",
-            "promotionEnd": "also-invalid"
+            "promotionEnd": "also-invalid",
         }
-        
+
         result = self.shopping_list._map_api_response_to_listitem(api_data)
-        
+
         assert result["promotion_start"] is None
         assert result["promotion_end"] is None
 
     def test_defrag_empty_list(self):
         """Test defrag with empty shopping list."""
-        with patch.object(self.shopping_list, 'get', return_value=[]):
+        with patch.object(self.shopping_list, "get", return_value=[]):
             result = self.shopping_list.defrag()
-            
+
             assert result is True
 
     def test_defrag_search_import_error(self):
         """Test defrag when search module is not available."""
-        with patch.object(self.shopping_list, 'get', return_value=[Mock()]), \
-             patch('builtins.__import__', side_effect=ImportError("No module named 'meijer.search'")):
-            
+        with patch.object(self.shopping_list, "get", return_value=[Mock()]), patch(
+            "builtins.__import__",
+            side_effect=ImportError("No module named 'meijer.search'"),
+        ):
             result = self.shopping_list.defrag()
-            
+
             assert result is False
 
     def test_defrag_exception(self):
         """Test defrag with exception."""
-        with patch.object(self.shopping_list, 'get', side_effect=Exception("Error")):
+        with patch.object(self.shopping_list, "get", side_effect=Exception("Error")):
             result = self.shopping_list.defrag()
-            
-            assert result is False 
+
+            assert result is False

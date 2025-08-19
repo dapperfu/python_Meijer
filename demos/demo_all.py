@@ -15,21 +15,22 @@ Assumes ~/.config/meijer.txt exists with valid authentication.
 
 from meijer import Meijer
 
+
 def main():
     print("Meijer API Comprehensive Demo")
     print("=" * 50)
-    
+
     # Initialize client (auto-loads from ~/.config/meijer.txt)
     print("🚀 Initializing Meijer client...")
     m = Meijer()
-    
+
     if not m.is_authenticated():
         print("❌ Not authenticated. Please check ~/.config/meijer.txt")
         return
-    
+
     print("✅ Authenticated successfully!")
     print()
-    
+
     # Shopping List
     print("🛒 Shopping List:")
     try:
@@ -41,9 +42,9 @@ def main():
                 print(f"   {status} {item.itemDescription}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Coupons
     print("🎫 Coupons:")
     try:
@@ -53,9 +54,9 @@ def main():
         print(f"   Clipped: {len(clipped)}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Search
     print("🔍 Search:")
     try:
@@ -67,9 +68,9 @@ def main():
                 print(f"   • {item.title} - {price}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Barcode Lookup
     print("📱 Barcode Lookup:")
     try:
@@ -81,9 +82,9 @@ def main():
             print("   ❌ Product not found")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # Stores
     print("🏪 Stores:")
     try:
@@ -94,9 +95,9 @@ def main():
                 print(f"   • {store.name} - {store.city}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
-    
+
     # mPerks
     print("⭐ mPerks:")
     try:
@@ -108,9 +109,10 @@ def main():
         print(f"   Categories: {len(categories)}")
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
     print("🎉 All functionality tested successfully!")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

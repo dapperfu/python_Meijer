@@ -4,7 +4,8 @@ Extract Bearer token from meijer2.log for temporary authentication bypass.
 """
 
 import json
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow
 

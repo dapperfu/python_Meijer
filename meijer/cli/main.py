@@ -21,35 +21,18 @@ Meijer CLI Tool
 A comprehensive command-line interface for managing Meijer shopping lists.
 """
 
-import sys
-import os
-from typing import List, Optional, TextIO
-from pathlib import Path
-from datetime import datetime
-
 import click
 
-try:
-    from tabulate import tabulate
-
-    TABULATE_AVAILABLE = True
-except ImportError:
-    TABULATE_AVAILABLE = False
-
-try:
-    from ..client import Meijer
-
-    MEIJER_AVAILABLE = True
-except ImportError:
-    MEIJER_AVAILABLE = False
-    click.echo(
-        "❌ Meijer package not available. Install with: pip install -e .", err=True
-    )
-    sys.exit(1)
-
-from .utils import get_meijer_client, display_items_table
-from .commands import list_group, coupons_group, cart_group, settings_group
-from .commands import auth_command, status_command, ad_command, gas_command
+from .commands import (
+    ad_command,
+    auth_command,
+    cart_group,
+    coupons_group,
+    gas_command,
+    list_group,
+    settings_group,
+    status_command,
+)
 
 
 @click.group()
@@ -59,7 +42,7 @@ def cli():
     🛒 Meijer Shopping List CLI Tool
 
     Manage your Meijer shopping lists, coupons, cart, and account from the command line.
-    
+
     Available commands:
     • list - Manage shopping list operations
     • coupons - Manage coupons and offers

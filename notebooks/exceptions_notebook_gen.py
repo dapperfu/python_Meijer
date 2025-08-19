@@ -8,12 +8,13 @@ and their usage with practical examples.
 
 import nbformat as nbf
 
+
 def create_exceptions_notebook():
     """Create the exceptions notebook."""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer API Exception Classes
 
@@ -38,7 +39,7 @@ MeijerError (Base Exception)
 
 First, let's import the necessary modules:
 """)
-    
+
     # Import cell
     import_cell = nbf.v4.new_code_cell("""# Import the exception classes
 from meijer.exceptions import (
@@ -63,7 +64,7 @@ print("  - MeijerAPIError")
 print("  - MeijerRateLimitError")
 print("  - CartError")
 print("  - FeedbackError")""")
-    
+
     # Base exception section
     base_exception_section = nbf.v4.new_markdown_cell("""## MeijerError - Base Exception
 
@@ -77,7 +78,7 @@ The `MeijerError` class is the base exception for all Meijer API errors. It inhe
 
 ### Basic Usage
 """)
-    
+
     base_exception_example = nbf.v4.new_code_cell("""# Basic MeijerError usage
 try:
     # Simulate a generic Meijer error
@@ -98,7 +99,7 @@ print(f"\\n📝 Custom Error:")
 print(f"Message: {base_error}")
 print(f"Type: {type(base_error).__name__}")
 print(f"String representation: {str(base_error)}")""")
-    
+
     # Authentication error section
     auth_error_section = nbf.v4.new_markdown_cell("""## MeijerAuthenticationError
 
@@ -112,7 +113,7 @@ The `MeijerAuthenticationError` is raised when authentication operations fail, s
 
 ### Basic Usage
 """)
-    
+
     auth_error_example = nbf.v4.new_code_cell("""# MeijerAuthenticationError examples
 def simulate_authentication(username: str, password: str) -> bool:
     \"\"\"Simulate authentication process with potential errors.\"\"\"
@@ -160,7 +161,7 @@ auth_error = MeijerAuthenticationError("Test auth error")
 print(f"auth_error is MeijerError: {isinstance(auth_error, MeijerError)}")
 print(f"auth_error is Exception: {isinstance(auth_error, Exception)}")
 print(f"MeijerAuthenticationError is MeijerError: {issubclass(MeijerAuthenticationError, MeijerError)}")""")
-    
+
     # API error section
     api_error_section = nbf.v4.new_markdown_cell("""## MeijerAPIError
 
@@ -175,7 +176,7 @@ The `MeijerAPIError` is raised when general API requests fail, such as network i
 
 ### Basic Usage
 """)
-    
+
     api_error_example = nbf.v4.new_code_cell("""# MeijerAPIError examples
 def simulate_api_request(endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
     \"\"\"Simulate API request with potential errors.\"\"\"
@@ -232,7 +233,7 @@ api_error = MeijerAPIError("Test API error")
 print(f"api_error is MeijerError: {isinstance(api_error, MeijerError)}")
 print(f"api_error is Exception: {isinstance(api_error, Exception)}")
 print(f"MeijerAPIError is MeijerError: {issubclass(MeijerAPIError, MeijerError)}")""")
-    
+
     # Rate limit error section
     rate_limit_section = nbf.v4.new_markdown_cell("""## MeijerRateLimitError
 
@@ -247,25 +248,25 @@ The `MeijerRateLimitError` is raised when API rate limits are exceeded, helping 
 
 ### Basic Usage
 """)
-    
+
     rate_limit_example = nbf.v4.new_code_cell("""# MeijerRateLimitError examples
 class RateLimitedAPI:
     \"\"\"Example API client with rate limiting.\"\"\"
-    
+
     def __init__(self):
         self.request_count = 0
         self.rate_limit = 10  # Max 10 requests per minute
         self.reset_time = time.time() + 60  # Reset every minute
-    
+
     def make_request(self, endpoint: str) -> Dict[str, Any]:
         \"\"\"Make an API request with rate limiting.\"\"\"
         current_time = time.time()
-        
+
         # Check if rate limit period has reset
         if current_time >= self.reset_time:
             self.request_count = 0
             self.reset_time = current_time + 60
-        
+
         # Check rate limit
         if self.request_count >= self.rate_limit:
             remaining_time = int(self.reset_time - current_time)
@@ -273,19 +274,19 @@ class RateLimitedAPI:
                 f"Rate limit exceeded. Limit: {self.rate_limit} requests per minute. "
                 f"Reset in {remaining_time} seconds."
             )
-        
+
         # Increment request count
         self.request_count += 1
-        
+
         # Simulate successful request
         return {"status": "success", "endpoint": endpoint, "request_number": self.request_count}
-    
+
     def get_rate_limit_info(self) -> Dict[str, Any]:
         \"\"\"Get current rate limit information.\"\"\"
         current_time = time.time()
         remaining_requests = max(0, self.rate_limit - self.request_count)
         time_until_reset = max(0, self.reset_time - current_time)
-        
+
         return {
             "requests_used": self.request_count,
             "requests_remaining": remaining_requests,
@@ -305,11 +306,11 @@ for i in range(12):  # Try to make 12 requests (exceeds limit of 10)
     try:
         result = api_client.make_request(f"/test{i}")
         print(f"✅ Request {i+1}: {result}")
-        
+
         # Show rate limit info
         info = api_client.get_rate_limit_info()
         print(f"   📊 Rate Limit: {info['requests_remaining']}/{info['rate_limit']} remaining")
-        
+
     except MeijerRateLimitError as e:
         print(f"❌ Rate Limit Error: {e}")
         print(f"   Error Type: {type(e).__name__}")
@@ -325,7 +326,7 @@ rate_limit_error = MeijerRateLimitError("Test rate limit error")
 print(f"rate_limit_error is MeijerError: {isinstance(rate_limit_error, MeijerError)}")
 print(f"rate_limit_error is Exception: {isinstance(rate_limit_error, Exception)}")
 print(f"MeijerRateLimitError is MeijerError: {issubclass(MeijerRateLimitError, MeijerError)}")""")
-    
+
     # Cart error section
     cart_error_section = nbf.v4.new_markdown_cell("""## CartError
 
@@ -340,31 +341,31 @@ The `CartError` is raised when shopping cart operations fail, such as adding/rem
 
 ### Basic Usage
 """)
-    
+
     cart_error_example = nbf.v4.new_code_cell("""# CartError examples
 class ShoppingCart:
     \"\"\"Example shopping cart with error handling.\"\"\"
-    
+
     def __init__(self):
         self.items = {}
         self.max_items = 100
         self.max_quantity_per_item = 99
-    
+
     def add_item(self, item_id: str, name: str, quantity: int, price: float) -> bool:
         \"\"\"Add an item to the cart with validation.\"\"\"
         # Validate quantity
         if quantity <= 0:
             raise CartError(f"Invalid quantity: {quantity}. Quantity must be positive.")
-        
+
         if quantity > self.max_quantity_per_item:
             raise CartError(
                 f"Quantity {quantity} exceeds maximum allowed ({self.max_quantity_per_item})"
             )
-        
+
         # Check cart capacity
         if len(self.items) >= self.max_items and item_id not in self.items:
             raise CartError(f"Cart is full. Maximum {self.max_items} different items allowed.")
-        
+
         # Add or update item
         if item_id in self.items:
             new_quantity = self.items[item_id]['quantity'] + quantity
@@ -379,40 +380,40 @@ class ShoppingCart:
                 'quantity': quantity,
                 'price': price
             }
-        
+
         return True
-    
+
     def remove_item(self, item_id: str) -> bool:
         \"\"\"Remove an item from the cart.\"\"\"
         if item_id not in self.items:
             raise CartError(f"Item {item_id} not found in cart.")
-        
+
         del self.items[item_id]
         return True
-    
+
     def update_quantity(self, item_id: str, new_quantity: int) -> bool:
         \"\"\"Update item quantity in cart.\"\"\"
         if item_id not in self.items:
             raise CartError(f"Item {item_id} not found in cart.")
-        
+
         if new_quantity <= 0:
             # Remove item if quantity is 0 or negative
             del self.items[item_id]
             return True
-        
+
         if new_quantity > self.max_quantity_per_item:
             raise CartError(
                 f"Quantity {new_quantity} exceeds maximum allowed ({self.max_quantity_per_item})"
             )
-        
+
         self.items[item_id]['quantity'] = new_quantity
         return True
-    
+
     def get_cart_summary(self) -> Dict[str, Any]:
         \"\"\"Get cart summary information.\"\"\"
         total_items = sum(item['quantity'] for item in self.items.values())
         total_value = sum(item['quantity'] * item['price'] for item in self.items.values())
-        
+
         return {
             'item_count': len(self.items),
             'total_quantity': total_items,
@@ -433,10 +434,10 @@ try:
     cart.add_item("BAN001", "Bananas", 2, 1.99)
     cart.add_item("MILK001", "Milk", 1, 3.99)
     print("  Added items successfully")
-    
+
     summary = cart.get_cart_summary()
     print(f"  Cart summary: {summary}")
-    
+
 except CartError as e:
     print(f"❌ Cart Error: {e}")
 
@@ -473,7 +474,7 @@ cart_error = CartError("Test cart error")
 print(f"cart_error is MeijerError: {isinstance(cart_error, MeijerError)}")
 print(f"cart_error is Exception: {isinstance(cart_error, Exception)}")
 print(f"CartError is MeijerError: {issubclass(CartError, MeijerError)}")""")
-    
+
     # Feedback error section
     feedback_error_section = nbf.v4.new_markdown_cell("""## FeedbackError
 
@@ -488,18 +489,18 @@ The `FeedbackError` is raised when feedback operations fail, such as submitting 
 
 ### Basic Usage
 """)
-    
+
     feedback_error_example = nbf.v4.new_code_cell("""# FeedbackError examples
 class FeedbackSystem:
     \"\"\"Example feedback system with error handling.\"\"\"
-    
+
     def __init__(self):
         self.min_rating = 1
         self.max_rating = 5
         self.min_comment_length = 10
         self.max_comment_length = 1000
         self.submitted_feedback = []
-    
+
     def submit_feedback(self, product_id: str, rating: int, comment: str, user_id: str) -> bool:
         \"\"\"Submit feedback with validation.\"\"\"
         # Validate rating
@@ -507,31 +508,31 @@ class FeedbackSystem:
             raise FeedbackError(
                 f"Invalid rating: {rating}. Rating must be an integer between {self.min_rating} and {self.max_rating}."
             )
-        
+
         # Validate comment
         if not comment or not isinstance(comment, str):
             raise FeedbackError("Comment is required and must be a string.")
-        
+
         if len(comment) < self.min_comment_length:
             raise FeedbackError(
                 f"Comment too short: {len(comment)} characters. Minimum {self.min_comment_length} characters required."
             )
-        
+
         if len(comment) > self.max_comment_length:
             raise FeedbackError(
                 f"Comment too long: {len(comment)} characters. Maximum {self.max_comment_length} characters allowed."
             )
-        
+
         # Check for inappropriate content (simplified)
         inappropriate_words = ["spam", "inappropriate", "offensive"]
         if any(word in comment.lower() for word in inappropriate_words):
             raise FeedbackError("Comment contains inappropriate content and cannot be submitted.")
-        
+
         # Check for duplicate feedback from same user
         for feedback in self.submitted_feedback:
             if feedback['user_id'] == user_id and feedback['product_id'] == product_id:
                 raise FeedbackError("You have already submitted feedback for this product.")
-        
+
         # Simulate submission process
         feedback_data = {
             'product_id': product_id,
@@ -540,22 +541,22 @@ class FeedbackSystem:
             'user_id': user_id,
             'timestamp': time.time()
         }
-        
+
         # Simulate potential submission failure
         if random.random() < 0.1:  # 10% chance of failure
             raise FeedbackError("Feedback submission failed due to temporary service issue.")
-        
+
         self.submitted_feedback.append(feedback_data)
         return True
-    
+
     def get_feedback_summary(self) -> Dict[str, Any]:
         \"\"\"Get feedback system summary.\"\"\"
         if not self.submitted_feedback:
             return {"total_feedback": 0, "average_rating": 0}
-        
+
         total_feedback = len(self.submitted_feedback)
         average_rating = sum(f['rating'] for f in self.submitted_feedback) / total_feedback
-        
+
         return {
             "total_feedback": total_feedback,
             "average_rating": round(average_rating, 2),
@@ -577,10 +578,10 @@ try:
     feedback_system.submit_feedback("PROD001", 5, "Great product! I love the quality and taste.", "USER001")
     feedback_system.submit_feedback("PROD002", 4, "Good product, but could be better packaging.", "USER002")
     print("  Feedback submitted successfully")
-    
+
     summary = feedback_system.get_feedback_summary()
     print(f"  Feedback summary: {summary}")
-    
+
 except FeedbackError as e:
     print(f"❌ Feedback Error: {e}")
 
@@ -623,7 +624,7 @@ feedback_error = FeedbackError("Test feedback error")
 print(f"feedback_error is MeijerError: {isinstance(feedback_error, MeijerError)}")
 print(f"feedback_error is Exception: {isinstance(feedback_error, Exception)}")
 print(f"FeedbackError is MeijerError: {issubclass(FeedbackError, MeijerError)}")""")
-    
+
     # Error handling patterns section
     error_patterns_section = nbf.v4.new_markdown_cell("""## Error Handling Patterns
 
@@ -633,7 +634,7 @@ Now let's explore common error handling patterns and best practices when working
 
 Handle specific exceptions first, then fall back to general error handling.
 """)
-    
+
     error_patterns_example = nbf.v4.new_code_cell("""# Error handling patterns
 def robust_api_operation(operation_type: str) -> Dict[str, Any]:
     \"\"\"Demonstrate robust error handling patterns.\"\"\"
@@ -643,48 +644,48 @@ def robust_api_operation(operation_type: str) -> Dict[str, Any]:
             if random.random() < 0.3:
                 raise MeijerAuthenticationError("Invalid credentials")
             return {"status": "authenticated"}
-            
+
         elif operation_type == "api":
             # Simulate API call
             if random.random() < 0.2:
                 raise MeijerAPIError("Network timeout")
             return {"status": "success", "data": "API response"}
-            
+
         elif operation_type == "cart":
             # Simulate cart operation
             if random.random() < 0.15:
                 raise CartError("Item not available")
             return {"status": "added_to_cart"}
-            
+
         elif operation_type == "feedback":
             # Simulate feedback submission
             if random.random() < 0.1:
                 raise FeedbackError("Service temporarily unavailable")
             return {"status": "feedback_submitted"}
-            
+
         else:
             raise ValueError(f"Unknown operation type: {operation_type}")
-            
+
     except MeijerAuthenticationError as e:
         print(f"🔐 Authentication Error: {e}")
         return {"status": "error", "type": "authentication", "message": str(e)}
-        
+
     except MeijerAPIError as e:
         print(f"🌐 API Error: {e}")
         return {"status": "error", "type": "api", "message": str(e)}
-        
+
     except CartError as e:
         print(f"🛒 Cart Error: {e}")
         return {"status": "error", "type": "cart", "message": str(e)}
-        
+
     except FeedbackError as e:
         print(f"💬 Feedback Error: {e}")
         return {"status": "error", "type": "feedback", "message": str(e)}
-        
+
     except MeijerError as e:
         print(f"⚠️ General Meijer Error: {e}")
         return {"status": "error", "type": "general", "message": str(e)}
-        
+
     except Exception as e:
         print(f"❌ Unexpected Error: {e}")
         return {"status": "error", "type": "unexpected", "message": str(e)}
@@ -710,7 +711,7 @@ def retry_with_backoff(operation_func, max_retries: int = 3, base_delay: float =
             if attempt == max_retries:
                 print(f"❌ Max retries ({max_retries}) exceeded for rate limit error")
                 raise e
-            
+
             delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
             print(f"⏱️ Rate limited. Retrying in {delay:.2f} seconds... (attempt {attempt + 1}/{max_retries + 1})")
             time.sleep(delay)
@@ -736,7 +737,7 @@ try:
     print(f"✅ Final result: {result}")
 except MeijerRateLimitError as e:
     print(f"❌ Final failure: {e}")""")
-    
+
     # Best practices section
     best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
 
@@ -761,7 +762,7 @@ Check input parameters before making API calls to catch errors early.
 ### 7. Use Custom Exceptions
 Extend the base exception classes for application-specific error scenarios.
 """)
-    
+
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
@@ -799,7 +800,7 @@ This notebook has demonstrated the comprehensive exception handling system avail
 
 The exception system provides robust error handling for building reliable Meijer API applications! 🚀
 """)
-    
+
     # Add all cells to notebook
     nb.cells = [
         title_cell,
@@ -819,14 +820,15 @@ The exception system provides robust error handling for building reliable Meijer
         error_patterns_section,
         error_patterns_example,
         best_practices_section,
-        summary_section
+        summary_section,
     ]
-    
+
     # Save notebook
-    with open('exceptions.ipynb', 'w') as f:
+    with open("exceptions.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ exceptions.ipynb created successfully!")
 
+
 if __name__ == "__main__":
-    create_exceptions_notebook() 
+    create_exceptions_notebook()

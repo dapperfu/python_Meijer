@@ -146,13 +146,9 @@ class MeijerCoupon:
         """Get a human-readable description of the coupon conditions."""
         if not self.has_conditions:
             return "No minimum purchase required"
-        
-        condition_types = {
-            1: "Spend",
-            2: "Buy",
-            3: "Save on"
-        }
-        
+
+        condition_types = {1: "Spend", 2: "Buy", 3: "Save on"}
+
         condition_type = condition_types.get(self.condition_type_id, "Purchase")
         return f"{condition_type} ${self.condition_value:.2f} or more"
 
@@ -163,11 +159,11 @@ class MeijerCoupon:
             1: "Percentage off",
             2: "Dollar amount off",
             3: "Buy one get one",
-            4: "Free item with purchase"
+            4: "Free item with purchase",
         }
-        
+
         discount_type = discount_types.get(self.discount_type_id, "Discount")
-        
+
         if self.discount_type_id == 1:  # Percentage
             return f"{discount_type} {self.redeem_amount:.0f}%"
         elif self.discount_type_id == 2:  # Dollar amount
@@ -211,8 +207,11 @@ class MeijerCoupon:
     def alcohol_related(self) -> bool:
         """Check if the coupon is related to alcohol products."""
         alcohol_keywords = ["wine", "beer", "liquor", "alcohol", "spirits"]
-        return any(keyword in (self.title or "").lower() or keyword in (self.description or "").lower() 
-                  for keyword in alcohol_keywords)
+        return any(
+            keyword in (self.title or "").lower()
+            or keyword in (self.description or "").lower()
+            for keyword in alcohol_keywords
+        )
 
     @property
     def requires_age_verification(self) -> bool:
@@ -223,31 +222,31 @@ class MeijerCoupon:
     def display_priority(self) -> int:
         """Get the display priority for the coupon (lower = higher priority)."""
         priority = 0
-        
+
         # High priority: expiring soon
         if self.about_to_expire:
             priority -= 100
-        
+
         # High priority: newly available
         if self.newly_available:
             priority -= 50
-        
+
         # High priority: targeted for user
         if self.targeted_for_user:
             priority -= 25
-        
+
         # High priority: suggested for user
         if self.suggested_for_user:
             priority -= 20
-        
+
         # Medium priority: clipped
         if self.is_clipped:
             priority += 10
-        
+
         # Lower priority: hidden
         if self.is_hidden:
             priority += 100
-        
+
         return priority
 
     def to_dict(self) -> Dict[str, Any]:

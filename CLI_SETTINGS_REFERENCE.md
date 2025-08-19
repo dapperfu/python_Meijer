@@ -224,4 +224,3 @@ meijer --help
 ---
 
 *This CLI provides direct access to the same functionality available in the Meijer mobile app Settings section, discovered through API analysis and implemented with comprehensive error handling and user feedback.*
-

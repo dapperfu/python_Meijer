@@ -23,9 +23,6 @@ def main():
             MeijerCoupon,
             MeijerItem,
             MeijerStore,
-            MeijerSearch,
-            MeijerStoreSearch,
-            MeijerSearchResults,
         )
 
         print("✅ All classes imported successfully")

@@ -9,9 +9,8 @@ session management, offers, stores, and more.
 
 import json
 import logging
-import time
-from typing import Dict, Any
-from meijer import Meijer, MeijerError, MeijerAuthenticationError
+
+from meijer import Meijer
 
 
 def setup_logging() -> None:
@@ -62,7 +61,7 @@ def test_credential_authentication(meijer: Meijer) -> bool:
     try:
         # Test with stored credentials
         if meijer.credentials:
-            print(f"1. Testing with stored credentials...")
+            print("1. Testing with stored credentials...")
             print(f"Username: {meijer.credentials.get('username', 'Not found')}")
             print(
                 f"Password: {'*' * len(meijer.credentials.get('password', '')) if meijer.credentials.get('password') else 'Not found'}"

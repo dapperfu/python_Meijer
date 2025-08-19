@@ -26,8 +26,7 @@ Based on actual API analysis from mitmproxy logs.
 import logging
 from dataclasses import dataclass
 from datetime import datetime, time
-from typing import Dict, List, Optional, Any
-from urllib.parse import urlencode
+from typing import Any, Dict, List, Optional
 
 from meijer.exceptions import CartError
 
@@ -210,19 +209,21 @@ class MeijerCart:
                         "retailerProductId": "0000000000",  # Dummy product ID
                         "retailerProductIdType": "UPCA",
                         "quantity": 1.0,
-                        "isAlcohol": False
+                        "isAlcohol": False,
                     }
-                ]
+                ],
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
             # The fulfillment endpoint might expect specific fulfillment headers
             headers = self.api_client._get_api_headers()
-            headers.update({
-                "Content-Type": "application/json",
-                "X-Fulfillment-Type": "pickup",
-                "X-Fulfillment-Store": self.store_id
-            })
+            headers.update(
+                {
+                    "Content-Type": "application/json",
+                    "X-Fulfillment-Type": "pickup",
+                    "X-Fulfillment-Store": self.store_id,
+                }
+            )
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
@@ -230,7 +231,7 @@ class MeijerCart:
             self.logger.info(f"Request URL: {url}")
             self.logger.info(f"Request headers: {headers}")
             self.logger.info(f"Request body: {request_data}")
-            
+
             response = self.api_client._make_request(
                 "POST", url, json_data=request_data, headers=headers
             )
@@ -288,21 +289,23 @@ class MeijerCart:
                         "retailerProductId": "0000000000",  # Dummy product ID
                         "retailerProductIdType": "UPCA",
                         "quantity": 1.0,
-                        "isAlcohol": False
+                        "isAlcohol": False,
                     }
-                ]
+                ],
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
             # Note: The fulfillment endpoint expects specific header format
             headers = self.api_client._get_api_headers()
-            headers.update({
-                "Content-Type": "application/json",
-                "X-MFC-Store": self.store_id,  # Use proper case
-                "DeliveryPartner": delivery_partner,  # Use proper case
-                "FulfillmentType": "delivery",  # Use proper case
-                "FulfillmentEligibility": "NORMAL",  # Use proper case
-            })
+            headers.update(
+                {
+                    "Content-Type": "application/json",
+                    "X-MFC-Store": self.store_id,  # Use proper case
+                    "DeliveryPartner": delivery_partner,  # Use proper case
+                    "FulfillmentType": "delivery",  # Use proper case
+                    "FulfillmentEligibility": "NORMAL",  # Use proper case
+                }
+            )
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
@@ -325,7 +328,10 @@ class MeijerCart:
             raise CartError(f"Error retrieving delivery slots: {str(e)}")
 
     def reserve_pickup_slot(
-        self, slot_id: str, delivery_partner: str = "SHIPT", curbside_partner: str = "MI9"
+        self,
+        slot_id: str,
+        delivery_partner: str = "SHIPT",
+        curbside_partner: str = "MI9",
     ) -> bool:
         """
         Reserve a pickup time slot.
@@ -360,23 +366,27 @@ class MeijerCart:
                         "retailerProductId": "0000000000",  # Dummy product ID
                         "retailerProductIdType": "UPCA",
                         "quantity": 1.0,
-                        "isAlcohol": False
+                        "isAlcohol": False,
                     }
-                ]
+                ],
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
             # The fulfillment endpoint might expect specific fulfillment headers
             headers = self.api_client._get_api_headers()
-            headers.update({
-                "Content-Type": "application/json",
-                "X-Fulfillment-Type": "pickup",
-                "X-Fulfillment-Store": self.store_id
-            })
+            headers.update(
+                {
+                    "Content-Type": "application/json",
+                    "X-Fulfillment-Type": "pickup",
+                    "X-Fulfillment-Store": self.store_id,
+                }
+            )
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
-            self.logger.info(f"Reserving pickup slot {slot_id} for store {self.store_id}")
+            self.logger.info(
+                f"Reserving pickup slot {slot_id} for store {self.store_id}"
+            )
             response = self.api_client._make_request(
                 "POST", url, json_data=request_data, headers=headers
             )
@@ -428,23 +438,27 @@ class MeijerCart:
                         "retailerProductId": "0000000000",  # Dummy product ID
                         "retailerProductIdType": "UPCA",
                         "quantity": 1.0,
-                        "isAlcohol": False
+                        "isAlcohol": False,
                     }
-                ]
+                ],
             }
 
             # Get default headers (includes Authorization) and merge with custom headers
             # The fulfillment endpoint might expect specific fulfillment headers
             headers = self.api_client._get_api_headers()
-            headers.update({
-                "Content-Type": "application/json",
-                "X-Fulfillment-Type": "delivery",
-                "X-Fulfillment-Store": self.store_id
-            })
+            headers.update(
+                {
+                    "Content-Type": "application/json",
+                    "X-Fulfillment-Type": "delivery",
+                    "X-Fulfillment-Store": self.store_id,
+                }
+            )
 
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/fulfillment/reservationslots"
 
-            self.logger.info(f"Reserving delivery slot {slot_id} for store {self.store_id}")
+            self.logger.info(
+                f"Reserving delivery slot {slot_id} for store {self.store_id}"
+            )
             response = self.api_client._make_request(
                 "POST", url, json_data=request_data, headers=headers
             )
@@ -683,28 +697,26 @@ class MeijerCart:
         """
         try:
             self.logger.info(f"Adding item with UPC {upc}, quantity {quantity} to cart")
-            
+
             # Build request body for adding item
             request_data = {
                 "storeId": self.store_id,
                 "productCode": upc,
                 "quantity": quantity,
-                "productCodeType": "UPCA"
+                "productCodeType": "UPCA",
             }
 
             # Get default headers and add content-type
             headers = self.api_client._get_api_headers()
-            headers.update({
-                "Content-Type": "application/json"
-            })
+            headers.update({"Content-Type": "application/json"})
 
             # Note: The actual endpoint for adding items needs to be determined
             # This is a placeholder implementation
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries"
-            
+
             self.logger.info(f"Adding item to cart: {url}")
             self.logger.info(f"Request data: {request_data}")
-            
+
             response = self.api_client._make_request(
                 "POST", url, json_data=request_data, headers=headers
             )
@@ -745,7 +757,7 @@ class MeijerCart:
         """
         try:
             self.logger.info("Emptying shopping cart")
-            
+
             # Get current cart data to find item IDs
             cart_data = self.get_current_cart()
             if not cart_data or "entries" not in cart_data:
@@ -766,11 +778,11 @@ class MeijerCart:
                         success_count += 1
 
             self.logger.info(f"Successfully removed {success_count} items from cart")
-            
+
             # Clear cached cart data
             self._cart_data = None
             self._last_updated = None
-            
+
             return success_count == len(entries)
 
         except Exception as e:
@@ -796,16 +808,14 @@ class MeijerCart:
         try:
             # Get default headers
             headers = self.api_client._get_api_headers()
-            
+
             # Note: The actual endpoint for removing items needs to be determined
             # This is a placeholder implementation
             url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries/{entry_id}"
-            
+
             self.logger.info(f"Removing cart item {entry_id}: {url}")
-            
-            response = self.api_client._make_request(
-                "DELETE", url, headers=headers
-            )
+
+            response = self.api_client._make_request("DELETE", url, headers=headers)
 
             if response.status_code == 200:
                 self.logger.info(f"Successfully removed cart item {entry_id}")

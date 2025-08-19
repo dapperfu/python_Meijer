@@ -1,1 +1,1 @@
-# Tests package for Meijer API client 
+# Tests package for Meijer API client

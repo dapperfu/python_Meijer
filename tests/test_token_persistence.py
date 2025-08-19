@@ -8,6 +8,7 @@ authentication from stored tokens, avoiding 2FA prompts on subsequent logins.
 
 import logging
 import time
+
 from meijer import Meijer
 
 # Setup logging

@@ -6,9 +6,9 @@ This document details the Settings API endpoints discovered through analysis of 
 
 ## 📊 Log Analysis Summary
 
-**Log File:** `meijer_mitm_20250818_110037.log` (9.5MB)  
-**Analysis Date:** December 19, 2024  
-**Analysis Tool:** `tools/search_log_content.py`  
+**Log File:** `meijer_mitm_20250818_110037.log` (9.5MB)
+**Analysis Date:** December 19, 2024
+**Analysis Tool:** `tools/search_log_content.py`
 **Session Context:** Settings section modifications including vehicle changes and preference updates
 
 ## 🚗 Vehicle Management Endpoints
@@ -212,8 +212,8 @@ for pref in preferences:
 
 # Update substitution preference
 success = client.settings.update_customer_preference(
-    "Substitutions", 
-    "No Substitutions", 
+    "Substitutions",
+    "No Substitutions",
     "DigitalGrocery"
 )
 ```

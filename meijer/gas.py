@@ -21,10 +21,10 @@ Represents gas station data for Meijer stores that have fuel services,
 including gas prices, hours, amenities, and fuel types.
 """
 
-from typing import Optional, Dict, Any, List
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, time
-import logging
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

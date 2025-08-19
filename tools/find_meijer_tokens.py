@@ -4,10 +4,11 @@ Targeted tool to find Meijer authentication tokens in response bodies and specif
 """
 
 import json
-from typing import Dict, List, Any
+import re
+from typing import Any, Dict, List
+
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow
-import re
 
 
 def load_flows(log_file: str) -> List[HTTPFlow]:

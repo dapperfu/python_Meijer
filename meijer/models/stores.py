@@ -5,7 +5,7 @@ This module contains dataclasses for store locations and services.
 """
 
 from dataclasses import dataclass, field
-from datetime import time, datetime
+from datetime import datetime, time
 from typing import Any, Dict, List, Optional
 
 
@@ -120,7 +120,7 @@ class Store:
         """Get the distance formatted as a string."""
         if self.distance is None:
             return None
-        
+
         if self.distance < 1:
             return f"{self.distance * 5280:.0f} ft"
         elif self.distance < 10:
@@ -147,71 +147,101 @@ class Store:
     def has_pharmacy(self) -> bool:
         """Check if the store has a pharmacy."""
         pharmacy_keywords = ["pharmacy", "rx", "prescription"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in pharmacy_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in pharmacy_keywords
+        )
 
     @property
     def has_photo_center(self) -> bool:
         """Check if the store has a photo center."""
         photo_keywords = ["photo", "photo center", "photography"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in photo_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in photo_keywords
+        )
 
     @property
     def has_gas_station(self) -> bool:
         """Check if the store has a gas station."""
         gas_keywords = ["gas", "fuel", "gas station"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in gas_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in gas_keywords
+        )
 
     @property
     def has_curbside_pickup(self) -> bool:
         """Check if the store offers curbside pickup."""
         pickup_keywords = ["curbside", "curbside pickup", "pickup"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in pickup_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in pickup_keywords
+        )
 
     @property
     def has_delivery(self) -> bool:
         """Check if the store offers delivery."""
         delivery_keywords = ["delivery", "home delivery", "shipt"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in delivery_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in delivery_keywords
+        )
 
     @property
     def has_self_checkout(self) -> bool:
         """Check if the store has self-checkout."""
         checkout_keywords = ["self checkout", "self-checkout", "express checkout"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in checkout_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in checkout_keywords
+        )
 
     @property
     def has_restaurant(self) -> bool:
         """Check if the store has a restaurant or food service."""
         restaurant_keywords = ["restaurant", "cafe", "food court", "dining"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in restaurant_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in restaurant_keywords
+        )
 
     @property
     def has_bank(self) -> bool:
         """Check if the store has a bank or financial services."""
         bank_keywords = ["bank", "atm", "financial", "credit union"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in bank_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in bank_keywords
+        )
 
     @property
     def has_optical(self) -> bool:
         """Check if the store has optical services."""
         optical_keywords = ["optical", "eyewear", "glasses", "contacts"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in optical_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in optical_keywords
+        )
 
     @property
     def has_automotive(self) -> bool:
         """Check if the store has automotive services."""
         auto_keywords = ["automotive", "tire", "oil change", "car care"]
-        return any(keyword in service.lower() for service in self.services 
-                  for keyword in auto_keywords)
+        return any(
+            keyword in service.lower()
+            for service in self.services
+            for keyword in auto_keywords
+        )
 
     @property
     def open_24_hours(self) -> bool:
@@ -252,7 +282,7 @@ class Store:
     def convenience_score(self) -> int:
         """Get a convenience score based on available services (0-100)."""
         score = 0
-        
+
         # Core services
         if self.has_pharmacy:
             score += 20
@@ -264,7 +294,7 @@ class Store:
             score += 10
         if self.has_delivery:
             score += 10
-        
+
         # Additional services
         if self.has_restaurant:
             score += 8
@@ -276,7 +306,7 @@ class Store:
             score += 5
         if self.has_self_checkout:
             score += 5
-        
+
         # Hours convenience
         if self.open_24_hours:
             score += 20
@@ -284,7 +314,7 @@ class Store:
             score += 10
         elif self.open_early:
             score += 5
-        
+
         return min(score, 100)
 
     def to_dict(self) -> Dict[str, Any]:

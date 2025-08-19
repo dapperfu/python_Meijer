@@ -7,6 +7,7 @@ Tests for the enumeration classes used in the Meijer API client.
 """
 
 import pytest
+
 from meijer.enums import AuthenticationStatus
 
 
@@ -22,13 +23,21 @@ class TestAuthenticationStatus:
 
     def test_enum_comparison(self):
         """Test AuthenticationStatus enum comparison."""
-        assert AuthenticationStatus.UNAUTHENTICATED != AuthenticationStatus.AUTHENTICATED
+        assert (
+            AuthenticationStatus.UNAUTHENTICATED != AuthenticationStatus.AUTHENTICATED
+        )
         assert AuthenticationStatus.AUTHENTICATED == AuthenticationStatus.AUTHENTICATED
 
     def test_enum_string_representation(self):
         """Test AuthenticationStatus enum string representation."""
-        assert str(AuthenticationStatus.AUTHENTICATED) == "AuthenticationStatus.AUTHENTICATED"
-        assert repr(AuthenticationStatus.EXPIRED) == "<AuthenticationStatus.EXPIRED: 'expired'>"
+        assert (
+            str(AuthenticationStatus.AUTHENTICATED)
+            == "AuthenticationStatus.AUTHENTICATED"
+        )
+        assert (
+            repr(AuthenticationStatus.EXPIRED)
+            == "<AuthenticationStatus.EXPIRED: 'expired'>"
+        )
 
     def test_enum_iteration(self):
         """Test AuthenticationStatus enum iteration."""
@@ -45,4 +54,4 @@ class TestAuthenticationStatus:
 
 
 if __name__ == "__main__":
-    pytest.main([__file__]) 
+    pytest.main([__file__])

@@ -74,4 +74,4 @@ If sensitive files are accidentally committed:
 
 ---
 
-**Remember**: This is a source code repository, not a data dump. Keep it clean, secure, and professional. 
+**Remember**: This is a source code repository, not a data dump. Keep it clean, secure, and professional.

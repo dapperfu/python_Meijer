@@ -6,11 +6,9 @@ This module contains the coupon-related operations that were moved from the main
 to reduce file size and improve organization.
 """
 
-import logging
 from typing import List, Optional
 
 from .models import MeijerCoupon
-from .exceptions import MeijerAuthenticationError
 
 
 class CouponOperations:
@@ -67,27 +65,43 @@ class CouponOperations:
                 }
             )
 
-            self.logger.info(f"Fetching offers with limit={limit}, store_id={store_id or 'any'}")
-            response = self.client._make_request("POST", url, headers=headers, json_data=data)
+            self.logger.info(
+                f"Fetching offers with limit={limit}, store_id={store_id or 'any'}"
+            )
+            response = self.client._make_request(
+                "POST", url, headers=headers, json_data=data
+            )
 
             if response.status_code == 200:
                 response_data = response.json()
-                
+
                 # Log response structure for debugging
-                response_keys = list(response_data.keys()) if isinstance(response_data, dict) else []
+                response_keys = (
+                    list(response_data.keys())
+                    if isinstance(response_data, dict)
+                    else []
+                )
                 self.logger.debug(f"Offers API response keys: {response_keys}")
-                
+
                 # Check for total count information
                 total_count = response_data.get("couponCount", 0)
                 if total_count > 0:
-                    self.logger.info(f"API reports {total_count} total coupons available")
-                
-                coupons = self.client.coupons.create_meijer_coupons_from_response(response_data)
-                self.logger.info(f"Successfully parsed {len(coupons)} coupons from response")
-                
+                    self.logger.info(
+                        f"API reports {total_count} total coupons available"
+                    )
+
+                coupons = self.client.coupons.create_meijer_coupons_from_response(
+                    response_data
+                )
+                self.logger.info(
+                    f"Successfully parsed {len(coupons)} coupons from response"
+                )
+
                 return coupons
             else:
-                self.logger.warning(f"Failed to get offers: {response.status_code} - {response.text[:200]}")
+                self.logger.warning(
+                    f"Failed to get offers: {response.status_code} - {response.text[:200]}"
+                )
                 return []
 
         except Exception as e:
@@ -157,26 +171,36 @@ class CouponOperations:
 
                     if response.status_code == 200:
                         page_data = response.json()
-                        
+
                         # Get total coupon count from first page
                         if total_coupons is None:
                             total_coupons = page_data.get("couponCount", 0)
-                            self.logger.info(f"Total coupons available: {total_coupons}")
-                        
-                        page_coupons = self.client.coupons.create_meijer_coupons_from_response(
-                            page_data
+                            self.logger.info(
+                                f"Total coupons available: {total_coupons}"
+                            )
+
+                        page_coupons = (
+                            self.client.coupons.create_meijer_coupons_from_response(
+                                page_data
+                            )
                         )
 
                         if not page_coupons:
                             consecutive_empty_pages += 1
-                            self.logger.debug(f"Page {current_page} returned no coupons (empty page {consecutive_empty_pages})")
-                            
+                            self.logger.debug(
+                                f"Page {current_page} returned no coupons (empty page {consecutive_empty_pages})"
+                            )
+
                             if consecutive_empty_pages >= max_empty_pages:
-                                self.logger.info(f"Stopping after {max_empty_pages} consecutive empty pages")
+                                self.logger.info(
+                                    f"Stopping after {max_empty_pages} consecutive empty pages"
+                                )
                                 break
                         else:
                             consecutive_empty_pages = 0  # Reset counter
-                            self.logger.debug(f"Page {current_page}: {len(page_coupons)} coupons")
+                            self.logger.debug(
+                                f"Page {current_page}: {len(page_coupons)} coupons"
+                            )
 
                         all_coupons.extend(page_coupons)
 
@@ -188,14 +212,18 @@ class CouponOperations:
 
                         # Check if we've reached the total available
                         if total_coupons and len(all_coupons) >= total_coupons:
-                            self.logger.info(f"Retrieved all available coupons: {total_coupons}")
+                            self.logger.info(
+                                f"Retrieved all available coupons: {total_coupons}"
+                            )
                             break
 
                         current_page += 1
 
                         # Safety check to prevent infinite loops
                         if current_page > 100:  # Maximum reasonable page number
-                            self.logger.warning("Reached maximum page limit, stopping pagination")
+                            self.logger.warning(
+                                "Reached maximum page limit, stopping pagination"
+                            )
                             break
 
                     else:
@@ -219,36 +247,44 @@ class CouponOperations:
     def get_all_coupons(self) -> List[MeijerCoupon]:
         """
         Get all available coupons using the most effective method.
-        
+
         This method automatically determines the best approach to fetch all coupons:
         1. First tries a single high-limit request
         2. Falls back to pagination if needed
         3. Returns the maximum number of coupons available
-        
+
         Returns:
             List of all available MeijerCoupon objects
         """
         try:
             self.logger.info("Fetching all available coupons...")
-            
+
             # First try to get all coupons in a single request
             all_coupons = self.get_coupons(limit=1000, use_pagination=False)
-            
+
             if len(all_coupons) >= 400:
-                self.logger.info(f"Single request successful: {len(all_coupons)} coupons")
+                self.logger.info(
+                    f"Single request successful: {len(all_coupons)} coupons"
+                )
                 return all_coupons
-            
+
             # If single request didn't get enough, try pagination
-            self.logger.info("Single request didn't get enough coupons, trying pagination...")
+            self.logger.info(
+                "Single request didn't get enough coupons, trying pagination..."
+            )
             paginated_coupons = self.get_coupons(limit=1000, use_pagination=True)
-            
+
             if len(paginated_coupons) > len(all_coupons):
-                self.logger.info(f"Pagination successful: {len(paginated_coupons)} coupons")
+                self.logger.info(
+                    f"Pagination successful: {len(paginated_coupons)} coupons"
+                )
                 return paginated_coupons
             else:
-                self.logger.info(f"Using single request result: {len(all_coupons)} coupons")
+                self.logger.info(
+                    f"Using single request result: {len(all_coupons)} coupons"
+                )
                 return all_coupons
-                
+
         except Exception as e:
             self.logger.error(f"Error getting all coupons: {e}")
             return []

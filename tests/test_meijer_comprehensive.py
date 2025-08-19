@@ -5,21 +5,20 @@ Comprehensive test suite for Meijer.
 Tests OAuth flows, API endpoints, error handling, and session management.
 """
 
-import json
 import unittest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 
 # Import the client
 from meijer import (
-    Meijer,
-    OAuthConfig,
+    AuthenticationStatus,
     AuthTokens,
-    UserInfo,
+    Meijer,
+    MeijerAuth,
     MeijerOffer,
     MeijerStore,
-    AuthenticationStatus,
-    MeijerAuth,
+    OAuthConfig,
+    UserInfo,
 )
 
 

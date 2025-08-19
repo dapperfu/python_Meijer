@@ -10,7 +10,7 @@ import logging
 import os
 import pickle
 from pathlib import Path
-from typing import Optional, Tuple, Dict
+from typing import Dict, Optional, Tuple
 
 from requests.auth import AuthBase
 

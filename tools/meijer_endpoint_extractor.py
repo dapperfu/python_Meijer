@@ -9,7 +9,7 @@ from the comprehensive discovery report, filtering out third-party services.
 import json
 import re
 from collections import defaultdict
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
 def load_comprehensive_report(report_file: str) -> Dict[str, Any]:

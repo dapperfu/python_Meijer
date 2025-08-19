@@ -8,12 +8,13 @@ and their usage with practical examples.
 
 import nbformat as nbf
 
+
 def create_auth_notebook():
     """Create the auth notebook."""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer API Authentication
 
@@ -34,7 +35,7 @@ The `auth.py` module provides comprehensive authentication functionality for the
 
 First, let's import the necessary modules:
 """)
-    
+
     # Import cell
     import_cell = nbf.v4.new_code_cell("""# Import the authentication classes
 from meijer.auth import (
@@ -59,7 +60,7 @@ print("  - MeijerAuth")
 print("  - TokenStorage")
 print("  - load_auth_from_config_file")
 print("  - load_auth_file")""")
-    
+
     # MeijerAuth section
     meijer_auth_section = nbf.v4.new_markdown_cell("""## MeijerAuth Class
 
@@ -74,7 +75,7 @@ The `MeijerAuth` class is a custom authentication class that implements the `req
 
 ### Basic Usage
 """)
-    
+
     meijer_auth_example = nbf.v4.new_code_cell("""# MeijerAuth basic usage
 # Create an authentication instance
 bearer_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.token"
@@ -95,7 +96,7 @@ print(f"Token Suffix: ...{bearer_token[-10:]}")
 class MockRequest:
     def __init__(self):
         self.headers = {}
-    
+
     def __repr__(self):
         return f"MockRequest(headers={self.headers})"
 
@@ -118,7 +119,7 @@ if auth_header.startswith('Bearer '):
     print(f"   Token part: {token_part[:20]}...")
 else:
     print(f"❌ Authorization header incorrectly formatted: {auth_header}")""")
-    
+
     # TokenStorage section
     token_storage_section = nbf.v4.new_markdown_cell("""## TokenStorage Class
 
@@ -133,7 +134,7 @@ The `TokenStorage` class handles persistent storage of authentication tokens usi
 
 ### Basic Usage
 """)
-    
+
     token_storage_example = nbf.v4.new_code_cell("""# TokenStorage basic usage
 # Create a temporary storage file for testing
 temp_dir = tempfile.mkdtemp()
@@ -153,14 +154,14 @@ class MockAuthTokens:
         self.access_token = access_token
         self.refresh_token = refresh_token
         self.expires_at = expires_at
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'access_token': self.access_token,
             'refresh_token': self.refresh_token,
             'expires_at': self.expires_at
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'MockAuthTokens':
         return cls(
@@ -214,7 +215,7 @@ print(f"Has Tokens: {storage.has_tokens()}")
 import shutil
 shutil.rmtree(temp_dir)
 print(f"\\n🧹 Cleaned up temporary files")""")
-    
+
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
@@ -244,7 +245,7 @@ This notebook has demonstrated the authentication system available in the Meijer
 
 The authentication system provides a robust foundation for building secure Meijer API applications! 🚀
 """)
-    
+
     # Add all cells to notebook
     nb.cells = [
         title_cell,
@@ -253,14 +254,15 @@ The authentication system provides a robust foundation for building secure Meije
         meijer_auth_example,
         token_storage_section,
         token_storage_example,
-        summary_section
+        summary_section,
     ]
-    
+
     # Save notebook
-    with open('auth.ipynb', 'w') as f:
+    with open("auth.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ auth.ipynb created successfully!")
 
+
 if __name__ == "__main__":
-    create_auth_notebook() 
+    create_auth_notebook()

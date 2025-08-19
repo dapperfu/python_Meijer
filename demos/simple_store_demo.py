@@ -7,6 +7,7 @@ storeInfo API analysis with real store data structures.
 """
 
 import sys
+
 from meijer import MeijerStore
 
 
@@ -134,12 +135,12 @@ def demo_contact_and_hours():
 
     print(f"🏪 {store.display_name}")
 
-    print(f"\n📞 Contact Information:")
+    print("\n📞 Contact Information:")
     contact = store.get_contact_info()
     for contact_type, info in contact.items():
         print(f"   {contact_type.replace('_', ' ').title()}: {info}")
 
-    print(f"\n⏰ Store Hours:")
+    print("\n⏰ Store Hours:")
     hours = store.get_hours_summary()
     for period, time in hours.items():
         print(f"   {period.title()}: {time}")
@@ -203,7 +204,7 @@ def demo_distance_calculation():
     # Sort by distance
     store_distances.sort(key=lambda x: x[1])
 
-    print(f"🚗 Stores by distance:")
+    print("🚗 Stores by distance:")
     for i, (store, distance) in enumerate(store_distances, 1):
         print(f"   {i}. {store.display_name}: {distance:.1f} miles")
         print(f"      Location: {store.coordinates}")
@@ -337,18 +338,18 @@ def demo_comprehensive_store():
     print(f"   String representation: {store}")
     print(f"   Object representation: {store.__repr__()}")
 
-    print(f"\n📋 Core Information:")
+    print("\n📋 Core Information:")
     print(f"   Store ID: {store.store_id}")
     print(f"   Type: {store.unit_type}")
     print(f"   Opened: {store.open_date}")
     print(f"   Timezone: {store.timezone}")
     print(f"   Director: {store.store_dir_name}")
 
-    print(f"\n📍 Location Details:")
+    print("\n📍 Location Details:")
     print(f"   Full Address: {store.full_address}")
     print(f"   Coordinates: {store.coordinates}")
 
-    print(f"\n🛍️ Shopping Services:")
+    print("\n🛍️ Shopping Services:")
     shopping_features = [
         ("Mobile Shopping", store.is_mobile_shopping_enabled),
         ("Mobile Payment", store.is_mobile_payment_enabled),
@@ -362,7 +363,7 @@ def demo_comprehensive_store():
         status = "✓ Yes" if enabled else "✗ No"
         print(f"   {feature}: {status}")
 
-    print(f"\n👨‍⚕️ Healthcare Services:")
+    print("\n👨‍⚕️ Healthcare Services:")
     healthcare_features = [
         ("Pharmacy", store.has_pharmacy()),
         ("Drive-Thru", store.drive_thru),
@@ -373,7 +374,7 @@ def demo_comprehensive_store():
         status = "✓ Available" if available else "✗ Not available"
         print(f"   {feature}: {status}")
 
-    print(f"\n🍷 Alcohol Services:")
+    print("\n🍷 Alcohol Services:")
     print(f"   Pickup: {'✓ Yes' if store.is_alcohol_pickupable else '✗ No'}")
     print(f"   Delivery: {'✓ Yes' if store.is_alcohol_deliverable else '✗ No'}")
     print(f"   Restricted: {'Yes' if store.are_alcohol_sales_restricted else 'No'}")
@@ -382,7 +383,7 @@ def demo_comprehensive_store():
             f"   Sunday Hours: {store.alcohol_sale_restricted_sun_start} - {store.alcohol_sale_restricted_sun_end}"
         )
 
-    print(f"\n⛽ Additional Services:")
+    print("\n⛽ Additional Services:")
     print(
         f"   Gas Station: {'✓ Available' if store.has_gas_station() else '✗ Not available'}"
     )

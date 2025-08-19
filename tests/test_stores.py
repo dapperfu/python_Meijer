@@ -6,10 +6,12 @@ Test Meijer Stores Module
 Tests for the store functionality in the Meijer API client.
 """
 
-import pytest
-from datetime import datetime, time
+from datetime import time
 from unittest.mock import Mock, patch
-from meijer.stores import StoreHours, MeijerStore
+
+import pytest
+
+from meijer.stores import MeijerStore, StoreHours
 
 
 class TestStoreHours:
@@ -21,9 +23,9 @@ class TestStoreHours:
             open_time=time(6, 0),  # 6:00 AM
             close_time=time(22, 0),  # 10:00 PM
             is_24_hours=False,
-            days_open=["Monday", "Tuesday", "Wednesday"]
+            days_open=["Monday", "Tuesday", "Wednesday"],
         )
-        
+
         assert hours.open_time == time(6, 0)
         assert hours.close_time == time(22, 0)
         assert hours.is_24_hours is False
@@ -32,7 +34,7 @@ class TestStoreHours:
     def test_store_hours_defaults(self):
         """Test StoreHours default values."""
         hours = StoreHours(open_time=time(6, 0), close_time=time(22, 0))
-        
+
         assert hours.is_24_hours is False
         assert len(hours.days_open) == 7
         assert "Monday" in hours.days_open
@@ -41,11 +43,9 @@ class TestStoreHours:
     def test_is_open_24_hours(self):
         """Test is_open method for 24-hour stores."""
         hours = StoreHours(
-            open_time=time(6, 0),
-            close_time=time(22, 0),
-            is_24_hours=True
+            open_time=time(6, 0), close_time=time(22, 0), is_24_hours=True
         )
-        
+
         assert hours.is_open() is True
         assert hours.is_open(time(3, 0)) is True  # 3:00 AM
         assert hours.is_open(time(15, 0)) is True  # 3:00 PM
@@ -55,32 +55,32 @@ class TestStoreHours:
         hours = StoreHours(
             open_time=time(6, 0),  # 6:00 AM
             close_time=time(22, 0),  # 10:00 PM
-            is_24_hours=False
+            is_24_hours=False,
         )
-        
+
         # Test during open hours
         assert hours.is_open(time(12, 0)) is True  # Noon
-        assert hours.is_open(time(6, 0)) is True   # Opening time
+        assert hours.is_open(time(6, 0)) is True  # Opening time
         assert hours.is_open(time(22, 0)) is True  # Closing time
-        
+
         # Test during closed hours
         assert hours.is_open(time(23, 0)) is False  # 11:00 PM
-        assert hours.is_open(time(5, 0)) is False   # 5:00 AM
+        assert hours.is_open(time(5, 0)) is False  # 5:00 AM
 
     def test_is_open_overnight_hours(self):
         """Test is_open method for overnight operating hours."""
         hours = StoreHours(
             open_time=time(18, 0),  # 6:00 PM
-            close_time=time(6, 0),   # 6:00 AM
-            is_24_hours=False
+            close_time=time(6, 0),  # 6:00 AM
+            is_24_hours=False,
         )
-        
+
         # Test during open hours (overnight)
-        assert hours.is_open(time(20, 0)) is True   # 8:00 PM
-        assert hours.is_open(time(2, 0)) is True    # 2:00 AM
-        assert hours.is_open(time(18, 0)) is True   # Opening time
-        assert hours.is_open(time(6, 0)) is True    # Closing time
-        
+        assert hours.is_open(time(20, 0)) is True  # 8:00 PM
+        assert hours.is_open(time(2, 0)) is True  # 2:00 AM
+        assert hours.is_open(time(18, 0)) is True  # Opening time
+        assert hours.is_open(time(6, 0)) is True  # Closing time
+
         # Test during closed hours
         assert hours.is_open(time(10, 0)) is False  # 10:00 AM
         assert hours.is_open(time(14, 0)) is False  # 2:00 PM
@@ -90,13 +90,13 @@ class TestStoreHours:
         hours = StoreHours(
             open_time=time(6, 0),
             close_time=time(22, 0),
-            days_open=["Monday", "Tuesday", "Wednesday"]
+            days_open=["Monday", "Tuesday", "Wednesday"],
         )
-        
+
         # Test on open day
         assert hours.is_open(time(12, 0), "Monday") is True
         assert hours.is_open(time(12, 0), "Tuesday") is True
-        
+
         # Test on closed day
         assert hours.is_open(time(12, 0), "Thursday") is False
         assert hours.is_open(time(12, 0), "Friday") is False
@@ -113,9 +113,9 @@ class TestMeijerStore:
             address="123 Main St",
             city="Test City",
             state="MI",
-            zip_code="48104"
+            zip_code="48104",
         )
-        
+
         assert store.unit_id == "STORE001"
         assert store.name == "Test Meijer Store"
         assert store.address == "123 Main St"
@@ -132,7 +132,7 @@ class TestMeijerStore:
                 address="123 Main St",
                 city="Test City",
                 state="MI",
-                zip_code="48104"
+                zip_code="48104",
             )
 
     def test_meijer_store_validation_empty_name(self):
@@ -144,7 +144,7 @@ class TestMeijerStore:
                 address="123 Main St",
                 city="Test City",
                 state="MI",
-                zip_code="48104"
+                zip_code="48104",
             )
 
     def test_meijer_store_validation_empty_address(self):
@@ -156,7 +156,7 @@ class TestMeijerStore:
                 address="   ",
                 city="Test City",
                 state="MI",
-                zip_code="48104"
+                zip_code="48104",
             )
 
     def test_meijer_store_validation_empty_city(self):
@@ -168,7 +168,7 @@ class TestMeijerStore:
                 address="123 Main St",
                 city="   ",
                 state="MI",
-                zip_code="48104"
+                zip_code="48104",
             )
 
     def test_meijer_store_validation_empty_state(self):
@@ -180,7 +180,7 @@ class TestMeijerStore:
                 address="123 Main St",
                 city="Test City",
                 state="   ",
-                zip_code="48104"
+                zip_code="48104",
             )
 
     def test_meijer_store_validation_empty_zip_code(self):
@@ -192,7 +192,7 @@ class TestMeijerStore:
                 address="123 Main St",
                 city="Test City",
                 state="MI",
-                zip_code="   "
+                zip_code="   ",
             )
 
     def test_meijer_store_defaults(self):
@@ -203,9 +203,9 @@ class TestMeijerStore:
             address="123 Main St",
             city="Test City",
             state="MI",
-            zip_code="48104"
+            zip_code="48104",
         )
-        
+
         assert store.phone_number is None
         assert store.latitude is None
         assert store.longitude is None
@@ -241,9 +241,9 @@ class TestMeijerStore:
             has_pharmacy=True,
             has_curbside_pickup=True,
             has_delivery=True,
-            store_type="Express"
+            store_type="Express",
         )
-        
+
         assert store.phone_number == "555-1234"
         assert store.latitude == 42.123
         assert store.longitude == -83.456
@@ -264,11 +264,11 @@ class TestMeijerStoreFromAPI:
             "Address": "123 Main St",
             "City": "Test City",
             "State": "MI",
-            "Zip": "48104"
+            "Zip": "48104",
         }
-        
+
         store = MeijerStore.from_api_data(api_data)
-        
+
         assert store.unit_id == "STORE001"
         assert store.name == "Test Meijer Store"
         assert store.address == "123 Main St"
@@ -286,11 +286,11 @@ class TestMeijerStoreFromAPI:
             "State": "MI",
             "Zip": "48104",
             "CurbsideWeekdayOpen": "1900-01-01T08:00:00",
-            "CurbsideWeekdayClose": "1900-01-01T21:00:00"
+            "CurbsideWeekdayClose": "1900-01-01T21:00:00",
         }
-        
+
         store = MeijerStore.from_api_data(api_data)
-        
+
         assert store.hours is not None
         assert store.hours.open_time == time(8, 0)
         assert store.hours.close_time == time(21, 0)
@@ -307,12 +307,12 @@ class TestMeijerStoreFromAPI:
             "State": "MI",
             "Zip": "48104",
             "CurbsideWeekdayOpen": "1900-01-01Tinvalid_time",  # Contains T but invalid time
-            "CurbsideWeekdayClose": "1900-01-01T21:00:00"
+            "CurbsideWeekdayClose": "1900-01-01T21:00:00",
         }
-        
+
         # Should handle malformed hours gracefully
         store = MeijerStore.from_api_data(api_data)
-        
+
         assert store.unit_id == "STORE001"
         assert store.hours is None  # Hours should be None due to parsing error
 
@@ -325,11 +325,11 @@ class TestMeijerStoreFromAPI:
             "City": "Test City",
             "State": "MI",
             "Zip": "48104",
-            "PharmPhone": "555-5678"
+            "PharmPhone": "555-5678",
         }
-        
+
         store = MeijerStore.from_api_data(api_data)
-        
+
         assert store.has_pharmacy is True
 
     def test_from_api_data_with_curbside_pickup(self):
@@ -341,11 +341,11 @@ class TestMeijerStoreFromAPI:
             "City": "Test City",
             "State": "MI",
             "Zip": "48104",
-            "CurbsideAllow": "Y"
+            "CurbsideAllow": "Y",
         }
-        
+
         store = MeijerStore.from_api_data(api_data)
-        
+
         assert store.has_curbside_pickup is True
 
     def test_from_api_data_with_delivery(self):
@@ -357,11 +357,11 @@ class TestMeijerStoreFromAPI:
             "City": "Test City",
             "State": "MI",
             "Zip": "48104",
-            "DlvryOrderPhone": "555-9999"
+            "DlvryOrderPhone": "555-9999",
         }
-        
+
         store = MeijerStore.from_api_data(api_data)
-        
+
         assert store.has_delivery is True
 
     def test_from_api_data_with_gas_station(self):
@@ -373,15 +373,13 @@ class TestMeijerStoreFromAPI:
             "City": "Test City",
             "State": "MI",
             "Zip": "48104",
-            "GasStationAmenities": [
-                {"AmentityType": "Car Wash"}
-            ]
+            "GasStationAmenities": [{"AmentityType": "Car Wash"}],
         }
-        
-        with patch('meijer.gas.MeijerGas') as mock_gas:
+
+        with patch("meijer.gas.MeijerGas") as mock_gas:
             mock_gas.from_api_data.return_value = Mock()
             store = MeijerStore.from_api_data(api_data)
-            
+
             assert store.gas_station is not None
             mock_gas.from_api_data.assert_called_once()
 
@@ -394,15 +392,13 @@ class TestMeijerStoreFromAPI:
             "City": "Test City",
             "State": "MI",
             "Zip": "48104",
-            "GasStationAmenities": [
-                {"AmentityType": "Car Wash"}
-            ]
+            "GasStationAmenities": [{"AmentityType": "Car Wash"}],
         }
-        
-        with patch('meijer.gas.MeijerGas') as mock_gas:
+
+        with patch("meijer.gas.MeijerGas") as mock_gas:
             mock_gas.from_api_data.side_effect = Exception("Gas station error")
             store = MeijerStore.from_api_data(api_data)
-            
+
             assert store.gas_station is None  # Should handle error gracefully
 
     def test_from_store_info_response(self):
@@ -413,14 +409,14 @@ class TestMeijerStoreFromAPI:
             "Address": "123 Main St",
             "City": "Test City",
             "State": "MI",
-            "Zip": "48104"
+            "Zip": "48104",
         }
-        
+
         store = MeijerStore.from_store_info_response(api_data)
-        
+
         assert store.unit_id == "STORE001"
         assert store.name == "Test Meijer Store"
 
 
 if __name__ == "__main__":
-    pytest.main([__file__]) 
+    pytest.main([__file__])

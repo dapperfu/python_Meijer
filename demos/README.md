@@ -92,4 +92,4 @@ python demo_search.py
 
 - **Authentication errors**: Check that `~/.config/meijer.txt` exists and contains valid tokens
 - **Import errors**: Ensure the `meijer` package is properly installed
-- **API errors**: Some endpoints may require specific permissions or may be rate-limited 
+- **API errors**: Some endpoints may require specific permissions or may be rate-limited
