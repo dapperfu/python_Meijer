@@ -763,7 +763,7 @@ def main():
     notebook = create_notebook()
 
     # Save the notebook
-    filename = "Barcode_Lookup_Demo.ipynb"
+    filename = "barcode_lookup_demo.ipynb"
     with open(filename, "w") as f:
         json.dump(notebook, f, indent=2)
 

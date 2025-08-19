@@ -1,0 +1,12 @@
+---
+description: Forbid any command that recursively deletes the home directory.
+alwaysApply: true
+---
+
+### Prohibit `rm -rf ~/`
+
+- Under **no circumstances** should the command `rm -rf ~/` (or any variant that recursively removes the home directory) be run.
+- This includes shorthand expansions such as `rm -rf ~/*`, `rm -rf $HOME`, or similar destructive patterns.
+- Deleting the home directory is catastrophic and irrecoverable.
+- If cleanup is required, target only explicit, narrow paths inside the project (for example: `rm -rf ./build/` or `rm -rf .venv/`).
+- Never run recursive removal commands on `$HOME`, `~/`, or any path that could expand to the home directory.

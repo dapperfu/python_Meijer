@@ -652,7 +652,7 @@ def main() -> None:
     notebook = create_defrag_demo_notebook()
 
     # Write to file
-    output_file = "Shopping_List_Defrag_Demo.ipynb"
+    output_file = "shopping_list_defrag_demo.ipynb"
 
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(notebook, f, indent=2, ensure_ascii=False)

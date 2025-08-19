@@ -660,7 +660,7 @@ def main():
     nb = create_store_demo_notebook()
 
     # Save the notebook
-    filename = "Store_Functionality_Demo.ipynb"
+    filename = "store_functionality_demo.ipynb"
     with open(filename, "w", encoding="utf-8") as f:
         nbf.write(nb, f)
 

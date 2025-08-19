@@ -4,6 +4,7 @@ Utility functions for Meijer CLI.
 This module contains helper functions used across the CLI commands.
 """
 
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -24,23 +25,35 @@ def get_meijer_client() -> Meijer:
     Raises:
         click.ClickException: If authentication fails
     """
+    logger = logging.getLogger(__name__)
+    logger.debug("Initializing Meijer client")
+
     try:
         # First try to load from local auth.txt file
         local_auth_path = "auth.txt"
         if os.path.exists(local_auth_path):
+            logger.debug(f"Found local auth file: {local_auth_path}")
             client = Meijer(auth=local_auth_path)
         else:
+            logger.debug("No local auth.txt found, using default authentication")
             # Fall back to default behavior
             client = Meijer()
 
+        logger.debug(f"Client authentication status: {client.auth_status.name}")
+
         if client.auth_status.name != "AUTHENTICATED":
+            logger.error(
+                f"Authentication failed with status: {client.auth_status.name}"
+            )
             raise click.ClickException(
                 "❌ Authentication failed! Please check your credentials.\n"
                 "   Ensure you have auth.txt or ~/.config/meijer.txt configured"
             )
 
+        logger.debug("Meijer client initialized successfully")
         return client
     except Exception as e:
+        logger.error(f"Failed to initialize Meijer client: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to initialize Meijer client: {e}")
 
 
@@ -52,13 +65,18 @@ def display_items_table(items: List, title: str = "Shopping List Items") -> None
         items: List of shopping list items
         title: Title for the table display
     """
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Displaying {len(items)} items with title: {title}")
+
     if not items:
+        logger.debug("No items to display")
         click.echo(f"📝 {title}: No items found")
         return
 
     # Prepare table data
     table_data = []
     for i, item in enumerate(items, 1):
+        logger.debug(f"Processing item {i}: {getattr(item, 'name', 'Unknown')}")
         table_data.append(
             [
                 i,
@@ -79,8 +97,10 @@ def display_items_table(items: List, title: str = "Shopping List Items") -> None
     try:
         from tabulate import tabulate
 
+        logger.debug("Using tabulate for table formatting")
         click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
     except ImportError:
+        logger.debug("Tabulate not available, using fallback formatting")
         # Fallback to simple formatting
         click.echo(f"{'#':<3} {'Status':<8} {'Item':<30} {'Qty':<4} {'Notes':<15}")
         click.echo("-" * 60)
@@ -99,6 +119,9 @@ def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
     Returns:
         int: Number of items successfully added
     """
+    logger = logging.getLogger(__name__)
+    logger.debug("Adding items from file input")
+
     added_count = 0
     lines = file_input.readlines()
 

@@ -24,17 +24,29 @@ class ProductOperations:
         self, upc: str, store_id: Optional[str] = None
     ) -> Optional[MeijerItem]:
         """
-        Get detailed product information by UPC.
+        Get detailed product information by UPC including store location.
 
         Args:
             upc: Product UPC/barcode
-            store_id: Optional store ID for store-specific pricing
+            store_id: Optional store ID for store-specific pricing and location
 
         Returns:
             MeijerItem with detailed product information, or None if not found
         """
         try:
-            # Use Constructor.io search API for product details
+            # First try to get product detail from Meijer's product detail API
+            # This should contain actual aisle location information
+            product_detail = self._get_product_detail_from_api(upc, store_id)
+
+            if product_detail and product_detail.aisle_primary:
+                # We have real location data from the API
+                self.logger.info(
+                    f"✅ Got real aisle data for UPC {upc}: {product_detail.aisle_primary}"
+                )
+                return product_detail
+
+            # Fallback: try Constructor.io search API
+            self.logger.debug(f"Falling back to search API for UPC {upc}")
             search_results = self.client.search_products(upc, results_per_page=1)
 
             if search_results and search_results.results:
@@ -54,6 +66,112 @@ class ProductOperations:
 
         except Exception as e:
             self.logger.error(f"Error getting product detail for UPC {upc}: {e}")
+            return None
+
+    def _get_product_detail_from_api(
+        self, upc: str, store_id: Optional[str] = None
+    ) -> Optional[MeijerItem]:
+        """
+        Get product detail from Meijer's product detail API endpoint.
+
+        This should provide actual aisle location information including ilcPrimary.
+        """
+        try:
+            # Use the correct Meijer product detail endpoint that provides ilcPrimary
+            endpoint = f"{self.client.api_base_url}/digital/occ/v3/products/{upc}"
+
+            headers = {
+                "accept": "application/json",
+                "user-agent": "Meijer/102700000 okhttp/5.1.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)",
+            }
+
+            # Add subscription key if available
+            if (
+                hasattr(self.client, "subscription_key")
+                and self.client.subscription_key
+            ):
+                headers["ocp-apim-subscription-key"] = self.client.subscription_key
+
+            # Add authorization if available
+            if hasattr(self.client, "_access_token") and self.client._access_token:
+                headers["authorization"] = f"Bearer {self.client._access_token}"
+
+            params = {"fields": "FULL", "pageName": "pdp_app"}
+
+            if store_id:
+                params["store"] = store_id
+
+            self.logger.debug(f"Trying Meijer product detail endpoint: {endpoint}")
+            response = self.client._make_request(
+                "GET", endpoint, headers=headers, params=params
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                self.logger.debug(
+                    f"Product detail API response keys: {list(data.keys())}"
+                )
+
+                # Check if we have stock information with ilcPrimary
+                if "stock" in data and "ilcPrimary" in data["stock"]:
+                    ilc_primary = data["stock"]["ilcPrimary"]
+                    self.logger.info(f"✅ Found ilcPrimary location: {ilc_primary}")
+
+                    # Parse the response and look for location information
+                    product = self._parse_product_detail_response(data, upc)
+                    if product:
+                        return product
+                else:
+                    self.logger.debug("No ilcPrimary found in product detail response")
+
+            # If the main endpoint failed or no ilcPrimary, try fallback endpoints
+            fallback_endpoints = [
+                f"{self.client.api_base_url}/products/{upc}",
+                f"{self.client.api_base_url}/product/{upc}",
+                f"{self.client.api_base_url}/catalog/product/{upc}",
+                f"{self.client.api_base_url}/productDetail/{upc}",
+            ]
+
+            for fallback_endpoint in fallback_endpoints:
+                try:
+                    self.logger.debug(f"Trying fallback endpoint: {fallback_endpoint}")
+                    response = self.client._make_request(
+                        "GET", fallback_endpoint, headers=headers, params=params
+                    )
+
+                    if response.status_code == 200:
+                        data = response.json()
+                        self.logger.debug(
+                            f"Fallback endpoint response keys: {list(data.keys())}"
+                        )
+
+                        # Parse the response and look for location information
+                        product = self._parse_product_detail_response(data, upc)
+                        if product:
+                            return product
+
+                except Exception as e:
+                    self.logger.debug(
+                        f"Fallback endpoint {fallback_endpoint} failed: {e}"
+                    )
+                    continue
+
+            # If no endpoints worked, try the Shop & Scan lookup which might have location data
+            if hasattr(self.client, "shop_scan"):
+                try:
+                    shop_scan_item = self.client.shop_scan.lookup_barcode_price(
+                        upc, store_id
+                    )
+                    if shop_scan_item:
+                        self.logger.debug("Got product from Shop & Scan API")
+                        return shop_scan_item
+                except Exception as e:
+                    self.logger.debug(f"Shop & Scan lookup failed: {e}")
+
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error in product detail API call: {e}")
             return None
 
     def _parse_product_detail_response(
@@ -106,10 +224,11 @@ class ProductOperations:
             location_info = self._extract_location_from_product_detail(data)
             if location_info:
                 item.aisle_primary = location_info.get("aisle")
+                # Store section and bay separately for proper location handling
                 if location_info.get("section"):
-                    item.aisle_locations.append(
-                        f"{location_info['aisle']} {location_info['section']}"
-                    )
+                    item.section = location_info.get("section")
+                if location_info.get("bay"):
+                    item.bay = location_info.get("bay")
 
             return item
 
@@ -121,40 +240,138 @@ class ProductOperations:
     def _extract_location_from_product_detail(
         self, data: Dict[str, Any]
     ) -> Optional[Dict[str, str]]:
-        """Extract aisle location information from product detail response."""
+        """
+        Extract location information from product detail response.
+
+        Looks for aisle, section, and bay information in various possible field names.
+        """
         try:
-            # Look for location fields in the response
-            location_fields = [
+            location_info = {}
+
+            # First check for Meijer's ilcPrimary field in stock data
+            if "stock" in data and isinstance(data["stock"], dict):
+                stock_data = data["stock"]
+
+                # Extract ilcPrimary (e.g., "B-15-44-7")
+                if "ilcPrimary" in stock_data and stock_data["ilcPrimary"]:
+                    ilc_primary = str(stock_data["ilcPrimary"]).strip()
+                    self.logger.debug(f"Found ilcPrimary: {ilc_primary}")
+
+                    # Parse ilcPrimary format: "B-15-44-7" -> aisle: "B15", section: "44", bay: "7"
+                    if "-" in ilc_primary:
+                        parts = ilc_primary.split("-")
+                        if len(parts) >= 2:
+                            # First part is aisle letter (e.g., "B")
+                            aisle_letter = parts[0]
+                            # Second part is aisle number (e.g., "15")
+                            aisle_number = parts[1]
+
+                            # Combine aisle letter and number to form aisle (e.g., "B15")
+                            location_info["aisle"] = f"{aisle_letter}{aisle_number}"
+
+                            # Third part is section (e.g., "44")
+                            if len(parts) > 2:
+                                location_info["section"] = parts[2]
+
+                            # Fourth part is bay (e.g., "7")
+                            if len(parts) > 3:
+                                location_info["bay"] = parts[3]
+
+                    if location_info:
+                        self.logger.debug(
+                            f"Extracted location from ilcPrimary: {location_info}"
+                        )
+                        return location_info
+
+            # Try to find aisle information in various possible field names
+            aisle_fields = [
                 "aisle",
-                "section",
-                "bay",
-                "location",
                 "aisleLocation",
+                "aisle_location",
+                "aisleLocationCode",
+                "storeAisle",
+                "productAisle",
+                "itemAisle",
+                "locationAisle",
+                "ilcPrimary",
+                "ilc_primary",
+                "primaryAisle",
+                "primary_aisle",
+            ]
+
+            for field in aisle_fields:
+                if field in data and data[field]:
+                    location_info["aisle"] = str(data[field]).strip()
+                    break
+
+            # Try to find section information
+            section_fields = [
+                "section",
+                "sectionLocation",
+                "section_location",
+                "sectionCode",
+                "storeSection",
+                "productSection",
+                "itemSection",
+                "locationSection",
+                "ilcSecondary",
+                "ilc_secondary",
+                "secondaryLocation",
+                "secondary_location",
+            ]
+
+            for field in section_fields:
+                if field in data and data[field]:
+                    location_info["section"] = str(data[field]).strip()
+                    break
+
+            # Try to find bay information
+            bay_fields = [
+                "bay",
+                "bayLocation",
+                "bay_location",
+                "bayCode",
+                "storeBay",
+                "productBay",
+                "itemBay",
+                "locationBay",
+                "ilcTertiary",
+                "ilc_tertiary",
+                "tertiaryLocation",
+                "tertiary_location",
+            ]
+
+            for field in bay_fields:
+                if field in data and data[field]:
+                    location_info["bay"] = str(data[field]).strip()
+                    break
+
+            # If we found any location information, return it
+            if location_info:
+                self.logger.debug(f"Extracted location info: {location_info}")
+                return location_info
+
+            # Try to extract location from text fields that might contain location info
+            text_fields = [
+                "location",
                 "storeLocation",
                 "productLocation",
                 "itemLocation",
+                "description",
+                "longDescription",
+                "locationDescription",
             ]
 
-            location_info = {}
-
-            for field in location_fields:
-                if field in data and data[field]:
-                    value = str(data[field]).strip()
-                    if value and value.lower() not in ["null", "none", ""]:
-                        location_info[field] = value
-
-            # If we found location data, parse it
-            if location_info:
-                return self._parse_location_data(location_info)
-
-            # Try to extract from text fields
-            text_fields = ["description", "productName", "title", "notes"]
             for field in text_fields:
                 if field in data and data[field]:
-                    text = str(data[field])
-                    extracted = self._extract_location_from_text(text)
-                    if extracted:
-                        return extracted
+                    text_value = str(data[field])
+                    # Look for location patterns in the text
+                    extracted_location = self._extract_location_from_text(text_value)
+                    if extracted_location:
+                        self.logger.debug(
+                            f"Extracted location from {field}: {extracted_location}"
+                        )
+                        return extracted_location
 
             return None
 

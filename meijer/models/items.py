@@ -193,6 +193,12 @@ class MeijerItem:
     aisle_primary: Optional[str] = None
     """Primary aisle location"""
 
+    section: Optional[str] = None
+    """Section within the aisle"""
+
+    bay: Optional[str] = None
+    """Bay within the section"""
+
     aisle_locations: List[str] = field(default_factory=list)
     """List of all aisle locations"""
 

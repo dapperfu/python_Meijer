@@ -1,0 +1,15 @@
+---
+description: Ensure project-local Python virtual environment is always used for running Python code and commands.
+alwaysApply: true
+---
+
+### Enforce local Python virtual environment usage
+
+- When executing Python-related commands, do **not** use the system `python` or `python3` binaries.
+- Always prefer the project-local virtual environment. If both exist, use in this order:
+  1. `./.venv/bin/python …`
+  2. `./venv/bin/python …`
+- Alternatively, explicitly activate the virtual environment before running Python:
+  - `source .venv/bin/activate && python …`
+  - `source venv/bin/activate && python …`
+- If neither `.venv` nor `venv` exists in the project root, the Python command **must fail** rather than defaulting to the system interpreter.

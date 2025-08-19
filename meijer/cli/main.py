@@ -21,6 +21,8 @@ Meijer CLI Tool
 A comprehensive command-line interface for managing Meijer shopping lists.
 """
 
+import logging
+
 import click
 
 from .commands import (
@@ -35,9 +37,47 @@ from .commands import (
 )
 
 
+def setup_logging(verbosity: int) -> None:
+    """
+    Set up logging configuration based on verbosity level.
+
+    Args:
+        verbosity: Number of -v flags (0, 1, 2, 3+)
+    """
+    if verbosity == 0:
+        # Default: Only show warnings and errors
+        logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    elif verbosity == 1:
+        # -v: Show info, warnings, and errors
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    elif verbosity == 2:
+        # -vv: Show debug, info, warnings, and errors
+        logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+    else:
+        # -vvv+: Show all levels with more detailed format
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s",
+        )
+
+    # Set specific logger levels for external libraries if needed
+    if verbosity >= 2:
+        logging.getLogger("urllib3").setLevel(logging.INFO)
+        logging.getLogger("requests").setLevel(logging.INFO)
+    else:
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.getLogger("requests").setLevel(logging.WARNING)
+
+
 @click.group()
+@click.option(
+    "--verbose",
+    "-v",
+    count=True,
+    help="Increase verbosity. Use -v for info, -vv for debug, -vvv for detailed debug",
+)
 @click.version_option(version="1.0.0", prog_name="meijer")
-def cli():
+def cli(verbose: int):
     """
     🛒 Meijer Shopping List CLI Tool
 
@@ -53,7 +93,13 @@ def cli():
     • ads - Browse weekly ad items
     • gas - Show gas station information
     """
-    pass
+    # Set up logging based on verbosity
+    setup_logging(verbose)
+
+    # Log CLI invocation for debugging
+    logger = logging.getLogger(__name__)
+    logger.debug(f"CLI invoked with verbosity level: {verbose}")
+    logger.debug("Setting up Meijer CLI environment")
 
 
 # Add command groups with cleaner names

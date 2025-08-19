@@ -4,6 +4,7 @@ CLI commands for Meijer CLI.
 This module contains all the Click command groups and individual commands.
 """
 
+import logging
 import sys
 from pathlib import Path
 from typing import Optional
@@ -35,25 +36,36 @@ def list_group():
 @click.option("--pending", is_flag=True, help="Show only pending items")
 def list_show(completed: bool, pending: bool):
     """Show shopping list items."""
+    logger = logging.getLogger(__name__)
+    logger.debug(
+        f"List show command called with completed={completed}, pending={pending}"
+    )
+
     client = get_meijer_client()
 
     try:
+        logger.debug("Fetching shopping list items")
         items = client.list.get()
+        logger.debug(f"Retrieved {len(items)} items from shopping list")
 
         if not items:
+            logger.debug("Shopping list is empty")
             click.echo("📝 Your shopping list is empty!")
             return
 
         # Filter items based on flags
         if completed:
+            logger.debug("Filtering for completed items only")
             items = [item for item in items if item.checked]
             title = "Completed Items"
         elif pending:
+            logger.debug("Filtering for pending items only")
             items = [item for item in items if not item.checked]
             title = "Pending Items"
         else:
             title = f"Shopping List ({len(items)} items)"
 
+        logger.debug(f"Displaying {len(items)} filtered items")
         display_items_table(items, title)
 
         # Show summary
@@ -61,29 +73,41 @@ def list_show(completed: bool, pending: bool):
         completed_count = len([item for item in items if item.checked])
         pending_count = total - completed_count
 
+        logger.debug(
+            f"Summary: total={total}, completed={completed_count}, pending={pending_count}"
+        )
         click.echo(
             f"\n📊 Summary: {total} total, {completed_count} completed, {pending_count} pending"
         )
 
     except Exception as e:
+        logger.error(f"Failed to show shopping list: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to show shopping list: {e}")
 
 
 @list_group.command("favorites")
 def list_favorites():
     """Show favorite items."""
+    logger = logging.getLogger(__name__)
+    logger.debug("List favorites command called")
+
     client = get_meijer_client()
 
     try:
+        logger.debug("Fetching favorite items")
         favorites = client.list.get_favorites()
+        logger.debug(f"Retrieved {len(favorites)} favorite items")
 
         if not favorites:
+            logger.debug("No favorite items found")
             click.echo("📝 No favorite items found!")
             return
 
         # Prepare table data
+        logger.debug("Preparing favorites table data")
         table_data = []
         for i, item in enumerate(favorites, 1):
+            logger.debug(f"Processing favorite item {i}: {item.name}")
             # Check if item is in active list by looking at list_item_id
             # If it's a favorite item, it might not have the same structure as regular list items
             in_list_status = (
@@ -106,9 +130,11 @@ def list_favorites():
         try:
             from tabulate import tabulate
 
+            logger.debug("Using tabulate for favorites table")
             click.echo(f"\n📊 Favorites ({len(favorites)} items):")
             click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
         except ImportError:
+            logger.debug("Tabulate not available, using fallback formatting")
             click.echo(f"\n📊 Favorites ({len(favorites)} items):")
             click.echo(
                 "╒══════════════════════════════════════════════════════════════════════════════════════════════════╕"
@@ -124,6 +150,7 @@ def list_favorites():
             )
 
     except Exception as e:
+        logger.error(f"Failed to show favorites: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to show favorites: {e}")
 
 
@@ -524,8 +551,17 @@ def gas_command():
 @click.command()
 def status_command():
     """Show authentication status."""
+    logger = logging.getLogger(__name__)
+    logger.debug("Status command called")
+
     try:
+        logger.debug("Getting Meijer client for status check")
         client = get_meijer_client()
+
+        logger.debug(f"Client authentication status: {client.auth_status.name}")
+        logger.debug(f"User ID: {client.user_id}")
+        logger.debug(f"Home store ID: {client.home_store_id}")
+
         click.echo(f"🔐 Authentication Status: {client.auth_status.name}")
         click.echo(f"👤 User ID: {client.user_id}")
         click.echo(f"🏪 Home Store: {client.home_store_id}")
@@ -536,38 +572,52 @@ def status_command():
 
             now = datetime.now()
             expires = client.token_expires_at
+            logger.debug(f"Token expires at: {expires}")
 
             if isinstance(expires, str):
                 try:
                     expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
-                except:
+                    logger.debug(f"Parsed expiry time: {expires}")
+                except Exception as parse_error:
+                    logger.warning(f"Failed to parse expiry time: {parse_error}")
                     expires = None
 
             if expires:
                 if expires > now:
                     time_left = expires - now
+                    logger.debug(f"Token expires in: {time_left}")
                     click.echo(f"⏰ Token expires in: {time_left}")
                 else:
+                    logger.warning("Token has expired")
                     click.echo("⚠️  Token has expired!")
             else:
+                logger.debug("Token expiry time unknown")
                 click.echo("⏰ Token expiry: Unknown")
         else:
+            logger.debug("Token expiry information not available")
             click.echo("⏰ Token expiry: Not available")
 
     except Exception as e:
+        logger.error(f"Failed to get status: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to get status: {e}")
 
 
 @click.command()
 def settings_command():
     """Show current account settings."""
+    logger = logging.getLogger(__name__)
+    logger.debug("Settings command called")
+
     try:
+        logger.debug("Getting Meijer client for settings")
         client = get_meijer_client()
         click.echo("⚙️  Account Settings:")
 
         # Get account info
+        logger.debug("Fetching account information")
         account_info = client.account.get()
         if account_info:
+            logger.debug(f"Retrieved account info: {account_info}")
             click.echo(
                 f"  👤 Name: {account_info.get('firstName', 'N/A')} {account_info.get('lastName', 'N/A')}"
             )
@@ -575,9 +625,11 @@ def settings_command():
             click.echo(f"  🏠 Home Store: {account_info.get('homeStoreId', 'N/A')}")
             click.echo(f"  📱 Phone: {account_info.get('phoneNumber', 'N/A')}")
         else:
+            logger.warning("Failed to retrieve account information")
             click.echo("  ❌ Failed to get account information")
 
     except Exception as e:
+        logger.error(f"Failed to get settings: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to get settings: {e}")
 
 
@@ -588,11 +640,102 @@ def coupons_group():
     pass
 
 
+@coupons_group.command("list")
+@click.option("--clipped", is_flag=True, help="Show only clipped coupons")
+@click.option("--available", is_flag=True, help="Show only available coupons")
+def coupons_list(clipped: bool, available: bool):
+    """List available coupons."""
+    logger = logging.getLogger(__name__)
+    logger.debug(
+        f"Coupons list command called with clipped={clipped}, available={available}"
+    )
+
+    try:
+        client = get_meijer_client()
+
+        if clipped:
+            logger.debug("Fetching clipped coupons")
+            coupons = client.coupons.get_clipped()
+            title = "Clipped Coupons"
+        elif available:
+            logger.debug("Fetching available coupons")
+            coupons = client.coupons.get_available()
+            title = "Available Coupons"
+        else:
+            logger.debug("Fetching all coupons")
+            coupons = client.coupons.get_all()
+            title = "All Coupons"
+
+        logger.debug(f"Retrieved {len(coupons)} coupons")
+
+        if not coupons:
+            click.echo(f"📝 No {title.lower()} found!")
+            return
+
+        # Display coupons in a simple format
+        click.echo(f"\n🎫 {title} ({len(coupons)} items):")
+        click.echo("=" * 80)
+
+        for i, coupon in enumerate(coupons, 1):
+            status = (
+                "✅ Clipped" if getattr(coupon, "clipped", False) else "⭕ Available"
+            )
+            click.echo(f"{i:2d}. {status} - {coupon.name}")
+            if hasattr(coupon, "description") and coupon.description:
+                click.echo(f"     {coupon.description}")
+            if hasattr(coupon, "expires") and coupon.expires:
+                click.echo(f"     Expires: {coupon.expires}")
+            click.echo()
+
+        logger.debug(f"Displayed {len(coupons)} coupons")
+
+    except Exception as e:
+        logger.error(f"Failed to list coupons: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to list coupons: {e}")
+
+
 # Cart Commands
 @click.group()
 def cart_group():
     """Manage shopping cart and fulfillment."""
     pass
+
+
+@cart_group.command("show")
+def cart_show():
+    """Show current shopping cart."""
+    logger = logging.getLogger(__name__)
+    logger.debug("Cart show command called")
+
+    try:
+        client = get_meijer_client()
+
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+
+        logger.debug("Fetching cart contents")
+        cart_items = client.cart.get_items()
+        logger.debug(f"Retrieved {len(cart_items)} cart items")
+
+        if not cart_items:
+            click.echo("🛒 Your shopping cart is empty!")
+            return
+
+        click.echo(f"\n🛒 Shopping Cart ({len(cart_items)} items):")
+        click.echo("=" * 60)
+
+        for i, item in enumerate(cart_items, 1):
+            click.echo(f"{i:2d}. {item.name} - Qty: {item.quantity}")
+            if hasattr(item, "price") and item.price:
+                click.echo(f"     Price: ${item.price}")
+
+        logger.debug(f"Displayed {len(cart_items)} cart items")
+
+    except Exception as e:
+        logger.error(f"Failed to show cart: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to show cart: {e}")
 
 
 # Settings Commands
@@ -607,17 +750,25 @@ def settings_group():
 @click.option("--log-file", help="Specific mitmproxy log file to use")
 def auth_command(log_file: str = None):
     """Extract authentication tokens from mitmproxy logs."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Auth command called with log_file: {log_file}")
+
     try:
         # If no log file specified, automatically find the latest one
         if not log_file:
             import glob
             import os
 
+            logger.debug(
+                "No log file specified, searching for latest meijer_mitm_*.log"
+            )
             # Find all meijer_mitm_*.log files
             log_pattern = "meijer_mitm_*.log"
             log_files = glob.glob(log_pattern)
+            logger.debug(f"Found log files: {log_files}")
 
             if not log_files:
+                logger.error("No mitmproxy log files found")
                 raise click.ClickException(
                     "❌ No mitmproxy log files found. Expected pattern: meijer_mitm_*.log"
                 )
@@ -625,9 +776,11 @@ def auth_command(log_file: str = None):
             # Sort by modification time and get the latest
             log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
             log_file = log_files[0]
+            logger.debug(f"Selected latest log file: {log_file}")
 
             click.echo(f"🔍 Automatically found latest log file: {log_file}")
         else:
+            logger.debug(f"Using specified log file: {log_file}")
             click.echo(f"🔍 Using specified log file: {log_file}")
 
         click.echo("⏳ This may take a moment for large log files...")
@@ -642,11 +795,14 @@ def auth_command(log_file: str = None):
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tools"
         )
         extract_script = os.path.join(tools_dir, "extract_bearer_token.py")
+        logger.debug(f"Extract script path: {extract_script}")
 
         if not os.path.exists(extract_script):
+            logger.error(f"Extract script not found: {extract_script}")
             raise click.ClickException(f"❌ Tool not found: {extract_script}")
 
         # Run the extract_bearer_token.py tool
+        logger.debug("Running extract_bearer_token.py tool")
         click.echo("🔧 Using extract_bearer_token.py tool...")
         result = subprocess.run(
             [sys.executable, extract_script, log_file],
@@ -656,20 +812,25 @@ def auth_command(log_file: str = None):
         )
 
         if result.returncode != 0:
+            logger.error(f"Extract tool failed with return code: {result.returncode}")
+            logger.error(f"Tool stderr: {result.stderr}")
             click.echo(f"⚠️  Tool output: {result.stderr}")
             raise click.ClickException("❌ Failed to run extract_bearer_token.py tool")
 
         # Check if the tool created output files
         bearer_auth_json = "bearer_auth.json"
         if not os.path.exists(bearer_auth_json):
+            logger.error("No bearer_auth.json file created by extract tool")
             raise click.ClickException("❌ No authentication tokens found in log file")
 
         # Load the extracted token
         import json
         from datetime import datetime
 
+        logger.debug("Loading extracted token data")
         with open(bearer_auth_json, "r") as f:
             token_data = json.load(f)
+        logger.debug(f"Token data keys: {list(token_data.keys())}")
 
         # Convert to the format expected by the client
         tokens = {
@@ -686,6 +847,7 @@ def auth_command(log_file: str = None):
         try:
             import jwt
 
+            logger.debug("Attempting to decode JWT for expiry information")
             payload = jwt.decode(
                 tokens["access_token"], options={"verify_signature": False}
             )
@@ -696,12 +858,16 @@ def auth_command(log_file: str = None):
                 if expires_in > 0:
                     tokens["expires_in"] = expires_in
                     tokens["expires_at"] = payload.get("exp")
-        except (ImportError, Exception):
-            pass  # Use default values if JWT decoding fails
+                    logger.debug(f"JWT expiry extracted: {expires_in} seconds")
+                else:
+                    logger.warning("JWT has already expired")
+        except (ImportError, Exception) as jwt_error:
+            logger.debug(f"JWT decoding failed: {jwt_error}")
 
         # Save to ~/.config/meijer.txt
         config_path = os.path.expanduser("~/.config/meijer.txt")
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        logger.debug(f"Saving tokens to: {config_path}")
 
         config = {
             **tokens,
@@ -713,6 +879,7 @@ def auth_command(log_file: str = None):
         with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
 
+        logger.debug("Tokens saved successfully")
         click.echo(f"💾 Tokens saved to {config_path}")
         click.echo("✅ Authentication file updated successfully!")
         click.echo(f"🔑 Access token: {tokens['access_token'][:50]}...")
@@ -722,7 +889,9 @@ def auth_command(log_file: str = None):
         for temp_file in ["bearer_auth.json", "bearer_token_analysis.json"]:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+                logger.debug(f"Cleaned up temporary file: {temp_file}")
                 click.echo(f"🧹 Cleaned up {temp_file}")
 
     except Exception as e:
+        logger.error(f"Failed to extract authentication: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to extract authentication: {e}")

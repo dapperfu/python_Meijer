@@ -607,9 +607,8 @@ class MeijerList:
 
                             location_info = {
                                 "aisle": product_detail.aisle_primary,
-                                "section": product_detail.aisle_locations[0]
-                                if product_detail.aisle_locations
-                                else "Unknown",
+                                "section": product_detail.section,
+                                "bay": product_detail.bay,
                                 "zone": "Store",
                                 "zone_code": "STORE",
                             }
@@ -624,9 +623,8 @@ class MeijerList:
                                 "brand": product_detail.brand,
                                 "category": product_detail.category,
                                 "aisle": product_detail.aisle_primary,
-                                "section": product_detail.aisle_locations[0]
-                                if product_detail.aisle_locations
-                                else "Unknown",
+                                "section": product_detail.section,
+                                "bay": product_detail.bay,
                             }
                             match_confidence = "High"
                             self.logger.info(
@@ -695,11 +693,8 @@ class MeijerList:
                                             # We have real location data from search result!
                                             location_info = {
                                                 "aisle": product_detail.aisle_primary,
-                                                "section": product_detail.aisle_locations[
-                                                    0
-                                                ]
-                                                if product_detail.aisle_locations
-                                                else "Unknown",
+                                                "section": product_detail.section,
+                                                "bay": product_detail.bay,
                                                 "zone": "Store",
                                                 "zone_code": "STORE",
                                             }
@@ -709,11 +704,8 @@ class MeijerList:
                                                 "brand": product_detail.brand,
                                                 "category": product_detail.category,
                                                 "aisle": product_detail.aisle_primary,
-                                                "section": product_detail.aisle_locations[
-                                                    0
-                                                ]
-                                                if product_detail.aisle_locations
-                                                else "Unknown",
+                                                "section": product_detail.section,
+                                                "bay": product_detail.bay,
                                             }
                                             match_confidence = "High"
                                             self.logger.info(
@@ -731,14 +723,46 @@ class MeijerList:
                                                     "group_ids" in data
                                                     and data["group_ids"]
                                                 ):
-                                                    # Use the first group_id as a category-based "aisle"
-                                                    primary_group = data["group_ids"][0]
-                                                    category_aisle = (
-                                                        f"Cat_{primary_group}"
-                                                    )
-                                                    self.logger.info(
-                                                        f"📍 Using category aisle: {category_aisle}"
-                                                    )
+                                                    # Parse group_ids to find the most relevant location information
+                                                    group_ids = data["group_ids"]
+
+                                                    # Look for L3 (subcategory) first as it seems to contain aisle info
+                                                    l3_groups = [
+                                                        g
+                                                        for g in group_ids
+                                                        if g.startswith("L3-")
+                                                    ]
+                                                    if l3_groups:
+                                                        # Use L3 subcategory as aisle information
+                                                        primary_group = l3_groups[0]
+                                                        category_aisle = primary_group  # Keep full format like "L3-4131"
+                                                        self.logger.info(
+                                                            f"📍 Using L3 subcategory as aisle: {category_aisle}"
+                                                        )
+                                                    else:
+                                                        # Fall back to L2 category if no L3
+                                                        l2_groups = [
+                                                            g
+                                                            for g in group_ids
+                                                            if g.startswith("L2-")
+                                                        ]
+                                                        if l2_groups:
+                                                            primary_group = l2_groups[0]
+                                                            category_aisle = (
+                                                                primary_group
+                                                            )
+                                                            self.logger.info(
+                                                                f"📍 Using L2 category as aisle: {category_aisle}"
+                                                            )
+                                                        else:
+                                                            # Use first available group
+                                                            primary_group = group_ids[0]
+                                                            category_aisle = (
+                                                                primary_group
+                                                            )
+                                                            self.logger.info(
+                                                                f"📍 Using first group as aisle: {category_aisle}"
+                                                            )
 
                                             location_info = {
                                                 "aisle": category_aisle,
@@ -933,7 +957,7 @@ class MeijerList:
                 aisle = location.get("aisle", "")
                 section = location.get("section", "")
 
-                # Extract aisle number for sorting (e.g., "B" -> 2, "A" -> 1, "Cat_L2-10357" -> category order)
+                # Extract aisle number for sorting (e.g., "B15" -> 2, "A14" -> 1, "Cat_L2-10357" -> category order)
                 aisle_num = 0
                 if aisle:
                     try:
@@ -942,22 +966,38 @@ class MeijerList:
                             aisle_num = (
                                 500 + hash(aisle) % 100
                             )  # Put categories in middle range
+                        elif aisle.startswith("L"):
+                            # L-level category - use a hash for consistent ordering
+                            aisle_num = (
+                                400 + hash(aisle) % 100
+                            )  # Put L-level categories in middle range
                         elif aisle[0].isalpha():
-                            # Handle alphanumeric aisles like "B", "A1", "B2", etc.
-                            aisle_num = ord(aisle[0].upper()) - ord("A") + 1
-                            # Add subsection number if present
-                            if len(aisle) > 1 and aisle[1:].isdigit():
-                                aisle_num = aisle_num * 100 + int(aisle[1:])
+                            # Handle alphanumeric aisles like "B15", "A14", etc.
+                            aisle_letter = ord(aisle[0].upper()) - ord("A") + 1
+
+                            # Extract numeric part for proper sorting (B1 -> 1, B15 -> 15, not B1 -> 1, B15 -> 5)
+                            numeric_part = ""
+                            for char in aisle[1:]:
+                                if char.isdigit():
+                                    numeric_part += char
+                                else:
+                                    break
+
+                            if numeric_part:
+                                aisle_num = aisle_letter * 1000 + int(numeric_part)
+                            else:
+                                aisle_num = aisle_letter * 1000
+                        else:
+                            aisle_num = 999  # Put unknown aisles at the end
                     except (ValueError, IndexError):
                         aisle_num = 999  # Put unknown aisles at the end
 
-                # Extract section number for secondary sorting (supports values like "35-4")
+                # Extract section number for secondary sorting (supports values like "44")
                 section_num = 0
                 if section:
                     try:
-                        section_token = str(section).strip().split("-")[0]
-                        if section_token.isdigit():
-                            section_num = int(section_token)
+                        if section.isdigit():
+                            section_num = int(section)
                         else:
                             section_num = 999
                     except Exception:
@@ -1095,9 +1135,43 @@ class MeijerList:
             ):
                 aisle = str(location.get("aisle", "")).strip()
                 section = str(location.get("section", "")).strip()
+                bay = str(location.get("bay", "")).strip()
 
-                if aisle.startswith("Cat_"):
-                    # Category-based organization
+                # Check if this is real aisle data (e.g., "B15", "A14")
+                if aisle and aisle[0].isalpha() and any(c.isdigit() for c in aisle):
+                    # Real aisle data - format as "Aisle:Section-Bay" or "Aisle:Section"
+                    if section and bay:
+                        loc_str = f"{aisle}:{section}-{bay}"
+                    elif section:
+                        loc_str = f"{aisle}:{section}"
+                    else:
+                        loc_str = aisle
+                elif aisle.startswith("L"):
+                    # Parse L-level category format (e.g., "L3-4131" -> "Cat:Sub4131")
+                    try:
+                        # Extract level and ID from format like "L3-4131"
+                        if "-" in aisle:
+                            level_part, id_part = aisle.split("-", 1)
+                            level_num = level_part[1:]  # Remove "L" prefix
+
+                            # Map level numbers to readable names
+                            level_names = {
+                                "1": "Dept",
+                                "2": "Cat",
+                                "3": "Sub",
+                                "4": "Item",
+                            }
+
+                            level_name = level_names.get(level_num, f"L{level_num}")
+                            loc_str = f"Cat:{level_name}{id_part}"
+                        else:
+                            # Fallback for unexpected format
+                            loc_str = f"Cat:{aisle}"
+                    except Exception:
+                        # Fallback if parsing fails
+                        loc_str = f"Cat:{aisle}"
+                elif aisle.startswith("Cat_"):
+                    # Legacy category-based organization
                     category_name = (
                         aisle.replace("Cat_", "")
                         .replace("L1-", "Dept")
