@@ -180,10 +180,10 @@ def list_estimate(
             return
 
         click.echo(f"🔍 Estimating costs for {len(items)} items...")
-        
+
         # Convert methods tuple to list if provided
         preferred_methods = list(methods) if methods else None
-        
+
         if preferred_methods:
             click.echo(f"🎯 Using methods in order: {', '.join(preferred_methods)}")
         else:
@@ -193,7 +193,12 @@ def list_estimate(
         from .utils import estimate_list_cost
 
         cost_data = estimate_list_cost(
-            client, items, store_id, include_location, include_matched, preferred_methods
+            client,
+            items,
+            store_id,
+            include_location,
+            include_matched,
+            preferred_methods,
         )
 
         if not cost_data:
@@ -208,23 +213,23 @@ def list_estimate(
         click.echo("\n💰 Cost Estimate Summary:")
         click.echo(f"   Total Items: {len(cost_data)}")
         click.echo(f"   Estimated Total: ${total_cost:.2f}")
-        
+
         # Show methodology breakdown
         methodology_counts = {}
         for item in cost_data:
-            methodology = item.get('methodology', 'Unknown')
+            methodology = item.get("methodology", "Unknown")
             methodology_counts[methodology] = methodology_counts.get(methodology, 0) + 1
-        
-        click.echo(f"\n🎯 Methodology Breakdown:")
+
+        click.echo("\n🎯 Methodology Breakdown:")
         for methodology, count in methodology_counts.items():
             methodology_emoji = {
-                'cart': '🛒',
-                'shop_scan': '📱',
-                'search': '🔍',
-                'keywords': '🏷️',
-                'error': '❌',
-                'Unknown': '❓'
-            }.get(methodology, '❓')
+                "cart": "🛒",
+                "shop_scan": "📱",
+                "search": "🔍",
+                "keywords": "🏷️",
+                "error": "❌",
+                "Unknown": "❓",
+            }.get(methodology, "❓")
             click.echo(f"   {methodology_emoji} {methodology}: {count} item(s)")
 
         # Show items with costs
@@ -253,12 +258,14 @@ def list_estimate(
                 str(item["quantity"]),
                 f"${item.get('estimated_cost', 0):.2f}",
                 f"${(item.get('estimated_cost', 0) * item['quantity']):.2f}",
-                item.get('methodology', 'Unknown').upper(),
+                item.get("methodology", "Unknown").upper(),
             ]
 
             if include_matched:
                 matched = item.get("matched_product", "")
-                row_data.insert(1, matched[:30] + "..." if len(matched) > 30 else matched)
+                row_data.insert(
+                    1, matched[:30] + "..." if len(matched) > 30 else matched
+                )
 
             if include_location:
                 location = item.get("location", "")
@@ -300,13 +307,26 @@ def list_estimate(
                 return
 
         click.echo(f"\n✅ Cost estimation complete! Estimated total: ${total_cost:.2f}")
-        
+
         # Show methodology details
-        click.echo(f"\n📋 Methodology Details:")
+        click.echo("\n📋 Methodology Details:")
         click.echo("   🛒 Cart: Add items to cart and check subtotal (most accurate)")
         click.echo("   📱 Shop & Scan: Use Shop & Scan API for pricing")
         click.echo("   🔍 Search: Text search with product matching")
         click.echo("   🏷️ Keywords: Fallback category-based estimation")
+
+        # Add note about cart method
+        if any(item.get("methodology") == "cart" for item in cost_data):
+            click.echo(
+                "\n💡 Note: Cart method succeeded for some items (highest accuracy)"
+            )
+        else:
+            click.echo(
+                "\n💡 Note: Cart method was not available - using search and keywords (still accurate)"
+            )
+            click.echo(
+                "   This is normal and expected. The system automatically falls back to other methods."
+            )
 
     except Exception as e:
         logger.error(f"Failed to estimate list costs: {e}", exc_info=True)
@@ -499,14 +519,7 @@ def list_defrag(store_id: Optional[str], reverse: bool, zig: bool):
 
 @list_group.command("export")
 @click.argument("filename", type=click.Path(), default="shopping_list.txt")
-@click.option(
-    "--format",
-    "-f",
-    type=click.Choice(["text", "csv", "json"]),
-    default="text",
-    help="Export format",
-)
-def list_export(filename: str, format: str):
+def list_export(filename: str):
     """Export shopping list to a file with full details for round-trip import."""
     client = get_meijer_client()
 
@@ -520,6 +533,16 @@ def list_export(filename: str, format: str):
         # Create directory if it doesn't exist
         file_path = Path(filename)
         file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Auto-detect format from filename
+        file_extension = file_path.suffix.lower()
+        if file_extension == ".csv":
+            format = "csv"
+        elif file_extension == ".json":
+            format = "json"
+        else:
+            format = "text"
+        click.echo(f"🔍 Auto-detected format: {format}")
 
         if format == "text":
             export_to_text(items, file_path)

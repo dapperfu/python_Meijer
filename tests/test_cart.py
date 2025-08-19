@@ -167,7 +167,7 @@ class TestMeijerCart:
         assert len(result) == 1
         slot = result[0]
         assert slot.slot_id == "slot_1"
-        assert slot.is_available is True
+        assert slot.available is True
         assert slot.max_orders == 10
         assert slot.current_orders == 5
 
@@ -312,7 +312,7 @@ class TestMeijerCart:
         result = self.cart._parse_pickup_slots(slots_data)
         assert len(result) == 1
         assert result[0].slot_id == "test_slot"
-        assert result[0].is_available is True
+        assert result[0].available is True
         assert result[0].max_orders == 5
 
     def test_parse_delivery_slots_with_data(self) -> None:
@@ -349,7 +349,7 @@ class TestPickupSlot:
             start_time=start_time,
             end_time=end_time,
             slot_id="test_slot",
-            is_available=True,
+            available=True,
             max_orders=10,
             current_orders=5,
         )
@@ -357,7 +357,7 @@ class TestPickupSlot:
         assert slot.start_time == start_time
         assert slot.end_time == end_time
         assert slot.slot_id == "test_slot"
-        assert slot.is_available is True
+        assert slot.available is True
         assert slot.max_orders == 10
         assert slot.current_orders == 5
 
@@ -368,7 +368,7 @@ class TestPickupSlot:
 
         slot = PickupSlot(start_time=start_time, end_time=end_time, slot_id="test_slot")
 
-        assert slot.is_available is True
+        assert slot.available is True
         assert slot.max_orders is None
         assert slot.current_orders is None
 
@@ -385,7 +385,7 @@ class TestDeliverySlot:
             start_time=start_time,
             end_time=end_time,
             slot_id="test_delivery",
-            is_available=True,
+            available=True,
             delivery_fee=5.99,
             min_order_amount=25.00,
         )
