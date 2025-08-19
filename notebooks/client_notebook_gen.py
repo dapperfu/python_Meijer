@@ -98,26 +98,358 @@ except Exception as e:
 
 # Method 2: With auth file path
 try:
-    # This would use an actual auth file if available
     client_auth = Meijer(auth="auth.txt")
     print("✅ Auth file client created")
     print(f"  Authentication Status: {client_auth.auth_status}")
+    print(f"  Is Authenticated: {client_auth.is_authenticated()}")
 except Exception as e:
     print(f"❌ Auth file client failed: {e}")
 
 # Method 3: With log file path
 try:
-    # This would use an actual log file if available
-    client_log = Meijer(auth="meijer_mitm.log")
+    client_log = Meijer(auth="path/to/mitmproxy.log")
     print("✅ Log file client created")
     print(f"  Authentication Status: {client_log.auth_status}")
+    print(f"  Is Authenticated: {client_log.is_authenticated()}")
 except Exception as e:
     print(f"❌ Log file client failed: {e}")
 
-# Create a demo client for the rest of the examples
-client = Meijer()
-print(f"\\n🎯 Demo client created for examples")
-print(f"  Authentication Status: {client.auth_status}")""")
+print("\\n💡 Use the client that successfully authenticates for the rest of this demo")""")
+
+    # Rich Jupyter Integration section
+    rich_jupyter_section = nbf.v4.new_markdown_cell("""## 🎨 Rich Jupyter Notebook Integration
+
+The Meijer client and its components now provide **beautiful, interactive displays** in Jupyter notebooks through rich representation methods.
+
+### Rich Display Features Available
+
+- **`_repr_html_`**: Rich HTML with CSS styling, icons, and visual elements
+- **`_repr_markdown_`**: Clean Markdown formatting for documentation
+- **`_repr_pretty_`**: Interactive IPython display for development
+
+### Components with Rich Display
+
+1. **Shopping List (`client.list`)**: Beautiful list visualization with item counts and status
+2. **Shopping Cart (`client.cart`)**: Rich cart display with pricing and item details
+3. **List Items**: Individual item representations with status indicators
+4. **Cart Items**: Product displays with availability and pricing information
+
+### How to Use
+
+```python
+# Display entire components
+display(client.list)      # Rich shopping list display
+display(client.cart)      # Rich cart display
+
+# Display individual items
+display(list_item)        # Rich list item display
+display(cart_item)        # Rich cart item display
+
+# Get different formats
+html_repr = client.list._repr_html_()
+markdown_repr = client.list._repr_markdown_()
+```
+
+Let's see these rich displays in action!""")
+
+    # Rich Jupyter demonstration
+    rich_jupyter_demo = nbf.v4.new_code_cell("""# Demonstrate rich Jupyter notebook integration
+print("🎨 Rich Jupyter Notebook Integration Demo")
+print("=" * 55)
+
+if client and client.is_authenticated():
+    print("✅ Client authenticated - demonstrating rich displays with real data")
+
+    try:
+        # 🎨 NEW: Rich Shopping List Display
+        print("\\n1️⃣ Rich Shopping List Display:")
+        print("-" * 35)
+
+        # Get shopping list and display with rich formatting
+        shopping_list = client.list.get()
+        print(f"Found {len(shopping_list)} items in shopping list")
+
+        # Display the shopping list object with rich formatting
+        print("\\n📝 Shopping List Object (rich HTML representation):")
+        display(client.list)
+
+        # Display individual items with rich formatting
+        if shopping_list:
+            print("\\n🛒 Individual List Items (rich representations):")
+            print("-" * 45)
+            for i, item in enumerate(shopping_list[:3], 1):  # Show first 3 items
+                print(f"\\n{i}. List Item Object:")
+                display(item)
+
+            if len(shopping_list) > 3:
+                print(f"\\n... and {len(shopping_list) - 3} more items")
+
+        # 🎨 NEW: Rich Shopping Cart Display
+        print("\\n2️⃣ Rich Shopping Cart Display:")
+        print("-" * 35)
+
+        try:
+            # Get shopping cart and display with rich formatting
+            cart = client.cart.get()
+            print(f"Cart contains {len(cart.items) if cart.items else 0} items")
+
+            # Display the cart object with rich formatting
+            print("\\n🛒 Shopping Cart Object (rich HTML representation):")
+            display(client.cart)
+
+            # Display individual cart items with rich formatting
+            if cart and cart.items:
+                print("\\n📦 Individual Cart Items (rich representations):")
+                print("-" * 45)
+                for i, item in enumerate(cart.items[:3], 1):  # Show first 3 items
+                    print(f"\\n{i}. Cart Item Object:")
+                    display(item)
+
+                if len(cart.items) > 3:
+                    print(f"\\n... and {len(cart.items) - 3} more items")
+            else:
+                print("\\n📝 Cart is empty - no items to display")
+
+        except Exception as e:
+            print(f"⚠️ Could not access cart: {e}")
+            print("This might be due to API permissions or cart not being available")
+
+        # 🎨 NEW: Rich Display Properties
+        print("\\n3️⃣ Rich Display Properties:")
+        print("-" * 35)
+
+        # Show the rich display methods available
+        print("\\n📊 Rich Display Method Availability:")
+        print(f"  Shopping List _repr_html_: {'✅' if hasattr(client.list, '_repr_html_') else '❌'}")
+        print(f"  Shopping List _repr_markdown_: {'✅' if hasattr(client.list, '_repr_markdown_') else '❌'}")
+        print(f"  Shopping List _repr_pretty_: {'✅' if hasattr(client.list, '_repr_pretty_') else '❌'}")
+
+        if hasattr(client.list, '_repr_html_'):
+            html_length = len(client.list._repr_html_())
+            print(f"  Shopping List HTML length: {html_length} characters")
+
+        if hasattr(client.list, '_repr_markdown_'):
+            markdown_length = len(client.list._repr_markdown_())
+            print(f"  Shopping List Markdown length: {markdown_length} characters")
+
+        # 🎨 NEW: Rich Display Examples
+        print("\\n4️⃣ Rich Display Examples:")
+        print("-" * 35)
+
+        if shopping_list:
+            print("\\n📝 Example List Item - Rich Markdown:")
+            first_item = shopping_list[0]
+            if hasattr(first_item, '_repr_markdown_'):
+                print(first_item._repr_markdown_())
+            else:
+                print("❌ _repr_markdown_ method not available")
+
+            print("\\n🔧 Example List Item - Rich IPython:")
+            if hasattr(first_item, '_repr_pretty_'):
+                print(first_item._repr_pretty_(None, False))
+            else:
+                print("❌ _repr_pretty_ method not available")
+
+    except Exception as e:
+        print(f"❌ Error during rich display demonstration: {e}")
+        print("This might be due to API changes or authentication issues")
+
+else:
+    print("⚠️ Client not authenticated - creating mock data for demonstration")
+
+    # Create mock objects to demonstrate rich display
+    print("\\n📝 Creating mock objects for rich display demonstration...")
+
+    # Mock shopping list item
+    class MockListItem:
+        def __init__(self, name, quantity, completed=False):
+            self.name = name
+            self.quantity = quantity
+            self.checked = completed
+            self.notes = "Sample item for demonstration"
+
+        def _repr_html_(self):
+            status_icon = "✅" if self.checked else "⏳"
+            return f'''
+            <div style="
+                border: 2px solid #3498db;
+                border-radius: 12px;
+                padding: 16px;
+                margin: 16px 0;
+                background: linear-gradient(135deg, #ffffff 0%, #ecf0f1 100%);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            ">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px;">{status_icon}</span>
+                    <div>
+                        <h3 style="margin: 0; color: #2c3e50;">{self.name}</h3>
+                        <p style="margin: 4px 0 0 0; color: #7f8c8d;">
+                            Quantity: {self.quantity} • Notes: {self.notes}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            '''
+
+        def _repr_markdown_(self):
+            status_icon = "✅" if self.checked else "⏳"
+            return f"""## {status_icon} {self.name}
+
+**Quantity:** {self.quantity}
+**Notes:** {self.notes}
+**Status:** {'Complete' if self.checked else 'Pending'}
+
+---
+*Mock item for demonstration*"""
+
+        def _repr_pretty_(self, p, cycle):
+            if cycle:
+                p.text("MockListItem(...)")
+            else:
+                status_icon = "✅" if self.checked else "⏳"
+                p.text(f"{status_icon} {self.name}")
+                p.breakable()
+                p.text(f"  Quantity: {self.quantity}")
+                p.breakable()
+                p.text(f"  Notes: {self.notes}")
+                p.breakable()
+                p.text(f"  Status: {'Complete' if self.checked else 'Pending'}")
+
+    # Mock shopping list
+    class MockShoppingList:
+        def __init__(self, items):
+            self.items = items
+
+        def get(self):
+            return self.items
+
+        def _repr_html_(self):
+            completed_count = sum(1 for item in self.items if item.checked)
+            return f'''
+            <div style="
+                border: 2px solid #3498db;
+                border-radius: 16px;
+                padding: 24px;
+                margin: 16px 0;
+                background: linear-gradient(135deg, #ffffff 0%, #ecf0f1 100%);
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            ">
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 24px;
+                    padding-bottom: 16px;
+                    border-bottom: 2px solid #ecf0f1;
+                ">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <span style="font-size: 36px;">📝</span>
+                        <div>
+                            <h1 style="margin: 0; color: #2c3e50; font-size: 28px;">Mock Shopping List</h1>
+                            <p style="margin: 4px 0 0 0; color: #7f8c8d; font-size: 16px;">
+                                {len(self.items)} items • {completed_count} completed • Rich Jupyter Demo
+                            </p>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="
+                            color: #3498db;
+                            font-size: 32px;
+                            font-weight: 700;
+                            margin-bottom: 8px;
+                        ">{len(self.items)}</div>
+                        <div style="color: #7f8c8d; font-size: 14px;">
+                            Total Items
+                        </div>
+                    </div>
+                </div>
+
+                <div style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 16px;
+                ">
+                    {''.join([f'''
+                    <div style="
+                        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                        border: 1px solid #dee2e6;
+                        border-radius: 12px;
+                        padding: 16px;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            {'✅' if item.checked else '⏳'}
+                            <strong>{item.name}</strong>
+                        </div>
+                        <div style="color: #6c757d; font-size: 14px;">
+                            Qty: {item.quantity} • Notes: {item.notes}
+                        </div>
+                    </div>
+                    ''' for item in self.items])}
+                </div>
+            </div>
+            '''
+
+        def _repr_markdown_(self):
+            completed_count = sum(1 for item in self.items if item.checked)
+            return f"""## 📝 Mock Shopping List - Rich Jupyter Demo
+
+**Total Items:** {len(self.items)} • **Completed:** {completed_count} • **Remaining:** {len(self.items) - completed_count}
+
+### Items:
+{''.join([f'- **{"✅" if item.checked else "⏳"} {item.name}**\n  - Quantity: {item.quantity}\n  - Notes: {item.notes}\n' for item in self.items])}
+
+---
+*Mock shopping list for demonstration*"""
+
+    # Create and display mock objects
+    mock_items = [
+        MockListItem("Organic Bananas", 2, False),
+        MockListItem("Whole Milk", 1, True),
+        MockListItem("Bread", 1, False)
+    ]
+
+    mock_list = MockShoppingList(mock_items)
+
+    print("\\n📝 Mock Shopping List - Rich HTML Display:")
+    display(mock_list)
+
+    print("\\n📝 Mock Shopping List - Rich Markdown Display:")
+    print(mock_list._repr_markdown_())
+
+    print("\\n🛒 Individual Mock Items - Rich HTML Display:")
+    for i, item in enumerate(mock_items, 1):
+        print(f"\\n--- Item {i} ---")
+        display(item)
+
+    print("\\n💡 These mock objects demonstrate the rich Jupyter integration!")
+    print("   Real authenticated clients will show actual data with the same beautiful formatting")
+
+    # Shopping list functionality section
+    list_section = nbf.v4.new_markdown_cell("""## Shopping List Functionality
+
+The Meijer client provides comprehensive shopping list management through the `client.list` component.
+
+### Key Features
+
+- **Get Items**: Retrieve current shopping list
+- **Add Items**: Add new items with UPC or description
+- **Complete Items**: Mark items as done
+- **Remove Items**: Delete items from list
+- **Manage Favorites**: Add/remove favorite items
+- **Defrag List**: Organize items by aisle for efficient shopping
+- **🎨 Rich Jupyter Display**: Beautiful visualizations with status indicators
+
+### Rich Display Features
+
+- **Visual Status Indicators**: Icons for completion, favorites, promotions
+- **Color-Coded Information**: Different colors for different data types
+- **Interactive Elements**: Hover effects and responsive design
+- **Professional Layout**: Clean, organized information display
+
+### Shopping List Operations
+""")
 
     # Authentication methods section
     auth_methods_section = nbf.v4.new_markdown_cell("""## Authentication Methods
@@ -1140,6 +1472,9 @@ The main client provides a powerful and comprehensive interface for building Mei
         import_cell,
         init_section,
         init_example,
+        rich_jupyter_section,
+        rich_jupyter_demo,
+        list_section,
         auth_methods_section,
         auth_methods_example,
         store_methods_section,

@@ -38,7 +38,7 @@ class PickupSlot:
     start_time: datetime
     end_time: datetime
     slot_id: str
-    is_available: bool = True
+    available: bool = True
     max_orders: Optional[int] = None
     current_orders: Optional[int] = None
 
@@ -48,7 +48,7 @@ class PickupSlot:
         return int((self.end_time - self.start_time).total_seconds() / 60)
 
     @property
-    def is_peak_time(self) -> bool:
+    def peak_time(self) -> bool:
         """Check if this is a peak time slot (lunch/dinner hours)."""
         hour = self.start_time.hour
         return 11 <= hour <= 13 or 17 <= hour <= 19
@@ -63,7 +63,7 @@ class PickupSlot:
         return ((self.max_orders - self.current_orders) / self.max_orders) * 100
 
     @property
-    def is_high_demand(self) -> bool:
+    def high_demand(self) -> bool:
         """Check if this slot has high demand (>80% capacity)."""
         return self.availability_percentage < 20.0
 
@@ -75,7 +75,7 @@ class DeliverySlot:
     start_time: datetime
     end_time: datetime
     slot_id: str
-    is_available: bool = True
+    available: bool = True
     delivery_fee: Optional[float] = None
     min_order_amount: Optional[float] = None
     max_orders: Optional[int] = None
@@ -87,7 +87,7 @@ class DeliverySlot:
         return int((self.end_time - self.start_time).total_seconds() / 60)
 
     @property
-    def is_free_delivery(self) -> bool:
+    def free_delivery(self) -> bool:
         """Check if delivery is free (no delivery fee)."""
         return self.delivery_fee is None or self.delivery_fee == 0.0
 
@@ -121,12 +121,12 @@ class FulfillmentRequest:
     preferred_time: Optional[time] = None
 
     @property
-    def is_pickup(self) -> bool:
+    def pickup(self) -> bool:
         """Check if this is a pickup request."""
         return self.fulfillment_type.lower() == "pickup"
 
     @property
-    def is_delivery(self) -> bool:
+    def delivery(self) -> bool:
         """Check if this is a delivery request."""
         return self.fulfillment_type.lower() == "delivery"
 
@@ -136,9 +136,9 @@ class FulfillmentRequest:
         return self.preferred_time is not None
 
     @property
-    def is_curbside(self) -> bool:
+    def curbside(self) -> bool:
         """Check if this is a curbside pickup request."""
-        return self.is_pickup and self.curbside_partner is not None
+        return self.pickup and self.curbside_partner is not None
 
 
 @dataclass
@@ -160,7 +160,7 @@ class CartItem:
     """Product name/description"""
 
     quantity: int
-    """Quantity of the item"""
+    """Current quantity of the item in the cart"""
 
     base_price: float
     """Base price per unit"""
@@ -210,23 +210,30 @@ class CartItem:
         default=None, repr=False, compare=False
     )
 
+    # Private field for property operations
+    _quantity_override: Optional[int] = field(default=None, repr=False, compare=False)
+
     # ============================================================================
     # Core Properties
     # ============================================================================
 
     @property
-    def quantity(self) -> int:
-        """Get the current quantity."""
-        return self._quantity if hasattr(self, '_quantity') else 1
+    def current_quantity(self) -> int:
+        """Get the current quantity (either override or dataclass field)."""
+        return (
+            self._quantity_override
+            if self._quantity_override is not None
+            else self.quantity
+        )
 
-    @quantity.setter
-    def quantity(self, value: int) -> None:
+    @current_quantity.setter
+    def current_quantity(self, value: int) -> None:
         """Set the quantity for the item.
-        
+
         When a cart API reference is attached, this will invoke the remote API to
         update the quantity and update the local state on success.
         If no API is attached, only the local state is updated.
-        
+
         Parameters
         ----------
         value : int
@@ -236,18 +243,18 @@ class CartItem:
             raise ValueError("Quantity must be at least 1")
         if value > 99:
             raise ValueError("Quantity cannot exceed 99")
-            
+
         # No-op if already desired state
-        current_qty = self._quantity if hasattr(self, '_quantity') else 1
-        if current_qty == value:
+        if self.current_quantity == value:
             return
-            
+
         if self._cart_api is not None:
             try:
                 # Update the item quantity via API
                 success = self._cart_api.update_item_quantity(self.entry_number, value)
                 if success:
-                    self._quantity = value
+                    # Update the override field
+                    self._quantity_override = value
                     # Update total price
                     self.total_price = self.base_price * value
                 else:
@@ -258,7 +265,7 @@ class CartItem:
                 raise
         else:
             # Fallback: update local state only
-            self._quantity = value
+            self._quantity_override = value
             self.total_price = self.base_price * value
 
     @property
@@ -269,7 +276,7 @@ class CartItem:
     @property
     def total_value(self) -> float:
         """Get the total value (price × quantity)."""
-        return self.base_price * self.quantity
+        return self.base_price * self.current_quantity
 
     @property
     def on_sale(self) -> bool:
@@ -290,16 +297,16 @@ class CartItem:
         """Check if this is a heavy item (weight > 10 lbs)."""
         if not self.weight_amount or not self.weight_unit:
             return False
-        if self.weight_unit.lower() in ['lb', 'lbs', 'pound', 'pounds']:
+        if self.weight_unit.lower() in ["lb", "lbs", "pound", "pounds"]:
             return self.weight_amount > 10.0
-        elif self.weight_unit.lower() in ['kg', 'kilogram']:
+        elif self.weight_unit.lower() in ["kg", "kilogram"]:
             return self.weight_amount > 4.5
         return False
 
     @property
     def fragile(self) -> bool:
         """Check if this item is fragile based on category."""
-        fragile_categories = ['eggs', 'glass', 'electronics', 'breakable']
+        fragile_categories = ["eggs", "glass", "electronics", "breakable"]
         if not self.category:
             return False
         return any(fragile in self.category.lower() for fragile in fragile_categories)
@@ -307,18 +314,23 @@ class CartItem:
     @property
     def requires_special_handling(self) -> bool:
         """Check if this item requires special handling."""
-        return (self.alcohol or self.tobacco or self.age_restricted or 
-                self.fragile or self.heavy)
+        return (
+            self.alcohol
+            or self.tobacco
+            or self.age_restricted
+            or self.fragile
+            or self.heavy
+        )
 
     @property
     def can_increase_quantity(self) -> bool:
         """Check if the quantity can be increased."""
-        return self.available and self.quantity < 99  # Reasonable upper limit
+        return self.available and self.current_quantity < 99  # Reasonable upper limit
 
     @property
     def can_decrease_quantity(self) -> bool:
         """Check if the quantity can be decreased."""
-        return self.quantity > 1
+        return self.current_quantity > 1
 
     @property
     def can_remove(self) -> bool:
@@ -335,10 +347,10 @@ class CartItem:
     @property
     def price_display(self) -> str:
         """Get a formatted price display string."""
-        if self.quantity == 1:
+        if self.current_quantity == 1:
             return f"${self.base_price:.2f}"
         else:
-            return f"${self.base_price:.2f} × {self.quantity} = ${self.total_value:.2f}"
+            return f"${self.base_price:.2f} × {self.current_quantity} = ${self.total_value:.2f}"
 
     @property
     def weight_display(self) -> Optional[str]:
@@ -367,23 +379,23 @@ class CartItem:
     def priority_score(self) -> int:
         """Calculate a priority score for sorting/display."""
         score = 0
-        
+
         # Higher priority for restricted items
         if self.requires_special_handling:
             score += 100
-            
+
         # Higher priority for fragile items
         if self.fragile:
             score += 50
-            
+
         # Higher priority for heavy items
         if self.heavy:
             score += 30
-            
+
         # Lower priority for weighted items (can be picked last)
         if self.weighted:
             score -= 20
-            
+
         return score
 
     # ============================================================================
@@ -394,9 +406,9 @@ class CartItem:
         """Increase the quantity by the specified amount."""
         if not self.can_increase_quantity:
             return False
-        new_quantity = min(self.quantity + amount, 99)
+        new_quantity = min(self.current_quantity + amount, 99)
         try:
-            self.quantity = new_quantity
+            self.current_quantity = new_quantity
             return True
         except (ValueError, RuntimeError):
             return False
@@ -405,9 +417,9 @@ class CartItem:
         """Decrease the quantity by the specified amount."""
         if not self.can_decrease_quantity:
             return False
-        new_quantity = max(self.quantity - amount, 1)
+        new_quantity = max(self.current_quantity - amount, 1)
         try:
-            self.quantity = new_quantity
+            self.current_quantity = new_quantity
             return True
         except (ValueError, RuntimeError):
             return False
@@ -416,7 +428,7 @@ class CartItem:
         """Remove this item from the cart."""
         if not self.can_remove:
             return False
-            
+
         if self._cart_api is not None:
             try:
                 success = self._cart_api.remove_item(self.entry_number)
@@ -429,10 +441,12 @@ class CartItem:
         """Get detailed product information if available."""
         if self._product_details is not None:
             return self._product_details
-            
+
         if self._cart_api is not None:
             try:
-                self._product_details = self._cart_api.get_product_details(self.product_code)
+                self._product_details = self._cart_api.get_product_details(
+                    self.product_code
+                )
                 return self._product_details
             except Exception:
                 return None
@@ -519,7 +533,7 @@ class CartItem:
                     <div style="
                         color: #7f8c8d;
                         font-size: 14px;
-                    ">Qty: {self.quantity}</div>
+                    ">Qty: {self.current_quantity}</div>
                 </div>
             </div>
 
@@ -599,7 +613,7 @@ class CartItem:
 ## {status_emoji} {self.display_name}
 
 **Price:** {self.price_display}
-**Quantity:** {self.quantity}
+**Quantity:** {self.current_quantity}
 **Product Code:** `{self.product_code}`
 
 ### Details
@@ -641,7 +655,7 @@ class CartItem:
             p.breakable()
             p.text(f"  Price: {self.price_display}")
             p.breakable()
-            p.text(f"  Qty: {self.quantity} | Code: {self.product_code}")
+            p.text(f"  Qty: {self.current_quantity} | Code: {self.product_code}")
             if self.brand:
                 p.breakable()
                 p.text(f"  Brand: {self.brand}")
@@ -728,14 +742,14 @@ class MeijerCart:
         return None
 
     @property
-    def is_empty(self) -> bool:
+    def empty(self) -> bool:
         """Check if the cart is empty."""
         return len(self._cart_items) == 0
 
     @property
     def has_items(self) -> bool:
         """Check if the cart has items."""
-        return not self.is_empty
+        return not self.empty
 
     @property
     def item_count(self) -> int:
@@ -750,7 +764,7 @@ class MeijerCart:
     @property
     def total_quantity(self) -> int:
         """Get the total quantity of all items."""
-        return sum(item.quantity for item in self._cart_items)
+        return sum(item.current_quantity for item in self._cart_items)
 
     @property
     def items(self) -> List[CartItem]:
@@ -886,7 +900,7 @@ class MeijerCart:
     # ============================================================================
 
     @property
-    def is_ready_for_checkout(self) -> bool:
+    def ready_for_checkout(self) -> bool:
         """Check if the cart is ready for checkout."""
         return (
             self.has_items
@@ -927,13 +941,15 @@ class MeijerCart:
                 has_weighted = True
                 # Convert to pounds for estimation
                 if item.weight_unit.lower() in ["kg", "kilogram"]:
-                    total_weight += item.weight_amount * 2.20462 * item.quantity
+                    total_weight += item.weight_amount * 2.20462 * item.current_quantity
                 elif item.weight_unit.lower() in ["lb", "lbs", "pound", "pounds"]:
-                    total_weight += item.weight_amount * item.quantity
+                    total_weight += item.weight_amount * item.current_quantity
                 elif item.weight_unit.lower() in ["oz", "ounce"]:
-                    total_weight += item.weight_amount * 0.0625 * item.quantity
+                    total_weight += item.weight_amount * 0.0625 * item.current_quantity
                 elif item.weight_unit.lower() in ["g", "gram"]:
-                    total_weight += item.weight_amount * 0.00220462 * item.quantity
+                    total_weight += (
+                        item.weight_amount * 0.00220462 * item.current_quantity
+                    )
 
         return total_weight if has_weighted else None
 
@@ -943,11 +959,11 @@ class MeijerCart:
         return self._last_updated
 
     @property
-    def is_stale(self) -> bool:
+    def stale(self) -> bool:
         """Check if the cart data is stale (older than 5 minutes)."""
         if not self._last_updated:
             return True
-        return (datetime.now() - self._last_updated).total_seconds > 300
+        return (datetime.now() - self._last_updated).total_seconds() > 300
 
     # ============================================================================
     # Cart Management Methods
@@ -981,7 +997,7 @@ class MeijerCart:
                 not force_refresh
                 and self._cart_data
                 and self._last_updated
-                and not self.is_stale
+                and not self.stale
             ):
                 return self._cart_data
 
@@ -1158,7 +1174,7 @@ class MeijerCart:
                 # Update local item and clear cache
                 for item in self._cart_items:
                     if item.entry_number == entry_number:
-                        item._quantity = quantity
+                        item.current_quantity = quantity  # Use the new setter
                         item.total_price = item.base_price * quantity
                         break
                 self._clear_cache()
@@ -1187,7 +1203,7 @@ class MeijerCart:
         try:
             self.logger.info("Emptying shopping cart")
 
-            if self.is_empty:
+            if self.empty:
                 self.logger.info("Cart is already empty")
                 return True
 
@@ -1394,7 +1410,9 @@ class MeijerCart:
                     entry_number=str(entry.get("entryNumber", "")),
                     product_code=entry.get("productCode", ""),
                     product_name=entry.get("productName", "Unknown Product"),
-                    quantity=int(entry.get("quantity", 1)),
+                    quantity=int(
+                        entry.get("quantity", 1)
+                    ),  # Add quantity from API response
                     base_price=base_price,
                     total_price=total_price,
                     image_url=entry.get("imageUrl"),
@@ -1432,7 +1450,7 @@ class MeijerCart:
                             ),
                             end_time=datetime.fromisoformat(slot.get("endTime", "")),
                             slot_id=slot.get("id", ""),
-                            is_available=slot.get("available", True),
+                            available=slot.get("available", True),
                             max_orders=slot.get("maxOrders"),
                             current_orders=slot.get("currentOrders"),
                         )
@@ -1455,7 +1473,7 @@ class MeijerCart:
                             ),
                             end_time=datetime.fromisoformat(slot.get("endTime", "")),
                             slot_id=slot.get("id", ""),
-                            is_available=slot.get("available", True),
+                            available=slot.get("available", True),
                             delivery_fee=slot.get("deliveryFee"),
                             min_order_amount=slot.get("minOrderAmount"),
                             max_orders=slot.get("maxOrders"),
@@ -1506,7 +1524,7 @@ class MeijerCart:
 
     def __str__(self) -> str:
         """String representation of the cart."""
-        if self.is_empty:
+        if self.empty:
             return "Empty shopping cart"
         return f"Shopping cart with {self.item_count} items (${self.final_total:.2f})"
 
@@ -1523,7 +1541,7 @@ class MeijerCart:
 
     def _repr_html_(self) -> str:
         """Rich HTML representation for Jupyter notebooks."""
-        if self.is_empty:
+        if self.empty:
             html = """
             <div style="
                 border: 2px solid #95a5a6;
@@ -1659,7 +1677,7 @@ class MeijerCart:
                             <div><strong>Average Price:</strong> ${avg_price:.2f}</div>
                             <div><strong>Currency:</strong> {self.currency}</div>
                             <div><strong>Last Updated:</strong> {self.last_updated.strftime('%Y-%m-%d %H:%M') if self.last_updated else 'Never'}</div>
-                            <div><strong>Data Fresh:</strong> {'✅ Fresh' if not self.is_stale else '⚠️ Stale'}</div>
+                            <div><strong>Data Fresh:</strong> {'✅ Fresh' if not self.stale else '⚠️ Stale'}</div>
                         </div>
                     </div>
 
@@ -1686,7 +1704,7 @@ class MeijerCart:
                     ">
                         <h3 style="margin: 0 0 16px 0; color: #2c3e50; font-size: 18px;">✅ Cart Status</h3>
                         <div style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">
-                            <div><strong>Ready for Checkout:</strong> {'✅ Yes' if self.is_ready_for_checkout else '❌ No'}</div>
+                            <div><strong>Ready for Checkout:</strong> {'✅ Yes' if self.ready_for_checkout else '❌ No'}</div>
                             <div><strong>All Items Available:</strong> {'✅ Yes' if all(item.available for item in self._cart_items) else '❌ No'}</div>
                             <div><strong>Estimated Weight:</strong> {f'{self.estimated_weight:.1f} lbs' if self.estimated_weight else 'N/A'}</div>
                             <div><strong>Store ID:</strong> {self.store_id}</div>
@@ -1712,7 +1730,7 @@ class MeijerCart:
 
     def _repr_markdown_(self) -> str:
         """Rich Markdown representation for Jupyter notebooks."""
-        if self.is_empty:
+        if self.empty:
             return """
 ## 🛒 Empty Shopping Cart
 
@@ -1754,10 +1772,10 @@ Your cart is currently empty.
 - **Requires Special Handling:** {'Yes' if self.requires_special_handling else 'No'}
 
 ### ✅ Cart Status
-- **Ready for Checkout:** {'Yes' if self.is_ready_for_checkout else 'No'}
+- **Ready for Checkout:** {'Yes' if self.ready_for_checkout else 'No'}
 - **All Items Available:** {'Yes' if all(item.available for item in self._cart_items) else 'No'}
 - **Estimated Weight:** {f'{self.estimated_weight:.1f} lbs' if self.estimated_weight else 'N/A'}
-- **Data Fresh:** {'Yes' if not self.is_stale else 'No'}
+- **Data Fresh:** {'Yes' if not self.stale else 'No'}
 
 ---
 *Cart contains {self.item_count} items with a total value of ${self.final_total:.2f}*
@@ -1770,7 +1788,7 @@ Your cart is currently empty.
         if cycle:
             p.text("MeijerCart(...)")
         else:
-            if self.is_empty:
+            if self.empty:
                 p.text("🛒 Empty Shopping Cart")
                 p.breakable()
                 p.text(f"  Store: #{self.store_id}")
@@ -1794,7 +1812,7 @@ Your cart is currently empty.
                 p.text(f"  Unique Products: {self.unique_item_count}")
                 p.breakable()
                 p.text(
-                    f"  Ready for Checkout: {'Yes' if self.is_ready_for_checkout else 'No'}"
+                    f"  Ready for Checkout: {'Yes' if self.ready_for_checkout else 'No'}"
                 )
                 p.breakable()
                 p.text(

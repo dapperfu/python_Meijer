@@ -668,10 +668,10 @@ class MeijerItem:
         # Remove None values
         return {k: v for k, v in result.items() if v is not None}
 
+    # ============================================================================
+    # Jupyter Notebook Rich Representations
+    # ============================================================================
 
-# ============================================================================
-# Jupyter Notebook Rich Representations
-# ============================================================================
 
 # Note: These methods are dynamically added to the MeijerItem class
 # to provide rich Jupyter Notebook representations
@@ -729,8 +729,13 @@ class ListItem:
 
     product_details: Optional[MeijerItem] = None
     """Detailed product information for the item"""
+
     # Internal reference to list API for operations like marking complete/incomplete
     _list_api: Optional[Any] = field(default=None, repr=False, compare=False)
+
+    # Private fields for property operations
+    _quantity_override: Optional[int] = field(default=None, repr=False, compare=False)
+    _notes_override: Optional[str] = field(default=None, repr=False, compare=False)
 
     # Backward compatibility properties
     @property
@@ -831,7 +836,7 @@ class ListItem:
     @property
     def has_notes(self) -> bool:
         """Check if the item has notes."""
-        return bool(self.notes and self.notes.strip())
+        return bool(self.current_notes and self.current_notes.strip())
 
     @property
     def has_promotion(self) -> bool:
@@ -876,12 +881,12 @@ class ListItem:
     @property
     def quantity_description(self) -> str:
         """Get a human-readable quantity description."""
-        if self.quantity == 1:
+        if self.current_quantity == 1:
             return "1 item"
-        elif self.quantity == 0:
+        elif self.current_quantity == 0:
             return "0 items"
         else:
-            return f"{self.quantity} items"
+            return f"{self.current_quantity} items"
 
     @property
     def display_summary(self) -> str:
@@ -904,18 +909,22 @@ class ListItem:
     # ============================================================================
 
     @property
-    def quantity(self) -> int:
-        """Get the current quantity."""
-        return self._quantity if hasattr(self, '_quantity') else 1
+    def current_quantity(self) -> int:
+        """Get the current quantity (either override or dataclass field)."""
+        return (
+            self._quantity_override
+            if self._quantity_override is not None
+            else self.quantity
+        )
 
-    @quantity.setter
-    def quantity(self, value: int) -> None:
+    @current_quantity.setter
+    def current_quantity(self, value: int) -> None:
         """Set the quantity for the item.
-        
+
         When a list API reference is attached, this will invoke the remote API to
         update the quantity and update the local state on success.
         If no API is attached, only the local state is updated.
-        
+
         Parameters
         ----------
         value : int
@@ -923,18 +932,19 @@ class ListItem:
         """
         if value < 0:
             raise ValueError("Quantity must be non-negative")
-            
+
         # No-op if already desired state
-        current_qty = self._quantity if hasattr(self, '_quantity') else 1
-        if current_qty == value:
+        if self.current_quantity == value:
             return
-            
+
         if self._list_api is not None:
             try:
                 # Update the item quantity
-                success = self._list_api.update_item_quantity(str(self.list_item_id), value)
+                success = self._list_api.update_item_quantity(
+                    str(self.list_item_id), value
+                )
                 if success:
-                    self._quantity = value
+                    self._quantity_override = value
                 else:
                     raise RuntimeError(
                         f"Failed to set quantity to {value} for item {self.list_item_id} via API"
@@ -943,37 +953,38 @@ class ListItem:
                 raise
         else:
             # Fallback: update local state only
-            self._quantity = value
+            self._quantity_override = value
 
     @property
-    def notes(self) -> Optional[str]:
-        """Get the notes for the item."""
-        return self._notes if hasattr(self, '_notes') else None
+    def current_notes(self) -> Optional[str]:
+        """Get the current notes (either override or dataclass field)."""
+        return self._notes_override if self._notes_override is not None else self.notes
 
-    @notes.setter
-    def notes(self, value: Optional[str]) -> None:
+    @current_notes.setter
+    def current_notes(self, value: Optional[str]) -> None:
         """Set the notes for the item.
-        
+
         When a list API reference is attached, this will invoke the remote API to
         update the notes and update the local state on success.
         If no API is attached, only the local state is updated.
-        
+
         Parameters
         ----------
         value : str, optional
             Desired notes text
         """
         # No-op if already desired state
-        current_notes = self._notes if hasattr(self, '_notes') else None
-        if current_notes == value:
+        if self.current_notes == value:
             return
-            
+
         if self._list_api is not None:
             try:
                 # Update the item notes
-                success = self._list_api.update_item_notes(str(self.list_item_id), value)
+                success = self._list_api.update_item_notes(
+                    str(self.list_item_id), value
+                )
                 if success:
-                    self._notes = value
+                    self._notes_override = value
                 else:
                     raise RuntimeError(
                         f"Failed to set notes for item {self.list_item_id} via API"
@@ -982,7 +993,7 @@ class ListItem:
                 raise
         else:
             # Fallback: update local state only
-            self._notes = value
+            self._notes_override = value
 
     @property
     def display_order(self) -> int:
@@ -992,11 +1003,11 @@ class ListItem:
     @display_order.setter
     def display_order(self, value: int) -> None:
         """Set the display order for the item.
-        
+
         When a list API reference is attached, this will invoke the remote API to
         reorder the item and update the local state on success.
         If no API is attached, only the local state is updated.
-        
+
         Parameters
         ----------
         value : int
@@ -1004,11 +1015,11 @@ class ListItem:
         """
         if value < 0:
             raise ValueError("Display order must be non-negative")
-            
+
         # No-op if already desired state
         if self.item_display_order == value:
             return
-            
+
         if self._list_api is not None:
             try:
                 # Reorder the item
@@ -1033,11 +1044,11 @@ class ListItem:
     @favorite.setter
     def favorite(self, value: bool) -> None:
         """Set the favorite status for the item.
-        
+
         When a list API reference is attached, this will invoke the remote API to
         update the favorite status and update the local state on success.
         If no API is attached, only the local state is updated.
-        
+
         Parameters
         ----------
         value : bool
@@ -1046,16 +1057,20 @@ class ListItem:
         # No-op if already desired state
         if bool(self.is_favorite) == bool(value):
             return
-            
+
         if self._list_api is not None:
             try:
                 if value:
                     # Add to favorites
-                    success = self._list_api.add_favorite(self.item_part_number or str(self.list_item_id))
+                    success = self._list_api.add_favorite(
+                        self.item_part_number or str(self.list_item_id)
+                    )
                 else:
                     # Remove from favorites
-                    success = self._list_api.delete_favorite(self.item_part_number or str(self.list_item_id))
-                    
+                    success = self._list_api.delete_favorite(
+                        self.item_part_number or str(self.list_item_id)
+                    )
+
                 if success:
                     self.is_favorite = bool(value)
                 else:
@@ -1255,7 +1270,7 @@ class ListItem:
                         color: #e74c3c;
                         font-size: 20px;
                         margin-bottom: 4px;
-                    ">Qty: {self.quantity}</div>
+                    ">Qty: {self.current_quantity}</div>
                     <div style="
                         color: #7f8c8d;
                         font-size: 14px;
@@ -1308,7 +1323,7 @@ class ListItem:
 
             {f'<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 12px; margin-bottom: 16px;"><div style="font-weight: 600; color: #856404; margin-bottom: 4px;">📍 Location</div><div style="color: #856404; font-size: 14px;">{location_info}</div></div>' if location_info else ''}
 
-            {f'<div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px;"><div style="font-weight: 600; color: #0c5460; margin-bottom: 4px;">📝 Notes</div><div style="color: #0c5460; font-size: 14px;">{self.notes}</div></div>' if self.notes else ''}
+            {f'<div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px;"><div style="font-weight: 600; color: #0c5460; margin-bottom: 4px;">📝 Notes</div><div style="color: #0c5460; font-size: 14px;">{self.current_notes}</div></div>' if self.current_notes else ''}
 
             <div style="
                 display: flex;
@@ -1355,7 +1370,7 @@ class ListItem:
         md = f"""
 ## {status_icon} {self.name}
 
-**Status:** {status_text} • **Quantity:** {self.quantity} • **Order:** {self.item_display_order}
+**Status:** {status_text} • **Quantity:** {self.current_quantity} • **Order:** {self.item_display_order}
 
 ### Details
 - **Item ID:** {self.list_item_id}
@@ -1387,8 +1402,8 @@ class ListItem:
         if location_info:
             md += f"\n### 📍 Location\n- **Aisle:** {location_info}\n"
 
-        if self.notes:
-            md += f"\n### 📝 Notes\n{self.notes}\n"
+        if self.current_notes:
+            md += f"\n### 📝 Notes\n{self.current_notes}\n"
 
         if self.has_promotion:
             md += f"\n### 🏷️ Promotion\n- **Status:** {self.promotion_status}\n"
@@ -1414,7 +1429,7 @@ class ListItem:
             p.text(f"{status_icon} {self.name}")
             p.breakable()
             p.text(
-                f"  ID: {self.list_item_id} | Qty: {self.quantity} | Order: {self.item_display_order}"
+                f"  ID: {self.list_item_id} | Qty: {self.current_quantity} | Order: {self.item_display_order}"
             )
             p.breakable()
             p.text(f"  Type: {ItemType(self.list_item_type_id).name}")
@@ -1423,9 +1438,9 @@ class ListItem:
             p.breakable()
             p.text(f"  Store ID: {self.store_id}")
 
-            if self.notes:
+            if self.current_notes:
                 p.breakable()
-                p.text(f"  Notes: {self.notes}")
+                p.text(f"  Notes: {self.current_notes}")
 
             # Show special properties
             special_props = []

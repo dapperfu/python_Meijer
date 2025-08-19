@@ -46,7 +46,7 @@ First, let's import the necessary modules:
 """)
 
     # Import cell
-    import_cell = nbf.v4.new_code_cell("""# Import the coupon classes
+import_cell = nbf.v4.new_code_cell("""# Import the coupon classes
 from meijer.coupons import (
     HatColor,
     BorderColor,
@@ -73,7 +73,13 @@ print("  - CouponDepartment & CouponCategory")
 print("  - CouponCondition & CouponReward")
 print("  - MeijerCoupon (main class)")
 print("  - MeijerCouponManager")
-print("  - Utility functions")""")
+print("  - Utility functions")
+
+# 🆕 NEW: Test rich Jupyter integration
+print("\\n🎨 Testing Rich Jupyter Notebook Integration:")
+print("=" * 50)
+print("All coupon classes now support beautiful display in notebooks!")
+print("Use display() function or just type the variable name to see rich formatting")""")
 
     # Enums section
     enums_section = nbf.v4.new_markdown_cell("""## Visual Element Enums
@@ -140,6 +146,221 @@ try:
     print(f"BorderColor(2): {border_from_value.name}")
 except ValueError as e:
     print(f"Error creating enum from value: {e}")""")
+
+    # Rich Jupyter Integration section
+    rich_jupyter_section = nbf.v4.new_markdown_cell("""## 🎨 Rich Jupyter Notebook Integration
+
+The Meijer coupon classes now provide **beautiful, interactive displays** in Jupyter notebooks through rich representation methods.
+
+### Rich Display Features Available
+
+- **`_repr_html_`**: Rich HTML with CSS styling, icons, and visual elements
+- **`_repr_markdown_`**: Clean Markdown formatting for documentation
+- **`_repr_pretty_`**: Interactive IPython display for development
+
+### Coupon Classes with Rich Display
+
+1. **MeijerCoupon**: Beautiful coupon visualization with status indicators
+2. **CouponDepartment**: Rich department display with category information
+3. **CouponCategory**: Visual category representation with details
+4. **Coupon Collections**: Rich displays for multiple coupons
+
+### How to Use Rich Display
+
+```python
+# Display individual coupons
+display(coupon)           # Rich HTML display
+print(coupon._repr_markdown_())  # Rich Markdown
+print(coupon._repr_pretty_(None, False))  # Rich IPython
+
+# Display coupon collections
+display(coupon_list)      # Rich collection display
+```
+
+Let's see these rich displays in action with coupon data!""")
+
+    # Rich Jupyter demonstration for coupons
+    rich_coupon_demo = nbf.v4.new_code_cell("""# Demonstrate rich Jupyter notebook integration for coupons
+print("🎨 Rich Jupyter Notebook Integration for Coupons")
+print("=" * 60)
+
+# Create sample coupon objects to demonstrate rich display
+print("\\n📝 Creating sample coupon objects for rich display demonstration...")
+
+# Sample coupon data
+sample_coupon_data = {
+    "id": "C001",
+    "title": "$2.00 off Organic Produce",
+    "description": "Save $2.00 on any organic produce purchase",
+    "discount_amount": 2.00,
+    "discount_type": "dollar",
+    "min_purchase": 0.00,
+    "expiration_date": datetime.now() + timedelta(days=30),
+    "times_used": 0,
+    "max_uses": 5,
+    "is_active": True,
+    "hat_color": HatColor.GREEN,
+    "border_color": BorderColor.BLUE
+}
+
+# Create sample MeijerCoupon object
+try:
+    sample_coupon = MeijerCoupon(**sample_coupon_data)
+    print("✅ Sample MeijerCoupon created successfully")
+
+    # 🎨 NEW: Demonstrate rich Jupyter integration
+    print("\\n🎨 Rich Jupyter Notebook Display Examples:")
+    print("=" * 55)
+
+    # Show the coupon with rich formatting
+    print("\\n1️⃣ Sample Coupon - Rich HTML Display:")
+    display(sample_coupon)
+
+    print("\\n2️⃣ Sample Coupon - Rich Markdown Display:")
+    if hasattr(sample_coupon, '_repr_markdown_'):
+        print(sample_coupon._repr_markdown_())
+    else:
+        print("❌ _repr_markdown_ method not available")
+
+    print("\\n3️⃣ Sample Coupon - Rich IPython Display:")
+    if hasattr(sample_coupon, '_repr_pretty_'):
+        print(sample_coupon._repr_pretty_(None, False))
+    else:
+        print("❌ _repr_pretty_ method not available")
+
+    # 🎨 NEW: Rich Display Properties
+    print("\\n4️⃣ Rich Display Properties:")
+    print("-" * 35)
+
+    # Show the rich display methods available
+    print("\\n📊 Rich Display Method Availability:")
+    print(f"  Coupon _repr_html_: {'✅' if hasattr(sample_coupon, '_repr_html_') else '❌'}")
+    print(f"  Coupon _repr_markdown_: {'✅' if hasattr(sample_coupon, '_repr_markdown_') else '❌'}")
+    print(f"  Coupon _repr_pretty_: {'✅' if hasattr(sample_coupon, '_repr_pretty_') else '❌'}")
+
+    if hasattr(sample_coupon, '_repr_html_'):
+        html_length = len(sample_coupon._repr_html_())
+        print(f"  Coupon HTML length: {html_length} characters")
+
+    if hasattr(sample_coupon, '_repr_markdown_'):
+        markdown_length = len(sample_coupon._repr_markdown_())
+        print(f"  Coupon Markdown length: {markdown_length} characters")
+
+    # 🎨 NEW: Rich Display Examples
+    print("\\n5️⃣ Rich Display Examples:")
+    print("-" * 35)
+
+    print("\\n🎫 Example Coupon - Rich Markdown:")
+    if hasattr(sample_coupon, '_repr_markdown_'):
+        print(sample_coupon._repr_markdown_())
+    else:
+        print("❌ _repr_markdown_ method not available")
+
+    print("\\n🔧 Example Coupon - Rich IPython:")
+    if hasattr(sample_coupon, '_repr_pretty_'):
+        print(sample_coupon._repr_pretty_(None, False))
+    else:
+        print("❌ _repr_pretty_ method not available")
+
+except Exception as e:
+    print(f"❌ Error creating sample coupon: {e}")
+    print("This might be due to missing required fields or API changes")
+
+    # Create a mock coupon class for demonstration
+    print("\\n📝 Creating mock coupon class for demonstration...")
+
+    class MockCoupon:
+        def __init__(self, title, description, discount_amount, discount_type="dollar"):
+            self.title = title
+            self.description = description
+            self.discount_amount = discount_amount
+            self.discount_type = discount_type
+            self.is_active = True
+            self.hat_color = "GREEN"
+            self.border_color = "BLUE"
+
+        def _repr_html_(self):
+            return f'''
+            <div style="
+                border: 2px solid #e74c3c;
+                border-radius: 12px;
+                padding: 16px;
+                margin: 16px 0;
+                background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            ">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px;">🎫</span>
+                    <div>
+                        <h3 style="margin: 0; color: #c53030;">{self.title}</h3>
+                        <p style="margin: 4px 0 0 0; color: #742a2a;">
+                            {self.description}
+                        </p>
+                        <div style="
+                            background: #e74c3c;
+                            color: white;
+                            padding: 4px 8px;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            margin-top: 8px;
+                            display: inline-block;
+                        ">
+                            Save ${self.discount_amount:.2f}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            '''
+
+        def _repr_markdown_(self):
+            return f"""## 🎫 {self.title}
+
+**Description:** {self.description}
+**Savings:** ${self.discount_amount:.2f} off
+**Status:** 🟢 Active
+**Hat Color:** {self.hat_color}
+**Border Color:** {self.border_color}
+
+---
+*Mock coupon for demonstration*"""
+
+        def _repr_pretty_(self, p, cycle):
+            if cycle:
+                p.text("MockCoupon(...)")
+            else:
+                p.text(f"🎫 {self.title}")
+                p.breakable()
+                p.text(f"  Description: {self.description}")
+                p.breakable()
+                p.text(f"  Savings: ${self.discount_amount:.2f} off")
+                p.breakable()
+                p.text(f"  Status: 🟢 Active")
+                p.breakable()
+                p.text(f"  Hat Color: {self.hat_color}")
+                p.breakable()
+                p.text(f"  Border Color: {self.border_color}")
+
+    # Create sample mock coupons
+    mock_coupons = [
+        MockCoupon("$2.00 off Organic Produce", "Save $2.00 on any organic produce purchase", 2.00),
+        MockCoupon("20% off Dairy Products", "20% discount on all dairy products", 20.0, "percentage"),
+        MockCoupon("$1.00 off Bread", "Save $1.00 on any bread product", 1.00)
+    ]
+
+    print("\\n🎫 Mock Coupons - Rich HTML Display:")
+    for i, coupon in enumerate(mock_coupons, 1):
+        print(f"\\n--- Coupon {i} ---")
+        display(coupon)
+
+    print("\\n📝 Mock Coupons - Rich Markdown Display:")
+    for i, coupon in enumerate(mock_coupons, 1):
+        print(f"\\n--- Coupon {i} ---")
+        print(coupon._repr_markdown_())
+
+    print("\\n💡 These mock coupons demonstrate the rich Jupyter integration!")
+    print("   Real MeijerCoupon objects will show actual coupon data with the same beautiful formatting")""")
 
     # CouponDepartment section
     department_section = nbf.v4.new_markdown_cell("""## CouponDepartment Class
@@ -970,6 +1191,8 @@ The coupon system provides a powerful and flexible foundation for managing Meije
         import_cell,
         enums_section,
         enums_example,
+        rich_jupyter_section,
+        rich_coupon_demo,
         department_section,
         department_example,
         category_section,

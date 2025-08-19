@@ -1,13 +1,13 @@
 """
-Meijer Shopping List Management
-==============================
+Shopping list management for Meijer API.
 
-Shopping list functionality for the Meijer API client.
+This module provides functionality for managing shopping lists, including
+adding/removing items, managing favorites, and list operations.
 """
 
+import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from urllib.parse import urljoin
-import json
 
 try:
     from .search import Search

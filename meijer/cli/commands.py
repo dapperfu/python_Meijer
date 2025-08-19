@@ -85,6 +85,234 @@ def list_show(completed: bool, pending: bool):
         raise click.ClickException(f"❌ Failed to show shopping list: {e}")
 
 
+@list_group.command("add")
+@click.argument("item", required=False)
+@click.option("--quantity", "-q", default=1, help="Quantity to add")
+@click.option("--notes", "-n", help="Additional notes for the item")
+@click.option("--file", "-f", type=click.Path(exists=True), help="Read items from file")
+def list_add(item: Optional[str], quantity: int, notes: str, file: str):
+    """Add item(s) to shopping list."""
+    client = get_meijer_client()
+
+    try:
+        if file:
+            # Add items from file
+            with open(file, "r") as f:
+                add_items_from_file(client, f)
+        elif not item and not sys.stdin.isatty():
+            # Add items from stdin (pipe)
+            add_items_from_file(client, sys.stdin)
+        elif item:
+            # Add single item
+            if item.isdigit() and len(item) >= 8:
+                # Treat as UPC
+                success = client.list.add_item(upc=item, quantity=quantity)
+                if success:
+                    click.echo(f"✅ Added UPC {item} to shopping list")
+                else:
+                    raise click.ClickException(f"❌ Failed to add UPC {item}")
+            else:
+                # Treat as description
+                success = client.list.add_item_with_details(
+                    upc=f"ITEM_{hash(item) % 10000}",  # Generate unique identifier
+                    description=item,
+                    quantity=quantity,
+                    notes=notes,
+                )
+                if success:
+                    click.echo(f"✅ Added '{item}' to shopping list")
+                else:
+                    raise click.ClickException(f"❌ Failed to add '{item}'")
+        else:
+            raise click.ClickException(
+                "❌ No item specified and no input provided.\n"
+                "   Usage: meijer list add <item> OR meijer list add < file.txt"
+            )
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to add item: {e}")
+
+
+@list_group.command("estimate")
+@click.option(
+    "--store-id", "-s", help="Store ID for location lookup (default: current store)"
+)
+@click.option(
+    "--output", "-o", type=click.Path(), help="Output file path (CSV or Excel)"
+)
+@click.option(
+    "--include-location",
+    is_flag=True,
+    default=True,
+    help="Include location information",
+)
+@click.option(
+    "--include-matched",
+    is_flag=True,
+    default=True,
+    help="Include matched product information",
+)
+@click.option(
+    "--methods",
+    "-m",
+    type=click.Choice(["cart", "shop_scan", "search", "keywords"]),
+    multiple=True,
+    help="Preferred estimation methods in order (default: cart, shop_scan, search, keywords)",
+)
+def list_estimate(
+    store_id: Optional[str],
+    output: Optional[str],
+    include_location: bool,
+    include_matched: bool,
+    methods: tuple,
+):
+    """Estimate cost of shopping list items with product matching and location data."""
+    logger = logging.getLogger(__name__)
+    logger.debug("List estimate command called")
+
+    client = get_meijer_client()
+
+    try:
+        # Get shopping list items
+        items = client.list.get()
+        if not items:
+            click.echo("📝 Your shopping list is empty!")
+            return
+
+        click.echo(f"🔍 Estimating costs for {len(items)} items...")
+        
+        # Convert methods tuple to list if provided
+        preferred_methods = list(methods) if methods else None
+        
+        if preferred_methods:
+            click.echo(f"🎯 Using methods in order: {', '.join(preferred_methods)}")
+        else:
+            click.echo("🎯 Using default methods: cart → shop_scan → search → keywords")
+
+        # Estimate costs for all items
+        from .utils import estimate_list_cost
+
+        cost_data = estimate_list_cost(
+            client, items, store_id, include_location, include_matched, preferred_methods
+        )
+
+        if not cost_data:
+            click.echo("❌ Failed to estimate costs")
+            return
+
+        # Display cost summary
+        total_cost = sum(
+            item.get("estimated_cost", 0) * item.get("quantity", 1)
+            for item in cost_data
+        )
+        click.echo("\n💰 Cost Estimate Summary:")
+        click.echo(f"   Total Items: {len(cost_data)}")
+        click.echo(f"   Estimated Total: ${total_cost:.2f}")
+        
+        # Show methodology breakdown
+        methodology_counts = {}
+        for item in cost_data:
+            methodology = item.get('methodology', 'Unknown')
+            methodology_counts[methodology] = methodology_counts.get(methodology, 0) + 1
+        
+        click.echo(f"\n🎯 Methodology Breakdown:")
+        for methodology, count in methodology_counts.items():
+            methodology_emoji = {
+                'cart': '🛒',
+                'shop_scan': '📱',
+                'search': '🔍',
+                'keywords': '🏷️',
+                'error': '❌',
+                'Unknown': '❓'
+            }.get(methodology, '❓')
+            click.echo(f"   {methodology_emoji} {methodology}: {count} item(s)")
+
+        # Show items with costs
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console()
+        table = Table(
+            title="Shopping List Cost Estimate",
+            show_header=True,
+            header_style="bold cyan",
+        )
+
+        headers = ["Item", "Quantity", "Est. Cost", "Total", "Method"]
+        if include_matched:
+            headers.insert(1, "Matched Product")
+        if include_location:
+            headers.append("Location")
+
+        for header in headers:
+            table.add_column(header, style="cyan", no_wrap=True)
+
+        for item in cost_data:
+            row_data = [
+                item["name"],
+                str(item["quantity"]),
+                f"${item.get('estimated_cost', 0):.2f}",
+                f"${(item.get('estimated_cost', 0) * item['quantity']):.2f}",
+                item.get('methodology', 'Unknown').upper(),
+            ]
+
+            if include_matched:
+                matched = item.get("matched_product", "")
+                row_data.insert(1, matched[:30] + "..." if len(matched) > 30 else matched)
+
+            if include_location:
+                location = item.get("location", "")
+                row_data.append(
+                    location[:20] + "..." if len(location) > 20 else location
+                )
+
+            table.add_row(*row_data)
+
+        console.print(table)
+
+        # Export if requested
+        if output:
+            # Auto-detect format from file extension
+            output_path = Path(output)
+            file_extension = output_path.suffix.lower()
+
+            if file_extension in [".xlsx", ".xls"]:
+                # Excel format
+                from .utils import export_cost_estimate_to_excel
+
+                export_cost_estimate_to_excel(
+                    cost_data, output, include_location, include_matched
+                )
+                click.echo(f"📊 Exported cost estimate to Excel: {output}")
+            elif file_extension == ".csv":
+                # CSV format
+                from .utils import export_cost_estimate_to_csv
+
+                export_cost_estimate_to_csv(
+                    cost_data, output, include_location, include_matched
+                )
+                click.echo(f"📊 Exported cost estimate to CSV: {output}")
+            else:
+                # Invalid or unsupported format
+                click.echo(f"❌ Unsupported file format: {file_extension}")
+                click.echo("   Supported formats: .csv, .xlsx, .xls")
+                click.echo("   Please use a supported file extension.")
+                return
+
+        click.echo(f"\n✅ Cost estimation complete! Estimated total: ${total_cost:.2f}")
+        
+        # Show methodology details
+        click.echo(f"\n📋 Methodology Details:")
+        click.echo("   🛒 Cart: Add items to cart and check subtotal (most accurate)")
+        click.echo("   📱 Shop & Scan: Use Shop & Scan API for pricing")
+        click.echo("   🔍 Search: Text search with product matching")
+        click.echo("   🏷️ Keywords: Fallback category-based estimation")
+
+    except Exception as e:
+        logger.error(f"Failed to estimate list costs: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to estimate list costs: {e}")
+
+
 @list_group.command("favorites")
 def list_favorites():
     """Show favorite items."""
@@ -149,54 +377,6 @@ def list_favorites():
     except Exception as e:
         logger.error(f"Failed to show favorites: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to show favorites: {e}")
-
-
-@list_group.command("add")
-@click.argument("item", required=False)
-@click.option("--quantity", "-q", default=1, help="Quantity to add")
-@click.option("--notes", "-n", help="Additional notes for the item")
-@click.option("--file", "-f", type=click.Path(exists=True), help="Read items from file")
-def list_add(item: Optional[str], quantity: int, notes: str, file: str):
-    """Add item(s) to shopping list."""
-    client = get_meijer_client()
-
-    try:
-        if file:
-            # Add items from file
-            with open(file, "r") as f:
-                add_items_from_file(client, f)
-        elif not item and not sys.stdin.isatty():
-            # Add items from stdin (pipe)
-            add_items_from_file(client, sys.stdin)
-        elif item:
-            # Add single item
-            if item.isdigit() and len(item) >= 8:
-                # Treat as UPC
-                success = client.list.add_item(upc=item, quantity=quantity)
-                if success:
-                    click.echo(f"✅ Added UPC {item} to shopping list")
-                else:
-                    raise click.ClickException(f"❌ Failed to add UPC {item}")
-            else:
-                # Treat as description
-                success = client.list.add_item_with_details(
-                    upc=f"ITEM_{hash(item) % 10000}",  # Generate unique identifier
-                    description=item,
-                    quantity=quantity,
-                    notes=notes,
-                )
-                if success:
-                    click.echo(f"✅ Added '{item}' to shopping list")
-                else:
-                    raise click.ClickException(f"❌ Failed to add '{item}'")
-        else:
-            raise click.ClickException(
-                "❌ No item specified and no input provided.\n"
-                "   Usage: meijer list add <item> OR meijer list add < file.txt"
-            )
-
-    except Exception as e:
-        raise click.ClickException(f"❌ Failed to add item: {e}")
 
 
 @list_group.command("clear")

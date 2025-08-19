@@ -1,0 +1,35 @@
+---
+description: Forbid any use of git reset and require safe, non-destructive recovery steps.
+alwaysApply: true
+---
+
+### Do not use git reset
+
+- Under no circumstances run `git reset` in any form.
+- This includes `git reset --hard`, `git reset --mixed`, `git reset --soft`, any revision like `git reset HEAD~1`, and path-based resets.
+
+### Rationale
+
+- Multiple editors and terminals may be open at once.
+- Code may have uncommitted edits across tabs and panes.
+
+### Required approach
+
+- Never rewrite or wipe work. Use non-destructive steps only.
+- First take a safety snapshot:
+  - `git switch -c safety-$(date +%Y%m%d-%H%M%S)` or `git checkout -b safety-...`
+  - Then either `git add -A && git commit -m "safety snapshot"` or `git stash push -u -m "safety snapshot"`
+- Investigate and plan using read-only commands:
+  - `git status`, `git diff`, `git log --oneline --graph --decorate`
+- Restore only what you mean to change, by path:
+  - `git restore --worktree path1 path2`
+  - `git restore --staged path1` to unstage without discarding content
+- To back out a bad commit without losing work, prefer:
+  - `git revert <commit>`
+  - or create a new branch and cherry-pick the good commits
+- If a tool believes packages or setup are needed, only display the commands to the user. Do not execute them.
+
+### Prohibited fallbacks
+
+- Do not use `git clean -fdx` as a substitute.
+- Do not use bulk wipes like `git checkout .` or `git restore --source=HEAD --worktree :/`.

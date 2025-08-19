@@ -45,6 +45,40 @@ def main():
 
     print()
 
+    # Cost Estimation
+    print("💰 Cost Estimation:")
+    try:
+        if items:
+            from meijer.cli.utils import estimate_list_cost
+
+            cost_data = estimate_list_cost(m, items)
+            if cost_data:
+                total_cost = sum(
+                    item.get("estimated_cost", 0) * item.get("quantity", 1)
+                    for item in cost_data
+                )
+                print(f"   Estimated total: ${total_cost:.2f}")
+                print(f"   Items processed: {len(cost_data)}")
+
+                # Show confidence breakdown
+                confidence_counts = {}
+                for item in cost_data:
+                    confidence = item.get("match_confidence", "Unknown")
+                    confidence_counts[confidence] = (
+                        confidence_counts.get(confidence, 0) + 1
+                    )
+
+                for confidence, count in confidence_counts.items():
+                    print(f"   {confidence} confidence: {count} items")
+            else:
+                print("   ❌ Failed to estimate costs")
+        else:
+            print("   No items to estimate")
+    except Exception as e:
+        print(f"   ❌ Error: {e}")
+
+    print()
+
     # Coupons
     print("🎫 Coupons:")
     try:
