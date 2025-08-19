@@ -1228,6 +1228,223 @@ class ListItem:
         """Check if this item is marked as a favorite."""
         return self.is_favorite
 
+    @favorite_item.setter
+    def favorite_item(self, value: bool) -> None:
+        """Set the favorite status for the item.
+        
+        When a list API reference is attached, this will invoke the remote API to
+        update the favorite status and update the local state on success.
+        If no API is attached, only the local state is updated.
+        
+        Parameters
+        ----------
+        value : bool
+            Desired favorite status
+        """
+        # No-op if already desired state
+        if bool(self.is_favorite) == bool(value):
+            return
+            
+        if self._list_api is not None:
+            try:
+                if value:
+                    # Add to favorites
+                    success = self._list_api.add_favorite(self.item_part_number or str(self.list_item_id))
+                else:
+                    # Remove from favorites
+                    success = self._list_api.delete_favorite(self.item_part_number or str(self.list_item_id))
+                    
+                if success:
+                    self.is_favorite = bool(value)
+                else:
+                    raise RuntimeError(
+                        f"Failed to set favorite status to {value} for item {self.list_item_id} via API"
+                    )
+            except Exception:  # pragma: no cover - passthrough for caller
+                raise
+        else:
+            # Fallback: update local state only
+            self.is_favorite = bool(value)
+
+    @property
+    def quantity(self) -> int:
+        """Get the quantity of the item."""
+        return self._quantity if hasattr(self, '_quantity') else 1
+
+    @quantity.setter
+    def quantity(self, value: int) -> None:
+        """Set the quantity for the item.
+        
+        When a list API reference is attached, this will invoke the remote API to
+        update the quantity and update the local state on success.
+        If no API is attached, only the local state is updated.
+        
+        Parameters
+        ----------
+        value : int
+            Desired quantity (must be positive)
+        """
+        if value < 0:
+            raise ValueError("Quantity must be non-negative")
+            
+        # No-op if already desired state
+        if self.quantity == value:
+            return
+            
+        if self._list_api is not None:
+            try:
+                # Update the item with new quantity
+                success = self._list_api.update_item_quantity(str(self.list_item_id), value)
+                if success:
+                    self._quantity = value
+                else:
+                    raise RuntimeError(
+                        f"Failed to set quantity to {value} for item {self.list_item_id} via API"
+                    )
+            except Exception:  # pragma: no cover - passthrough for caller
+                raise
+        else:
+            # Fallback: update local state only
+            self._quantity = value
+
+    @property
+    def notes(self) -> Optional[str]:
+        """Get the notes for the item."""
+        return self._notes if hasattr(self, '_notes') else None
+
+    @notes.setter
+    def notes(self, value: Optional[str]) -> None:
+        """Set the notes for the item.
+        
+        When a list API reference is attached, this will invoke the remote API to
+        update the notes and update the local state on success.
+        If no API is attached, only the local state is updated.
+        
+        Parameters
+        ----------
+        value : str, optional
+            Desired notes text
+        """
+        # No-op if already desired state
+        if self.notes == value:
+            return
+            
+        if self._list_api is not None:
+            try:
+                # Update the item with new notes
+                success = self._list_api.update_item_notes(str(self.list_item_id), value)
+                if success:
+                    self._notes = value
+                else:
+                    raise RuntimeError(
+                        f"Failed to set notes for item {self.list_item_id} via API"
+                    )
+            except Exception:  # pragma: no cover - passthrough for caller
+                raise
+        else:
+            # Fallback: update local state only
+            self._notes = value
+
+    @property
+    def display_order(self) -> int:
+        """Get the display order of the item."""
+        return self.item_display_order
+
+    @display_order.setter
+    def display_order(self, value: int) -> None:
+        """Set the display order for the item.
+        
+        When a list API reference is attached, this will invoke the remote API to
+        reorder the item and update the local state on success.
+        If no API is attached, only the local state is updated.
+        
+        Parameters
+        ----------
+        value : int
+            Desired display order position
+        """
+        if value < 0:
+            raise ValueError("Display order must be non-negative")
+            
+        # No-op if already desired state
+        if self.item_display_order == value:
+            return
+            
+        if self._list_api is not None:
+            try:
+                # Reorder the item
+                success = self._list_api.reorder_item(str(self.list_item_id), value)
+                if success:
+                    self.item_display_order = value
+                else:
+                    raise RuntimeError(
+                        f"Failed to set display order to {value} for item {self.list_item_id} via API"
+                    )
+            except Exception:  # pragma: no cover - passthrough for caller
+                raise
+        else:
+            # Fallback: update local state only
+            self.item_display_order = value
+
+    @property
+    def can_be_deleted(self) -> bool:
+        """Check if the item can be deleted from the list."""
+        return self.list_item_id > 0  # Only real items can be deleted
+
+    @property
+    def is_editable(self) -> bool:
+        """Check if the item can be edited."""
+        return not self.is_complete and self.list_item_id > 0
+
+    @property
+    def status_icon(self) -> str:
+        """Get a status icon for the item."""
+        if self.is_complete:
+            return "✅"
+        elif self.is_favorite:
+            return "⭐"
+        elif self.has_promotion:
+            return "🏷️"
+        else:
+            return "⏳"
+
+    @property
+    def priority_level(self) -> str:
+        """Get the priority level of the item based on display order."""
+        if self.item_display_order <= 3:
+            return "High"
+        elif self.item_display_order <= 7:
+            return "Medium"
+        else:
+            return "Low"
+
+    @property
+    def location_info(self) -> Optional[str]:
+        """Get location information from notes if available."""
+        if not self.notes:
+            return None
+        
+        # Look for location patterns in notes
+        if ":" in self.notes:
+            location_part = self.notes.split(":")[0]
+            if any(aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]):
+                return location_part.strip()
+        
+        return None
+
+    @property
+    def product_info(self) -> Optional[str]:
+        """Get product information from notes if available."""
+        if not self.notes or "|" not in self.notes:
+            return None
+        
+        # Extract product info after the pipe separator
+        parts = self.notes.split("|")
+        if len(parts) > 1:
+            return parts[1].strip()
+        
+        return None
+
     @property
     def has_product_details(self) -> bool:
         """Check if the item has detailed product information."""

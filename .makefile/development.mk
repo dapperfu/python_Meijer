@@ -16,12 +16,7 @@ notebook:
 .PHONY: notebooks-gen
 notebooks-gen:
 	@echo "📚 Generating all notebooks from Python generators..."
-	@echo "=================================================="
-	@cd notebooks && \
-	for gen_file in *_notebook_gen.py; do \
-		echo "🔧 Generating from $$gen_file..."; \
-		../venv/bin/python "$$gen_file"; \
-	done
+	@cd notebooks && ../venv/bin/python -c "import glob; [__import__(f[:-3]) for f in glob.glob('*_notebook_gen.py')]"
 	@echo "✅ All notebooks generated successfully!"
 
 .PHONY: notebooks-gen-execute
@@ -35,14 +30,7 @@ notebooks-gen-execute:
 .PHONY: notebooks-execute
 notebooks-execute:
 	@echo "🚀 Executing all notebooks in-place..."
-	@echo "======================================"
-	@cd notebooks && \
-	for notebook in *.ipynb; do \
-		if [ -f "$$notebook" ]; then \
-			echo "▶️  Executing $$notebook..."; \
-			../venv/bin/jupyter nbconvert --to notebook --execute --inplace "$$notebook"; \
-		fi; \
-	done
+	@cd notebooks && ../venv/bin/jupyter nbconvert --to notebook --execute --inplace *.ipynb
 	@echo "✅ All notebooks executed successfully!"
 
 .PHONY: demos

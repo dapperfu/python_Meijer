@@ -29,15 +29,7 @@ completion-bash:
 	@echo "        return 0"
 	@echo "    fi"
 	@echo ""
-	@echo "    # Handle FILE= parameter for auth target"
-	@echo "    if [ \"\$$prev\" = \"auth\" ] || [ \"\$$prev\" = \"FILE=\" ]; then"
-	@echo "        # Complete log files"
-	@echo "        local log_files=\$$(ls meijer_mitm_*.log 2>/dev/null | sed 's/^/FILE=/' 2>/dev/null || echo \"\")"
-	@echo "        if [ -n \"\$$log_files\" ]; then"
-	@echo "            COMPREPLY=( \$$(compgen -W \"\$$log_files\" -- \$$cur) )"
-	@echo "        fi"
-	@echo "        return 0"
-	@echo "    fi"
+
 	@echo ""
 	@echo "    # Handle VENV= parameter for venv target"
 	@echo "    if [ \"\$$prev\" = \"venv\" ] || [ \"\$$prev\" = \"VENV=\" ]; then"
@@ -51,29 +43,17 @@ completion-bash:
 .PHONY: completion-install
 completion-install:
 	@echo "🔧 Installing bash completion for Meijer API Client..."
-	@if [ -f ~/.bashrc ]; then \
-		echo "" >> ~/.bashrc; \
-		echo "# Meijer API Client bash completion" >> ~/.bashrc; \
-		echo "source <(cd /projects/python_Meijer && make completion-bash)" >> ~/.bashrc; \
-		echo "✅ Added to ~/.bashrc"; \
-		echo "🔄 Run 'source ~/.bashrc' or start a new terminal to activate"; \
-	elif [ -f ~/.bash_profile ]; then \
-		echo "" >> ~/.bash_profile; \
-		echo "# Meijer API Client bash completion" >> ~/.bash_profile; \
-		echo "source <(cd /projects/python_Meijer && make completion-bash)" >> ~/.bash_profile; \
-		echo "✅ Added to ~/.bash_profile"; \
-		echo "🔄 Run 'source ~/.bash_profile' or start a new terminal to activate"; \
-	else \
-		echo "❌ No ~/.bashrc or ~/.bash_profile found"; \
-		echo "💡 Create one of these files or manually add the completion source"; \
-	fi
+	@echo "📝 Add this line to your ~/.bashrc or ~/.bash_profile:"
+	@echo "   source <(cd /projects/python_Meijer && make completion-bash)"
+	@echo ""
+	@echo "💡 Then run 'source ~/.bashrc' or start a new terminal to activate"
 
 .PHONY: completion-test
 completion-test:
 	@echo "🧪 Testing bash completion..."
 	@echo "💡 In a new terminal, try:"
 	@echo "   make <TAB>                    # Should show all targets"
-	@echo "   make auth FILE=<TAB>          # Should complete log files"
+	@echo "   make auth                     # Should complete auth target"
 	@echo "   make venv VENV=<TAB>          # Should complete venv names"
 	@echo ""
 	@echo "🔧 If completion doesn't work, run:"

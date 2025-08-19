@@ -129,17 +129,21 @@ def list_favorites():
 
         from rich.console import Console
         from rich.table import Table
-        
+
         logger.debug("Using rich for favorites table")
         console = Console()
-        table = Table(title=f"Favorites ({len(favorites)} items)", show_header=True, header_style="bold cyan")
-        
+        table = Table(
+            title=f"Favorites ({len(favorites)} items)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+
         for header in headers:
             table.add_column(header, style="cyan", no_wrap=True)
-        
+
         for row in table_data:
             table.add_row(*[str(cell) for cell in row])
-        
+
         console.print(table)
 
     except Exception as e:
@@ -672,26 +676,30 @@ def coupons_list(clipped: bool, available: bool):
         # Display coupons using Rich table
         from rich.console import Console
         from rich.table import Table
-        
+
         logger.debug("Using rich for coupons table")
         console = Console()
-        table = Table(title=f"{title} ({len(coupons)} items)", show_header=True, header_style="bold cyan")
-        
+        table = Table(
+            title=f"{title} ({len(coupons)} items)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+
         table.add_column("#", style="cyan", no_wrap=True)
         table.add_column("Status", style="cyan", no_wrap=True)
         table.add_column("Title", style="cyan", no_wrap=True)
         table.add_column("Description", style="cyan", no_wrap=True)
         table.add_column("Expires", style="cyan", no_wrap=True)
-        
+
         for i, coupon in enumerate(coupons, 1):
             status = (
                 "✅ Clipped" if getattr(coupon, "clipped", False) else "⭕ Available"
             )
             description = getattr(coupon, "description", "") or ""
             expires = getattr(coupon, "redemption_end_date", "") or ""
-            
+
             table.add_row(str(i), status, coupon.title, description, expires)
-        
+
         console.print(table)
 
         logger.debug(f"Displayed {len(coupons)} coupons")
@@ -732,20 +740,24 @@ def cart_show():
 
         from rich.console import Console
         from rich.table import Table
-        
+
         logger.debug("Using rich for cart table")
         console = Console()
-        table = Table(title=f"Shopping Cart ({len(cart_items)} items)", show_header=True, header_style="bold cyan")
-        
+        table = Table(
+            title=f"Shopping Cart ({len(cart_items)} items)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+
         table.add_column("#", style="cyan", no_wrap=True)
         table.add_column("Item", style="cyan", no_wrap=True)
         table.add_column("Qty", style="cyan", no_wrap=True)
         table.add_column("Price", style="cyan", no_wrap=True)
-        
+
         for i, item in enumerate(cart_items, 1):
             price = f"${item.price}" if hasattr(item, "price") and item.price else "N/A"
             table.add_row(str(i), item.name, str(item.quantity), price)
-        
+
         console.print(table)
 
         logger.debug(f"Displayed {len(cart_items)} cart items")

@@ -19,7 +19,6 @@ help:
 	@echo ""
 	@echo "🔑 Authentication:"
 	@echo "  make auth         - Extract tokens from most recent log file"
-	@echo "  make auth FILE=logfile.log - Extract from specific log file"
 	@echo ""
 	@echo "🛠️  Development:"
 	@echo "  make venv         - Create/update virtual environment"

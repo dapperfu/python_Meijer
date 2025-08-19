@@ -57,9 +57,7 @@ def get_meijer_client() -> Meijer:
         raise click.ClickException(f"❌ Failed to initialize Meijer client: {e}")
 
 
-def display_items_table(
-    items: List, title: str = "Shopping List Items"
-) -> None:
+def display_items_table(items: List, title: str = "Shopping List Items") -> None:
     """
     Display items in a formatted table using Rich.
 
@@ -95,20 +93,20 @@ def display_items_table(
     headers = ["#", "Status", "Item", "Qty", "Notes"]
     click.echo(f"\n📋 {title}")
 
-        # Always use Rich for table formatting
+    # Always use Rich for table formatting
     from rich.console import Console
     from rich.table import Table
-    
+
     logger.debug("Using rich for table formatting")
     console = Console()
     table = Table(title=title, show_header=True, header_style="bold cyan")
-    
+
     for header in headers:
         table.add_column(header, style="cyan", no_wrap=True)
-    
+
     for row in table_data:
         table.add_row(*[str(cell) for cell in row])
-    
+
     console.print(table)
 
 
