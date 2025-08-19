@@ -115,7 +115,7 @@ if client:
     print(f"Status enum: {AuthenticationStatus(client.auth_status)}")
     print(f"Status name: {AuthenticationStatus(client.auth_status).name}")
     print(f"Is authenticated: {client.is_authenticated()}")
-    
+
     # Demonstrate status checking
     if client.auth_status == AuthenticationStatus.AUTHENTICATED:
         print("✅ Client is properly authenticated!")
@@ -172,34 +172,34 @@ print(f"repr(product_type): {repr(product_type)}")
 # Real API usage with ItemType
 if client and client.is_authenticated():
     print(f"\\n🔍 Real API Usage with ItemType:")
-    
+
     try:
         # Get real shopping lists to see ItemType in action
         shopping_lists = client.get_shopping_lists()
         print(f"Found {len(shopping_lists)} shopping lists")
-        
+
         if shopping_lists:
             # Get items from the first list
             first_list = shopping_lists[0]
             print(f"\\nFirst list: {first_list.name}")
-            
+
             list_items = client.get_shopping_list_items(first_list.list_id)
             print(f"Found {len(list_items)} items in the list")
-            
+
             if list_items:
                 print("\\nItem Types in Shopping List:")
                 type_counts = {}
-                
+
                 for item in list_items:
                     item_type = ItemType(item.list_item_type_id)
                     type_counts[item_type.name] = type_counts.get(item_type.name, 0) + 1
-                    
+
                     print(f"  - {item.name} (Type: {item_type.name})")
-                
+
                 print(f"\\nType Distribution:")
                 for type_name, count in type_counts.items():
                     print(f"  {type_name}: {count} items")
-                    
+
                 # Demonstrate ItemType checking
                 print(f"\\nItemType Checking Examples:")
                 for item in list_items[:3]:  # First 3 items
@@ -215,11 +215,11 @@ if client and client.is_authenticated():
                 print("No items found in the first list")
         else:
             print("No shopping lists found")
-            
+
     except Exception as e:
         print(f"❌ Shopping list API failed: {e}")
         print("Cannot demonstrate ItemType with real data")
-        
+
 else:
     print("\\n❌ Client not available for ItemType demo")""")
 
@@ -232,52 +232,52 @@ else:
     advanced_example = nbf.v4.new_code_cell("""# Advanced enum usage with real API
 if client and client.is_authenticated():
     print("🚀 Advanced enum usage examples...")
-    
+
     try:
         # Demonstrate filtering by ItemType
         print("\\n1. Filtering items by type...")
-        
+
         shopping_lists = client.get_shopping_lists()
         if shopping_lists:
             first_list = shopping_lists[0]
             list_items = client.get_shopping_list_items(first_list.list_id)
-            
+
             if list_items:
                 # Filter by product type
-                product_items = [item for item in list_items 
+                product_items = [item for item in list_items
                                if ItemType(item.list_item_type_id) == ItemType.PRODUCT]
                 print(f"   Product items: {len(product_items)}")
-                
+
                 # Filter by coupon type
-                coupon_items = [item for item in list_items 
+                coupon_items = [item for item in list_items
                               if ItemType(item.list_item_type_id) == ItemType.COUPON]
                 print(f"   Coupon items: {len(coupon_items)}")
-                
+
                 # Filter by weekly ad type
-                weekly_ad_items = [item for item in list_items 
+                weekly_ad_items = [item for item in list_items
                                  if ItemType(item.list_item_type_id) == ItemType.WEEKLY_AD]
                 print(f"   Weekly ad items: {len(weekly_ad_items)}")
-                
+
                 # Filter by manual type
-                manual_items = [item for item in list_items 
+                manual_items = [item for item in list_items
                               if ItemType(item.list_item_type_id) == ItemType.MANUAL]
                 print(f"   Manual items: {len(manual_items)}")
-        
+
         # Demonstrate AuthenticationStatus checking
         print("\\n2. Authentication status monitoring...")
         current_status = client.auth_status
         status_enum = AuthenticationStatus(current_status)
-        
+
         print(f"   Current status: {status_enum.name}")
         print(f"   Status value: {status_enum.value}")
         print(f"   Is authenticated: {status_enum == AuthenticationStatus.AUTHENTICATED}")
         print(f"   Needs auth: {status_enum == AuthenticationStatus.UNAUTHENTICATED}")
         print(f"   Has expired: {status_enum == AuthenticationStatus.EXPIRED}")
         print(f"   Has failed: {status_enum == AuthenticationStatus.FAILED}")
-        
+
         # Demonstrate enum conversion
         print("\\n3. Enum conversion examples...")
-        
+
         # String to enum
         status_string = "authenticated"
         try:
@@ -285,7 +285,7 @@ if client and client.is_authenticated():
             print(f"   String '{status_string}' -> {status_from_string.name}")
         except ValueError:
             print(f"   Invalid status string: {status_string}")
-        
+
         # Value to enum
         status_value = 1
         try:
@@ -293,10 +293,10 @@ if client and client.is_authenticated():
             print(f"   Value {status_value} -> {status_from_value.name}")
         except ValueError:
             print(f"   Invalid status value: {status_value}")
-            
+
     except Exception as e:
         print(f"❌ Advanced enum usage failed: {e}")
-        
+
 else:
     print("❌ Client not available for advanced enum usage demo")""")
 
@@ -351,7 +351,7 @@ This notebook has demonstrated the enumeration classes available in the Meijer A
 
 - **AuthenticationStatus**: Tracks client authentication state
   - UNAUTHENTICATED, AUTHENTICATED, EXPIRED, FAILED
-  
+
 - **ItemType**: Classifies shopping list items
   - PRODUCT, COUPON, WEEKLY_AD, MANUAL
 
@@ -376,7 +376,7 @@ All enums are designed to work seamlessly with the Meijer API and provide a cons
         advanced_section,
         advanced_example,
         best_practices_section,
-        summary_section
+        summary_section,
     ]
 
     return nb
@@ -385,9 +385,9 @@ All enums are designed to work seamlessly with the Meijer API and provide a cons
 if __name__ == "__main__":
     # Create the notebook
     nb = create_enums_notebook()
-    
+
     # Write to file
     with open("enums.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ enums.ipynb generated successfully!")

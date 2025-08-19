@@ -12,7 +12,7 @@
  * - IDE: Cursor (cursor.sh)
  * - Generation method: AI-assisted pair programming
  * - Code style: Python with full mypy typing and numpy-style docstrings
- * - Dependencies: click, meijer package, tabulate, sys, os
+ * - Dependencies: click, meijer package, rich, sys, os
  */
 
 Meijer CLI Tool

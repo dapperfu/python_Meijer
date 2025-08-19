@@ -55,7 +55,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "click>=8.0.0",
-        "tabulate>=0.9.0",
+        "rich>=12.0.0",
         "requests>=2.25.0",
         "urllib3>=1.26.0",
     ],

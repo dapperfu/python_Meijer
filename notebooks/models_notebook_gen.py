@@ -91,12 +91,12 @@ The `MeijerItem` class represents a product/item from Meijer's system. It's base
     meijer_item_example = nbf.v4.new_code_cell("""# Get real items from Meijer API
 if client and client.is_authenticated():
     print("🔍 Fetching real items from Meijer API...")
-    
+
     try:
         # Search for real products
         search_results = client.search_products("banana", limit=5)
         print(f"Found {len(search_results)} products")
-        
+
         if search_results:
             # Use the first real item
             real_item = search_results[0]
@@ -110,13 +110,13 @@ if client and client.is_authenticated():
             print(f"Unit Price: {real_item.unit_price}")
             print(f"Weighted: {real_item.is_weighted}")
             print(f"Available: {real_item.is_available}")
-            
+
             # Test computed properties
             print(f"\\nComputed Properties:")
             print(f"Display Name: {real_item.display_name}")
             print(f"Best Price: ${real_item.best_price}")
             print(f"On Sale: {real_item.on_sale}")
-            
+
             # Show all available attributes
             print(f"\\nAll Attributes:")
             for attr in dir(real_item):
@@ -128,11 +128,11 @@ if client and client.is_authenticated():
                         pass
         else:
             print("No search results found")
-            
+
     except Exception as e:
         print(f"❌ API search failed: {e}")
         print("Falling back to example data...")
-        
+
         # Fallback example (only if API fails)
         example_item = MeijerItem(
             id="example_123",
@@ -143,7 +143,7 @@ if client and client.is_authenticated():
             price=2.99
         )
         print(f"\\nExample item created: {example_item.title}")
-        
+
 else:
     print("❌ Client not available or not authenticated")
     print("Cannot demonstrate real API usage")""")
@@ -157,21 +157,21 @@ The `MeijerItem` class can be created from Constructor.io search API responses u
     constructor_example = nbf.v4.new_code_cell("""# Demonstrate Constructor.io integration with real search
 if client and client.is_authenticated():
     print("🔍 Demonstrating Constructor.io integration...")
-    
+
     try:
         # Get real search results that might include Constructor.io data
         search_results = client.search_products("cereal", limit=3)
-        
+
         if search_results:
             print(f"Found {len(search_results)} cereal products")
-            
+
             for i, item in enumerate(search_results[:2]):
                 print(f"\\nProduct {i+1}:")
                 print(f"  Title: {item.title}")
                 print(f"  Brand: {item.brand}")
                 print(f"  Category: {item.category}")
                 print(f"  Price: ${item.price}")
-                
+
                 # Show Constructor.io specific fields if available
                 if hasattr(item, 'data_hasmperks'):
                     print(f"  MPerks Eligible: {item.data_hasmperks}")
@@ -179,13 +179,13 @@ if client and client.is_authenticated():
                     print(f"  Special Buy: {item.data_specialbuy}")
                 if hasattr(item, 'data_ebtfoodstampable'):
                     print(f"  EBT Eligible: {item.data_ebtfoodstampable}")
-                    
+
         else:
             print("No cereal products found")
-            
+
     except Exception as e:
         print(f"❌ Constructor.io demo failed: {e}")
-        
+
 else:
     print("❌ Client not available for Constructor.io demo")""")
 
@@ -207,20 +207,20 @@ The `ListItem` class represents an item in a shopping list or favorites list. It
     list_item_example = nbf.v4.new_code_cell("""# Get real shopping list items from Meijer API
 if client and client.is_authenticated():
     print("🛒 Fetching real shopping list items...")
-    
+
     try:
         # Get real shopping lists
         shopping_lists = client.get_shopping_lists()
         print(f"Found {len(shopping_lists)} shopping lists")
-        
+
         if shopping_lists:
             # Get items from the first list
             first_list = shopping_lists[0]
             print(f"\\nFirst list: {first_list.name}")
-            
+
             list_items = client.get_shopping_list_items(first_list.list_id)
             print(f"Found {len(list_items)} items in the list")
-            
+
             if list_items:
                 # Use the first real list item
                 real_list_item = list_items[0]
@@ -233,14 +233,14 @@ if client and client.is_authenticated():
                 print(f"Notes: {real_list_item.notes}")
                 print(f"Checked: {real_list_item.checked}")
                 print(f"Favorite: {real_list_item.is_favorite}")
-                
+
                 # Test type checking properties
                 print(f"\\nType Properties:")
                 print(f"Is Product: {real_list_item.is_product}")
                 print(f"Is Coupon: {real_list_item.is_coupon}")
                 print(f"Is Weekly Ad: {real_list_item.is_weekly_ad}")
                 print(f"Is Manual: {real_list_item.is_manual}")
-                
+
                 # Show all available attributes
                 print(f"\\nAll Attributes:")
                 for attr in dir(real_list_item):
@@ -254,11 +254,11 @@ if client and client.is_authenticated():
                 print("No items found in the first list")
         else:
             print("No shopping lists found")
-            
+
     except Exception as e:
         print(f"❌ Shopping list API failed: {e}")
         print("Falling back to example data...")
-        
+
         # Fallback example (only if API fails)
         example_list_item = ListItem(
             list_item_id=1001,
@@ -274,7 +274,7 @@ if client and client.is_authenticated():
             listing_id="LIST001"
         )
         print(f"\\nExample list item created: {example_list_item.item_description}")
-        
+
 else:
     print("❌ Client not available for shopping list demo")""")
 
@@ -297,12 +297,12 @@ The `MeijerCoupon` class represents a coupon/offer from Meijer. It's based on th
     coupon_example = nbf.v4.new_code_cell("""# Get real coupons from Meijer API
 if client and client.is_authenticated():
     print("🎫 Fetching real coupons from Meijer API...")
-    
+
     try:
         # Get real offers/coupons
         offers = client.get_offers(limit=5)
         print(f"Found {len(offers)} offers")
-        
+
         if offers:
             # Use the first real coupon
             real_coupon = offers[0]
@@ -317,13 +317,13 @@ if client and client.is_authenticated():
             print(f"Tags: {real_coupon.tags}")
             print(f"Hat Text: {real_coupon.hat_text}")
             print(f"Special Offer: {real_coupon.is_special_offer}")
-            
+
             # Test computed properties
             print(f"\\nComputed Properties:")
             print(f"Is Expired: {real_coupon.is_expired}")
             print(f"Is Active: {real_coupon.is_active}")
             print(f"Days Until Expiry: {real_coupon.days_until_expiry}")
-            
+
             # Show all available attributes
             print(f"\\nAll Attributes:")
             for attr in dir(real_coupon):
@@ -335,11 +335,11 @@ if client and client.is_authenticated():
                         pass
         else:
             print("No offers found")
-            
+
     except Exception as e:
         print(f"❌ Coupon API failed: {e}")
         print("Falling back to example data...")
-        
+
         # Fallback example (only if API fails)
         example_coupon = MeijerCoupon(
             meijer_offer_id=1001,
@@ -354,7 +354,7 @@ if client and client.is_authenticated():
             logix_offer_id=5001
         )
         print(f"\\nExample coupon created: {example_coupon.title}")
-        
+
 else:
     print("❌ Client not available for coupon demo")""")
 
@@ -377,12 +377,12 @@ The `Store` class represents a Meijer store location with all relevant informati
     store_example = nbf.v4.new_code_cell("""# Get real stores from Meijer API
 if client and client.is_authenticated():
     print("🏪 Fetching real stores from Meijer API...")
-    
+
     try:
         # Get real stores
         stores = client.get_stores(zip_code="49508", limit=3)
         print(f"Found {len(stores)} stores")
-        
+
         if stores:
             # Use the first real store
             real_store = stores[0]
@@ -399,16 +399,16 @@ if client and client.is_authenticated():
             print(f"Distance: {real_store.distance} miles")
             print(f"Open: {real_store.is_open}")
             print(f"Services: {real_store.services}")
-            
+
             # Test computed properties
             print(f"\\nComputed Properties:")
             print(f"Full Address: {real_store.full_address}")
-            
+
             # Convert to dictionary
             store_dict = real_store.to_dict()
             print(f"\\nDictionary Representation:")
             print(json.dumps(store_dict, indent=2))
-            
+
             # Show all available attributes
             print(f"\\nAll Attributes:")
             for attr in dir(real_store):
@@ -420,11 +420,11 @@ if client and client.is_authenticated():
                         pass
         else:
             print("No stores found")
-            
+
     except Exception as e:
         print(f"❌ Store API failed: {e}")
         print("Falling back to example data...")
-        
+
         # Fallback example (only if API fails)
         example_store = Store(
             store_id="example_123",
@@ -442,7 +442,7 @@ if client and client.is_authenticated():
             services=["Grocery", "Pharmacy"]
         )
         print(f"\\nExample store created: {example_store.name}")
-        
+
 else:
     print("❌ Client not available for store demo")""")
 
@@ -464,20 +464,20 @@ The `SearchResult` class represents the results of a product search operation, i
     search_result_example = nbf.v4.new_code_cell("""# Demonstrate SearchResult with real search
 if client and client.is_authenticated():
     print("🔍 Demonstrating SearchResult with real search...")
-    
+
     try:
         # Perform a real search
         search_results = client.search_products("milk", limit=10)
-        
+
         if search_results:
             print(f"✅ Search completed successfully!")
             print(f"Found {len(search_results)} products")
-            
+
             # Show first few results
             print("\\nFirst 3 results:")
             for i, item in enumerate(search_results[:3]):
                 print(f"  {i+1}. {item.title} - ${item.price}")
-                
+
             # Demonstrate SearchResult properties if available
             if hasattr(search_results, 'total_count'):
                 print(f"\\nTotal available: {search_results.total_count}")
@@ -485,13 +485,13 @@ if client and client.is_authenticated():
                 print(f"Search query: {search_results.query}")
             if hasattr(search_results, 'filters'):
                 print(f"Applied filters: {search_results.filters}")
-                
+
         else:
             print("No search results found")
-            
+
     except Exception as e:
         print(f"❌ Search demo failed: {e}")
-        
+
 else:
     print("❌ Client not available for search demo")""")
 
@@ -504,47 +504,47 @@ else:
     advanced_example = nbf.v4.new_code_cell("""# Advanced usage with real data
 if client and client.is_authenticated():
     print("🚀 Advanced usage examples with real data...")
-    
+
     try:
         # Get multiple types of data
         print("\\n1. Getting multiple products...")
         products = client.search_products("bread", limit=5)
         print(f"   Found {len(products)} bread products")
-        
+
         print("\\n2. Getting multiple coupons...")
         coupons = client.get_offers(limit=5)
         print(f"   Found {len(coupons)} coupons")
-        
+
         print("\\n3. Getting multiple stores...")
         stores = client.get_stores(zip_code="49508", limit=3)
         print(f"   Found {len(stores)} stores")
-        
+
         # Demonstrate data processing
         if products and coupons and stores:
             print("\\n4. Data processing examples:")
-            
+
             # Filter products by price
             affordable_products = [p for p in products if p.price < 5.00]
             print(f"   Products under $5: {len(affordable_products)}")
-            
+
             # Filter coupons by category
             grocery_coupons = [c for c in coupons if c.category == "Grocery"]
             print(f"   Grocery coupons: {len(grocery_coupons)}")
-            
+
             # Filter stores by services
             pharmacy_stores = [s for s in stores if "Pharmacy" in s.services]
             print(f"   Stores with pharmacy: {len(pharmacy_stores)}")
-            
+
     except Exception as e:
         print(f"❌ Advanced usage demo failed: {e}")
-        
+
 else:
     print("❌ Client not available for advanced usage demo")""")
 
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
-This notebook has demonstrated all the data models available in the Meijer API client using **real API calls** instead of mocked data. 
+This notebook has demonstrated all the data models available in the Meijer API client using **real API calls** instead of mocked data.
 
 ### Key Takeaways
 
@@ -591,7 +591,7 @@ All models are designed to work seamlessly with the Meijer API and provide a con
         search_result_example,
         advanced_section,
         advanced_example,
-        summary_section
+        summary_section,
     ]
 
     return nb
@@ -600,9 +600,9 @@ All models are designed to work seamlessly with the Meijer API and provide a con
 if __name__ == "__main__":
     # Create the notebook
     nb = create_models_notebook()
-    
+
     # Write to file
     with open("models.ipynb", "w") as f:
         nbf.write(nb, f)
-    
+
     print("✅ models.ipynb generated successfully!")

@@ -6,9 +6,6 @@ This script creates a comprehensive notebook demonstrating the extended mPerks f
 """
 
 import os
-import sys
-from typing import Optional
-from datetime import datetime
 
 # Import meijer module directly
 

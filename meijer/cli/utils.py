@@ -57,14 +57,15 @@ def get_meijer_client() -> Meijer:
         raise click.ClickException(f"❌ Failed to initialize Meijer client: {e}")
 
 
-def display_items_table(items: List, title: str = "Shopping List Items", table_format: str = "auto") -> None:
+def display_items_table(
+    items: List, title: str = "Shopping List Items"
+) -> None:
     """
-    Display items in a formatted table.
+    Display items in a formatted table using Rich.
 
     Args:
         items: List of shopping list items
         title: Title for the table display
-        table_format: Table format to use ("auto", "tabulate", "rich", or "simple")
     """
     logger = logging.getLogger(__name__)
     logger.debug(f"Displaying {len(items)} items with title: {title}")
@@ -93,60 +94,22 @@ def display_items_table(items: List, title: str = "Shopping List Items", table_f
     # Display table
     headers = ["#", "Status", "Item", "Qty", "Notes"]
     click.echo(f"\n📋 {title}")
+
+        # Always use Rich for table formatting
+    from rich.console import Console
+    from rich.table import Table
     
-    # Handle different table formats
-    if table_format == "rich":
-        # Force rich table format
-        try:
-            from rich.console import Console
-            from rich.table import Table
-            
-            logger.debug("Using rich for table formatting")
-            console = Console()
-            table = Table(title=title)
-            
-            for header in headers:
-                table.add_column(header, style="cyan", no_wrap=True)
-            
-            for row in table_data:
-                table.add_row(*[str(cell) for cell in row])
-            
-            console.print(table)
-            return
-        except ImportError:
-            logger.warning("Rich not available, falling back to tabulate")
-            table_format = "tabulate"
+    logger.debug("Using rich for table formatting")
+    console = Console()
+    table = Table(title=title, show_header=True, header_style="bold cyan")
     
-    if table_format == "tabulate":
-        # Force tabulate table format
-        try:
-            from tabulate import tabulate
-            logger.debug("Using tabulate for table formatting")
-            click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
-            return
-        except ImportError:
-            logger.warning("Tabulate not available, falling back to simple formatting")
-            table_format = "simple"
+    for header in headers:
+        table.add_column(header, style="cyan", no_wrap=True)
     
-    # Auto mode or fallback to simple formatting
-    if table_format == "auto":
-        try:
-            from tabulate import tabulate
-            logger.debug("Using tabulate for table formatting")
-            click.echo(tabulate(table_data, headers=headers, tablefmt="grid"))
-            return
-        except ImportError:
-            logger.debug("Tabulate not available, using fallback formatting")
-            table_format = "simple"
+    for row in table_data:
+        table.add_row(*[str(cell) for cell in row])
     
-    # Simple formatting fallback
-    if table_format == "simple":
-        logger.debug("Using simple text formatting")
-        click.echo("=" * 60)
-        click.echo(f"{'#':<3} {'Status':<8} {'Item':<30} {'Qty':<4} {'Notes':<15}")
-        click.echo("-" * 60)
-        for row in table_data:
-            click.echo(f"{row[0]:<3} {row[1]:<8} {row[2]:<30} {row[3]:<4} {row[4]:<15}")
+    console.print(table)
 
 
 def add_items_from_file(client: Meijer, file_input: TextIO) -> int:

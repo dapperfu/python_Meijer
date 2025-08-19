@@ -34,9 +34,7 @@ def list_group():
 @list_group.command("show")
 @click.option("--completed", is_flag=True, help="Show only completed items")
 @click.option("--pending", is_flag=True, help="Show only pending items")
-@click.option("--tabulate", is_flag=True, help="Force tabulate table format (for testing)")
-@click.option("--rich", is_flag=True, help="Force rich table format (for testing)")
-def list_show(completed: bool, pending: bool, tabulate: bool, rich: bool):
+def list_show(completed: bool, pending: bool):
     """Show shopping list items."""
     logger = logging.getLogger(__name__)
     logger.debug(
@@ -68,15 +66,7 @@ def list_show(completed: bool, pending: bool, tabulate: bool, rich: bool):
             title = f"Shopping List ({len(items)} items)"
 
         logger.debug(f"Displaying {len(items)} filtered items")
-        # Determine table format based on flags
-        if tabulate:
-            table_format = "tabulate"
-        elif rich:
-            table_format = "rich"
-        else:
-            table_format = "auto"  # Default behavior
-        
-        display_items_table(items, title, table_format=table_format)
+        display_items_table(items, title)
 
         # Show summary
         total = len(items)
@@ -137,27 +127,20 @@ def list_favorites():
 
         headers = ["#", "Favorite Item", "Qty", "Status"]
 
-        try:
-            from tabulate import tabulate
-
-            logger.debug("Using tabulate for favorites table")
-            click.echo(f"\n📊 Favorites ({len(favorites)} items):")
-            click.echo(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
-        except ImportError:
-            logger.debug("Tabulate not available, using fallback formatting")
-            click.echo(f"\n📊 Favorites ({len(favorites)} items):")
-            click.echo(
-                "╒══════════════════════════════════════════════════════════════════════════════════════════════════╕"
-            )
-            click.echo(f"│ {'#':<3} {'Favorite Item':<40} {'Qty':<4} {'Status':<15} │")
-            click.echo(
-                "╞══════════════════════════════════════════════════════════════════════════════════════════════════╡"
-            )
-            for row in table_data:
-                click.echo(f"│ {row[0]:<3} {row[1]:<40} {row[2]:<4} {row[3]:<15} │")
-            click.echo(
-                "╘══════════════════════════════════════════════════════════════════════════════════════════════════╛"
-            )
+        from rich.console import Console
+        from rich.table import Table
+        
+        logger.debug("Using rich for favorites table")
+        console = Console()
+        table = Table(title=f"Favorites ({len(favorites)} items)", show_header=True, header_style="bold cyan")
+        
+        for header in headers:
+            table.add_column(header, style="cyan", no_wrap=True)
+        
+        for row in table_data:
+            table.add_row(*[str(cell) for cell in row])
+        
+        console.print(table)
 
     except Exception as e:
         logger.error(f"Failed to show favorites: {e}", exc_info=True)
@@ -686,20 +669,30 @@ def coupons_list(clipped: bool, available: bool):
             click.echo(f"📝 No {title.lower()} found!")
             return
 
-        # Display coupons in a simple format
-        click.echo(f"\n🎫 {title} ({len(coupons)} items):")
-        click.echo("=" * 80)
-
+        # Display coupons using Rich table
+        from rich.console import Console
+        from rich.table import Table
+        
+        logger.debug("Using rich for coupons table")
+        console = Console()
+        table = Table(title=f"{title} ({len(coupons)} items)", show_header=True, header_style="bold cyan")
+        
+        table.add_column("#", style="cyan", no_wrap=True)
+        table.add_column("Status", style="cyan", no_wrap=True)
+        table.add_column("Title", style="cyan", no_wrap=True)
+        table.add_column("Description", style="cyan", no_wrap=True)
+        table.add_column("Expires", style="cyan", no_wrap=True)
+        
         for i, coupon in enumerate(coupons, 1):
             status = (
                 "✅ Clipped" if getattr(coupon, "clipped", False) else "⭕ Available"
             )
-            click.echo(f"{i:2d}. {status} - {coupon.title}")
-            if hasattr(coupon, "description") and coupon.description:
-                click.echo(f"     {coupon.description}")
-            if hasattr(coupon, "redemption_end_date") and coupon.redemption_end_date:
-                click.echo(f"     Expires: {coupon.redemption_end_date}")
-            click.echo()
+            description = getattr(coupon, "description", "") or ""
+            expires = getattr(coupon, "redemption_end_date", "") or ""
+            
+            table.add_row(str(i), status, coupon.title, description, expires)
+        
+        console.print(table)
 
         logger.debug(f"Displayed {len(coupons)} coupons")
 
@@ -737,13 +730,23 @@ def cart_show():
             click.echo("🛒 Your shopping cart is empty!")
             return
 
-        click.echo(f"\n🛒 Shopping Cart ({len(cart_items)} items):")
-        click.echo("=" * 60)
-
+        from rich.console import Console
+        from rich.table import Table
+        
+        logger.debug("Using rich for cart table")
+        console = Console()
+        table = Table(title=f"Shopping Cart ({len(cart_items)} items)", show_header=True, header_style="bold cyan")
+        
+        table.add_column("#", style="cyan", no_wrap=True)
+        table.add_column("Item", style="cyan", no_wrap=True)
+        table.add_column("Qty", style="cyan", no_wrap=True)
+        table.add_column("Price", style="cyan", no_wrap=True)
+        
         for i, item in enumerate(cart_items, 1):
-            click.echo(f"{i:2d}. {item.name} - Qty: {item.quantity}")
-            if hasattr(item, "price") and item.price:
-                click.echo(f"     Price: ${item.price}")
+            price = f"${item.price}" if hasattr(item, "price") and item.price else "N/A"
+            table.add_row(str(i), item.name, str(item.quantity), price)
+        
+        console.print(table)
 
         logger.debug(f"Displayed {len(cart_items)} cart items")
 
