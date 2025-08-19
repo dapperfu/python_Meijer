@@ -1,0 +1,5 @@
+# Meijer Shopping List - 2025-08-18 17:29:11
+# Format: Item Name [Quantity] [Notes]
+# Lines starting with # are comments
+
+Test Item [2] Testing CLI

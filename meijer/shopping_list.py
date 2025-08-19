@@ -107,10 +107,27 @@ class MeijerList:
             self.logger.error(f"Error getting shopping list: {e}")
             return []
 
-    def add_item(self, upc: str, quantity: int = 1) -> bool:
-        """Add item to shopping list by UPC using real APK-discovered endpoint."""
+    def add(self, item_name: str, quantity: int = 1, notes: str = None) -> bool:
+        """
+        Add item to shopping list with a simple interface.
+        
+        This is a convenience method for the CLI that creates a UPC from the item name.
+        
+        Args:
+            item_name: Name/description of the item to add
+            quantity: Quantity to add
+            notes: Optional notes for the item
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # Generate a simple UPC from the item name hash
+        upc = f"ITEM_{hash(item_name) % 10000}"
         return self.add_item_with_details(
-            upc=upc, quantity=quantity, description=f"Product {upc}"
+            upc=upc,
+            quantity=quantity,
+            description=item_name,
+            notes=notes
         )
 
     def add_item_with_details(

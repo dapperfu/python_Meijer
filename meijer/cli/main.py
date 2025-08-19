@@ -67,23 +67,23 @@ def cli():
     • settings - Manage account settings and preferences
     • auth - Extract authentication tokens
     • status - Show authentication status
-    • ad - Browse weekly ad items
+    • ads - Browse weekly ad items
     • gas - Show gas station information
     """
     pass
 
 
-# Add command groups
-cli.add_command(list_group)
-cli.add_command(coupons_group)
-cli.add_command(cart_group)
-cli.add_command(settings_group)
+# Add command groups with cleaner names
+cli.add_command(list_group, name="list")
+cli.add_command(coupons_group, name="coupons")
+cli.add_command(cart_group, name="cart")
+cli.add_command(settings_group, name="settings")
 
-# Add individual commands
-cli.add_command(auth_command)
-cli.add_command(status_command)
-cli.add_command(ad_command)
-cli.add_command(gas_command)
+# Add individual commands with cleaner names
+cli.add_command(auth_command, name="auth")
+cli.add_command(status_command, name="status")
+cli.add_command(ad_command, name="ads")
+cli.add_command(gas_command, name="gas")
 
 
 if __name__ == "__main__":

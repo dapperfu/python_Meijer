@@ -17,7 +17,7 @@ from .utils import (
 )
 
 
-# List Group Commands
+# Shopping List Commands
 @click.group()
 def list_group():
     """Manage shopping list operations."""
@@ -545,27 +545,140 @@ def settings_command():
         raise click.ClickException(f"❌ Failed to get settings: {e}")
 
 
-# Placeholder command groups for now - these will be implemented in separate files
+# Coupons Commands
 @click.group()
 def coupons_group():
     """Manage coupons and offers."""
     pass
 
 
+# Cart Commands  
 @click.group()
 def cart_group():
     """Manage shopping cart and fulfillment."""
     pass
 
 
+# Settings Commands
 @click.group()
 def settings_group():
     """Manage account settings and preferences."""
     pass
 
 
+# Authentication Commands
 @click.command()
-def auth_command():
+@click.option("--log-file", help="Specific mitmproxy log file to use")
+def auth_command(log_file: str = None):
     """Extract authentication tokens from mitmproxy logs."""
-    # This is a placeholder - the full implementation will be added later
-    click.echo("🔐 Authentication token extraction - implementation coming soon")
+    try:
+        # If no log file specified, automatically find the latest one
+        if not log_file:
+            import glob
+            import os
+            
+            # Find all meijer_mitm_*.log files
+            log_pattern = "meijer_mitm_*.log"
+            log_files = glob.glob(log_pattern)
+            
+            if not log_files:
+                raise click.ClickException("❌ No mitmproxy log files found. Expected pattern: meijer_mitm_*.log")
+            
+            # Sort by modification time and get the latest
+            log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            log_file = log_files[0]
+            
+            click.echo(f"🔍 Automatically found latest log file: {log_file}")
+        else:
+            click.echo(f"🔍 Using specified log file: {log_file}")
+        
+        click.echo("⏳ This may take a moment for large log files...")
+
+        # Use the existing extract_bearer_token.py tool
+        import subprocess
+        import sys
+        import os
+        
+        # Get the path to the tools directory
+        tools_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tools")
+        extract_script = os.path.join(tools_dir, "extract_bearer_token.py")
+        
+        if not os.path.exists(extract_script):
+            raise click.ClickException(f"❌ Tool not found: {extract_script}")
+        
+        # Run the extract_bearer_token.py tool
+        click.echo("🔧 Using extract_bearer_token.py tool...")
+        result = subprocess.run(
+            [sys.executable, extract_script, log_file],
+            capture_output=True,
+            text=True,
+            cwd=os.getcwd()
+        )
+        
+        if result.returncode != 0:
+            click.echo(f"⚠️  Tool output: {result.stderr}")
+            raise click.ClickException("❌ Failed to run extract_bearer_token.py tool")
+        
+        # Check if the tool created output files
+        bearer_auth_json = "bearer_auth.json"
+        if not os.path.exists(bearer_auth_json):
+            raise click.ClickException("❌ No authentication tokens found in log file")
+        
+        # Load the extracted token
+        import json
+        from datetime import datetime
+        
+        with open(bearer_auth_json, "r") as f:
+            token_data = json.load(f)
+        
+        # Convert to the format expected by the client
+        tokens = {
+            "access_token": token_data["bearer_token"],
+            "refresh_token": "",  # Not available from request headers
+            "id_token": token_data["bearer_token"],  # Use as ID token
+            "expires_in": 28800,  # Default, could be extracted from JWT
+            "token_type": "Bearer",
+            "scope": "",
+            "user_agent": token_data.get("user_agent", ""),
+        }
+        
+        # Try to extract expiration from JWT if possible
+        try:
+            import jwt
+            payload = jwt.decode(tokens["access_token"], options={"verify_signature": False})
+            if payload.get("exp"):
+                import time
+                expires_in = payload.get("exp") - int(time.time())
+                if expires_in > 0:
+                    tokens["expires_in"] = expires_in
+                    tokens["expires_at"] = payload.get("exp")
+        except (ImportError, Exception):
+            pass  # Use default values if JWT decoding fails
+        
+        # Save to ~/.config/meijer.txt
+        config_path = os.path.expanduser("~/.config/meijer.txt")
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+
+        config = {
+            **tokens,
+            "updated_at": datetime.now().isoformat(),
+            "source": f"Extracted from {log_file}",
+            "extracted_at": datetime.now().isoformat(),
+        }
+
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+
+        click.echo(f"💾 Tokens saved to {config_path}")
+        click.echo("✅ Authentication file updated successfully!")
+        click.echo(f"🔑 Access token: {tokens['access_token'][:50]}...")
+        click.echo(f"⏰ Expires in: {tokens['expires_in']} seconds")
+        
+        # Clean up temporary files
+        for temp_file in ["bearer_auth.json", "bearer_token_analysis.json"]:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                click.echo(f"🧹 Cleaned up {temp_file}")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to extract authentication: {e}")
