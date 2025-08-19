@@ -1000,7 +1000,7 @@ class MeijerList:
                 has_match = 1 if item_data.get("matched_product") else 0
                 return (1, confidence_score, has_match, item_data["item"].name.lower())
 
-        # Apply zig-zag sorting for B aisles if requested and we have real aisle data
+        # Apply smart zig-zag sorting for B aisles if requested and we have real aisle data
         real_aisle_items = [
             item
             for item in items_with_locations
@@ -1008,7 +1008,8 @@ class MeijerList:
         ]
 
         if zig and real_aisle_items:
-            self.logger.info("🔄 Applying zig-zag sorting for real aisle data...")
+            self.logger.info("🔄 Applying SMART zig-zag sorting for real aisle data...")
+            self.logger.info("   Pattern continues across empty aisles for optimal shopping route")
 
             # Group items by aisle
             aisle_groups = {}
@@ -1018,7 +1019,7 @@ class MeijerList:
                     aisle_groups[aisle] = []
                 aisle_groups[aisle].append(item_data)
 
-            # Sort each aisle group
+            # Sort each aisle group by sections (ascending)
             for aisle in aisle_groups:
                 # Sort sections within each aisle (by primary numeric part of section, e.g., 35 from "35-4")
                 def _section_key(x):
@@ -1028,45 +1029,9 @@ class MeijerList:
 
                 aisle_groups[aisle].sort(key=_section_key)
 
-                # Apply zig-zag within each aisle if it has multiple sections
-                if len(aisle_groups[aisle]) > 1:
-                    sections = []
-                    for x in aisle_groups[aisle]:
-                        s = str(x["location"].get("section", "")).strip()
-                        token = s.split("-")[0]
-                        if token.isdigit():
-                            sections.append(int(token))
-                    if len(set(sections)) > 1:
-                        # Reverse every other section group for zig-zag effect
-                        current_section = None
-                        section_start = 0
-                        for i, item_data in enumerate(aisle_groups[aisle]):
-                            s = str(item_data["location"].get("section", "")).strip()
-                            token = s.split("-")[0]
-                            if token.isdigit():
-                                item_section = int(token)
-                                if current_section is None:
-                                    current_section = item_section
-                                elif item_section != current_section:
-                                    # We've moved to a new section, reverse the previous group if needed
-                                    if (
-                                        current_section // 10
-                                    ) % 2 == 1:  # Odd section groups get reversed
-                                        aisle_groups[aisle][section_start:i] = reversed(
-                                            aisle_groups[aisle][section_start:i]
-                                        )
-                                    current_section = item_section
-                                    section_start = i
-
-                        # Handle the last section group
-                        if current_section and (current_section // 10) % 2 == 1:
-                            aisle_groups[aisle][section_start:] = reversed(
-                                aisle_groups[aisle][section_start:]
-                            )
-
-            # Combine sorted aisle groups - sort aisles semantically (B1, B2, B10, B17, not B1, B10, B17, B2)
+            # Apply SMART zig-zag across aisles (pattern continues across empty aisles)
             sorted_real_items = []
-
+            
             def _aisle_sort_key(aisle):
                 if not aisle or not aisle[0].isalpha():
                     return (999, 999)
@@ -1078,8 +1043,38 @@ class MeijerList:
                     aisle_num = 0
                 return (aisle_letter, aisle_num)
 
-            for aisle in sorted(aisle_groups.keys(), key=_aisle_sort_key):
-                sorted_real_items.extend(aisle_groups[aisle])
+            # Get all possible aisles in order (including empty ones)
+            all_aisles = []
+            for item_data in real_aisle_items:
+                aisle = item_data["location"]["aisle"]
+                if aisle[0].isalpha() and aisle[1:].isdigit():
+                    all_aisles.append(aisle)
+            
+            # Remove duplicates and sort
+            all_aisles = sorted(list(set(all_aisles)), key=_aisle_sort_key)
+            
+            # Apply smart zig-zag pattern
+            last_direction = "ascending"  # Start with ascending (section 1 -> 40)
+            
+            for aisle in all_aisles:
+                if aisle in aisle_groups:
+                    # This aisle has items - apply the current direction
+                    items_in_aisle = aisle_groups[aisle].copy()
+                    
+                    if last_direction == "descending":
+                        # Reverse the items to go from high section to low section
+                        items_in_aisle.reverse()
+                        self.logger.debug(f"🔄 Aisle {aisle}: Descending order (section high → low)")
+                    else:
+                        self.logger.debug(f"🔄 Aisle {aisle}: Ascending order (section low → high)")
+                    
+                    sorted_real_items.extend(items_in_aisle)
+                    
+                    # Toggle direction for next occupied aisle
+                    last_direction = "descending" if last_direction == "ascending" else "ascending"
+                else:
+                    # Empty aisle - pattern continues, don't toggle direction
+                    self.logger.debug(f"⏭️  Aisle {aisle}: Empty, continuing {last_direction} pattern")
 
             # Sort search-based items by confidence
             search_items = [
