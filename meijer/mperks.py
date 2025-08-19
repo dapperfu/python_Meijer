@@ -284,7 +284,7 @@ class EarnTabData:
 class MPerksEarnedRewards:
     """Handles mPerks earned rewards operations."""
 
-    def __init__(self, meijer_client: "Meijer"):
+    def __init__(self, meijer_client: Any):
         self.meijer = meijer_client
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 

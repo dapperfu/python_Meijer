@@ -53,6 +53,7 @@ logs/
 *.cap
 
 # Sensitive data files
+*.json
 *_analysis_report.json
 *_analysis_report.json2
 *_analysis_report.json3

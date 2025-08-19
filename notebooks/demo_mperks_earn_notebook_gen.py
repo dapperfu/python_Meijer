@@ -5,15 +5,14 @@ This script creates a comprehensive notebook showcasing the new earn features.
 """
 
 import nbformat as nbf
-from datetime import datetime
 
 
 def create_mperks_earn_notebook():
     """Create the mPerks earn functionality demo notebook."""
-    
+
     # Create a new notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Add title and description
     title_cell = nbf.v4.new_markdown_cell("""# mPerks Earn Functionality Demo
 
@@ -57,11 +56,11 @@ print("✓ Ready to demonstrate mPerks earn functionality")""")
 try:
     meijer = Meijer()
     print("✅ Meijer client initialized successfully")
-    
+
     # Get mPerks instance
     mperks = meijer.mperks
     print("✅ mPerks instance created")
-    
+
 except Exception as e:
     print(f"❌ Failed to initialize: {e}")
     print("Please ensure you have valid authentication credentials")""")
@@ -78,17 +77,17 @@ print()
 
 try:
     earn_data = meijer.get_earn_offers()
-    
+
     print(f"✅ Successfully retrieved earn tab data")
     print(f"   📈 In Progress: {earn_data.total_in_progress} offers")
     print(f"   ✅ Available: {earn_data.total_available} offers")
     print(f"   📋 Total: {earn_data.total_all} offers")
-    
+
     if earn_data.last_updated:
         print(f"   🕒 Last Updated: {earn_data.last_updated}")
-    
+
     print(f"\\n📊 Data structure: {type(earn_data).__name__}")
-    
+
 except Exception as e:
     print(f"❌ Failed to get earn offers: {e}")
     print("Note: This endpoint may not be available in the current API version")""")
@@ -106,7 +105,7 @@ print()
 try:
     in_progress = meijer.get_earn_offers_in_progress()
     print(f"✅ Found {len(in_progress)} in-progress offers")
-    
+
     if in_progress:
         print("\\n📋 Sample offers:")
         for i, offer in enumerate(in_progress[:3], 1):
@@ -120,7 +119,7 @@ try:
                 print(f"   ⏰ Expires in: {offer.days_until_expiry} days")
     else:
         print("ℹ️ No in-progress offers found")
-        
+
 except Exception as e:
     print(f"❌ Failed to get in-progress offers: {e}")""")
 
@@ -137,7 +136,7 @@ print()
 try:
     available = meijer.get_earn_offers_available()
     print(f"✅ Found {len(available)} available offers")
-    
+
     if available:
         print("\\n📋 Sample offers:")
         for i, offer in enumerate(available[:3], 1):
@@ -150,7 +149,7 @@ try:
             print(f"   📝 Description: {offer.description[:100]}...")
     else:
         print("ℹ️ No available offers found")
-        
+
 except Exception as e:
     print(f"❌ Failed to get available offers: {e}")""")
 
@@ -167,30 +166,30 @@ print()
 try:
     all_offers = meijer.get_earn_offers_all()
     print(f"✅ Found {len(all_offers)} total offers")
-    
+
     if all_offers:
         # Group by status
         status_counts = {}
         category_counts = {}
-        
+
         for offer in all_offers:
             status = offer.status
             category = offer.category
-            
+
             status_counts[status] = status_counts.get(status, 0) + 1
             category_counts[category] = category_counts.get(category, 0) + 1
-        
+
         print("\\n📊 Status Breakdown:")
         for status, count in status_counts.items():
             print(f"   {status}: {count}")
-        
+
         print("\\n📁 Category Breakdown:")
         for category, count in category_counts.items():
             print(f"   {category}: {count}")
-            
+
     else:
         print("ℹ️ No offers found")
-        
+
 except Exception as e:
     print(f"❌ Failed to get all offers: {e}")""")
 
@@ -205,34 +204,34 @@ print()
 
 try:
     earn_data = meijer.get_earn_offers()
-    
+
     if earn_data.all_offers:
         print("✅ Data loaded successfully")
-        
+
         # Test filtering by category
         categories = set(offer.category for offer in earn_data.all_offers if offer.category)
         print(f"\\n📁 Available categories: {', '.join(categories)}")
-        
+
         if categories:
             sample_category = list(categories)[0]
             category_offers = earn_data.get_offers_by_category(sample_category)
             print(f"✅ Offers in '{sample_category}' category: {len(category_offers)}")
-        
+
         # Test filtering by status
         status_offers = earn_data.get_offers_by_status("available")
         print(f"✅ Offers with 'available' status: {len(status_offers)}")
-        
+
         # Test getting active offers
         active_offers = earn_data.get_active_offers()
         print(f"✅ Active offers: {len(active_offers)}")
-        
+
         # Test getting non-expired offers
         non_expired = [offer for offer in earn_data.all_offers if not offer.is_expired]
         print(f"✅ Non-expired offers: {len(non_expired)}")
-        
+
     else:
         print("ℹ️ No data available for utility method testing")
-        
+
 except Exception as e:
     print(f"❌ Failed to test utility methods: {e}")""")
 
@@ -261,13 +260,13 @@ try:
         end_date=datetime(2025, 12, 31),
         is_active=True
     )
-    
+
     print("✅ Created in-progress offer:")
     print(f"   📝 Title: {in_progress_offer.title}")
     print(f"   📊 Progress: {in_progress_offer.progress_percentage:.1f}%")
     print(f"   ⏰ Days until expiry: {in_progress_offer.days_until_expiry}")
     print(f"   🚫 Is expired: {in_progress_offer.is_expired}")
-    
+
     # Create a sample available offer
     available_offer = EarnableOffer(
         offer_id="demo_002",
@@ -281,17 +280,17 @@ try:
         end_date=datetime(2025, 12, 31),
         is_active=True
     )
-    
+
     print(f"\\n✅ Created available offer:")
     print(f"   📝 Title: {available_offer.title}")
     print(f"   🎯 Points to earn: {available_offer.points_earned}")
     print(f"   📁 Category: {available_offer.category}")
-    
+
     # Test to_dict method
     offer_dict = in_progress_offer.to_dict()
     print(f"\\n✅ Converted to dict with {len(offer_dict)} fields")
     print(f"   Sample fields: {list(offer_dict.keys())[:5]}")
-    
+
 except Exception as e:
     print(f"❌ Failed to create sample offers: {e}")""")
 
@@ -306,31 +305,31 @@ print()
 
 try:
     earn_data = meijer.get_earn_offers()
-    
+
     if earn_data.all_offers:
         print("✅ Data loaded for analysis")
-        
+
         # Find high-value offers (high points earned)
         high_value_offers = sorted(
-            earn_data.all_offers, 
-            key=lambda x: x.points_earned, 
+            earn_data.all_offers,
+            key=lambda x: x.points_earned,
             reverse=True
         )[:5]
-        
+
         print(f"\\n🏆 Top 5 High-Value Offers:")
         for i, offer in enumerate(high_value_offers, 1):
             print(f"   {i}. {offer.title} - {offer.points_earned} points")
-        
+
         # Find offers expiring soon (within 7 days)
         soon_expiring = [
-            offer for offer in earn_data.all_offers 
+            offer for offer in earn_data.all_offers
             if offer.days_until_expiry and 0 <= offer.days_until_expiry <= 7
         ]
-        
+
         print(f"\\n⏰ Offers Expiring Soon (≤7 days): {len(soon_expiring)}")
         for offer in soon_expiring[:3]:
             print(f"   • {offer.title} - expires in {offer.days_until_expiry} days")
-        
+
         # Category analysis
         category_analysis = {}
         for offer in earn_data.all_offers:
@@ -343,19 +342,19 @@ try:
                 }
             category_analysis[category]['count'] += 1
             category_analysis[category]['total_points'] += offer.points_earned
-        
+
         # Calculate averages
         for category, data in category_analysis.items():
             if data['count'] > 0:
                 data['avg_points'] = data['total_points'] / data['count']
-        
+
         print(f"\\n📊 Category Analysis:")
         for category, data in sorted(category_analysis.items(), key=lambda x: x[1]['count'], reverse=True):
             print(f"   {category}: {data['count']} offers, {data['avg_points']:.1f} avg points")
-            
+
     else:
         print("ℹ️ No data available for analysis")
-        
+
 except Exception as e:
     print(f"❌ Failed to perform analysis: {e}")""")
 
@@ -417,7 +416,7 @@ The new earn functionality provides a robust foundation for building sophisticat
         object_demo_code,
         advanced_cell,
         advanced_code,
-        summary_cell
+        summary_cell,
     ]
 
     # Set notebook metadata
@@ -425,20 +424,17 @@ The new earn functionality provides a robust foundation for building sophisticat
         "kernelspec": {
             "display_name": "Python 3",
             "language": "python",
-            "name": "python3"
+            "name": "python3",
         },
         "language_info": {
-            "codemirror_mode": {
-                "name": "ipython",
-                "version": 3
-            },
+            "codemirror_mode": {"name": "ipython", "version": 3},
             "file_extension": ".py",
             "mimetype": "text/x-python",
             "name": "python",
             "nbconvert_exporter": "python",
             "pygments_lexer": "ipython3",
-            "version": "3.8.0"
-        }
+            "version": "3.8.0",
+        },
     }
 
     return nb
@@ -447,14 +443,14 @@ The new earn functionality provides a robust foundation for building sophisticat
 def main():
     """Generate the mPerks earn functionality demo notebook."""
     print("Creating mPerks earn functionality demo notebook...")
-    
+
     # Create the notebook
     nb = create_mperks_earn_notebook()
-    
+
     # Save the notebook
     output_file = "demo_mperks_earn.ipynb"
     nbf.write(nb, output_file)
-    
+
     print(f"✅ Notebook generated successfully: {output_file}")
     print("📚 You can now open this notebook in Jupyter or VS Code")
     print("🚀 The notebook demonstrates all the new earn functionality features")
