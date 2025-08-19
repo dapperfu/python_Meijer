@@ -345,7 +345,7 @@ class MPerksEarnedRewards:
             self.logger.error(f"Error getting earned rewards: {e}")
             return []  # Return empty list on failure instead of raising exception
 
-    def get_mcard_info(self, **kwargs) -> MCardInfo:
+    def get_mcard_info(self, **kwargs) -> Optional[MCardInfo]:
         """
         Get mCard information from mPerks.
 
@@ -353,7 +353,7 @@ class MPerksEarnedRewards:
             **kwargs: Additional query parameters
 
         Returns:
-            MCardInfo object
+            MCardInfo object or None if the request fails
 
         Raises:
             MeijerAPIError: If the API request fails
@@ -960,6 +960,7 @@ class MPerksEarnedRewards:
             for fmt in [
                 "%Y-%m-%dT%H:%M:%S.%fZ",
                 "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%dT%H:%M:%S",  # Added missing format for "2023-02-21T00:00:00"
                 "%Y-%m-%d",
                 "%Y-%m-%d %H:%M:%S",
             ]:
