@@ -7,9 +7,10 @@ This script creates a comprehensive notebook demonstrating the extended mPerks f
 
 import os
 import sys
+from typing import Optional
+from datetime import datetime
 
-# Add the parent directory to the path to import meijer module
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Import meijer module directly
 
 
 def generate_notebook():
@@ -64,8 +65,7 @@ def generate_notebook():
                     "from typing import Optional\n",
                     "from datetime import datetime\n",
                     "\n",
-                    "# Add the parent directory to the path to import meijer module\n",
-                    "sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\n",
+                    "# Import meijer module directly\n",
                     "\n",
                     "from meijer import Meijer\n",
                     "from meijer.mperks import MPerksEarnedRewards, RewardCoupon, PointBalance\n",

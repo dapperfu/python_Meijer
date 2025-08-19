@@ -34,7 +34,9 @@ def list_group():
 @list_group.command("show")
 @click.option("--completed", is_flag=True, help="Show only completed items")
 @click.option("--pending", is_flag=True, help="Show only pending items")
-def list_show(completed: bool, pending: bool):
+@click.option("--tabulate", is_flag=True, help="Force tabulate table format (for testing)")
+@click.option("--rich", is_flag=True, help="Force rich table format (for testing)")
+def list_show(completed: bool, pending: bool, tabulate: bool, rich: bool):
     """Show shopping list items."""
     logger = logging.getLogger(__name__)
     logger.debug(
@@ -66,7 +68,15 @@ def list_show(completed: bool, pending: bool):
             title = f"Shopping List ({len(items)} items)"
 
         logger.debug(f"Displaying {len(items)} filtered items")
-        display_items_table(items, title)
+        # Determine table format based on flags
+        if tabulate:
+            table_format = "tabulate"
+        elif rich:
+            table_format = "rich"
+        else:
+            table_format = "auto"  # Default behavior
+        
+        display_items_table(items, title, table_format=table_format)
 
         # Show summary
         total = len(items)

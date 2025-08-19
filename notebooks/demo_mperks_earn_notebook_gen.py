@@ -38,12 +38,9 @@ This notebook demonstrates the new mPerks earn functionality, including:
 
     # Add setup cell
     setup_cell = nbf.v4.new_code_cell("""# Setup and imports
-import os
-import sys
 from datetime import datetime
 
-# Add the parent directory to the path so we can import meijer
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Import meijer module directly
 
 from meijer import Meijer
 from meijer.mperks import EarnableOffer, EarnTabData

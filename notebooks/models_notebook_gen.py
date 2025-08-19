@@ -3,7 +3,7 @@
 Generate Jupyter notebook for Meijer models.py
 
 This script creates a comprehensive notebook demonstrating all data models
-and their usage with practical examples.
+and their usage with real API calls to Meijer endpoints.
 """
 
 import nbformat as nbf
@@ -18,7 +18,7 @@ def create_models_notebook():
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer Data Models
 
-This notebook demonstrates all the data models available in the Meijer API client.
+This notebook demonstrates all the data models available in the Meijer API client using real API calls.
 
 ## Overview
 
@@ -35,11 +35,11 @@ The `models.py` module contains dataclasses that represent the structure of API 
 
 ## Setup
 
-First, let's import the necessary modules:
+First, let's import the necessary modules and create a real Meijer client:
 """)
 
-    # Import cell
-    import_cell = nbf.v4.new_code_cell("""# Import the models
+    # Import and client setup cell
+    import_cell = nbf.v4.new_code_cell("""# Import the models and client
 from meijer.models import (
     MeijerItem,
     ListItem,
@@ -49,13 +49,26 @@ from meijer.models import (
     ItemType,
     create_meijer_items_from_search
 )
+from meijer.client import Meijer
 
 # Import additional utilities
 from datetime import date, datetime
 from typing import Dict, List, Any
 import json
 
-print("✅ All models imported successfully!")
+print("✅ All modules imported successfully!")
+
+# Create a real Meijer client
+try:
+    client = Meijer()
+    print("✅ Meijer client created successfully!")
+    print(f"Authentication status: {client.auth_status}")
+    print(f"Is authenticated: {client.is_authenticated()}")
+except Exception as e:
+    print(f"❌ Failed to create Meijer client: {e}")
+    print("Please ensure you have valid authentication credentials")
+    client = None
+
 print(f"Available item types: {[t.name for t in ItemType]}")
 print(f"ItemType values: {[t.value for t in ItemType]}")""")
 
@@ -72,100 +85,109 @@ The `MeijerItem` class represents a product/item from Meijer's system. It's base
 - **Constructor.io Integration**: Special fields for search API responses
 - **Aisle Location**: Support for shopping list defragmentation
 
-### Basic Usage
+### Real API Usage
 """)
 
-    meijer_item_example = nbf.v4.new_code_cell("""# Create a basic MeijerItem
-basic_item = MeijerItem(
-    id="12345",
-    title="Organic Bananas",
-    description="Fresh organic bananas from Ecuador",
-    brand="Chiquita",
-    category="Produce",
-    subcategory="Fruits",
-    upc="123456789012",
-    price=2.99,
-    sale_price=1.99,
-    unit_price="$1.99/lb",
-    is_weighted=True,
-    weight_unit="lb",
-    is_available=True
-)
+    meijer_item_example = nbf.v4.new_code_cell("""# Get real items from Meijer API
+if client and client.is_authenticated():
+    print("🔍 Fetching real items from Meijer API...")
+    
+    try:
+        # Search for real products
+        search_results = client.search_products("banana", limit=5)
+        print(f"Found {len(search_results)} products")
+        
+        if search_results:
+            # Use the first real item
+            real_item = search_results[0]
+            print("\\n✅ Real MeijerItem from API:")
+            print(f"ID: {real_item.id}")
+            print(f"Title: {real_item.title}")
+            print(f"Brand: {real_item.brand}")
+            print(f"Category: {real_item.category}")
+            print(f"Price: ${real_item.price}")
+            print(f"Sale Price: ${real_item.sale_price}")
+            print(f"Unit Price: {real_item.unit_price}")
+            print(f"Weighted: {real_item.is_weighted}")
+            print(f"Available: {real_item.is_available}")
+            
+            # Test computed properties
+            print(f"\\nComputed Properties:")
+            print(f"Display Name: {real_item.display_name}")
+            print(f"Best Price: ${real_item.best_price}")
+            print(f"On Sale: {real_item.on_sale}")
+            
+            # Show all available attributes
+            print(f"\\nAll Attributes:")
+            for attr in dir(real_item):
+                if not attr.startswith('_') and not callable(getattr(real_item, attr)):
+                    try:
+                        value = getattr(real_item, attr)
+                        print(f"  {attr}: {value}")
+                    except:
+                        pass
+        else:
+            print("No search results found")
+            
+    except Exception as e:
+        print(f"❌ API search failed: {e}")
+        print("Falling back to example data...")
+        
+        # Fallback example (only if API fails)
+        example_item = MeijerItem(
+            id="example_123",
+            title="Example Product",
+            description="This is example data when API is unavailable",
+            brand="Example Brand",
+            category="Example Category",
+            price=2.99
+        )
+        print(f"\\nExample item created: {example_item.title}")
+        
+else:
+    print("❌ Client not available or not authenticated")
+    print("Cannot demonstrate real API usage")""")
 
-print("Basic Item Created:")
-print(f"ID: {basic_item.id}")
-print(f"Title: {basic_item.title}")
-print(f"Brand: {basic_item.brand}")
-print(f"Category: {basic_item.category}")
-print(f"Price: ${basic_item.price}")
-print(f"Sale Price: ${basic_item.sale_price}")
-print(f"Unit Price: {basic_item.unit_price}")
-print(f"Weighted: {basic_item.is_weighted}")
-print(f"Available: {basic_item.is_available}")
+    # Constructor.io section
+    constructor_section = nbf.v4.new_markdown_cell("""### Constructor.io Integration
 
-# Test computed properties
-print(f"\\nComputed Properties:")
-print(f"Display Name: {basic_item.display_name}")
-print(f"Best Price: ${basic_item.best_price}")
-        print(f"On Sale: {basic_item.on_sale}")""")
-
-    # Constructor.io example
-    constructor_example = nbf.v4.new_markdown_cell("""### Constructor.io Integration
-
-The `MeijerItem` class can be created from Constructor.io search API responses using the `from_constructor_response` class method:
+The `MeijerItem` class can be created from Constructor.io search API responses using the `from_constructor_response` class method. Let's demonstrate this with real search results:
 """)
 
-    constructor_code = nbf.v4.new_code_cell("""# Example Constructor.io response data
-constructor_data = {
-    "id": "67890",
-    "value": "Kellogg's Frosted Flakes",
-    "data": {
-        "data_id": "67890",
-        "data_description": "Sweetened corn flakes cereal",
-        "data_brand": "Kellogg's",
-        "data_category": "Grocery",
-        "data_subcategory": "Cereal",
-        "data_ean": 3800039100000,
-        "data_sku": "KF001",
-        "data_image_url": "https://example.com/frosted-flakes.jpg",
-        "data_price": 4.99,
-        "data_discountsalepricevalue": 3.99,
-        "data_priceunit": "$0.28/oz",
-        "data_pricebyweight": False,
-        "data_ispurchasable": True,
-        "data_hasmperks": True,
-        "data_specialbuy": True,
-        "data_isagerestricted": False,
-        "data_ebtfoodstampable": True,
-        "data_pickupavailableflag": True,
-        "data_homedeliverynotavailable": False,
-        "data_ismap": False,
-        "data_packagesize": "18 oz",
-        "data_ingredients": "Corn, Sugar, Malt Flavoring, Salt, BHT"
-    },
-    "matched_terms": ["frosted", "flakes", "cereal"]
-}
-
-# Create MeijerItem from Constructor.io data
-constructor_item = MeijerItem.from_constructor_response(constructor_data)
-
-print("Constructor.io Item Created:")
-print(f"ID: {constructor_item.id}")
-print(f"Title: {constructor_item.title}")
-print(f"Brand: {constructor_item.brand}")
-print(f"Category: {constructor_item.category}")
-print(f"UPC: {constructor_item.upc}")
-print(f"Price: ${constructor_item.price}")
-print(f"Sale Price: ${constructor_item.sale_price}")
-print(f"Package Size: {constructor_item.data_packagesize}")
-print(f"MPerks Eligible: {constructor_item.data_hasmperks}")
-print(f"Special Buy: {constructor_item.data_specialbuy}")
-print(f"EBT Eligible: {constructor_item.data_ebtfoodstampable}")
-print(f"Pickup Available: {constructor_item.data_pickupavailableflag}")
-print(f"Home Delivery: {constructor_item.data_homedeliverynotavailable}")
-print(f"MAP Item: {constructor_item.data_ismap}")
-print(f"Ingredients: {constructor_item.data_ingredients}")
-print(f"Matched Terms: {constructor_item.matched_terms}")""")
+    constructor_example = nbf.v4.new_code_cell("""# Demonstrate Constructor.io integration with real search
+if client and client.is_authenticated():
+    print("🔍 Demonstrating Constructor.io integration...")
+    
+    try:
+        # Get real search results that might include Constructor.io data
+        search_results = client.search_products("cereal", limit=3)
+        
+        if search_results:
+            print(f"Found {len(search_results)} cereal products")
+            
+            for i, item in enumerate(search_results[:2]):
+                print(f"\\nProduct {i+1}:")
+                print(f"  Title: {item.title}")
+                print(f"  Brand: {item.brand}")
+                print(f"  Category: {item.category}")
+                print(f"  Price: ${item.price}")
+                
+                # Show Constructor.io specific fields if available
+                if hasattr(item, 'data_hasmperks'):
+                    print(f"  MPerks Eligible: {item.data_hasmperks}")
+                if hasattr(item, 'data_specialbuy'):
+                    print(f"  Special Buy: {item.data_specialbuy}")
+                if hasattr(item, 'data_ebtfoodstampable'):
+                    print(f"  EBT Eligible: {item.data_ebtfoodstampable}")
+                    
+        else:
+            print("No cereal products found")
+            
+    except Exception as e:
+        print(f"❌ Constructor.io demo failed: {e}")
+        
+else:
+    print("❌ Client not available for Constructor.io demo")""")
 
     # ListItem section
     list_item_section = nbf.v4.new_markdown_cell("""## ListItem Class
@@ -178,69 +200,83 @@ The `ListItem` class represents an item in a shopping list or favorites list. It
 - **Item Details**: Description, quantity, notes, store association
 - **Type Classification**: Product, coupon, weekly ad, or manual item
 - **Promotion Support**: Start/end dates for promotional items
-- **Backward Compatibility**: Properties for legacy code support
 
-### Basic Usage
+### Real API Usage
 """)
 
-    list_item_example = nbf.v4.new_code_cell("""# Create a ListItem for a product
-product_list_item = ListItem(
-    list_item_id=1001,
-    list_item_type_id=ItemType.PRODUCT.value,
-    item_display_order=1,
-    item_part_number="BAN001",
-    item_description="Organic Bananas",
-    quantity=2,
-    store_id=12345,
-    notes="Get the yellow ones, not too ripe",
-    is_complete=False,
-    is_favorite=True,
-    listing_id="LIST001",
-    promotion_start=date(2024, 1, 15),
-    promotion_end=date(2024, 1, 31),
-    coupon_id=0
-)
-
-print("Product List Item Created:")
-print(f"Item ID: {product_list_item.item_id}")
-print(f"Name: {product_list_item.name}")
-print(f"Type: {ItemType(product_list_item.list_item_type_id).name}")
-print(f"Quantity: {product_list_item.quantity}")
-print(f"Store ID: {product_list_item.store_id}")
-print(f"Notes: {product_list_item.notes}")
-print(f"Checked: {product_list_item.checked}")
-print(f"Favorite: {product_list_item.is_favorite}")
-print(f"Promotion: {product_list_item.promotion_start} to {product_list_item.promotion_end}")
-
-# Test type checking properties
-print(f"\\nType Properties:")
-print(f"Is Product: {product_list_item.is_product}")
-print(f"Is Coupon: {product_list_item.is_coupon}")
-print(f"Is Weekly Ad: {product_list_item.is_weekly_ad}")
-print(f"Is Manual: {product_list_item.is_manual}")
-
-# Create a coupon list item
-coupon_list_item = ListItem(
-    list_item_id=1002,
-    list_item_type_id=ItemType.COUPON.value,
-    item_display_order=2,
-    item_part_number=None,
-    item_description="$1.00 off Bananas",
-    quantity=1,
-    store_id=12345,
-    notes="Digital coupon",
-    is_complete=False,
-    is_favorite=False,
-    listing_id="LIST001",
-    promotion_start=date(2024, 1, 15),
-    promotion_end=date(2024, 1, 31),
-    coupon_id=5001
-)
-
-print(f"\\nCoupon List Item:")
-print(f"Type: {ItemType(coupon_list_item.list_item_type_id).name}")
-print(f"Is Coupon: {coupon_list_item.is_coupon}")
-print(f"Coupon ID: {coupon_list_item.coupon_id}")""")
+    list_item_example = nbf.v4.new_code_cell("""# Get real shopping list items from Meijer API
+if client and client.is_authenticated():
+    print("🛒 Fetching real shopping list items...")
+    
+    try:
+        # Get real shopping lists
+        shopping_lists = client.get_shopping_lists()
+        print(f"Found {len(shopping_lists)} shopping lists")
+        
+        if shopping_lists:
+            # Get items from the first list
+            first_list = shopping_lists[0]
+            print(f"\\nFirst list: {first_list.name}")
+            
+            list_items = client.get_shopping_list_items(first_list.list_id)
+            print(f"Found {len(list_items)} items in the list")
+            
+            if list_items:
+                # Use the first real list item
+                real_list_item = list_items[0]
+                print("\\n✅ Real ListItem from API:")
+                print(f"Item ID: {real_list_item.item_id}")
+                print(f"Name: {real_list_item.name}")
+                print(f"Type: {ItemType(real_list_item.list_item_type_id).name}")
+                print(f"Quantity: {real_list_item.quantity}")
+                print(f"Store ID: {real_list_item.store_id}")
+                print(f"Notes: {real_list_item.notes}")
+                print(f"Checked: {real_list_item.checked}")
+                print(f"Favorite: {real_list_item.is_favorite}")
+                
+                # Test type checking properties
+                print(f"\\nType Properties:")
+                print(f"Is Product: {real_list_item.is_product}")
+                print(f"Is Coupon: {real_list_item.is_coupon}")
+                print(f"Is Weekly Ad: {real_list_item.is_weekly_ad}")
+                print(f"Is Manual: {real_list_item.is_manual}")
+                
+                # Show all available attributes
+                print(f"\\nAll Attributes:")
+                for attr in dir(real_list_item):
+                    if not attr.startswith('_') and not callable(getattr(real_list_item, attr)):
+                        try:
+                            value = getattr(real_list_item, attr)
+                            print(f"  {attr}: {value}")
+                        except:
+                            pass
+            else:
+                print("No items found in the first list")
+        else:
+            print("No shopping lists found")
+            
+    except Exception as e:
+        print(f"❌ Shopping list API failed: {e}")
+        print("Falling back to example data...")
+        
+        # Fallback example (only if API fails)
+        example_list_item = ListItem(
+            list_item_id=1001,
+            list_item_type_id=ItemType.PRODUCT.value,
+            item_display_order=1,
+            item_part_number="12345",
+            item_description="Example Product",
+            quantity=2,
+            store_id=12345,
+            notes="Example note",
+            is_complete=False,
+            is_favorite=False,
+            listing_id="LIST001"
+        )
+        print(f"\\nExample list item created: {example_list_item.item_description}")
+        
+else:
+    print("❌ Client not available for shopping list demo")""")
 
     # MeijerCoupon section
     coupon_section = nbf.v4.new_markdown_cell("""## MeijerCoupon Class
@@ -255,81 +291,72 @@ The `MeijerCoupon` class represents a coupon/offer from Meijer. It's based on th
 - **Visual Elements**: Image URLs, hat text, colors
 - **Computed Properties**: Expiration status, days until expiry
 
-### Basic Usage
+### Real API Usage
 """)
 
-    coupon_example = nbf.v4.new_code_cell("""# Create a MeijerCoupon
-coupon = MeijerCoupon(
-    meijer_offer_id=1001,
-    title="$1.00 off Organic Bananas",
-    description="Save $1.00 on any organic bananas",
-    image_url="https://example.com/coupon_small.jpg",
-    large_image_url="https://example.com/coupon_large.jpg",
-    terms_and_conditions="Limit one per transaction. Cannot be combined with other offers.",
-    manufacturer_coupon=False,
-    redemption_start_date=date(2024, 1, 15),
-    redemption_end_date=date(2024, 1, 31),
-    redeem_amount=1.00,
-    offer_class_id=1,
-    logix_offer_id=5001,
-    is_suggested=True,
-    is_clipped=False,
-    is_auto_clipped=False,
-    is_hidden=False,
-    is_targeted=False,
-    is_clippable=True,
-    is_special_offer=True,
-    category="Produce",
-    subcategory="Fruits",
-    tags=["organic", "bananas", "produce"],
-    hat_text="SAVE $1.00",
-    hat_color=16711680,  # Red
-    border_color=65280,   # Green
-    is_meijer_buck=False,
-    show_large_image=True,
-    condition_type_id=1,
-    condition_value=1.0,
-    discount_type_id=1,
-    discount_level_id=1,
-    coupon_id=5001
-)
-
-print("MeijerCoupon Created:")
-print(f"Offer ID: {coupon.meijer_offer_id}")
-print(f"Title: {coupon.title}")
-print(f"Description: {coupon.description}")
-print(f"Redemption Period: {coupon.redemption_start_date} to {coupon.redemption_end_date}")
-print(f"Redeem Amount: ${coupon.redeem_amount}")
-print(f"Category: {coupon.category}")
-print(f"Subcategory: {coupon.subcategory}")
-print(f"Tags: {coupon.tags}")
-print(f"Hat Text: {coupon.hat_text}")
-print(f"Special Offer: {coupon.is_special_offer}")
-
-# Test computed properties
-print(f"\\nComputed Properties:")
-print(f"Is Expired: {coupon.is_expired}")
-print(f"Is Active: {coupon.is_active}")
-print(f"Days Until Expiry: {coupon.days_until_expiry}")
-
-# Test with expired coupon
-expired_coupon = MeijerCoupon(
-    meijer_offer_id=1002,
-    title="Expired Coupon",
-    description="This coupon has expired",
-    terms_and_conditions="Expired",
-    manufacturer_coupon=False,
-    redemption_start_date=date(2023, 12, 1),
-    redemption_end_date=date(2023, 12, 31),
-    redeem_amount=0.50,
-    offer_class_id=1,
-    logix_offer_id=5002
-)
-
-print(f"\\nExpired Coupon:")
-print(f"Is Expired: {expired_coupon.is_expired}")
-print(f"Is Active: {expired_coupon.is_active}")
-print(f"Days Until Expiry: {expired_coupon.days_until_expiry}")""")
+    coupon_example = nbf.v4.new_code_cell("""# Get real coupons from Meijer API
+if client and client.is_authenticated():
+    print("🎫 Fetching real coupons from Meijer API...")
+    
+    try:
+        # Get real offers/coupons
+        offers = client.get_offers(limit=5)
+        print(f"Found {len(offers)} offers")
+        
+        if offers:
+            # Use the first real coupon
+            real_coupon = offers[0]
+            print("\\n✅ Real MeijerCoupon from API:")
+            print(f"Offer ID: {real_coupon.meijer_offer_id}")
+            print(f"Title: {real_coupon.title}")
+            print(f"Description: {real_coupon.description}")
+            print(f"Redemption Period: {real_coupon.redemption_start_date} to {real_coupon.redemption_end_date}")
+            print(f"Redeem Amount: ${real_coupon.redeem_amount}")
+            print(f"Category: {real_coupon.category}")
+            print(f"Subcategory: {real_coupon.subcategory}")
+            print(f"Tags: {real_coupon.tags}")
+            print(f"Hat Text: {real_coupon.hat_text}")
+            print(f"Special Offer: {real_coupon.is_special_offer}")
+            
+            # Test computed properties
+            print(f"\\nComputed Properties:")
+            print(f"Is Expired: {real_coupon.is_expired}")
+            print(f"Is Active: {real_coupon.is_active}")
+            print(f"Days Until Expiry: {real_coupon.days_until_expiry}")
+            
+            # Show all available attributes
+            print(f"\\nAll Attributes:")
+            for attr in dir(real_coupon):
+                if not attr.startswith('_') and not callable(getattr(real_coupon, attr)):
+                    try:
+                        value = getattr(real_coupon, attr)
+                        print(f"  {attr}: {value}")
+                    except:
+                        pass
+        else:
+            print("No offers found")
+            
+    except Exception as e:
+        print(f"❌ Coupon API failed: {e}")
+        print("Falling back to example data...")
+        
+        # Fallback example (only if API fails)
+        example_coupon = MeijerCoupon(
+            meijer_offer_id=1001,
+            title="Example Coupon",
+            description="This is example data when API is unavailable",
+            terms_and_conditions="Example terms",
+            manufacturer_coupon=False,
+            redemption_start_date=date(2024, 1, 15),
+            redemption_end_date=date(2024, 1, 31),
+            redeem_amount=1.00,
+            offer_class_id=1,
+            logix_offer_id=5001
+        )
+        print(f"\\nExample coupon created: {example_coupon.title}")
+        
+else:
+    print("❌ Client not available for coupon demo")""")
 
     # Store section
     store_section = nbf.v4.new_markdown_cell("""## Store Class
@@ -344,335 +371,206 @@ The `Store` class represents a Meijer store location with all relevant informati
 - **Services**: Available services at the store
 - **Status**: Whether the store is currently open
 
-### Basic Usage
+### Real API Usage
 """)
 
-    store_example = nbf.v4.new_code_cell("""# Create a Meijer store
-store = Store(
-    store_id="12345",
-    name="Meijer Grand Rapids",
-    address="1234 28th Street SE",
-    city="Grand Rapids",
-    state="MI",
-    zip_code="49508",
-    phone="(616) 555-0123",
-    hours="Open 24 hours",
-    latitude=42.9634,
-    longitude=-85.6681,
-    distance=2.5,
-    is_open=True,
-    services=["Grocery", "Pharmacy", "Gas Station", "Pickup", "Delivery"]
-)
-
-print("Store Created:")
-print(f"Store ID: {store.store_id}")
-print(f"Name: {store.name}")
-print(f"Address: {store.address}")
-print(f"City: {store.city}")
-print(f"State: {store.state}")
-print(f"ZIP: {store.zip_code}")
-print(f"Phone: {store.phone}")
-print(f"Hours: {store.hours}")
-print(f"Coordinates: ({store.latitude}, {store.longitude})")
-print(f"Distance: {store.distance} miles")
-print(f"Open: {store.is_open}")
-print(f"Services: {store.services}")
-
-# Test computed properties
-print(f"\\nComputed Properties:")
-print(f"Full Address: {store.full_address}")
-
-# Convert to dictionary
-store_dict = store.to_dict()
-print(f"\\nDictionary Representation:")
-print(json.dumps(store_dict, indent=2))""")
+    store_example = nbf.v4.new_code_cell("""# Get real stores from Meijer API
+if client and client.is_authenticated():
+    print("🏪 Fetching real stores from Meijer API...")
+    
+    try:
+        # Get real stores
+        stores = client.get_stores(zip_code="49508", limit=3)
+        print(f"Found {len(stores)} stores")
+        
+        if stores:
+            # Use the first real store
+            real_store = stores[0]
+            print("\\n✅ Real Store from API:")
+            print(f"Store ID: {real_store.store_id}")
+            print(f"Name: {real_store.name}")
+            print(f"Address: {real_store.address}")
+            print(f"City: {real_store.city}")
+            print(f"State: {real_store.state}")
+            print(f"ZIP: {real_store.zip_code}")
+            print(f"Phone: {real_store.phone}")
+            print(f"Hours: {real_store.hours}")
+            print(f"Coordinates: ({real_store.latitude}, {real_store.longitude})")
+            print(f"Distance: {real_store.distance} miles")
+            print(f"Open: {real_store.is_open}")
+            print(f"Services: {real_store.services}")
+            
+            # Test computed properties
+            print(f"\\nComputed Properties:")
+            print(f"Full Address: {real_store.full_address}")
+            
+            # Convert to dictionary
+            store_dict = real_store.to_dict()
+            print(f"\\nDictionary Representation:")
+            print(json.dumps(store_dict, indent=2))
+            
+            # Show all available attributes
+            print(f"\\nAll Attributes:")
+            for attr in dir(real_store):
+                if not attr.startswith('_') and not callable(getattr(real_store, attr)):
+                    try:
+                        value = getattr(real_store, attr)
+                        print(f"  {attr}: {value}")
+                    except:
+                        pass
+        else:
+            print("No stores found")
+            
+    except Exception as e:
+        print(f"❌ Store API failed: {e}")
+        print("Falling back to example data...")
+        
+        # Fallback example (only if API fails)
+        example_store = Store(
+            store_id="example_123",
+            name="Example Store",
+            address="123 Example Street",
+            city="Example City",
+            state="MI",
+            zip_code="12345",
+            phone="(555) 123-4567",
+            hours="Open 24 hours",
+            latitude=42.9634,
+            longitude=-85.6681,
+            distance=0.0,
+            is_open=True,
+            services=["Grocery", "Pharmacy"]
+        )
+        print(f"\\nExample store created: {example_store.name}")
+        
+else:
+    print("❌ Client not available for store demo")""")
 
     # SearchResult section
     search_result_section = nbf.v4.new_markdown_cell("""## SearchResult Class
 
-The `SearchResult` class represents the results from a product search operation, including pagination and filtering information.
+The `SearchResult` class represents the results of a product search operation, including pagination information and result metadata.
 
 ### Key Features
 
-- **Results**: List of MeijerItem objects
-- **Pagination**: Current page, total pages, total results
-- **Search Context**: Query string, applied filters, sort order
-- **Computed Properties**: Whether results exist, if it's the last page
+- **Search Results**: List of items matching the search query
+- **Pagination**: Total count, page information, navigation
+- **Query Information**: Search term, filters applied
+- **Result Metadata**: Search performance and timing information
 
-### Basic Usage
+### Real API Usage
 """)
 
-    search_result_example = nbf.v4.new_code_cell("""# Create sample items for search results
-item1 = MeijerItem(
-    id="001",
-    title="Organic Bananas",
-    description="Fresh organic bananas",
-    brand="Chiquita",
-    category="Produce",
-    price=2.99
-)
-
-item2 = MeijerItem(
-    id="002",
-    title="Conventional Bananas",
-    description="Regular bananas",
-    brand="Dole",
-    category="Produce",
-    price=1.99
-)
-
-item3 = MeijerItem(
-    id="003",
-    title="Banana Bread Mix",
-    description="Banana bread baking mix",
-    brand="Betty Crocker",
-    category="Baking",
-    price=3.49
-)
-
-# Create a SearchResult
-search_result = SearchResult(
-    total_results=3,
-    results=[item1, item2, item3],
-    current_page=1,
-    total_pages=1,
-    query="banana",
-    filters={"category": ["Produce", "Baking"]},
-    sort_by="relevance"
-)
-
-print("SearchResult Created:")
-print(f"Query: '{search_result.query}'")
-print(f"Total Results: {search_result.total_results}")
-print(f"Current Page: {search_result.current_page}")
-print(f"Total Pages: {search_result.total_pages}")
-print(f"Sort By: {search_result.sort_by}")
-print(f"Filters: {search_result.filters}")
-
-# Test computed properties
-print(f"\\nComputed Properties:")
-print(f"Has Results: {search_result.has_results}")
-print(f"Is Last Page: {search_result.is_last_page}")
-
-# Display results
-print(f"\\nSearch Results:")
-for i, item in enumerate(search_result.results, 1):
-    print(f"{i}. {item.title} - {item.brand} - ${item.price}")
-
-# Convert to dictionary
-result_dict = search_result.to_dict()
-print(f"\\nDictionary Representation:")
-print(json.dumps(result_dict, indent=2, default=str))""")
-
-    # Utility functions section
-    utility_section = nbf.v4.new_markdown_cell("""## Utility Functions
-
-The models module provides utility functions for creating objects from API responses.
-
-### create_meijer_items_from_search
-
-This function creates a list of `MeijerItem` objects from Constructor.io search response data.
-""")
-
-    utility_example = nbf.v4.new_code_cell("""# Example search response data
-search_response = {
-    "results": [
-        {
-            "id": "001",
-            "value": "Organic Bananas",
-            "data": {
-                "data_id": "001",
-                "data_description": "Fresh organic bananas",
-                "data_brand": "Chiquita",
-                "data_category": "Produce",
-                "data_price": 2.99
-            }
-        },
-        {
-            "id": "002",
-            "value": "Conventional Bananas",
-            "data": {
-                "data_id": "002",
-                "data_description": "Regular bananas",
-                "data_brand": "Dole",
-                "data_category": "Produce",
-                "data_price": 1.99
-            }
-        }
-    ]
-}
-
-# Create items using the utility function
-items = create_meijer_items_from_search(search_response)
-
-print(f"Created {len(items)} items from search response:")
-for i, item in enumerate(items, 1):
-    print(f"{i}. {item.title} - {item.brand} - ${item.price}")
-
-# Test with empty results
-empty_response = {"results": []}
-empty_items = create_meijer_items_from_search(empty_response)
-print(f"\\nEmpty response created {len(empty_items)} items")
-
-# Test with malformed data (should handle gracefully)
-malformed_response = {"results": [{"invalid": "data"}]}
-malformed_items = create_meijer_items_from_search(malformed_response)
-print(f"Malformed response created {len(malformed_items)} items")""")
+    search_result_example = nbf.v4.new_code_cell("""# Demonstrate SearchResult with real search
+if client and client.is_authenticated():
+    print("🔍 Demonstrating SearchResult with real search...")
+    
+    try:
+        # Perform a real search
+        search_results = client.search_products("milk", limit=10)
+        
+        if search_results:
+            print(f"✅ Search completed successfully!")
+            print(f"Found {len(search_results)} products")
+            
+            # Show first few results
+            print("\\nFirst 3 results:")
+            for i, item in enumerate(search_results[:3]):
+                print(f"  {i+1}. {item.title} - ${item.price}")
+                
+            # Demonstrate SearchResult properties if available
+            if hasattr(search_results, 'total_count'):
+                print(f"\\nTotal available: {search_results.total_count}")
+            if hasattr(search_results, 'query'):
+                print(f"Search query: {search_results.query}")
+            if hasattr(search_results, 'filters'):
+                print(f"Applied filters: {search_results.filters}")
+                
+        else:
+            print("No search results found")
+            
+    except Exception as e:
+        print(f"❌ Search demo failed: {e}")
+        
+else:
+    print("❌ Client not available for search demo")""")
 
     # Advanced usage section
     advanced_section = nbf.v4.new_markdown_cell("""## Advanced Usage Examples
 
-### Working with Multiple Item Types
+### Working with Multiple Items
 """)
 
-    advanced_example = nbf.v4.new_code_cell("""# Create a comprehensive shopping scenario
-from datetime import date
-
-# Create various types of items
-grocery_item = MeijerItem(
-    id="GROC001",
-    title="Whole Milk",
-    description="Fresh whole milk, 1 gallon",
-    brand="Meijer",
-    category="Dairy",
-    price=3.99,
-    is_available=True
-)
-
-coupon_item = MeijerCoupon(
-    meijer_offer_id=2001,
-    title="$0.50 off Milk",
-    description="Save $0.50 on any milk product",
-    terms_and_conditions="Limit one per transaction",
-    manufacturer_coupon=False,
-    redemption_start_date=date(2024, 1, 15),
-    redemption_end_date=date(2024, 1, 31),
-    redeem_amount=0.50,
-    offer_class_id=1,
-    logix_offer_id=6001,
-    category="Dairy"
-)
-
-store_location = Store(
-    store_id="67890",
-    name="Meijer Lansing",
-    address="5678 Saginaw Highway",
-    city="Lansing",
-    state="MI",
-    zip_code="48917",
-    is_open=True
-)
-
-# Create list items
-grocery_list_item = ListItem(
-    list_item_id=2001,
-    list_item_type_id=ItemType.PRODUCT.value,
-    item_display_order=1,
-    item_description="Whole Milk",
-    quantity=1,
-    store_id=67890,
-    is_complete=False,
-    is_favorite=False,
-    listing_id="SHOP001",
-    coupon_id=0
-)
-
-coupon_list_item = ListItem(
-    list_item_id=2002,
-    list_item_type_id=ItemType.COUPON.value,
-    item_display_order=2,
-    item_description="$0.50 off Milk",
-    quantity=1,
-    store_id=67890,
-    is_complete=False,
-    is_favorite=False,
-    listing_id="SHOP001",
-    coupon_id=2001
-)
-
-# Simulate a shopping trip
-print("🛒 Shopping Trip Simulation")
-print("=" * 40)
-print(f"Store: {store_location.name}")
-print(f"Address: {store_location.full_address}")
-print(f"Open: {'Yes' if store_location.is_open else 'No'}")
-print()
-
-print("📋 Shopping List:")
-print(f"1. {grocery_list_item.item_description} (Qty: {grocery_list_item.quantity})")
-print(f"2. {coupon_list_item.item_description}")
-
-print("\\n💰 Available Coupons:")
-if coupon_item.is_active:
-    print(f"• {coupon_item.title} - Save ${coupon_item.redeem_amount}")
-    print(f"  Valid until: {coupon_item.redemption_end_date}")
+    advanced_example = nbf.v4.new_code_cell("""# Advanced usage with real data
+if client and client.is_authenticated():
+    print("🚀 Advanced usage examples with real data...")
+    
+    try:
+        # Get multiple types of data
+        print("\\n1. Getting multiple products...")
+        products = client.search_products("bread", limit=5)
+        print(f"   Found {len(products)} bread products")
+        
+        print("\\n2. Getting multiple coupons...")
+        coupons = client.get_offers(limit=5)
+        print(f"   Found {len(coupons)} coupons")
+        
+        print("\\n3. Getting multiple stores...")
+        stores = client.get_stores(zip_code="49508", limit=3)
+        print(f"   Found {len(stores)} stores")
+        
+        # Demonstrate data processing
+        if products and coupons and stores:
+            print("\\n4. Data processing examples:")
+            
+            # Filter products by price
+            affordable_products = [p for p in products if p.price < 5.00]
+            print(f"   Products under $5: {len(affordable_products)}")
+            
+            # Filter coupons by category
+            grocery_coupons = [c for c in coupons if c.category == "Grocery"]
+            print(f"   Grocery coupons: {len(grocery_coupons)}")
+            
+            # Filter stores by services
+            pharmacy_stores = [s for s in stores if "Pharmacy" in s.services]
+            print(f"   Stores with pharmacy: {len(pharmacy_stores)}")
+            
+    except Exception as e:
+        print(f"❌ Advanced usage demo failed: {e}")
+        
 else:
-    print("• No active coupons")
-
-print("\\n📱 Product Details:")
-print(f"• {grocery_item.title}")
-print(f"  Brand: {grocery_item.brand}")
-print(f"  Category: {grocery_item.category}")
-print(f"  Price: ${grocery_item.price}")
-print(f"  Available: {'Yes' if grocery_item.is_available else 'No'}")
-
-# Calculate total savings
-total_savings = coupon_item.redeem_amount if coupon_item.is_active else 0
-final_price = grocery_item.price - total_savings
-
-print(f"\\n💵 Total Cost:")
-print(f"Original Price: ${grocery_item.price}")
-print(f"Coupon Savings: ${total_savings}")
-print(f"Final Price: ${final_price}")""")
-
-    # Best practices section
-    best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
-
-### 1. Type Safety
-Always use the provided dataclasses instead of raw dictionaries for better type safety and IDE support.
-
-### 2. Error Handling
-The models include validation and will handle malformed data gracefully. Always check computed properties like `is_active` for coupons.
-
-### 3. Memory Management
-For large datasets, consider processing items one at a time rather than loading everything into memory.
-
-### 4. API Compatibility
-Use the `to_dict()` method when sending data back to APIs to ensure proper formatting.
-
-### 5. Extensibility
-The models include `raw_data` fields for storing additional information that might not fit the standard schema.
-""")
+    print("❌ Client not available for advanced usage demo")""")
 
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
-This notebook has demonstrated all the data models available in the Meijer API client:
+This notebook has demonstrated all the data models available in the Meijer API client using **real API calls** instead of mocked data. 
 
-✅ **MeijerItem**: Complete product representation with Constructor.io integration
-✅ **ListItem**: Shopping list and favorites management
-✅ **MeijerCoupon**: Coupon and offer handling with expiration logic
-✅ **Store**: Store location and service information
-✅ **SearchResult**: Search results with pagination support
-✅ **ItemType**: Enumeration for different item types
-✅ **Utility Functions**: Helper functions for API integration
+### Key Takeaways
 
-### Key Benefits
-
-- **Type Safety**: Full mypy typing support
-- **API Compatibility**: Matches Meijer's API structure exactly
-- **Extensibility**: Easy to add new fields and functionality
-- **Performance**: Efficient data structures with computed properties
-- **Documentation**: Comprehensive docstrings and examples
+- **Real Data**: All examples use actual Meijer API responses
+- **Type Safety**: Models provide structured, validated data
+- **Computed Properties**: Models include helpful computed attributes
+- **API Integration**: Seamless integration with Meijer's services
+- **Error Handling**: Graceful fallbacks when API calls fail
 
 ### Next Steps
 
-- Explore the other modules in the Meijer package
-- Learn about authentication and API client usage
-- Discover shopping list and coupon management features
-- Understand the search and store location capabilities
+- Explore the individual model classes in more detail
+- Use these models in your own applications
+- Check the API documentation for additional endpoints
+- Experiment with different search queries and filters
 
-The models provide a solid foundation for building robust Meijer API applications! 🚀
+### Available Models
+
+- **MeijerItem**: Product and item information
+- **ListItem**: Shopping list and favorites management
+- **MeijerCoupon**: Coupon and offer management
+- **Store**: Store location and information
+- **SearchResult**: Search operation results
+- **ItemType**: Item classification enums
+
+All models are designed to work seamlessly with the Meijer API and provide a consistent, type-safe interface for your applications.
 """)
 
     # Add all cells to notebook
@@ -681,8 +579,8 @@ The models provide a solid foundation for building robust Meijer API application
         import_cell,
         meijer_item_section,
         meijer_item_example,
+        constructor_section,
         constructor_example,
-        constructor_code,
         list_item_section,
         list_item_example,
         coupon_section,
@@ -691,20 +589,20 @@ The models provide a solid foundation for building robust Meijer API application
         store_example,
         search_result_section,
         search_result_example,
-        utility_section,
-        utility_example,
         advanced_section,
         advanced_example,
-        best_practices_section,
-        summary_section,
+        summary_section
     ]
 
-    # Save notebook
-    with open("models.ipynb", "w") as f:
-        nbf.write(nb, f)
-
-    print("✅ models.ipynb created successfully!")
+    return nb
 
 
 if __name__ == "__main__":
-    create_models_notebook()
+    # Create the notebook
+    nb = create_models_notebook()
+    
+    # Write to file
+    with open("models.ipynb", "w") as f:
+        nbf.write(nb, f)
+    
+    print("✅ models.ipynb generated successfully!")

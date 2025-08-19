@@ -3,7 +3,7 @@
 Generate Jupyter notebook for Meijer enums.py
 
 This script creates a comprehensive notebook demonstrating all enumeration classes
-and their usage with practical examples.
+and their usage with real API calls to Meijer endpoints.
 """
 
 import nbformat as nbf
@@ -18,7 +18,7 @@ def create_enums_notebook():
     # Title and description
     title_cell = nbf.v4.new_markdown_cell("""# Meijer API Enumerations
 
-This notebook demonstrates the enumeration classes available in the Meijer API client.
+This notebook demonstrates the enumeration classes available in the Meijer API client using real API calls.
 
 ## Overview
 
@@ -31,19 +31,32 @@ The `enums.py` module contains enumeration classes that provide type-safe consta
 
 ## Setup
 
-First, let's import the necessary modules:
+First, let's import the necessary modules and create a real Meijer client:
 """)
 
     # Import cell
-    import_cell = nbf.v4.new_code_cell("""# Import the enums
+    import_cell = nbf.v4.new_code_cell("""# Import the enums and client
 from meijer.enums import AuthenticationStatus
 from meijer.models import ItemType
+from meijer.client import Meijer
 
 # Import additional utilities
 from enum import Enum
 import json
 
 print("✅ All enums imported successfully!")
+
+# Create a real Meijer client
+try:
+    client = Meijer()
+    print("✅ Meijer client created successfully!")
+    print(f"Authentication status: {client.auth_status}")
+    print(f"Is authenticated: {client.is_authenticated()}")
+except Exception as e:
+    print(f"❌ Failed to create Meijer client: {e}")
+    print("Please ensure you have valid authentication credentials")
+    client = None
+
 print(f"AuthenticationStatus values: {[status.value for status in AuthenticationStatus]}")
 print(f"ItemType values: {[item_type.value for item_type in ItemType]}")""")
 
@@ -59,11 +72,11 @@ The `AuthenticationStatus` enum represents the current authentication state of t
 - **EXPIRED**: Authentication has expired and needs renewal
 - **FAILED**: Authentication attempt failed
 
-### Basic Usage
+### Real API Usage
 """)
 
-    auth_status_example = nbf.v4.new_code_cell("""# Explore AuthenticationStatus enum
-print("AuthenticationStatus Enum Values:")
+    auth_status_example = nbf.v4.new_code_cell("""# Explore AuthenticationStatus enum with real client
+print("🔐 AuthenticationStatus Enum Values:")
 print("=" * 40)
 
 for status in AuthenticationStatus:
@@ -93,7 +106,27 @@ print(f"failed == 'failed': {failed == 'failed'}")
 # String representation
 print(f"\\nString Representations:")
 print(f"str(unauthenticated): {str(unauthenticated)}")
-print(f"repr(unauthenticated): {repr(unauthenticated)}")""")
+print(f"repr(unauthenticated): {repr(unauthenticated)}")
+
+# Real client authentication status
+if client:
+    print(f"\\n🔍 Real Client Authentication Status:")
+    print(f"Current status: {client.auth_status}")
+    print(f"Status enum: {AuthenticationStatus(client.auth_status)}")
+    print(f"Status name: {AuthenticationStatus(client.auth_status).name}")
+    print(f"Is authenticated: {client.is_authenticated()}")
+    
+    # Demonstrate status checking
+    if client.auth_status == AuthenticationStatus.AUTHENTICATED:
+        print("✅ Client is properly authenticated!")
+    elif client.auth_status == AuthenticationStatus.UNAUTHENTICATED:
+        print("❌ Client needs authentication")
+    elif client.auth_status == AuthenticationStatus.EXPIRED:
+        print("⚠️ Client authentication has expired")
+    elif client.auth_status == AuthenticationStatus.FAILED:
+        print("❌ Client authentication failed")
+else:
+    print("\\n❌ Client not available for authentication status demo")""")
 
     # ItemType section
     item_type_section = nbf.v4.new_markdown_cell("""## ItemType Enum
@@ -107,11 +140,11 @@ The `ItemType` enum represents different types of items that can be added to sho
 - **WEEKLY_AD**: Weekly advertisement items
 - **MANUAL**: Manually added items
 
-### Basic Usage
+### Real API Usage
 """)
 
-    item_type_example = nbf.v4.new_code_cell("""# Explore ItemType enum
-print("ItemType Enum Values:")
+    item_type_example = nbf.v4.new_code_cell("""# Explore ItemType enum with real data
+print("📦 ItemType Enum Values:")
 print("=" * 30)
 
 for item_type in ItemType:
@@ -120,415 +153,216 @@ for item_type in ItemType:
 print(f"\\nTotal values: {len(ItemType)}")
 
 # Access specific values
-product = ItemType.PRODUCT
-coupon = ItemType.COUPON
-weekly_ad = ItemType.WEEKLY_AD
-manual = ItemType.MANUAL
+product_type = ItemType.PRODUCT
+coupon_type = ItemType.COUPON
+weekly_ad_type = ItemType.WEEKLY_AD
+manual_type = ItemType.MANUAL
 
-print(f"\\nIndividual Item Type Values:")
-print(f"PRODUCT: {product.value}")
-print(f"COUPON: {coupon.value}")
-print(f"WEEKLY_AD: {weekly_ad.value}")
-print(f"MANUAL: {manual.value}")
-
-# Compare values
-print(f"\\nComparison Examples:")
-print(f"product == 1: {product == 1}")
-print(f"coupon == 2: {coupon == 2}")
-print(f"weekly_ad == 3: {weekly_ad == 3}")
-print(f"manual == 4: {manual == 4}")
+print(f"\\nIndividual Type Values:")
+print(f"PRODUCT: {product_type.value}")
+print(f"COUPON: {coupon_type.value}")
+print(f"WEEKLY_AD: {weekly_ad_type.value}")
+print(f"MANUAL: {manual_type.value}")
 
 # String representation
 print(f"\\nString Representations:")
-print(f"str(product): {str(product)}")
-print(f"repr(product): {repr(product)}")""")
+print(f"str(product_type): {str(product_type)}")
+print(f"repr(product_type): {repr(product_type)}")
 
-    # Practical examples section
-    practical_section = nbf.v4.new_markdown_cell("""## Practical Examples
-
-### Authentication State Management
-
-Enums are particularly useful for managing application state and ensuring consistency across different parts of your code.
-""")
-
-    practical_example = nbf.v4.new_code_cell("""# Simulate authentication state management
-class AuthenticationManager:
-    \"\"\"Example authentication manager using enums.\"\"\"
-
-    def __init__(self):
-        self.status = AuthenticationStatus.UNAUTHENTICATED
-        self.token = None
-
-    def authenticate(self, username: str, password: str) -> bool:
-        \"\"\"Attempt to authenticate user.\"\"\"
-        print(f"🔐 Attempting authentication for {username}...")
-
-        # Simulate authentication process
-        if username == "valid_user" and password == "valid_pass":
-            self.status = AuthenticationStatus.AUTHENTICATED
-            self.token = "sample_token_12345"
-            print("✅ Authentication successful!")
-            return True
+# Real API usage with ItemType
+if client and client.is_authenticated():
+    print(f"\\n🔍 Real API Usage with ItemType:")
+    
+    try:
+        # Get real shopping lists to see ItemType in action
+        shopping_lists = client.get_shopping_lists()
+        print(f"Found {len(shopping_lists)} shopping lists")
+        
+        if shopping_lists:
+            # Get items from the first list
+            first_list = shopping_lists[0]
+            print(f"\\nFirst list: {first_list.name}")
+            
+            list_items = client.get_shopping_list_items(first_list.list_id)
+            print(f"Found {len(list_items)} items in the list")
+            
+            if list_items:
+                print("\\nItem Types in Shopping List:")
+                type_counts = {}
+                
+                for item in list_items:
+                    item_type = ItemType(item.list_item_type_id)
+                    type_counts[item_type.name] = type_counts.get(item_type.name, 0) + 1
+                    
+                    print(f"  - {item.name} (Type: {item_type.name})")
+                
+                print(f"\\nType Distribution:")
+                for type_name, count in type_counts.items():
+                    print(f"  {type_name}: {count} items")
+                    
+                # Demonstrate ItemType checking
+                print(f"\\nItemType Checking Examples:")
+                for item in list_items[:3]:  # First 3 items
+                    item_type = ItemType(item.list_item_type_id)
+                    print(f"  {item.name}:")
+                    print(f"    Raw type ID: {item.list_item_type_id}")
+                    print(f"    Enum type: {item_type.name}")
+                    print(f"    Is product: {item_type == ItemType.PRODUCT}")
+                    print(f"    Is coupon: {item_type == ItemType.COUPON}")
+                    print(f"    Is weekly ad: {item_type == ItemType.WEEKLY_AD}")
+                    print(f"    Is manual: {item_type == ItemType.MANUAL}")
+            else:
+                print("No items found in the first list")
         else:
-            self.status = AuthenticationStatus.FAILED
-            print("❌ Authentication failed!")
-            return False
+            print("No shopping lists found")
+            
+    except Exception as e:
+        print(f"❌ Shopping list API failed: {e}")
+        print("Cannot demonstrate ItemType with real data")
+        
+else:
+    print("\\n❌ Client not available for ItemType demo")""")
 
-    def check_token_expiry(self) -> bool:
-        \"\"\"Check if authentication token has expired.\"\"\"
-        if self.status == AuthenticationStatus.AUTHENTICATED:
-            # Simulate token expiry check
-            import random
-            if random.random() < 0.3:  # 30% chance of expiry
-                self.status = AuthenticationStatus.EXPIRED
-                print("⚠️ Token has expired!")
-                return True
-        return False
+    # Advanced usage section
+    advanced_section = nbf.v4.new_markdown_cell("""## Advanced Usage Examples
 
-    def get_status(self) -> AuthenticationStatus:
-        \"\"\"Get current authentication status.\"\"\"
-        return self.status
-
-    def is_authenticated(self) -> bool:
-        \"\"\"Check if currently authenticated.\"\"\"
-        return self.status == AuthenticationStatus.AUTHENTICATED
-
-    def logout(self):
-        \"\"\"Logout and reset status.\"\"\"
-        self.status = AuthenticationStatus.UNAUTHENTICATED
-        self.token = None
-        print("👋 Logged out successfully!")
-
-# Test the authentication manager
-auth_manager = AuthenticationManager()
-
-print("🚀 Authentication Manager Demo")
-print("=" * 40)
-
-# Initial state
-print(f"Initial status: {auth_manager.get_status().value}")
-
-# Attempt authentication
-auth_manager.authenticate("valid_user", "valid_pass")
-print(f"Status after auth: {auth_manager.get_status().value}")
-
-# Check if authenticated
-print(f"Is authenticated: {auth_manager.is_authenticated()}")
-
-# Simulate token expiry
-auth_manager.check_token_expiry()
-print(f"Status after expiry check: {auth_manager.get_status().value}")
-
-# Logout
-auth_manager.logout()
-print(f"Status after logout: {auth_manager.get_status().value}")
-
-# Failed authentication
-auth_manager.authenticate("invalid_user", "wrong_pass")
-print(f"Status after failed auth: {auth_manager.get_status().value}")""")
-
-    # Item type usage section
-    item_type_usage_section = nbf.v4.new_markdown_cell("""### Item Type Classification
-
-Enums are also useful for classifying different types of items in shopping lists and other data structures.
+### Working with Enum Values in API Calls
 """)
 
-    item_type_usage_example = nbf.v4.new_code_cell("""# Simulate shopping list item classification
-class ShoppingListItem:
-    \"\"\"Example shopping list item using ItemType enum.\"\"\"
-
-    def __init__(self, name: str, item_type: ItemType, quantity: int = 1):
-        self.name = name
-        self.item_type = item_type
-        self.quantity = quantity
-
-    def get_type_description(self) -> str:
-        \"\"\"Get human-readable description of item type.\"\"\"
-        type_descriptions = {
-            ItemType.PRODUCT: "Product",
-            ItemType.COUPON: "Coupon",
-            ItemType.WEEKLY_AD: "Weekly Ad Item",
-            ItemType.MANUAL: "Manual Entry"
-        }
-        return type_descriptions.get(self.item_type, "Unknown")
-
-    def get_icon(self) -> str:
-        \"\"\"Get appropriate icon for item type.\"\"\"
-        icons = {
-            ItemType.PRODUCT: "🛍️",
-            ItemType.COUPON: "🎫",
-            ItemType.WEEKLY_AD: "📰",
-            ItemType.MANUAL: "✏️"
-        }
-        return icons.get(self.item_type, "❓")
-
-    def __str__(self) -> str:
-        return f"{self.get_icon()} {self.name} ({self.get_type_description()}) - Qty: {self.quantity}"
-
-# Create different types of shopping list items
-shopping_items = [
-    ShoppingListItem("Organic Bananas", ItemType.PRODUCT, 2),
-    ShoppingListItem("$1.00 off Bananas", ItemType.COUPON, 1),
-    ShoppingListItem("Weekly Special: Milk", ItemType.WEEKLY_AD, 1),
-    ShoppingListItem("Remember to check pharmacy", ItemType.MANUAL, 1)
-]
-
-print("🛒 Shopping List Item Classification Demo")
-print("=" * 50)
-
-for item in shopping_items:
-    print(f"• {item}")
-    print(f"  Type ID: {item.item_type.value}")
-    print(f"  Type Name: {item.item_type.name}")
-    print()
-
-# Group items by type
-items_by_type = {}
-for item in shopping_items:
-    item_type = item.item_type
-    if item_type not in items_by_type:
-        items_by_type[item_type] = []
-    items_by_type[item_type].append(item)
-
-print("📊 Items Grouped by Type:")
-print("=" * 30)
-
-for item_type, items in items_by_type.items():
-    print(f"{item_type.name} ({len(items)} items):")
-    for item in items:
-        print(f"  - {item.name}")
-    print()""")
-
-    # Enum comparison and validation section
-    comparison_section = nbf.v4.new_markdown_cell("""### Enum Comparison and Validation
-
-Enums provide powerful comparison and validation capabilities that make your code more robust.
-""")
-
-    comparison_example = nbf.v4.new_code_cell("""# Enum comparison and validation examples
-def validate_authentication_status(status_value: str) -> bool:
-    \"\"\"Validate that a status value is a valid AuthenticationStatus.\"\"\"
+    advanced_example = nbf.v4.new_code_cell("""# Advanced enum usage with real API
+if client and client.is_authenticated():
+    print("🚀 Advanced enum usage examples...")
+    
     try:
-        # Try to create an AuthenticationStatus from the value
-        status = AuthenticationStatus(status_value)
-        return True
-    except ValueError:
-        return False
-
-def validate_item_type(type_value: int) -> bool:
-    \"\"\"Validate that a type value is a valid ItemType.\"\"\"
-    try:
-        # Try to create an ItemType from the value
-        item_type = ItemType(type_value)
-        return True
-    except ValueError:
-        return False
-
-# Test validation functions
-print("🔍 Enum Validation Demo")
-print("=" * 30)
-
-# Test AuthenticationStatus validation
-auth_test_values = ["authenticated", "expired", "invalid_status", "unauthenticated"]
-print("AuthenticationStatus Validation:")
-for value in auth_test_values:
-    is_valid = validate_authentication_status(value)
-    print(f"  '{value}': {'✅ Valid' if is_valid else '❌ Invalid'}")
-
-print()
-
-# Test ItemType validation
-item_type_test_values = [1, 2, 3, 4, 99, -1]
-print("ItemType Validation:")
-for value in item_type_test_values:
-    is_valid = validate_item_type(value)
-    print(f"  {value}: {'✅ Valid' if is_valid else '❌ Invalid'}")
-
-# Enum comparison examples
-print(f"\\n🔄 Enum Comparison Examples:")
-print("=" * 30)
-
-status1 = AuthenticationStatus.AUTHENTICATED
-status2 = AuthenticationStatus.AUTHENTICATED
-status3 = AuthenticationStatus.UNAUTHENTICATED
-
-print(f"status1 == status2: {status1 == status2}")
-print(f"status1 == status3: {status1 == status3}")
-print(f"status1 is status2: {status1 is status2}")
-print(f"status1 is status3: {status1 is status3}")
-
-# Enum ordering (Python 3.4+)
-print(f"\\n📊 Enum Ordering:")
-print("=" * 20)
-
-# Sort AuthenticationStatus by value
-sorted_auth_statuses = sorted(AuthenticationStatus, key=lambda x: x.value)
-print("AuthenticationStatus sorted by value:")
-for status in sorted_auth_statuses:
-    print(f"  {status.name}: {status.value}")
-
-# Sort ItemType by value
-sorted_item_types = sorted(ItemType, key=lambda x: x.value)
-print("\\nItemType sorted by value:")
-for item_type in sorted_item_types:
-    print(f"  {item_type.name}: {item_type.value}")""")
-
-    # Advanced enum usage section
-    advanced_section = nbf.v4.new_markdown_cell("""### Advanced Enum Usage
-
-Enums can be used in more advanced scenarios like state machines, configuration management, and API response handling.
-""")
-
-    advanced_example = nbf.v4.new_code_cell("""# Advanced enum usage examples
-class APIResponseHandler:
-    \"\"\"Example API response handler using enums for state management.\"\"\"
-
-    def __init__(self):
-        self.current_status = AuthenticationStatus.UNAUTHENTICATED
-        self.retry_count = 0
-        self.max_retries = 3
-
-    def handle_api_response(self, response_data: dict) -> bool:
-        \"\"\"Handle API response and update status accordingly.\"\"\"
-        status_code = response_data.get('status_code', 200)
-        auth_status = response_data.get('auth_status', 'unauthenticated')
-
-        # Update authentication status based on response
+        # Demonstrate filtering by ItemType
+        print("\\n1. Filtering items by type...")
+        
+        shopping_lists = client.get_shopping_lists()
+        if shopping_lists:
+            first_list = shopping_lists[0]
+            list_items = client.get_shopping_list_items(first_list.list_id)
+            
+            if list_items:
+                # Filter by product type
+                product_items = [item for item in list_items 
+                               if ItemType(item.list_item_type_id) == ItemType.PRODUCT]
+                print(f"   Product items: {len(product_items)}")
+                
+                # Filter by coupon type
+                coupon_items = [item for item in list_items 
+                              if ItemType(item.list_item_type_id) == ItemType.COUPON]
+                print(f"   Coupon items: {len(coupon_items)}")
+                
+                # Filter by weekly ad type
+                weekly_ad_items = [item for item in list_items 
+                                 if ItemType(item.list_item_type_id) == ItemType.WEEKLY_AD]
+                print(f"   Weekly ad items: {len(weekly_ad_items)}")
+                
+                # Filter by manual type
+                manual_items = [item for item in list_items 
+                              if ItemType(item.list_item_type_id) == ItemType.MANUAL]
+                print(f"   Manual items: {len(manual_items)}")
+        
+        # Demonstrate AuthenticationStatus checking
+        print("\\n2. Authentication status monitoring...")
+        current_status = client.auth_status
+        status_enum = AuthenticationStatus(current_status)
+        
+        print(f"   Current status: {status_enum.name}")
+        print(f"   Status value: {status_enum.value}")
+        print(f"   Is authenticated: {status_enum == AuthenticationStatus.AUTHENTICATED}")
+        print(f"   Needs auth: {status_enum == AuthenticationStatus.UNAUTHENTICATED}")
+        print(f"   Has expired: {status_enum == AuthenticationStatus.EXPIRED}")
+        print(f"   Has failed: {status_enum == AuthenticationStatus.FAILED}")
+        
+        # Demonstrate enum conversion
+        print("\\n3. Enum conversion examples...")
+        
+        # String to enum
+        status_string = "authenticated"
         try:
-            self.current_status = AuthenticationStatus(auth_status)
+            status_from_string = AuthenticationStatus(status_string)
+            print(f"   String '{status_string}' -> {status_from_string.name}")
         except ValueError:
-            print(f"⚠️ Unknown auth status: {auth_status}")
-            return False
-
-        # Handle different response scenarios
-        if status_code == 200:
-            if self.current_status == AuthenticationStatus.AUTHENTICATED:
-                print("✅ API call successful, user authenticated")
-                self.retry_count = 0  # Reset retry count
-                return True
-            elif self.current_status == AuthenticationStatus.EXPIRED:
-                print("⚠️ Token expired, attempting refresh...")
-                return self.refresh_authentication()
-            else:
-                print(f"❌ API call failed with status: {self.current_status.value}")
-                return False
-        elif status_code == 401:
-            self.current_status = AuthenticationStatus.FAILED
-            print("❌ Authentication failed")
-            return False
-        elif status_code == 403:
-            self.current_status = AuthenticationStatus.EXPIRED
-            print("⚠️ Access forbidden, token may have expired")
-            return self.refresh_authentication()
-        else:
-            print(f"❌ API error: {status_code}")
-            return False
-
-    def refresh_authentication(self) -> bool:
-        \"\"\"Attempt to refresh authentication.\"\"\"
-        if self.retry_count < self.max_retries:
-            self.retry_count += 1
-            print(f"🔄 Authentication refresh attempt {self.retry_count}/{self.max_retries}")
-            # Simulate refresh attempt
-            import random
-            if random.random() < 0.7:  # 70% success rate
-                self.current_status = AuthenticationStatus.AUTHENTICATED
-                print("✅ Authentication refreshed successfully!")
-                return True
-            else:
-                print("❌ Authentication refresh failed")
-                return False
-        else:
-            print("❌ Max retry attempts exceeded")
-            self.current_status = AuthenticationStatus.FAILED
-            return False
-
-    def get_status_summary(self) -> dict:
-        \"\"\"Get current status summary.\"\"\"
-        return {
-            'auth_status': self.current_status.value,
-            'retry_count': self.retry_count,
-            'max_retries': self.max_retries,
-            'can_retry': self.retry_count < self.max_retries
-        }
-
-# Test the API response handler
-print("🚀 Advanced Enum Usage Demo")
-print("=" * 40)
-
-handler = APIResponseHandler()
-
-# Test various API responses
-test_responses = [
-    {'status_code': 200, 'auth_status': 'authenticated'},
-    {'status_code': 200, 'auth_status': 'expired'},
-    {'status_code': 401, 'auth_status': 'failed'},
-    {'status_code': 403, 'auth_status': 'expired'},
-    {'status_code': 500, 'auth_status': 'unauthenticated'}
-]
-
-for i, response in enumerate(test_responses, 1):
-    print(f"\\n📡 Test Response {i}:")
-    print(f"Status Code: {response['status_code']}")
-    print(f"Auth Status: {response['auth_status']}")
-
-    success = handler.handle_api_response(response)
-    print(f"Result: {'✅ Success' if success else '❌ Failed'}")
-
-    summary = handler.get_status_summary()
-    print(f"Status Summary: {summary}")""")
+            print(f"   Invalid status string: {status_string}")
+        
+        # Value to enum
+        status_value = 1
+        try:
+            status_from_value = AuthenticationStatus(status_value)
+            print(f"   Value {status_value} -> {status_from_value.name}")
+        except ValueError:
+            print(f"   Invalid status value: {status_value}")
+            
+    except Exception as e:
+        print(f"❌ Advanced enum usage failed: {e}")
+        
+else:
+    print("❌ Client not available for advanced enum usage demo")""")
 
     # Best practices section
     best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
 
-### 1. Use Enums for Constants
-Always use enums instead of magic strings or numbers for better code readability and maintainability.
+### 1. Always Use Enums for Type Safety
+Instead of hardcoding string values or numbers, use the provided enums to ensure consistency and catch errors at development time.
 
-### 2. Validate Input Values
-Use enum validation to ensure that input values are valid before processing.
+### 2. Handle Invalid Values Gracefully
+When converting from external data (like API responses), always handle potential invalid values:
 
-### 3. Leverage Enum Properties
-Take advantage of enum properties like `.name`, `.value`, and comparison operators.
+```python
+try:
+    item_type = ItemType(api_response['type_id'])
+except ValueError:
+    # Handle invalid type ID
+    item_type = ItemType.PRODUCT  # Default fallback
+```
 
-### 4. Group Related Constants
-Use enums to group related constants together, making your code more organized.
+### 3. Use Enum Comparisons
+Compare enum values directly rather than comparing raw values:
 
-### 5. Handle Invalid Values Gracefully
-Always handle cases where enum values might be invalid or unexpected.
+```python
+# Good
+if item_type == ItemType.PRODUCT:
+    # Handle product
+
+# Avoid
+if item.list_item_type_id == 1:  # Magic number
+    # Handle product
+```
+
+### 4. Leverage Enum Properties
+Use the enum's built-in properties and methods for better code readability and maintenance.
 """)
 
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
 
-This notebook has demonstrated the enumeration classes available in the Meijer API client:
+This notebook has demonstrated the enumeration classes available in the Meijer API client using **real API calls** instead of mocked data.
 
-✅ **AuthenticationStatus**: Manages authentication state with clear, readable values
-✅ **ItemType**: Classifies different types of items in shopping lists and other data structures
+### Key Takeaways
 
-### Key Benefits
+- **Type Safety**: Enums provide compile-time type checking and prevent invalid values
+- **Consistency**: Centralized constants ensure consistent values across the application
+- **Real Data Integration**: All examples use actual Meijer API responses
+- **Error Prevention**: Enums help catch errors early in development
+- **Code Readability**: Enum names are more descriptive than magic numbers
 
-- **Type Safety**: Prevents errors from invalid constant values
-- **Readability**: Makes code more self-documenting
-- **Maintainability**: Centralizes constant definitions
-- **Validation**: Provides built-in validation capabilities
-- **Comparison**: Enables powerful comparison and sorting operations
+### Available Enums
 
-### Use Cases
-
-- **State Management**: Track application and API states
-- **Data Classification**: Categorize different types of data
-- **Configuration**: Define valid configuration options
-- **API Responses**: Handle different response types consistently
-- **User Interface**: Display human-readable status messages
+- **AuthenticationStatus**: Tracks client authentication state
+  - UNAUTHENTICATED, AUTHENTICATED, EXPIRED, FAILED
+  
+- **ItemType**: Classifies shopping list items
+  - PRODUCT, COUPON, WEEKLY_AD, MANUAL
 
 ### Next Steps
 
-- Explore the other modules in the Meijer package
-- Learn about authentication and API client usage
-- Discover how enums integrate with the data models
-- Understand the complete API workflow
+- Explore the individual enum classes in more detail
+- Use these enums in your own applications for type safety
+- Check the API documentation for additional enum values
+- Experiment with different enum combinations and filtering
 
-Enums provide a solid foundation for building robust, maintainable Meijer API applications! 🚀
+All enums are designed to work seamlessly with the Meijer API and provide a consistent, type-safe interface for your applications.
 """)
 
     # Add all cells to notebook
@@ -539,24 +373,21 @@ Enums provide a solid foundation for building robust, maintainable Meijer API ap
         auth_status_example,
         item_type_section,
         item_type_example,
-        practical_section,
-        practical_example,
-        item_type_usage_section,
-        item_type_usage_example,
-        comparison_section,
-        comparison_example,
         advanced_section,
         advanced_example,
         best_practices_section,
-        summary_section,
+        summary_section
     ]
 
-    # Save notebook
-    with open("enums.ipynb", "w") as f:
-        nbf.write(nb, f)
-
-    print("✅ enums.ipynb created successfully!")
+    return nb
 
 
 if __name__ == "__main__":
-    create_enums_notebook()
+    # Create the notebook
+    nb = create_enums_notebook()
+    
+    # Write to file
+    with open("enums.ipynb", "w") as f:
+        nbf.write(nb, f)
+    
+    print("✅ enums.ipynb generated successfully!")
