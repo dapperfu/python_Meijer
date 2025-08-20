@@ -1,160 +1,176 @@
 #!/usr/bin/env python3
 """
-Test script for OKTA authentication flow.
-
-This script demonstrates the complete OKTA IDX authentication process
-without requiring a browser or local web server.
-
-Usage:
-    python test_okta_auth.py [username] [password]
-
-Example:
-    python test_okta_auth.py "meijer.com@eabi.xyz" "your_password"
+Test script for the OKTA authentication flows.
 """
 
 import os
 import sys
 
-# Add the meijer package to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
+# Add the project root to the Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from meijer.okta_auth import OktaAuthenticator
+from meijer.okta_js_widget_simulator import authenticate_with_js_widget
 
 
-def test_okta_authentication():
-    """Test the OKTA authentication flow."""
-    print("🧪 Testing OKTA Authentication Flow")
+def test_js_widget_auth():
+    """Test the JavaScript widget simulator approach."""
+    print("🧪 Testing OKTA JavaScript Widget Simulator")
     print("=" * 50)
 
+    # Test credentials (replace with actual credentials for testing)
+    username = "test@example.com"  # Replace with actual username
+    password = "test_password"  # Replace with actual password
+
+    print(f"👤 Username: {username}")
+    print(f"🔑 Password: {'*' * len(password)}")
+    print()
+
     try:
-        from meijer.okta_auth import authenticate_with_credentials
+        # Perform authentication using widget simulator
+        auth_code = authenticate_with_js_widget(username, password)
 
-        # Get credentials from command line or use defaults
-        if len(sys.argv) >= 3:
-            username = sys.argv[1]
-            password = sys.argv[2]
-        else:
-            print("⚠️ No credentials provided, using defaults from logs")
-            print("💡 Usage: python test_okta_auth.py <username> <password>")
-            username = "meijer.com@eabi.xyz"  # From logs
-            password = "Default12!@"  # From logs (for testing only)
-
-        print(f"🔐 Testing authentication for: {username}")
-        print()
-
-        # Attempt authentication
-        tokens = authenticate_with_credentials(username, password)
-
-        if tokens:
-            print()
-            print("🎉 SUCCESS: Authentication completed!")
-            print("=" * 50)
-            print(f"🔑 Access Token: {tokens.access_token[:50]}...")
-            print(f"🔄 Refresh Token: {tokens.refresh_token[:50]}...")
-            print(f"⏰ Expires In: {tokens.expires_in} seconds")
-            print(f"🎫 Token Type: {tokens.token_type}")
-
-            # Test token validation
-            if tokens.is_expired():
-                print("❌ Token is expired")
-            else:
-                print("✅ Token is valid")
-                time_until_expiry = tokens.time_until_expiry()
-                if time_until_expiry:
-                    hours = time_until_expiry.total_seconds() / 3600
-                    print(f"⏰ Token expires in: {hours:.1f} hours")
-
-            # Save tokens to storage for testing
-            try:
-                from meijer.auth import TokenStorage
-
-                storage = TokenStorage()
-                if storage.save_tokens(tokens):
-                    print("💾 Tokens saved to storage successfully")
-                else:
-                    print("⚠️ Failed to save tokens to storage")
-            except Exception as e:
-                print(f"⚠️ Could not save tokens to storage: {e}")
-
+        if auth_code:
+            print("🎉 SUCCESS: Widget simulation completed!")
+            print(f"🔑 Authorization code: {auth_code[:50]}...")
             return True
         else:
-            print()
-            print("❌ FAILED: Authentication failed")
-            print("=" * 50)
-            print("💡 Possible issues:")
-            print("   1. Invalid credentials")
-            print("   2. OKTA flow changes")
-            print("   3. Device fingerprinting issues")
-            print("   4. Rate limiting")
-            print("   5. Network connectivity")
+            print("❌ FAILED: Widget simulation did not complete")
             return False
 
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("💡 Make sure you're running from the project root directory")
-        return False
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"❌ ERROR: Widget simulation failed with exception: {e}")
         return False
 
 
-def test_token_storage():
-    """Test token storage functionality."""
-    print("\n🧪 Testing Token Storage")
-    print("=" * 30)
+def test_direct_auth():
+    """Test the direct API approach (for comparison)."""
+    print("\n🧪 Testing Direct API Approach (for comparison)")
+    print("=" * 50)
+
+    # Test credentials (replace with actual credentials for testing)
+    username = "test@example.com"  # Replace with actual username
+    password = "test_password"  # Replace with actual password
+
+    print(f"👤 Username: {username}")
+    print(f"🔑 Password: {'*' * len(password)}")
+    print()
+
+    try:
+        # Create authenticator instance
+        authenticator = OktaAuthenticator(username, password)
+
+        # Perform authentication
+        auth_code = authenticator.authenticate()
+
+        if auth_code:
+            print("🎉 SUCCESS: Direct API authentication completed!")
+            print(f"🔑 Authorization code: {auth_code[:50]}...")
+            return True
+        else:
+            print("❌ FAILED: Direct API authentication did not complete")
+            return False
+
+    except Exception as e:
+        print(f"❌ ERROR: Direct API authentication failed with exception: {e}")
+        return False
+
+
+def test_token_refresh():
+    """Test token refresh functionality."""
+    print("\n🧪 Testing Token Refresh Functionality")
+    print("=" * 50)
 
     try:
         from meijer.auth import TokenStorage
 
         storage = TokenStorage()
 
-        # Check if we have tokens
+        # Check if we have existing tokens
         if storage.has_tokens():
-            print("✅ Tokens found in storage")
-            tokens = storage.get_valid_tokens()
+            print("✅ Found existing tokens")
+            tokens = storage.load_tokens()
+
             if tokens:
                 print(f"🔑 Access token: {tokens.access_token[:30]}...")
                 print(f"🔄 Refresh token: {tokens.refresh_token[:30]}...")
                 print(f"⏰ Expires in: {tokens.expires_in} seconds")
 
-                # Test refresh
-                if tokens.refresh_token and tokens.refresh_token.strip():
-                    print("🔄 Testing token refresh...")
-                    if storage.refresh_tokens(tokens.refresh_token):
-                        print("✅ Token refresh successful")
+                # Test if tokens are expired
+                if tokens.is_expired():
+                    print("⚠️ Tokens are expired - attempting refresh...")
+
+                    # Try to refresh tokens
+                    if storage.refresh_tokens():
+                        print("✅ Token refresh successful!")
+                        refreshed_tokens = storage.load_tokens()
+                        if refreshed_tokens:
+                            print(
+                                f"🔑 New access token: {refreshed_tokens.access_token[:30]}..."
+                            )
+                            return True
                     else:
                         print("❌ Token refresh failed")
+                        return False
                 else:
-                    print("⚠️ No refresh token available")
+                    print("✅ Tokens are still valid")
+                    return True
             else:
-                print("❌ No valid tokens in storage")
+                print("❌ Could not load tokens")
+                return False
         else:
-            print("ℹ️ No tokens in storage")
+            print("ℹ️ No existing tokens found")
+            print("💡 Run 'meijer auth' first to capture tokens from browser login")
+            return True  # This is not an error condition
 
     except Exception as e:
-        print(f"❌ Token storage test failed: {e}")
+        print(f"❌ ERROR: Token refresh test failed: {e}")
+        return False
 
 
 if __name__ == "__main__":
     print("🚀 OKTA Authentication Test Suite")
-    print("=" * 50)
+    print("=" * 60)
 
-    # Test authentication
-    auth_success = test_okta_authentication()
+    # Test 1: JavaScript Widget Simulator
+    js_widget_success = test_js_widget_auth()
 
-    # Test token storage
-    test_token_storage()
+    # Test 2: Direct API Approach (for comparison)
+    direct_api_success = test_direct_auth()
+
+    # Test 3: Token Refresh
+    token_refresh_success = test_token_refresh()
 
     # Summary
     print("\n📊 Test Summary")
     print("=" * 30)
-    if auth_success:
-        print("✅ Authentication: PASSED")
-        print("💡 You can now use the extracted tokens for API calls")
+    print(f"✅ JS Widget Simulator: {'PASSED' if js_widget_success else 'FAILED'}")
+    print(f"✅ Direct API Approach: {'PASSED' if direct_api_success else 'FAILED'}")
+    print(f"✅ Token Refresh: {'PASSED' if token_refresh_success else 'FAILED'}")
+
+    # Overall result
+    overall_success = js_widget_success or direct_api_success
+
+    print(f"\n🎯 Overall Result: {'SUCCESS' if overall_success else 'FAILED'}")
+
+    if overall_success:
+        print("💡 At least one authentication method is working!")
+        if token_refresh_success:
+            print(
+                "💡 Token refresh is also working - you can maintain long-term access!"
+            )
     else:
-        print("❌ Authentication: FAILED")
-        print("💡 Check the error messages above for troubleshooting")
+        print("💡 Both authentication methods failed")
+        print("💡 Check credentials and network connectivity")
 
     print("\n🔧 Next Steps:")
-    print("   1. If successful, tokens are saved and ready for use")
-    print("   2. If failed, check the detailed error messages")
-    print("   3. Verify credentials and network connectivity")
-    print("   4. Check if OKTA flow has changed")
+    if not overall_success:
+        print("   1. Verify credentials are correct")
+        print("   2. Check if OKTA flow has changed")
+        print("   3. Try running 'meijer auth' to capture working tokens")
+    else:
+        print("   1. Integrate successful method into the main client")
+        print("   2. Implement automatic token refresh")
+        print("   3. Test with real API calls")
+
+    sys.exit(0 if overall_success else 1)

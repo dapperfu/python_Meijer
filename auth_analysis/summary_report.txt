@@ -1,0 +1,45 @@
+OKTA Authentication Flow Analysis Summary
+==================================================
+
+Analysis Date: 2025-08-20T10:02:45.785613
+Total Attempts: 3
+
+COOKIE ANALYSIS
+--------------------
+Unique cookies observed: 12
+Cookie names: DT, _abck, bm_sv, AKA_A2, ak_bmsc, bm_s, bm_so, bm_ss, bm_mi, JSESSIONID, akavpau_VP2, bm_sz
+
+Attempt 1 cookie progression:
+  initial_session: 0 cookies
+  post_initial_session: 10 cookies
+  post_oauth2_request: 12 cookies
+
+Attempt 2 cookie progression:
+  initial_session: 0 cookies
+  post_initial_session: 10 cookies
+  post_oauth2_request: 12 cookies
+
+Attempt 3 cookie progression:
+  initial_session: 0 cookies
+  post_initial_session: 10 cookies
+  post_oauth2_request: 12 cookies
+
+RESPONSE ANALYSIS
+--------------------
+Attempt 1 responses:
+  initial_session_establishment: 200 (11653 bytes)
+  oauth2_authorization: 302 (0 bytes)
+
+Attempt 2 responses:
+  initial_session_establishment: 200 (11640 bytes)
+  oauth2_authorization: 302 (0 bytes)
+
+Attempt 3 responses:
+  initial_session_establishment: 200 (11639 bytes)
+  oauth2_authorization: 302 (0 bytes)
+
+TOKEN ANALYSIS
+--------------------
+Attempt 1: ❌ No tokens
+Attempt 2: ❌ No tokens
+Attempt 3: ❌ No tokens

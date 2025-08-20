@@ -5,6 +5,7 @@ This module contains all the Click command groups and individual commands.
 """
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -1510,6 +1511,8 @@ def auth_command():
     click.echo("=" * 50)
 
     # First check if we have existing tokens and try to refresh them
+    from ..auth import TokenStorage
+
     token_storage = TokenStorage()
     if token_storage.has_tokens():
         click.echo("🔍 Found existing tokens, testing refresh...")
@@ -1621,16 +1624,16 @@ def auth_command():
 
 
 @click.command()
-@click.argument('username', required=False)
-@click.argument('password', required=False)
+@click.argument("username", required=False)
+@click.argument("password", required=False)
 def login_command(username: Optional[str], password: Optional[str]):
     """Login to Meijer API using OKTA authentication with username/password.
-    
+
     CREDENTIAL PRIORITY:
     1. CLI arguments (highest priority)
     2. ~/.config/meijer/login.txt file
     3. User prompts (lowest priority)
-    
+
     EXAMPLES:
         meijer login                    # Prompt for both username and password
         meijer login user@email.com     # Use username from CLI, prompt for password
@@ -1638,74 +1641,80 @@ def login_command(username: Optional[str], password: Optional[str]):
     """
     click.echo("🔐 Meijer OKTA Login")
     click.echo("=" * 50)
-    
+
     # Get credentials based on priority:
     # 1. CLI arguments (highest priority)
     # 2. ~/.config/meijer/login.txt file
     # 3. User prompts (lowest priority)
-    
+
     if username:
         click.echo(f"🔑 Username from CLI: {username}")
-    
+
     if password:
         click.echo(f"🔑 Password from CLI: {'*' * len(password)}")
-    
+
     # If no CLI args, check for login.txt file
     if not username or not password:
-        from ..auth import get_meijer_config_path
         from pathlib import Path
-        
+
+        from ..auth import get_meijer_config_path
+
         login_file_path = get_meijer_config_path("login.txt")
         login_file = Path(login_file_path)
-        
+
         if login_file.exists():
             click.echo(f"📁 Found login file: {login_file}")
             try:
-                with open(login_file, 'r') as f:
+                with open(login_file, "r") as f:
                     lines = [line.strip() for line in f.readlines() if line.strip()]
-                
+
                 if len(lines) >= 2:
                     file_username = lines[0]
                     file_password = lines[1]
-                    
+
                     if not username:
                         username = file_username
                         click.echo(f"👤 Username from file: {username}")
-                    
+
                     if not password:
                         password = file_password
                         click.echo(f"🔐 Password from file: {'*' * len(password)}")
-                        
+
                 elif len(lines) == 1:
                     file_username = lines[0]
                     if not username:
                         username = file_username
                         click.echo(f"👤 Username from file: {username}")
-                    click.echo("⚠️ Only username found in file, will prompt for password")
-                    
+                    click.echo(
+                        "⚠️ Only username found in file, will prompt for password"
+                    )
+
             except Exception as e:
                 click.echo(f"❌ Error reading login file: {e}")
                 click.echo("💡 Will prompt for credentials")
-    
+
     # Prompt for missing credentials
     if not username:
         click.echo("\n👤 Please enter your Meijer username/email:")
         username = click.prompt("Username", type=str)
-    
+
     if not password:
         click.echo("\n🔐 Please enter your Meijer password:")
         password = click.prompt("Password", type=str, hide_input=True)
-    
+
     click.echo(f"\n🔍 Attempting OKTA authentication for: {username}")
     click.echo("⏳ This may take a moment...")
-    
+
     try:
-        # Import and use the OKTA authenticator
-        from ..okta_auth import authenticate_with_credentials
-        
+        # Import and use the enhanced authentication system
+        from ..enhanced_auth import EnhancedMeijerAuth
+
+        # Create enhanced authenticator with credentials
+        auth = EnhancedMeijerAuth(username, password)
+
         # Attempt authentication
-        tokens = authenticate_with_credentials(username, password)
-        
+        tokens = auth.authenticate()
+
         if tokens:
             click.echo("\n🎉 SUCCESS: Authentication completed!")
             click.echo("=" * 50)
@@ -1713,7 +1722,7 @@ def login_command(username: Optional[str], password: Optional[str]):
             click.echo(f"🔄 Refresh Token: {tokens.refresh_token[:30]}...")
             click.echo(f"⏰ Expires In: {tokens.expires_in} seconds")
             click.echo(f"🎫 Token Type: {tokens.token_type}")
-            
+
             # Test token validation
             if tokens.is_expired():
                 click.echo("❌ Token is expired")
@@ -1723,10 +1732,11 @@ def login_command(username: Optional[str], password: Optional[str]):
                 if time_until_expiry:
                     hours = time_until_expiry.total_seconds() / 3600
                     click.echo(f"⏰ Token expires in: {hours:.1f} hours")
-            
+
             # Save tokens to storage
             try:
                 from ..auth import TokenStorage
+
                 storage = TokenStorage()
                 if storage.save_tokens(tokens):
                     click.echo("💾 Tokens saved to storage successfully")
@@ -1735,21 +1745,22 @@ def login_command(username: Optional[str], password: Optional[str]):
                     click.echo("⚠️ Failed to save tokens to storage")
             except Exception as e:
                 click.echo(f"⚠️ Could not save tokens to storage: {e}")
-            
+
             # Test the tokens with a simple API call
             click.echo("\n🧪 Testing extracted tokens with API call...")
             try:
                 from ..client import Meijer
+
                 test_client = Meijer()
-                
+
                 # Try to get account status to verify tokens work
                 status = test_client.auth_status
                 click.echo(f"✅ API call successful! Auth status: {status.name}")
-                
+
             except Exception as e:
                 click.echo(f"❌ API call failed: {e}")
                 click.echo("💡 The extracted tokens may have issues")
-            
+
         else:
             click.echo("\n❌ FAILED: Authentication failed")
             click.echo("=" * 50)
@@ -1764,7 +1775,7 @@ def login_command(username: Optional[str], password: Optional[str]):
             click.echo("   - Check your internet connection")
             click.echo("   - Try again in a few minutes")
             click.echo("   - Contact support if issues persist")
-            
+
     except ImportError as e:
         click.echo(f"❌ Import error: {e}")
         click.echo("💡 Make sure the OKTA authentication module is available")
