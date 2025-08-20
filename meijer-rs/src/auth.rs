@@ -74,7 +74,7 @@ pub struct TokenStorage {
 
 impl TokenStorage {
     pub fn new() -> Self {
-        let storage_file = Self::get_meijer_config_path("auth.txt");
+        let storage_file = Self::get_meijer_config_path("auth.json");
         Self { storage_file }
     }
 
