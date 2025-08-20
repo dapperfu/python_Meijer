@@ -1645,7 +1645,42 @@ def login_command(user: Optional[str], password: Optional[str], save_credentials
                 click.echo("❌ Failed to clear credentials")
             return
 
-        # Get credentials interactively if not provided
+        # Smart fallback logic: check login.txt before prompting
+        fallback_username = None
+        fallback_password = None
+        
+        if not user or not password:
+            from meijer.auth import get_meijer_config_path
+            import os
+            
+            login_file = os.path.join(get_meijer_config_path(""), "login.txt")
+            if os.path.exists(login_file):
+                try:
+                    with open(login_file, "r") as f:
+                        lines = [line.strip() for line in f.readlines()]
+                    
+                    if len(lines) >= 1 and lines[0]:  # First line has username
+                        fallback_username = lines[0]
+                        click.echo(f"👤 Found username in login.txt: {fallback_username}")
+                    
+                    if len(lines) >= 2 and lines[1]:  # Second line has password
+                        fallback_password = lines[1]
+                        click.echo("🔑 Found password in login.txt")
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to read login.txt: {e}")
+                    click.echo("⚠️ Error reading login.txt, will prompt for credentials")
+
+        # Use fallback credentials where available, prompt for missing ones
+        if not user and fallback_username:
+            user = fallback_username
+            click.echo(f"✅ Using username from login.txt: {user}")
+        
+        if not password and fallback_password:
+            password = fallback_password
+            click.echo("✅ Using password from login.txt")
+        
+        # Prompt for any missing credentials
         if not user:
             user = click.prompt("👤 Username/Email", type=str)
         if not password:
