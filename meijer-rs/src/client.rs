@@ -22,15 +22,17 @@ impl MeijerClient {
 
     pub fn _get_api_headers(&self) -> Result<HashMap<String, String>> {
         let mut headers = HashMap::new();
-        headers.insert("Ocp-Apim-Subscription-Key".to_string(), self.subscription_key.clone());
-        headers.insert("Content-Type".to_string(), "application/json".to_string());
-        headers.insert("Accept".to_string(), "application/json".to_string());
-        
+
+        // Use exact same headers as Python version
+        headers.insert("user-agent".to_string(), "Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)".to_string());
+        headers.insert("accept-encoding".to_string(), "gzip".to_string());
+        headers.insert("ocp-apim-subscription-key".to_string(), self.subscription_key.clone());
+
         // Add authentication token if available
         if let Some(tokens) = self.token_storage.get_valid_tokens() {
             headers.insert("Authorization".to_string(), format!("Bearer {}", tokens.access_token));
         }
-        
+
         Ok(headers)
     }
 
@@ -39,6 +41,16 @@ impl MeijerClient {
     }
 
     pub fn _make_request(&self, method: &str, url: &str, headers: HashMap<String, String>) -> Result<reqwest::blocking::Response> {
+        println!("🌐 Making {} request to: {}", method, url);
+        println!("📋 Headers:");
+        for (key, value) in &headers {
+            if key.to_lowercase() == "authorization" {
+                println!("   {}: Bearer [REDACTED]", key);
+            } else {
+                println!("   {}: {}", key, value);
+            }
+        }
+
         let request = match method.to_uppercase().as_str() {
             "GET" => self.http_client.get(url),
             "POST" => self.http_client.post(url),
@@ -54,6 +66,13 @@ impl MeijerClient {
         }
 
         let response = request_builder.send()?;
+
+        println!("📡 Response status: {}", response.status());
+        println!("📡 Response headers:");
+        for (key, value) in response.headers() {
+            println!("   {}: {:?}", key, value);
+        }
+
         Ok(response)
     }
 

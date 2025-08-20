@@ -94,8 +94,8 @@ class TokenStorage:
 
     def __init__(self, storage_file: str = None):
         if storage_file is None:
-            # Use cross-platform config directory
-            self.storage_file = get_meijer_config_path("meijer_tokens.pkl")
+            # Use cross-platform config directory with JSON format
+            self.storage_file = get_meijer_config_path("auth.json")
         else:
             self.storage_file = storage_file
         self.logger = logging.getLogger(__name__)
@@ -122,8 +122,8 @@ class TokenStorage:
     def save_tokens(self, tokens: AuthTokens) -> bool:
         """Save tokens to persistent storage."""
         try:
-            with open(self.storage_file, "wb") as f:
-                pickle.dump(tokens.to_dict(), f)
+            with open(self.storage_file, "w") as f:
+                json.dump(tokens.to_dict(), f, indent=2)
             self.logger.info("✅ Tokens saved to persistent storage")
             return True
         except Exception as e:
@@ -136,8 +136,8 @@ class TokenStorage:
             if not os.path.exists(self.storage_file):
                 return None
 
-            with open(self.storage_file, "rb") as f:
-                token_data = pickle.load(f)
+            with open(self.storage_file, "r") as f:
+                token_data = json.load(f)
 
             tokens = AuthTokens.from_dict(token_data)
             self.logger.info("✅ Tokens loaded from persistent storage")

@@ -36,19 +36,20 @@ impl MeijerList {
             return Err(anyhow!("Authentication required"));
         }
 
-        let url = format!("{}{}", 
-            self.meijer_client.api_base_url(), 
+        let url = format!("{}{}",
+            self.meijer_client.api_base_url(),
             self.endpoints.get("get_list").unwrap()
         );
 
         let mut headers = self.meijer_client._get_api_headers()?;
+        // Use exact same Accept header as Python version
         headers.insert("Accept".to_string(), "application/meijer.shoppingList.ShoppingList-v1.0+json".to_string());
 
         let response = self.meijer_client._make_request("GET", &url, headers)?;
 
         if response.status().is_success() {
             let data: HashMap<String, Value> = response.json()?;
-            
+
             let mut items = Vec::new();
             if let Some(list_items) = data.get("listItems").and_then(|v| v.as_array()) {
                 for item_data in list_items {
@@ -58,7 +59,7 @@ impl MeijerList {
                     }
                 }
             }
-            
+
             Ok(items)
         } else if response.status().as_u16() == 401 {
             Err(anyhow!("Authentication failed - token may be expired"))
@@ -72,7 +73,7 @@ impl MeijerList {
 
     pub fn get_filtered(&self, completed: bool, pending: bool) -> Result<Vec<ListItem>> {
         let items = self.get()?;
-        
+
         let filtered_items: Vec<ListItem> = if completed && !pending {
             items.into_iter().filter(|item| item.is_complete).collect()
         } else if pending && !completed {
@@ -89,48 +90,48 @@ impl MeijerList {
         let list_item_id = item_data.get("listItemId")
             .and_then(|v| v.as_i64())
             .unwrap_or(0) as i32;
-            
+
         let list_item_type_id = item_data.get("listItemTypeId")
             .and_then(|v| v.as_i64())
             .unwrap_or(1) as i32;
-            
+
         let item_display_order = item_data.get("itemDisplayOrder")
             .and_then(|v| v.as_i64())
             .unwrap_or(1) as i32;
-            
+
         let item_part_number = item_data.get("itemPartNumber")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
-            
+
         let item_description = item_data.get("itemDescription")
             .and_then(|v| v.as_str())
             .unwrap_or("Unknown Item")
             .to_string();
-            
+
         let quantity = item_data.get("quantity")
             .and_then(|v| v.as_i64())
             .unwrap_or(1) as i32;
-            
+
         let store_id = item_data.get("storeId")
             .and_then(|v| v.as_i64())
             .unwrap_or(0) as i32;
-            
+
         let notes = item_data.get("notes")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
-            
+
         let is_complete = item_data.get("isComplete")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
-            
+
         let is_favorite = item_data.get("isFavorite")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
-            
+
         let listing_id = item_data.get("listingId")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
-            
+
         let coupon_id = item_data.get("couponId")
             .and_then(|v| v.as_i64())
             .unwrap_or(0) as i32;

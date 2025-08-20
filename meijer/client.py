@@ -181,7 +181,7 @@ class Meijer:
             
         # Get cross-platform config path
         from .auth import get_meijer_config_path
-        config_path = Path(get_meijer_config_path("auth.txt"))
+        config_path = Path(get_meijer_config_path("auth.json"))
             
         if config_path.exists():
             try:
@@ -284,6 +284,58 @@ class Meijer:
         headers["ocp-apim-subscription-key"] = self.subscription_key
 
         return headers
+
+    @property
+    def token_expires_at(self) -> Optional[datetime]:
+        """
+        Get the expiration time of the current access token.
+        
+        Returns:
+            datetime object representing when the token expires, or None if no token
+        """
+        tokens = self.token_storage.get_valid_tokens()
+        if tokens and tokens.expires_at:
+            return tokens.expires_at
+        return None
+
+    @property
+    def auth_status(self) -> str:
+        """
+        Get the current authentication status.
+        
+        Returns:
+            String representing authentication status
+        """
+        tokens = self.token_storage.get_valid_tokens()
+        if not tokens:
+            return "Not Authenticated"
+        if tokens.is_expired():
+            return "Expired"
+        return "Authenticated"
+
+    @property
+    def user_id(self) -> Optional[str]:
+        """
+        Get the user ID from the current tokens.
+        
+        Returns:
+            User ID string or None if not available
+        """
+        # This would need to be extracted from the JWT token
+        # For now, return a placeholder
+        return "User ID not available"
+
+    @property
+    def home_store_id(self) -> Optional[str]:
+        """
+        Get the home store ID from the current tokens.
+        
+        Returns:
+            Home store ID string or None if not available
+        """
+        # This would need to be extracted from the JWT token or API call
+        # For now, return a placeholder
+        return "Home store ID not available"
 
     def _make_request(
         self,
