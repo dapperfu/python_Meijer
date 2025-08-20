@@ -1149,6 +1149,22 @@ def auth_command(log_file: str = None):
         with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
 
+        # Also save to TokenStorage pickle file for refresh functionality
+        try:
+            from ..models import AuthTokens
+            auth_tokens = AuthTokens(
+                access_token=tokens["access_token"],
+                refresh_token=tokens.get("refresh_token", ""),
+                expires_in=tokens["expires_in"],
+                token_type=tokens["token_type"],
+            )
+            if token_storage.save_tokens(auth_tokens):
+                logger.debug("✅ Tokens also saved to TokenStorage for refresh functionality")
+            else:
+                logger.warning("⚠️ Failed to save tokens to TokenStorage")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not save tokens to TokenStorage: {e}")
+
         logger.debug("Tokens saved successfully")
         click.echo(f"💾 Tokens saved to {config_path}")
         click.echo("✅ Authentication file updated successfully!")
