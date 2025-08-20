@@ -1,6 +1,7 @@
 use crate::client::MeijerClient;
 use crate::shopping_list::MeijerList;
 use anyhow::Result;
+use chrono;
 
 pub fn handle_show(completed: bool, pending: bool) -> Result<()> {
     // Create client and shopping list
@@ -104,23 +105,23 @@ pub fn handle_clearall() -> Result<()> {
 }
 
 pub fn handle_defrag() -> Result<()> {
-    let client = MeijerClient::new();
-    let shopping_list = MeijerList::new(client);
+    let _client = MeijerClient::new();
+    let _shopping_list = MeijerList::new(_client);
     
-    // TODO: Implement defrag functionality
     println!("🔧 Defragmenting shopping list by organizing items by aisle...");
-    println!("🔄 Defrag functionality coming soon!");
+    println!("🔄 Defrag functionality is complex and coming in a future release!");
+    println!("   This requires search integration and store location data.");
     
     Ok(())
 }
 
 pub fn handle_estimate() -> Result<()> {
-    let client = MeijerClient::new();
-    let shopping_list = MeijerList::new(client);
+    let _client = MeijerClient::new();
+    let _shopping_list = MeijerList::new(_client);
     
-    // TODO: Implement cost estimation functionality
     println!("💰 Estimating cost of shopping list items...");
-    println!("🔄 Cost estimation functionality coming soon!");
+    println!("🔄 Cost estimation functionality coming in a future release!");
+    println!("   This requires product pricing data integration.");
     
     Ok(())
 }
@@ -129,10 +130,29 @@ pub fn handle_export(output: Option<String>) -> Result<()> {
     let client = MeijerClient::new();
     let shopping_list = MeijerList::new(client);
     
-    // TODO: Implement export functionality
     let output_path = output.unwrap_or_else(|| "shopping_list_export.json".to_string());
     println!("📤 Exporting shopping list to: {}", output_path);
-    println!("🔄 Export functionality coming soon!");
+    
+    // Get the shopping list
+    let items = shopping_list.get()?;
+    
+    // Export to JSON
+    let export_data = serde_json::json!({
+        "exported_at": chrono::Utc::now().to_rfc3339(),
+        "total_items": items.len(),
+        "items": items.iter().map(|item| {
+            serde_json::json!({
+                "name": item.name(),
+                "quantity": item.quantity,
+                "notes": item.notes,
+                "is_complete": item.is_complete,
+                "item_id": item.list_item_id
+            })
+        }).collect::<Vec<_>>()
+    });
+    
+    std::fs::write(&output_path, serde_json::to_string_pretty(&export_data)?)?;
+    println!("✅ Successfully exported {} items to {}", items.len(), output_path);
     
     Ok(())
 }
@@ -169,20 +189,46 @@ pub fn handle_import(file_path: String) -> Result<()> {
     let client = MeijerClient::new();
     let shopping_list = MeijerList::new(client);
     
-    // TODO: Implement import functionality
     println!("📥 Importing shopping list from: {}", file_path);
-    println!("🔄 Import functionality coming soon!");
+    
+    // Read and parse the JSON file
+    let content = std::fs::read_to_string(&file_path)?;
+    let import_data: serde_json::Value = serde_json::from_str(&content)?;
+    
+    if let Some(items) = import_data.get("items").and_then(|v| v.as_array()) {
+        let mut added_count = 0;
+        
+        for item in items {
+            if let (Some(name), Some(quantity)) = (
+                item.get("name").and_then(|v| v.as_str()),
+                item.get("quantity").and_then(|v| v.as_i64())
+            ) {
+                let notes = item.get("notes").and_then(|v| v.as_str());
+                
+                if shopping_list.add(name, quantity as i32, notes)? {
+                    added_count += 1;
+                    println!("✅ Added: {}", name);
+                } else {
+                    println!("⚠️ Failed to add: {}", name);
+                }
+            }
+        }
+        
+        println!("✅ Successfully imported {} items from {}", added_count, file_path);
+    } else {
+        return Err(anyhow::anyhow!("Invalid import file format"));
+    }
     
     Ok(())
 }
 
 pub fn handle_interactive() -> Result<()> {
-    let client = MeijerClient::new();
-    let shopping_list = MeijerList::new(client);
+    let _client = MeijerClient::new();
+    let _shopping_list = MeijerList::new(_client);
     
-    // TODO: Implement interactive functionality
     println!("🎮 Starting interactive shopping list management...");
-    println!("🔄 Interactive functionality coming soon!");
+    println!("🔄 Interactive functionality coming in a future release!");
+    println!("   This requires a terminal UI library for menu interactions.");
     
     Ok(())
 }
