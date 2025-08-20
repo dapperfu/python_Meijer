@@ -191,7 +191,7 @@ def add_items_from_file(client: Meijer, file_input: TextIO) -> int:
 
 def export_to_text(items: List, file_path: Path) -> None:
     """
-    Export shopping list items to a text file.
+    Export shopping list items to a text file with comprehensive details.
 
     Args:
         items: List of shopping list items
@@ -204,21 +204,53 @@ def export_to_text(items: List, file_path: Path) -> None:
         f.write(
             f"# Meijer Shopping List - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         )
-        f.write("# Format: Item Name [Quantity] [Notes]\n")
+        f.write(
+            "# Format: Item Name [UPC] [Quantity] [Unit Price] [Total Price] [Methodology] [Notes] [Status] [Location]\n"
+        )
         f.write("# Lines starting with # are comments\n\n")
 
         for item in items:
             name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
+            upc = getattr(item, "upc", getattr(item, "id", ""))
             quantity = getattr(item, "quantity", 1)
+            unit_price = getattr(
+                item, "unit_price", getattr(item, "estimated_cost", "")
+            )
+            total_price = getattr(item, "total_price", "")
+            methodology = getattr(item, "methodology", "")
             notes = getattr(item, "notes", "")
+            status = "Completed" if getattr(item, "checked", False) else "Pending"
+            location = getattr(item, "location", "")
+
+            # Calculate total price if not provided but unit price is available
+            if not total_price and unit_price and quantity:
+                total_price = unit_price * quantity
+
+            # Format the line with all available information
+            line_parts = [name]
+
+            if upc:
+                line_parts.append(f"UPC:{upc}")
+            if quantity and quantity != 1:
+                line_parts.append(f"Qty:{quantity}")
+            if unit_price:
+                line_parts.append(f"Price:${unit_price:.2f}")
+            if total_price:
+                line_parts.append(f"Total:${total_price:.2f}")
+            if methodology:
+                line_parts.append(f"Method:{methodology.upper()}")
+            if notes:
+                line_parts.append(f"Notes:{notes}")
+            if status == "Completed":
+                line_parts.append("✓")
+            if location:
+                line_parts.append(f"Loc:{location}")
+
+            f.write(" ".join(line_parts) + "\n")
+
             logger.debug(
                 f"Exporting item: {name}, quantity: {quantity}, notes: {notes}"
             )
-
-            if notes:
-                f.write(f"{name} [{quantity}] {notes}\n")
-            else:
-                f.write(f"{name} [{quantity}]\n")
 
     logger.debug("Text export completed successfully")
     click.echo(f"📄 Exported {len(items)} items to {file_path}")
@@ -246,6 +278,7 @@ def export_to_csv(items: List, file_path: Path) -> None:
             quantity = getattr(item, "quantity", 1)
             notes = getattr(item, "notes", "")
             status = "Completed" if getattr(item, "checked", False) else "Pending"
+
             logger.debug(
                 f"Exporting CSV item: {name}, quantity: {quantity}, status: {status}"
             )
@@ -457,14 +490,14 @@ def estimate_list_cost(
 
             # Try each method in order of preference
             cost_found = False
-            
+
             for method in preferred_methods:
                 if cost_found:
                     break
-                    
+
                 try:
                     logger.debug(f"🔍 Trying {method} method for '{item_name}'...")
-                    
+
                     if method == "cart":
                         cost_found = _try_cart_method(
                             client, item, item_cost_data, store_id, include_location
@@ -479,15 +512,17 @@ def estimate_list_cost(
                         )
                     elif method == "keywords":
                         cost_found = _try_keyword_method(item, item_cost_data)
-                    
+
                     if cost_found:
                         logger.info(
                             f"✅ Found cost using {method} method: {item_name} -> ${item_cost_data['estimated_cost']:.2f}"
                         )
                         break
                     else:
-                        logger.debug(f"⚠️  {method} method failed for '{item_name}', trying next method...")
-                        
+                        logger.debug(
+                            f"⚠️  {method} method failed for '{item_name}', trying next method..."
+                        )
+
                 except Exception as e:
                     logger.debug(f"⚠️  {method} method failed for '{item_name}': {e}")
                     continue
@@ -523,17 +558,17 @@ def estimate_list_cost(
             )
 
     logger.info(f"✅ Cost estimation complete for {len(cost_data)} items")
-    
+
     # Log summary of method usage
     methodology_counts = {}
     for item in cost_data:
-        methodology = item.get('methodology', 'Unknown')
+        methodology = item.get("methodology", "Unknown")
         methodology_counts[methodology] = methodology_counts.get(methodology, 0) + 1
-    
+
     logger.info("📊 Method usage summary:")
     for methodology, count in methodology_counts.items():
         logger.info(f"   {methodology}: {count} item(s)")
-    
+
     return cost_data
 
 
@@ -542,18 +577,18 @@ def _try_cart_method(
 ) -> bool:
     """
     Try to get cost by adding item to cart and checking subtotal.
-    
+
     Returns:
         bool: True if cost was found, False otherwise
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Check if cart functionality is available
         if not hasattr(client, "cart") or not hasattr(client.cart, "add_item_by_upc"):
             logger.debug("🛒 Cart method skipped: cart functionality not available")
             return False
-        
+
         # Check if cart is accessible
         try:
             current_cart = client.cart.get_current_cart()
@@ -561,23 +596,23 @@ def _try_cart_method(
         except Exception as e:
             logger.debug(f"🛒 Cart method skipped: cannot access cart ({e})")
             return False
-        
+
         # Try to add the item to cart
         item_name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
         quantity = getattr(item, "quantity", 1)
-        
+
         # If we have a UPC, use it; otherwise try to search for one
         upc = None
         if hasattr(item, "item_part_number") and item.item_part_number:
             upc = item.item_part_number
             if not upc.startswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
                 upc = None
-        
+
         if not upc:
             # Try to find UPC via search
             try:
                 from ..search import Search
-                
+
                 search_client = Search(client)
                 search_results = search_client.search(
                     item_name, results_per_page=1, store_id=store_id
@@ -590,20 +625,20 @@ def _try_cart_method(
                     upc = search_results.results[0].upc
             except Exception:
                 pass
-        
+
         if not upc:
             logger.debug(f"🛒 Cart method skipped: no UPC available for '{item_name}'")
             return False
-        
+
         logger.debug(f"🛒 Attempting to add '{item_name}' (UPC: {upc}) to cart...")
-        
+
         # Add item to cart
         success = client.cart.add_item_by_upc(upc, quantity)
         if success:
             # Get updated cart to see new subtotal
             updated_cart = client.cart.get_current_cart()
             new_subtotal = client.cart.subtotal
-            
+
             # Calculate cost difference
             cost_difference = new_subtotal - initial_subtotal
             if cost_difference > 0:
@@ -615,32 +650,28 @@ def _try_cart_method(
                     f"Added to cart via UPC {upc}, cost difference: ${cost_difference:.2f}"
                 )
                 item_cost_data["match_confidence"] = "High"
-                
+
                 # Get product details for location and matching
                 if include_location:
                     try:
                         product_detail = client.get_product_detail(upc, store_id)
-                        if product_detail and hasattr(
-                            product_detail, "aisle_primary"
-                        ):
+                        if product_detail and hasattr(product_detail, "aisle_primary"):
                             aisle = getattr(product_detail, "aisle_primary", "")
                             section = getattr(product_detail, "section", "")
                             bay = getattr(product_detail, "bay", "")
-                            
+
                             if aisle:
                                 if section and bay:
                                     item_cost_data["location"] = (
                                         f"{aisle}:{section}-{bay}"
                                     )
                                 elif section:
-                                    item_cost_data["location"] = (
-                                        f"{aisle}:{section}"
-                                    )
+                                    item_cost_data["location"] = f"{aisle}:{section}"
                                 else:
                                     item_cost_data["location"] = aisle
                     except Exception:
                         pass
-                
+
                 # Remove item from cart to restore original state
                 try:
                     # Find the item we just added and remove it
@@ -651,16 +682,20 @@ def _try_cart_method(
                             break
                 except Exception:
                     logger.warning("⚠️  Failed to remove test item from cart")
-                
-                logger.info(f"✅ Cart method succeeded for '{item_name}': ${unit_cost:.2f}")
+
+                logger.info(
+                    f"✅ Cart method succeeded for '{item_name}': ${unit_cost:.2f}"
+                )
                 return True
             else:
-                logger.debug(f"🛒 Cart method failed: no cost difference detected for '{item_name}'")
+                logger.debug(
+                    f"🛒 Cart method failed: no cost difference detected for '{item_name}'"
+                )
         else:
             logger.debug(f"🛒 Cart method failed: could not add '{item_name}' to cart")
-        
+
         return False
-        
+
     except Exception as e:
         logger.debug(f"🛒 Cart method failed for '{item_name}': {e}")
         return False
@@ -1225,8 +1260,9 @@ def export_to_excel(items: List, file_path: Path) -> None:
         bottom=Side(style="thin"),
     )
 
-    # Write headers
+    # Write headers - basic shopping list format
     headers = ["☐", "Item", "Quantity", "Notes", "Status"]
+
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font = header_font

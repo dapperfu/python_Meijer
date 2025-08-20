@@ -1173,6 +1173,28 @@ def auth_command(log_file: str = None):
         click.echo(f"🔑 Access token: {tokens['access_token'][:50]}...")
         click.echo(f"⏰ Expires in: {tokens['expires_in']} seconds")
 
+        # Test the extracted tokens by making a simple API call
+        click.echo("\n🧪 Testing extracted tokens with a simple API call...")
+        try:
+            # Create a temporary client to test the tokens
+            from ..client import Meijer
+            test_client = Meijer()
+            
+            # Try to get the shopping list to prove authentication works
+            click.echo("📝 Attempting to fetch shopping list...")
+            shopping_list = test_client.list.get()
+            
+            if shopping_list:
+                click.echo(f"✅ Authentication successful! Retrieved {len(shopping_list)} shopping list items")
+                click.echo("🎉 Your tokens are working correctly!")
+            else:
+                click.echo("⚠️ Authentication successful but no shopping list items found")
+                
+        except Exception as e:
+            click.echo(f"❌ Token test failed: {e}")
+            click.echo("⚠️ Tokens were extracted but may not be valid for API calls")
+            logger.warning(f"Token test failed: {e}")
+
         # Clean up temporary files
         for temp_file in ["bearer_auth.json", "bearer_token_analysis.json"]:
             if os.path.exists(temp_file):

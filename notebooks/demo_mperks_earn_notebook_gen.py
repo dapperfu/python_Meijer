@@ -52,14 +52,14 @@ print("✓ Ready to demonstrate mPerks earn functionality")""")
     init_cell = nbf.v4.new_code_cell("""# Initialize Meijer client
 try:
     meijer = Meijer()
-    print("✅ Meijer client initialized successfully")
+    print("[OK] Meijer client initialized successfully")
 
     # Get mPerks instance
     mperks = meijer.mperks
-    print("✅ mPerks instance created")
+    print("[OK] mPerks instance created")
 
 except Exception as e:
-    print(f"❌ Failed to initialize: {e}")
+    print(f"[X] Failed to initialize: {e}")
     print("Please ensure you have valid authentication credentials")""")
 
     # Add earn tab data retrieval
@@ -68,25 +68,25 @@ except Exception as e:
 Get comprehensive earn tab data including all sub-tabs and offer counts.""")
 
     earn_tab_code = nbf.v4.new_code_cell("""# Get all earn offers data
-print("📊 Retrieving earn tab data...")
+print("[BAR] Retrieving earn tab data...")
 print("Endpoint: GET /digital/mperks40/customer/v1/earn/offers")
 print()
 
 try:
     earn_data = meijer.get_earn_offers()
 
-    print(f"✅ Successfully retrieved earn tab data")
-    print(f"   📈 In Progress: {earn_data.total_in_progress} offers")
-    print(f"   ✅ Available: {earn_data.total_available} offers")
-    print(f"   📋 Total: {earn_data.total_all} offers")
+    print(f"[OK] Successfully retrieved earn tab data")
+    print(f"   [CHART] In Progress: {earn_data.total_in_progress} offers")
+    print(f"   [OK] Available: {earn_data.total_available} offers")
+    print(f"   [CLIPBOARD] Total: {earn_data.total_all} offers")
 
     if earn_data.last_updated:
-        print(f"   🕒 Last Updated: {earn_data.last_updated}")
+        print(f"   [CLOCK] Last Updated: {earn_data.last_updated}")
 
-    print(f"\\n📊 Data structure: {type(earn_data).__name__}")
+    print(f"\\n[BAR] Data structure: {type(earn_data).__name__}")
 
 except Exception as e:
-    print(f"❌ Failed to get earn offers: {e}")
+    print(f"[X] Failed to get earn offers: {e}")
     print("Note: This endpoint may not be available in the current API version")""")
 
     # Add in-progress offers demo
@@ -95,30 +95,30 @@ except Exception as e:
 Display offers that are currently being worked on with progress tracking.""")
 
     in_progress_code = nbf.v4.new_code_cell("""# Get in-progress offers
-print("🔄 In Progress Offers:")
+print("[ARROWS] In Progress Offers:")
 print("Endpoint: GET /digital/mperks40/customer/v1/earn/offers/in-progress")
 print()
 
 try:
     in_progress = meijer.get_earn_offers_in_progress()
-    print(f"✅ Found {len(in_progress)} in-progress offers")
+    print(f"[OK] Found {len(in_progress)} in-progress offers")
 
     if in_progress:
-        print("\\n📋 Sample offers:")
+        print("\\n[CLIPBOARD] Sample offers:")
         for i, offer in enumerate(in_progress[:3], 1):
             print(f"\\n{i}. {offer.title}")
-            print(f"   📁 Category: {offer.category}")
-            print(f"   🎯 Progress: {offer.progress_current}/{offer.progress_target}")
+            print(f"   [FOLDER] Category: {offer.category}")
+            print(f"   [TARGET] Progress: {offer.progress_current}/{offer.progress_target}")
             if offer.progress_percentage:
-                print(f"   📊 Percentage: {offer.progress_percentage:.1f}%")
-            print(f"   🏆 Points Earned: {offer.points_earned}")
+                print(f"   [BAR] Percentage: {offer.progress_percentage:.1f}%")
+            print(f"   [TROPHY] Points Earned: {offer.points_earned}")
             if offer.days_until_expiry:
-                print(f"   ⏰ Expires in: {offer.days_until_expiry} days")
+                print(f"   [TIME] Expires in: {offer.days_until_expiry} days")
     else:
         print("ℹ️ No in-progress offers found")
 
 except Exception as e:
-    print(f"❌ Failed to get in-progress offers: {e}")""")
+    print(f"[X] Failed to get in-progress offers: {e}")""")
 
     # Add available offers demo
     available_cell = nbf.v4.new_markdown_cell("""## 3. Available Offers
@@ -126,29 +126,29 @@ except Exception as e:
 Show offers that can be started to earn points.""")
 
     available_code = nbf.v4.new_code_cell("""# Get available offers
-print("✅ Available Offers:")
+print("[OK] Available Offers:")
 print("Endpoint: GET /digital/mperks40/customer/v1/earn/offers/available")
 print()
 
 try:
     available = meijer.get_earn_offers_available()
-    print(f"✅ Found {len(available)} available offers")
+    print(f"[OK] Found {len(available)} available offers")
 
     if available:
-        print("\\n📋 Sample offers:")
+        print("\\n[CLIPBOARD] Sample offers:")
         for i, offer in enumerate(available[:3], 1):
             print(f"\\n{i}. {offer.title}")
-            print(f"   📁 Category: {offer.category}")
-            print(f"   🎯 Points Required: {offer.points_required}")
-            print(f"   🏆 Points to Earn: {offer.points_earned}")
+            print(f"   [FOLDER] Category: {offer.category}")
+            print(f"   [TARGET] Points Required: {offer.points_required}")
+            print(f"   [TROPHY] Points to Earn: {offer.points_earned}")
             if offer.days_until_expiry:
-                print(f"   ⏰ Expires in: {offer.days_until_expiry} days")
-            print(f"   📝 Description: {offer.description[:100]}...")
+                print(f"   [TIME] Expires in: {offer.days_until_expiry} days")
+            print(f"   [MEMO] Description: {offer.description[:100]}...")
     else:
         print("ℹ️ No available offers found")
 
 except Exception as e:
-    print(f"❌ Failed to get available offers: {e}")""")
+    print(f"[X] Failed to get available offers: {e}")""")
 
     # Add all offers demo
     all_offers_cell = nbf.v4.new_markdown_cell("""## 4. All Offers
@@ -156,13 +156,13 @@ except Exception as e:
 Retrieve the complete list of all earn offers regardless of status.""")
 
     all_offers_code = nbf.v4.new_code_cell("""# Get all offers
-print("📋 All Earn Offers:")
+print("[CLIPBOARD] All Earn Offers:")
 print("Endpoint: GET /digital/mperks40/customer/v1/earn/offers/all")
 print()
 
 try:
     all_offers = meijer.get_earn_offers_all()
-    print(f"✅ Found {len(all_offers)} total offers")
+    print(f"[OK] Found {len(all_offers)} total offers")
 
     if all_offers:
         # Group by status
@@ -176,11 +176,11 @@ try:
             status_counts[status] = status_counts.get(status, 0) + 1
             category_counts[category] = category_counts.get(category, 0) + 1
 
-        print("\\n📊 Status Breakdown:")
+        print("\\n[BAR] Status Breakdown:")
         for status, count in status_counts.items():
             print(f"   {status}: {count}")
 
-        print("\\n📁 Category Breakdown:")
+        print("\\n[FOLDER] Category Breakdown:")
         for category, count in category_counts.items():
             print(f"   {category}: {count}")
 
@@ -188,7 +188,7 @@ try:
         print("ℹ️ No offers found")
 
 except Exception as e:
-    print(f"❌ Failed to get all offers: {e}")""")
+    print(f"[X] Failed to get all offers: {e}")""")
 
     # Add utility methods demo
     utility_cell = nbf.v4.new_markdown_cell("""## 5. EarnTabData Utility Methods
@@ -196,41 +196,41 @@ except Exception as e:
 Explore the powerful utility methods for filtering and manipulating earn data.""")
 
     utility_code = nbf.v4.new_code_cell("""# Test utility methods
-print("🔧 Testing EarnTabData Utility Methods:")
+print("[WRENCH] Testing EarnTabData Utility Methods:")
 print()
 
 try:
     earn_data = meijer.get_earn_offers()
 
     if earn_data.all_offers:
-        print("✅ Data loaded successfully")
+        print("[OK] Data loaded successfully")
 
         # Test filtering by category
         categories = set(offer.category for offer in earn_data.all_offers if offer.category)
-        print(f"\\n📁 Available categories: {', '.join(categories)}")
+        print(f"\\n[FOLDER] Available categories: {', '.join(categories)}")
 
         if categories:
             sample_category = list(categories)[0]
             category_offers = earn_data.get_offers_by_category(sample_category)
-            print(f"✅ Offers in '{sample_category}' category: {len(category_offers)}")
+            print(f"[OK] Offers in '{sample_category}' category: {len(category_offers)}")
 
         # Test filtering by status
         status_offers = earn_data.get_offers_by_status("available")
-        print(f"✅ Offers with 'available' status: {len(status_offers)}")
+        print(f"[OK] Offers with 'available' status: {len(status_offers)}")
 
         # Test getting active offers
         active_offers = earn_data.get_active_offers()
-        print(f"✅ Active offers: {len(active_offers)}")
+        print(f"[OK] Active offers: {len(active_offers)}")
 
         # Test getting non-expired offers
         non_expired = [offer for offer in earn_data.all_offers if not offer.is_expired]
-        print(f"✅ Non-expired offers: {len(non_expired)}")
+        print(f"[OK] Non-expired offers: {len(non_expired)}")
 
     else:
         print("ℹ️ No data available for utility method testing")
 
 except Exception as e:
-    print(f"❌ Failed to test utility methods: {e}")""")
+    print(f"[X] Failed to test utility methods: {e}")""")
 
     # Add object creation demo
     object_demo_cell = nbf.v4.new_markdown_cell("""## 6. EarnableOffer Object Creation
@@ -258,10 +258,10 @@ try:
         is_active=True
     )
 
-    print("✅ Created in-progress offer:")
-    print(f"   📝 Title: {in_progress_offer.title}")
-    print(f"   📊 Progress: {in_progress_offer.progress_percentage:.1f}%")
-    print(f"   ⏰ Days until expiry: {in_progress_offer.days_until_expiry}")
+    print("[OK] Created in-progress offer:")
+    print(f"   [MEMO] Title: {in_progress_offer.title}")
+    print(f"   [BAR] Progress: {in_progress_offer.progress_percentage:.1f}%")
+    print(f"   [TIME] Days until expiry: {in_progress_offer.days_until_expiry}")
     print(f"   🚫 Is expired: {in_progress_offer.is_expired}")
 
     # Create a sample available offer
@@ -278,18 +278,18 @@ try:
         is_active=True
     )
 
-    print(f"\\n✅ Created available offer:")
-    print(f"   📝 Title: {available_offer.title}")
-    print(f"   🎯 Points to earn: {available_offer.points_earned}")
-    print(f"   📁 Category: {available_offer.category}")
+    print(f"\\n[OK] Created available offer:")
+    print(f"   [MEMO] Title: {available_offer.title}")
+    print(f"   [TARGET] Points to earn: {available_offer.points_earned}")
+    print(f"   [FOLDER] Category: {available_offer.category}")
 
     # Test to_dict method
     offer_dict = in_progress_offer.to_dict()
-    print(f"\\n✅ Converted to dict with {len(offer_dict)} fields")
+    print(f"\\n[OK] Converted to dict with {len(offer_dict)} fields")
     print(f"   Sample fields: {list(offer_dict.keys())[:5]}")
 
 except Exception as e:
-    print(f"❌ Failed to create sample offers: {e}")""")
+    print(f"[X] Failed to create sample offers: {e}")""")
 
     # Add advanced filtering demo
     advanced_cell = nbf.v4.new_markdown_cell("""## 7. Advanced Filtering and Analysis
@@ -297,14 +297,14 @@ except Exception as e:
 Demonstrate advanced filtering and analysis capabilities.""")
 
     advanced_code = nbf.v4.new_code_cell("""# Advanced filtering and analysis
-print("🔍 Advanced Filtering and Analysis:")
+print("[MAGNIFYING] Advanced Filtering and Analysis:")
 print()
 
 try:
     earn_data = meijer.get_earn_offers()
 
     if earn_data.all_offers:
-        print("✅ Data loaded for analysis")
+        print("[OK] Data loaded for analysis")
 
         # Find high-value offers (high points earned)
         high_value_offers = sorted(
@@ -313,7 +313,7 @@ try:
             reverse=True
         )[:5]
 
-        print(f"\\n🏆 Top 5 High-Value Offers:")
+        print(f"\\n[TROPHY] Top 5 High-Value Offers:")
         for i, offer in enumerate(high_value_offers, 1):
             print(f"   {i}. {offer.title} - {offer.points_earned} points")
 
@@ -323,9 +323,9 @@ try:
             if offer.days_until_expiry and 0 <= offer.days_until_expiry <= 7
         ]
 
-        print(f"\\n⏰ Offers Expiring Soon (≤7 days): {len(soon_expiring)}")
+        print(f"\\n[TIME] Offers Expiring Soon (≤7 days): {len(soon_expiring)}")
         for offer in soon_expiring[:3]:
-            print(f"   • {offer.title} - expires in {offer.days_until_expiry} days")
+            print(f"   - {offer.title} - expires in {offer.days_until_expiry} days")
 
         # Category analysis
         category_analysis = {}
@@ -345,7 +345,7 @@ try:
             if data['count'] > 0:
                 data['avg_points'] = data['total_points'] / data['count']
 
-        print(f"\\n📊 Category Analysis:")
+        print(f"\\n[BAR] Category Analysis:")
         for category, data in sorted(category_analysis.items(), key=lambda x: x[1]['count'], reverse=True):
             print(f"   {category}: {data['count']} offers, {data['avg_points']:.1f} avg points")
 
@@ -353,14 +353,14 @@ try:
         print("ℹ️ No data available for analysis")
 
 except Exception as e:
-    print(f"❌ Failed to perform analysis: {e}")""")
+    print(f"[X] Failed to perform analysis: {e}")""")
 
     # Add summary cell
     summary_cell = nbf.v4.new_markdown_cell("""## Summary
 
 This demo has showcased the comprehensive mPerks earn functionality:
 
-### ✅ What We've Covered
+### [OK] What We've Covered
 
 1. **Earn Tab Data Retrieval** - Getting comprehensive earn information
 2. **In Progress Offers** - Tracking offers currently being worked on
@@ -370,7 +370,7 @@ This demo has showcased the comprehensive mPerks earn functionality:
 6. **Object Creation** - Programmatic offer management
 7. **Advanced Analysis** - Deep insights into earn opportunities
 
-### 🚀 Key Benefits
+### [ROCKET] Key Benefits
 
 - **Pythonic Interface**: Easy-to-use dataclasses with intuitive methods
 - **Progress Tracking**: Monitor your progress on in-progress offers
@@ -378,14 +378,14 @@ This demo has showcased the comprehensive mPerks earn functionality:
 - **Expiration Handling**: Automatic expiry date management
 - **Data Analysis**: Comprehensive insights into your earn opportunities
 
-### 🔗 API Endpoints
+### [LINK] API Endpoints
 
 - `GET /digital/mperks40/customer/v1/earn/offers` - Complete earn tab data
 - `GET /digital/mperks40/customer/v1/earn/offers/in-progress` - In-progress offers
 - `GET /digital/mperks40/customer/v1/earn/offers/available` - Available offers
 - `GET /digital/mperks40/customer/v1/earn/offers/all` - All offers
 
-### 💡 Next Steps
+### [BULB] Next Steps
 
 - Integrate earn functionality into your applications
 - Build dashboards to track earn progress
@@ -448,9 +448,9 @@ def main():
     output_file = "demo_mperks_earn.ipynb"
     nbf.write(nb, output_file)
 
-    print(f"✅ Notebook generated successfully: {output_file}")
-    print("📚 You can now open this notebook in Jupyter or VS Code")
-    print("🚀 The notebook demonstrates all the new earn functionality features")
+    print(f"[OK] Notebook generated successfully: {output_file}")
+    print("[BOOKS] You can now open this notebook in Jupyter or VS Code")
+    print("[ROCKET] The notebook demonstrates all the new earn functionality features")
 
 
 if __name__ == "__main__":

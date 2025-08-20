@@ -62,7 +62,7 @@ import secrets
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-print("✅ All API client classes imported successfully!")
+print("[OK] All API client classes imported successfully!")
 print("Available components:")
 print("  - MeijerAuthConfig")
 print("  - MeijerTokens")
@@ -89,7 +89,7 @@ The `MeijerAuthConfig` class contains all the configuration needed for OAuth aut
 # Create default configuration
 default_config = MeijerAuthConfig()
 
-print("🔧 Default MeijerAuthConfig:")
+print("[WRENCH] Default MeijerAuthConfig:")
 print("=" * 40)
 print(f"Auth URL: {default_config.auth_url}")
 print(f"Token URL: {default_config.token_url}")
@@ -107,14 +107,14 @@ custom_config = MeijerAuthConfig(
     scopes="openid profile offline_access custom_scope"
 )
 
-print(f"\\n🔧 Custom MeijerAuthConfig:")
+print(f"\\n[WRENCH] Custom MeijerAuthConfig:")
 print("=" * 40)
 print(f"Client ID: {custom_config.client_id}")
 print(f"Redirect URI: {custom_config.redirect_uri}")
 print(f"Scopes: {custom_config.scopes}")
 
 # Configuration validation
-print(f"\\n✅ Configuration Validation:")
+print(f"\\n[OK] Configuration Validation:")
 print("=" * 30)
 print(f"Auth URL is HTTPS: {default_config.auth_url.startswith('https://')}")
 print(f"Token URL is HTTPS: {default_config.token_url.startswith('https://')}")
@@ -123,7 +123,7 @@ print(f"Client ID format: {len(default_config.client_id)} characters")
 print(f"Scopes contain required: {'openid' in default_config.scopes}")
 
 # URL structure analysis
-print(f"\\n🔗 URL Structure Analysis:")
+print(f"\\n[LINK] URL Structure Analysis:")
 print("=" * 30)
 print(f"Authorization endpoint: {default_config.auth_url}")
 print(f"Token endpoint: {default_config.token_url}")
@@ -157,7 +157,7 @@ sample_tokens = MeijerTokens(
     token_type="Bearer"
 )
 
-print("🔑 MeijerTokens Created:")
+print("[KEY] MeijerTokens Created:")
 print("=" * 30)
 print(f"Access Token: {sample_tokens.access_token[:30]}...")
 print(f"Refresh Token: {sample_tokens.refresh_token[:30]}...")
@@ -167,7 +167,7 @@ print(f"Token Type: {sample_tokens.token_type}")
 print(f"Expires At: {datetime.fromtimestamp(sample_tokens.expires_at)}")
 
 # Test expiration logic
-print(f"\\n⏰ Token Expiration Testing:")
+print(f"\\n[TIME] Token Expiration Testing:")
 print("=" * 30)
 
 # Check current status
@@ -190,7 +190,7 @@ expired_tokens = MeijerTokens(
     token_type="Bearer"
 )
 
-print(f"\\n⏰ Expired Token Testing:")
+print(f"\\n[TIME] Expired Token Testing:")
 print("=" * 30)
 print(f"Is Expired: {expired_tokens.is_expired()}")
 print(f"Needs Refresh: {expired_tokens.needs_refresh()}")
@@ -205,7 +205,7 @@ expiring_soon_tokens = MeijerTokens(
     token_type="Bearer"
 )
 
-print(f"\\n⏰ Expiring Soon Token Testing:")
+print(f"\\n[TIME] Expiring Soon Token Testing:")
 print("=" * 30)
 print(f"Is Expired: {expiring_soon_tokens.is_expired()}")
 print(f"Needs Refresh (5 min buffer): {expiring_soon_tokens.needs_refresh(300)}")
@@ -213,7 +213,7 @@ print(f"Needs Refresh (1 min buffer): {expiring_soon_tokens.needs_refresh(60)}")
 print(f"Needs Refresh (10 min buffer): {expiring_soon_tokens.needs_refresh(600)}")
 
 # Token format validation
-print(f"\\n🔍 Token Format Analysis:")
+print(f"\\n[MAGNIFYING] Token Format Analysis:")
 print("=" * 30)
 print(f"Access Token Format: {sample_tokens.access_token[:20]}...")
 print(f"Refresh Token Format: {sample_tokens.refresh_token[:20]}...")
@@ -231,7 +231,7 @@ def analyze_jwt_structure(token: str) -> Dict[str, Any]:
         'is_valid_format': len(parts) == 3
     }
 
-print(f"\\n🔍 JWT Structure Analysis:")
+print(f"\\n[MAGNIFYING] JWT Structure Analysis:")
 for token_name, token_value in [
     ("Access Token", sample_tokens.access_token),
     ("Refresh Token", sample_tokens.refresh_token),
@@ -262,7 +262,7 @@ The `MeijerAPIClient` class is the main client for interacting with the Meijer A
 # Create API client with default configuration
 client = MeijerAPIClient()
 
-print("🚀 MeijerAPIClient Created:")
+print("[ROCKET] MeijerAPIClient Created:")
 print("=" * 35)
 print(f"Client Type: {type(client).__name__}")
 print(f"Config: {type(client.config).__name__}")
@@ -270,13 +270,13 @@ print(f"Tokens: {client.tokens}")
 print(f"Session: {type(client.session).__name__}")
 
 # Examine session headers
-print(f"\\n📋 Session Headers:")
+print(f"\\n[CLIPBOARD] Session Headers:")
 print("=" * 20)
 for header_name, header_value in client.session.headers.items():
     print(f"{header_name}: {header_value}")
 
 # Examine configuration
-print(f"\\n🔧 Client Configuration:")
+print(f"\\n[WRENCH] Client Configuration:")
 print("=" * 30)
 print(f"Auth URL: {client.config.auth_url}")
 print(f"Token URL: {client.config.token_url}")
@@ -286,7 +286,7 @@ print(f"Scopes: {client.config.scopes}")
 print(f"API Base: {client.config.api_base}")
 
 # Test PKCE challenge generation
-print(f"\\n🔐 PKCE Challenge Generation:")
+print(f"\\n[LOCK] PKCE Challenge Generation:")
 print("=" * 35)
 
 try:
@@ -297,7 +297,7 @@ try:
     print(f"Challenge Length: {len(code_challenge)} characters")
 
     # Verify PKCE challenge format
-    print(f"\\n🔍 PKCE Format Validation:")
+    print(f"\\n[MAGNIFYING] PKCE Format Validation:")
     print("=" * 30)
     print(f"Verifier is base64url: {all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_' for c in code_verifier)}")
     print(f"Challenge is base64url: {all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_' for c in code_challenge)}")
@@ -305,10 +305,10 @@ try:
     print(f"Challenge no padding: {not code_challenge.endswith('=')}")
 
 except Exception as e:
-    print(f"❌ PKCE generation failed: {e}")
+    print(f"[X] PKCE generation failed: {e}")
 
 # Test authorization URL generation
-print(f"\\n🌐 Authorization URL Generation:")
+print(f"\\n[WEB] Authorization URL Generation:")
 print("=" * 40)
 
 try:
@@ -321,7 +321,7 @@ try:
     parsed_url = urlparse(auth_url)
     query_params = parse_qs(parsed_url.query)
 
-    print(f"\\n🔍 URL Components:")
+    print(f"\\n[MAGNIFYING] URL Components:")
     print("=" * 20)
     print(f"Base URL: {parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}")
     print(f"Query Parameters:")
@@ -335,17 +335,17 @@ try:
     required_params = ['code_challenge', 'code_challenge_method', 'client_id', 'scope', 'redirect_uri', 'response_type', 'state', 'nonce']
     missing_params = [param for param in required_params if param not in query_params]
 
-    print(f"\\n✅ Parameter Validation:")
+    print(f"\\n[OK] Parameter Validation:")
     print("=" * 25)
     print(f"Required Parameters: {required_params}")
     print(f"Missing Parameters: {missing_params}")
     print(f"All Required Present: {len(missing_params) == 0}")
 
 except Exception as e:
-    print(f"❌ Authorization URL generation failed: {e}")
+    print(f"[X] Authorization URL generation failed: {e}")
 
 # Test with custom state
-print(f"\\n🔒 Custom State Parameter:")
+print(f"\\n[LOCK] Custom State Parameter:")
 print("=" * 30)
 
 try:
@@ -361,7 +361,7 @@ try:
     print(f"State Match: {custom_state == actual_state}")
 
 except Exception as e:
-    print(f"❌ Custom state test failed: {e}")""")
+    print(f"[X] Custom state test failed: {e}")""")
 
     # API methods section
     api_methods_section = nbf.v4.new_markdown_cell("""## API Methods
@@ -383,7 +383,7 @@ The `MeijerAPIClient` provides several pre-built methods for common API endpoint
 # Note: These methods require valid authentication tokens
 # We'll demonstrate the structure and error handling
 
-print("📡 API Methods Overview:")
+print("[SATELLITE] API Methods Overview:")
 print("=" * 30)
 
 # List available methods
@@ -400,7 +400,7 @@ for i, method_name in enumerate(api_methods, 1):
     print(f"{i}. {method_name}()")
 
 # Examine method signatures
-print(f"\\n🔍 Method Signatures:")
+print(f"\\n[MAGNIFYING] Method Signatures:")
 print("=" * 25)
 
 for method_name in api_methods:
@@ -411,21 +411,21 @@ for method_name in api_methods:
         print(f"{method_name}({', '.join(arg_names[1:])}) -> Dict[str, Any]")
 
 # Test method availability without authentication
-print(f"\\n⚠️ Testing Methods Without Authentication:")
+print(f"\\n[WARN] Testing Methods Without Authentication:")
 print("=" * 45)
 
 for method_name in api_methods:
     try:
         method = getattr(client, method_name)
         result = method()
-        print(f"✅ {method_name}(): Success")
+        print(f"[OK] {method_name}(): Success")
     except ValueError as e:
-        print(f"❌ {method_name}(): {e}")
+        print(f"[X] {method_name}(): {e}")
     except Exception as e:
-        print(f"⚠️ {method_name}(): Unexpected error - {e}")
+        print(f"[WARN] {method_name}(): Unexpected error - {e}")
 
 # Demonstrate token validation logic
-print(f"\\n🔐 Token Validation Logic:")
+print(f"\\n[LOCK] Token Validation Logic:")
 print("=" * 35)
 
 def demonstrate_token_validation():
@@ -447,7 +447,7 @@ def demonstrate_token_validation():
 demonstrate_token_validation()
 
 # Show expected API response structure
-print(f"\\n📊 Expected API Response Structure:")
+print(f"\\n[BAR] Expected API Response Structure:")
 print("=" * 40)
 
 api_response_examples = {
@@ -511,7 +511,7 @@ print("🛠️ Utility Functions Demo:")
 print("=" * 30)
 
 # Test loading tokens from environment
-print("📂 Loading Tokens from Environment:")
+print("[OPEN] Loading Tokens from Environment:")
 print("-" * 35)
 
 # Check current environment variables
@@ -528,17 +528,17 @@ for var, value in current_env.items():
 # Try to load tokens
 tokens_from_env = load_tokens_from_env()
 if tokens_from_env:
-    print(f"\\n✅ Tokens loaded from environment:")
+    print(f"\\n[OK] Tokens loaded from environment:")
     print(f"  Access Token: {tokens_from_env.access_token[:30]}...")
     print(f"  Refresh Token: {tokens_from_env.refresh_token[:30]}...")
     print(f"  ID Token: {tokens_from_env.id_token[:30]}...")
     print(f"  Expires In: {tokens_from_env.expires_in} seconds")
     print(f"  Is Expired: {tokens_from_env.is_expired()}")
 else:
-    print(f"\\n❌ No tokens found in environment variables")
+    print(f"\\n[X] No tokens found in environment variables")
 
 # Demonstrate saving tokens to environment
-print(f"\\n💾 Saving Tokens to Environment:")
+print(f"\\n[FLOPPY] Saving Tokens to Environment:")
 print("-" * 35)
 
 # Create sample tokens for demonstration
@@ -573,7 +573,7 @@ for var in env_vars:
 print(f"\\nTesting load_tokens_from_env with saved tokens...")
 loaded_tokens = load_tokens_from_env()
 if loaded_tokens:
-    print(f"✅ Tokens successfully loaded from environment:")
+    print(f"[OK] Tokens successfully loaded from environment:")
     print(f"  Access Token: {loaded_tokens.access_token}")
     print(f"  Refresh Token: {loaded_tokens.refresh_token}")
     print(f"  ID Token: {loaded_tokens.id_token}")
@@ -581,19 +581,19 @@ if loaded_tokens:
     print(f"  Is Expired: {loaded_tokens.is_expired()}")
 
     # Verify data integrity
-    print(f"\\n🔍 Data Integrity Check:")
+    print(f"\\n[MAGNIFYING] Data Integrity Check:")
     access_match = demo_tokens.access_token == loaded_tokens.access_token
     refresh_match = demo_tokens.refresh_token == loaded_tokens.refresh_token
     id_match = demo_tokens.id_token == loaded_tokens.id_token
     expires_match = demo_tokens.expires_in == loaded_tokens.expires_in
 
-    print(f"  Access Token Match: {'✅' if access_match else '❌'}")
-    print(f"  Refresh Token Match: {'✅' if refresh_match else '❌'}")
-    print(f"  ID Token Match: {'✅' if id_match else '❌'}")
-    print(f"  Expires In Match: {'✅' if expires_match else '❌'}")
-    print(f"  Overall Match: {'✅' if all([access_match, refresh_match, id_match, expires_match]) else '❌'}")
+    print(f"  Access Token Match: {'[OK]' if access_match else '[X]'}")
+    print(f"  Refresh Token Match: {'[OK]' if refresh_match else '[X]'}")
+    print(f"  ID Token Match: {'[OK]' if id_match else '[X]'}")
+    print(f"  Expires In Match: {'[OK]' if expires_match else '[X]'}")
+    print(f"  Overall Match: {'[OK]' if all([access_match, refresh_match, id_match, expires_match]) else '[X]'}")
 else:
-    print(f"❌ Failed to load tokens from environment")
+    print(f"[X] Failed to load tokens from environment")
 
 # Clean up environment variables (for demonstration)
 print(f"\\n🧹 Cleaning up environment variables...")
@@ -602,7 +602,7 @@ for var in env_vars:
         del os.environ[var]
         print(f"  Removed {var}")
 
-print(f"\\n✅ Environment cleanup completed")""")
+print(f"\\n[OK] Environment cleanup completed")""")
 
     # Best practices section
     best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
@@ -643,12 +643,12 @@ print(f"\\n✅ Environment cleanup completed")""")
 
 This notebook has demonstrated the comprehensive Meijer API client system:
 
-✅ **MeijerAuthConfig**: OAuth configuration with secure endpoints
-✅ **MeijerTokens**: Secure token management with expiration handling
-✅ **MeijerAPIClient**: Main client with OAuth 2.0 PKCE implementation
-✅ **API Methods**: Pre-built methods for common endpoints
-✅ **Utility Functions**: Environment variable management for development
-✅ **Security Features**: PKCE flow, CSRF protection, secure headers
+[OK] **MeijerAuthConfig**: OAuth configuration with secure endpoints
+[OK] **MeijerTokens**: Secure token management with expiration handling
+[OK] **MeijerAPIClient**: Main client with OAuth 2.0 PKCE implementation
+[OK] **API Methods**: Pre-built methods for common endpoints
+[OK] **Utility Functions**: Environment variable management for development
+[OK] **Security Features**: PKCE flow, CSRF protection, secure headers
 
 ### Key Benefits
 
@@ -674,7 +674,7 @@ This notebook has demonstrated the comprehensive Meijer API client system:
 - Discover store location and search capabilities
 - Understand the complete API workflow
 
-The API client provides a secure and robust foundation for building Meijer API applications! 🚀
+The API client provides a secure and robust foundation for building Meijer API applications! [ROCKET]
 """)
 
     # Add all cells to notebook
@@ -699,7 +699,7 @@ The API client provides a secure and robust foundation for building Meijer API a
     with open("api_client.ipynb", "w") as f:
         nbf.write(nb, f)
 
-    print("✅ api_client.ipynb created successfully!")
+    print("[OK] api_client.ipynb created successfully!")
 
 
 if __name__ == "__main__":

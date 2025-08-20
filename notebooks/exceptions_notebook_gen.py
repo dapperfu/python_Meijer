@@ -28,11 +28,11 @@ The `exceptions.py` module contains custom exception classes that provide meanin
 
 ```
 MeijerError (Base Exception)
-├── MeijerAuthenticationError
-├── MeijerAPIError
-├── MeijerRateLimitError
-├── CartError
-└── FeedbackError
+|-- MeijerAuthenticationError
+|-- MeijerAPIError
+|-- MeijerRateLimitError
+|-- CartError
+|-- FeedbackError
 ```
 
 ## Setup
@@ -52,16 +52,16 @@ from meijer.exceptions import (
 )
 from meijer.client import Meijer
 
-print("✅ All exception classes imported successfully!")
+print("[OK] All exception classes imported successfully!")
 
 # Create a real Meijer client
 try:
     client = Meijer()
-    print("✅ Meijer client created successfully!")
+    print("[OK] Meijer client created successfully!")
     print(f"Authentication status: {client.auth_status}")
     print(f"Is authenticated: {client.is_authenticated()}")
 except Exception as e:
-    print(f"❌ Failed to create Meijer client: {e}")
+    print(f"[X] Failed to create Meijer client: {e}")
     client = None""")
 
     # MeijerError section
@@ -76,7 +76,7 @@ The `MeijerError` class is the base exception for all Meijer API errors.
 try:
     raise MeijerError("A generic Meijer API error occurred")
 except MeijerError as e:
-    print(f"✅ Caught MeijerError: {e}")
+    print(f"[OK] Caught MeijerError: {e}")
     print(f"Error type: {type(e).__name__}")
 
 # Real client error handling
@@ -91,7 +91,7 @@ if client:
     except Exception as e:
         print(f"API call failed: {type(e).__name__}: {e}")
 else:
-    print("❌ Client not available")""")
+    print("[X] Client not available")""")
 
     # Authentication Error section
     auth_error_section = nbf.v4.new_markdown_cell("""## MeijerAuthenticationError
@@ -105,7 +105,7 @@ Raised when authentication-related issues occur.
 try:
     raise MeijerAuthenticationError("Authentication failed")
 except MeijerAuthenticationError as e:
-    print(f"✅ Caught MeijerAuthenticationError: {e}")
+    print(f"[OK] Caught MeijerAuthenticationError: {e}")
 
 # Real authentication testing
 if client:
@@ -116,11 +116,11 @@ if client:
             shopping_lists = client.get_shopping_lists()
             print("Unexpectedly succeeded")
         except MeijerAuthenticationError as e:
-            print(f"✅ Expected auth error: {e}")
+            print(f"[OK] Expected auth error: {e}")
         except Exception as e:
             print(f"Different error: {type(e).__name__}: {e}")
 else:
-    print("❌ Client not available")""")
+    print("[X] Client not available")""")
 
     # API Error section
     api_error_section = nbf.v4.new_markdown_cell("""## MeijerAPIError
@@ -134,7 +134,7 @@ Raised when general API issues occur.
 try:
     raise MeijerAPIError("API call failed")
 except MeijerAPIError as e:
-    print(f"✅ Caught MeijerAPIError: {e}")
+    print(f"[OK] Caught MeijerAPIError: {e}")
 
 # Real API testing
 if client and client.is_authenticated():
@@ -143,11 +143,11 @@ if client and client.is_authenticated():
         stores = client.get_stores(zip_code="invalid")
         print(f"Found {len(stores)} stores")
     except MeijerAPIError as e:
-        print(f"✅ API error: {e}")
+        print(f"[OK] API error: {e}")
     except Exception as e:
         print(f"Different error: {type(e).__name__}: {e}")
 else:
-    print("❌ Client not authenticated")""")
+    print("[X] Client not authenticated")""")
 
     # Rate Limit Error section
     rate_limit_section = nbf.v4.new_markdown_cell("""## MeijerRateLimitError
@@ -161,7 +161,7 @@ Raised when API rate limits are exceeded.
 try:
     raise MeijerRateLimitError("Rate limit exceeded")
 except MeijerRateLimitError as e:
-    print(f"✅ Caught MeijerRateLimitError: {e}")
+    print(f"[OK] Caught MeijerRateLimitError: {e}")
 
 # Real rate limiting demo
 if client and client.is_authenticated():
@@ -178,7 +178,7 @@ if client and client.is_authenticated():
         except Exception as e:
             print(f"Error: {type(e).__name__}: {e}")
 else:
-    print("❌ Client not authenticated")""")
+    print("[X] Client not authenticated")""")
 
     # Cart Error section
     cart_error_section = nbf.v4.new_markdown_cell("""## CartError
@@ -192,7 +192,7 @@ Raised when cart operations fail.
 try:
     raise CartError("Failed to add item to cart")
 except CartError as e:
-    print(f"✅ Caught CartError: {e}")
+    print(f"[OK] Caught CartError: {e}")
 
 # Real cart testing
 if client and client.is_authenticated():
@@ -201,11 +201,11 @@ if client and client.is_authenticated():
         result = client.add_to_cart(product_id="invalid", quantity=1)
         print("Unexpectedly succeeded")
     except CartError as e:
-        print(f"✅ Expected cart error: {e}")
+        print(f"[OK] Expected cart error: {e}")
     except Exception as e:
         print(f"Different error: {type(e).__name__}: {e}")
 else:
-    print("❌ Client not authenticated")""")
+    print("[X] Client not authenticated")""")
 
     # Feedback Error section
     feedback_error_section = nbf.v4.new_markdown_cell("""## FeedbackError
@@ -219,7 +219,7 @@ Raised when feedback operations fail.
 try:
     raise FeedbackError("Failed to submit feedback")
 except FeedbackError as e:
-    print(f"✅ Caught FeedbackError: {e}")
+    print(f"[OK] Caught FeedbackError: {e}")
 
 # Real feedback testing
 if client and client.is_authenticated():
@@ -232,11 +232,11 @@ if client and client.is_authenticated():
         )
         print("Unexpectedly succeeded")
     except FeedbackError as e:
-        print(f"✅ Expected feedback error: {e}")
+        print(f"[OK] Expected feedback error: {e}")
     except Exception as e:
         print(f"Different error: {type(e).__name__}: {e}")
 else:
-    print("❌ Client not authenticated")""")
+    print("[X] Client not authenticated")""")
 
     # Advanced usage section
     advanced_section = nbf.v4.new_markdown_cell("""## Advanced Error Handling
@@ -251,11 +251,11 @@ def handle_meijer_operation(operation_name, operation_func, *args, **kwargs):
 
     try:
         result = operation_func(*args, **kwargs)
-        print(f"✅ {operation_name} succeeded")
+        print(f"[OK] {operation_name} succeeded")
         return result
 
     except MeijerAuthenticationError as e:
-        print(f"🔐 Authentication error: {e}")
+        print(f"[LOCK] Authentication error: {e}")
         return None
 
     except MeijerRateLimitError as e:
@@ -263,23 +263,23 @@ def handle_meijer_operation(operation_name, operation_func, *args, **kwargs):
         return None
 
     except CartError as e:
-        print(f"🛒 Cart error: {e}")
+        print(f"[CART] Cart error: {e}")
         return None
 
     except FeedbackError as e:
-        print(f"💬 Feedback error: {e}")
+        print(f"[SPEECH] Feedback error: {e}")
         return None
 
     except MeijerAPIError as e:
-        print(f"🌐 API error: {e}")
+        print(f"[WEB] API error: {e}")
         return None
 
     except MeijerError as e:
-        print(f"❌ General Meijer error: {e}")
+        print(f"[X] General Meijer error: {e}")
         return None
 
     except Exception as e:
-        print(f"💥 Unexpected error: {type(e).__name__}: {e}")
+        print(f"[COLLISION] Unexpected error: {type(e).__name__}: {e}")
         return None
 
 # Test with real operations
@@ -300,7 +300,7 @@ if client and client.is_authenticated():
         limit=5
     )
 else:
-    print("❌ Client not authenticated for advanced demo")""")
+    print("[X] Client not authenticated for advanced demo")""")
 
     # Summary section
     summary_section = nbf.v4.new_markdown_cell("""## Summary
@@ -356,4 +356,4 @@ if __name__ == "__main__":
     with open("exceptions.ipynb", "w") as f:
         nbf.write(nb, f)
 
-    print("✅ exceptions.ipynb generated successfully!")
+    print("[OK] exceptions.ipynb generated successfully!")

@@ -9,7 +9,7 @@ token expiration and demonstrating refresh behavior.
 
 from datetime import datetime, timedelta
 
-from old.meijer_comprehensive import Meijer
+from meijer import Meijer
 
 
 def main():

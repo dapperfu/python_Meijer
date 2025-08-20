@@ -90,17 +90,17 @@ def demonstrate_cost_estimation(client: Meijer) -> None:
     """Demonstrate the cost estimation functionality."""
     print("💰 Demonstrating Cost Estimation Feature")
     print("=" * 50)
-    
+
     # Get the shopping list
     try:
         items = client.list.get()
         if not items:
             print("📝 Shopping list is empty. Please add some items first.")
             return
-        
+
         print(f"🔍 Estimating costs for {len(items)} items...")
         print("🎯 Using all available methods: cart → shop_scan → search → keywords")
-        
+
         # Estimate costs
         cost_data = estimate_list_cost(
             client=client,
@@ -109,90 +109,90 @@ def demonstrate_cost_estimation(client: Meijer) -> None:
             include_location=True,
             include_matched=True,
         )
-        
+
         if not cost_data:
             print("❌ Failed to estimate costs")
             return
-        
+
         # Display results
-        print(f"\n📊 Cost Estimation Results:")
+        print("\n📊 Cost Estimation Results:")
         print("-" * 50)
-        
+
         total_cost = 0
         for i, item in enumerate(cost_data, 1):
             item_cost = item["estimated_cost"] * item["quantity"]
             total_cost += item_cost
-            
+
             print(
                 f"{i:2d}. {item['name']:<20} "
                 f"Qty: {item['quantity']} "
                 f"Est: ${item['estimated_cost']:>6.2f} "
                 f"Total: ${item_cost:>7.2f}"
             )
-            
+
             # Show methodology
-            methodology = item.get('methodology', 'Unknown')
+            methodology = item.get("methodology", "Unknown")
             methodology_emoji = {
-                'cart': '🛒',
-                'shop_scan': '📱',
-                'search': '🔍',
-                'keywords': '🏷️',
-                'error': '❌'
-            }.get(methodology, '❓')
+                "cart": "🛒",
+                "shop_scan": "📱",
+                "search": "🔍",
+                "keywords": "🏷️",
+                "error": "❌",
+            }.get(methodology, "❓")
             print(f"    └─ Method: {methodology_emoji} {methodology.upper()}")
-            
+
             if item.get("matched_product"):
                 print(f"    └─ Matched: {item['matched_product'][:50]}...")
-            
+
             if item.get("location"):
                 print(f"    └─ Location: {item['location']}")
-            
-            confidence = item.get('match_confidence', 'Unknown')
+
+            confidence = item.get("match_confidence", "Unknown")
             confidence_emoji = {
-                'High': '🟢',
-                'Medium': '🟡',
-                'Low': '🔴',
-                'Error': '❌'
-            }.get(confidence, '❓')
+                "High": "🟢",
+                "Medium": "🟡",
+                "Low": "🔴",
+                "Error": "❌",
+            }.get(confidence, "❓")
             print(f"    └─ Confidence: {confidence_emoji} {confidence}")
             print()
-        
+
         print(f"💰 Total Estimated Cost: ${total_cost:.2f}")
         print(f"📝 Items Processed: {len(cost_data)}")
-        
+
         # Show methodology breakdown
         methodology_counts = {}
         for item in cost_data:
-            methodology = item.get('methodology', 'Unknown')
+            methodology = item.get("methodology", "Unknown")
             methodology_counts[methodology] = methodology_counts.get(methodology, 0) + 1
-        
-        print(f"\n🎯 Methodology Breakdown:")
+
+        print("\n🎯 Methodology Breakdown:")
         for methodology, count in methodology_counts.items():
             methodology_emoji = {
-                'cart': '🛒',
-                'shop_scan': '📱',
-                'search': '🔍',
-                'keywords': '🏷️',
-                'error': '❌'
-            }.get(methodology, '❓')
+                "cart": "🛒",
+                "shop_scan": "📱",
+                "search": "🔍",
+                "keywords": "🏷️",
+                "error": "❌",
+            }.get(methodology, "❓")
             print(f"   {methodology_emoji} {methodology}: {count} item(s)")
-        
+
         # Show confidence breakdown
         confidence_counts = {}
         for item in cost_data:
-            confidence = item.get('match_confidence', 'Unknown')
+            confidence = item.get("match_confidence", "Unknown")
             confidence_counts[confidence] = confidence_counts.get(confidence, 0) + 1
-        
-        print(f"\n🎯 Match Confidence Summary:")
+
+        print("\n🎯 Match Confidence Summary:")
         for confidence, count in confidence_counts.items():
             confidence_emoji = {
-                'High': '🟢',
-                'Medium': '🟡',
-                'Low': '🔴',
-                'Error': '❌'
-            }.get(confidence, '❓')
+                "High": "🟢",
+                "Medium": "🟡",
+                "Low": "🔴",
+                "Error": "❌",
+            }.get(confidence, "❓")
             print(f"   {confidence_emoji} {confidence}: {count} item(s)")
-        
+
     except Exception as e:
         print(f"❌ Error during cost estimation: {e}")
         logging.error(f"Cost estimation failed: {e}", exc_info=True)
@@ -274,12 +274,14 @@ def show_usage_examples() -> None:
     print("  cost_data = estimate_list_cost(client, items)")
     print()
     print("  # Use specific methods in order")
-    print("  cost_data = estimate_list_cost(client, items, preferred_methods=['cart', 'shop_scan'])")
+    print(
+        "  cost_data = estimate_list_cost(client, items, preferred_methods=['cart', 'shop_scan'])"
+    )
     print()
     print("  # Export with methodology")
     print("  from meijer.cli.utils import export_cost_estimate_to_excel")
     print("  export_cost_estimate_to_excel(cost_data, 'output.xlsx')")
-    
+
     print("\n🎯 Available Methods:")
     print("  🛒 cart      - Add to cart, check subtotal (most accurate)")
     print("  📱 shop_scan - Shop & Scan API pricing")

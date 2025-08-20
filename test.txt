@@ -1,0 +1,48 @@
+{
+  "exported_at": "2025-08-19T08:34:48.841654",
+  "total_items": 6,
+  "items": [
+    {
+      "name": "Test",
+      "quantity": 1,
+      "notes": "F11:1-3 | SpeedySwab Covid+Flu 3in1 Test - 2pk",
+      "checked": false,
+      "item_id": null
+    },
+    {
+      "name": "watermelon toothpaste",
+      "quantity": 1,
+      "notes": "F5:38-12 | Watermelon Flavor, 4.6 oz",
+      "checked": false,
+      "item_id": null
+    },
+    {
+      "name": "Meijer sensitive toothpaste",
+      "quantity": 1,
+      "notes": "F5:24-33 | Meijer Maximum Strength Sensitive Toothpaste, 4 o",
+      "checked": false,
+      "item_id": null
+    },
+    {
+      "name": "milk",
+      "quantity": 1,
+      "notes": "B16:35-4 | Meijer 2% Reduced Fat Milk, Gallon",
+      "checked": false,
+      "item_id": null
+    },
+    {
+      "name": "oreos",
+      "quantity": 1,
+      "notes": "B8:49-6 | Family Size, 18.12 oz",
+      "checked": false,
+      "item_id": null
+    },
+    {
+      "name": "cheerios",
+      "quantity": 1,
+      "notes": "B7:15-3 | Original Cheerios Heart Healthy Cereal, 18 OZ Fami",
+      "checked": false,
+      "item_id": null
+    }
+  ]
+}

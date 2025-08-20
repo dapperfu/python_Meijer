@@ -44,16 +44,16 @@ from meijer.client import Meijer
 from enum import Enum
 import json
 
-print("✅ All enums imported successfully!")
+print("[OK] All enums imported successfully!")
 
 # Create a real Meijer client
 try:
     client = Meijer()
-    print("✅ Meijer client created successfully!")
+    print("[OK] Meijer client created successfully!")
     print(f"Authentication status: {client.auth_status}")
     print(f"Is authenticated: {client.is_authenticated()}")
 except Exception as e:
-    print(f"❌ Failed to create Meijer client: {e}")
+    print(f"[X] Failed to create Meijer client: {e}")
     print("Please ensure you have valid authentication credentials")
     client = None
 
@@ -76,7 +76,7 @@ The `AuthenticationStatus` enum represents the current authentication state of t
 """)
 
     auth_status_example = nbf.v4.new_code_cell("""# Explore AuthenticationStatus enum with real client
-print("🔐 AuthenticationStatus Enum Values:")
+print("[LOCK] AuthenticationStatus Enum Values:")
 print("=" * 40)
 
 for status in AuthenticationStatus:
@@ -110,7 +110,7 @@ print(f"repr(unauthenticated): {repr(unauthenticated)}")
 
 # Real client authentication status
 if client:
-    print(f"\\n🔍 Real Client Authentication Status:")
+    print(f"\\n[MAGNIFYING] Real Client Authentication Status:")
     print(f"Current status: {client.auth_status}")
     print(f"Status enum: {AuthenticationStatus(client.auth_status)}")
     print(f"Status name: {AuthenticationStatus(client.auth_status).name}")
@@ -118,15 +118,15 @@ if client:
 
     # Demonstrate status checking
     if client.auth_status == AuthenticationStatus.AUTHENTICATED:
-        print("✅ Client is properly authenticated!")
+        print("[OK] Client is properly authenticated!")
     elif client.auth_status == AuthenticationStatus.UNAUTHENTICATED:
-        print("❌ Client needs authentication")
+        print("[X] Client needs authentication")
     elif client.auth_status == AuthenticationStatus.EXPIRED:
-        print("⚠️ Client authentication has expired")
+        print("[WARN] Client authentication has expired")
     elif client.auth_status == AuthenticationStatus.FAILED:
-        print("❌ Client authentication failed")
+        print("[X] Client authentication failed")
 else:
-    print("\\n❌ Client not available for authentication status demo")""")
+    print("\\n[X] Client not available for authentication status demo")""")
 
     # ItemType section
     item_type_section = nbf.v4.new_markdown_cell("""## ItemType Enum
@@ -144,7 +144,7 @@ The `ItemType` enum represents different types of items that can be added to sho
 """)
 
     item_type_example = nbf.v4.new_code_cell("""# Explore ItemType enum with real data
-print("📦 ItemType Enum Values:")
+print("[PACKAGE] ItemType Enum Values:")
 print("=" * 30)
 
 for item_type in ItemType:
@@ -171,7 +171,7 @@ print(f"repr(product_type): {repr(product_type)}")
 
 # Real API usage with ItemType
 if client and client.is_authenticated():
-    print(f"\\n🔍 Real API Usage with ItemType:")
+    print(f"\\n[MAGNIFYING] Real API Usage with ItemType:")
 
     try:
         # Get real shopping lists to see ItemType in action
@@ -217,11 +217,11 @@ if client and client.is_authenticated():
             print("No shopping lists found")
 
     except Exception as e:
-        print(f"❌ Shopping list API failed: {e}")
+        print(f"[X] Shopping list API failed: {e}")
         print("Cannot demonstrate ItemType with real data")
 
 else:
-    print("\\n❌ Client not available for ItemType demo")""")
+    print("\\n[X] Client not available for ItemType demo")""")
 
     # Advanced usage section
     advanced_section = nbf.v4.new_markdown_cell("""## Advanced Usage Examples
@@ -231,7 +231,7 @@ else:
 
     advanced_example = nbf.v4.new_code_cell("""# Advanced enum usage with real API
 if client and client.is_authenticated():
-    print("🚀 Advanced enum usage examples...")
+    print("[ROCKET] Advanced enum usage examples...")
 
     try:
         # Demonstrate filtering by ItemType
@@ -295,10 +295,10 @@ if client and client.is_authenticated():
             print(f"   Invalid status value: {status_value}")
 
     except Exception as e:
-        print(f"❌ Advanced enum usage failed: {e}")
+        print(f"[X] Advanced enum usage failed: {e}")
 
 else:
-    print("❌ Client not available for advanced enum usage demo")""")
+    print("[X] Client not available for advanced enum usage demo")""")
 
     # Best practices section
     best_practices_section = nbf.v4.new_markdown_cell("""## Best Practices
@@ -390,4 +390,4 @@ if __name__ == "__main__":
     with open("enums.ipynb", "w") as f:
         nbf.write(nb, f)
 
-    print("✅ enums.ipynb generated successfully!")
+    print("[OK] enums.ipynb generated successfully!")

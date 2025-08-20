@@ -75,14 +75,14 @@ from datetime import datetime
 import json
 
 # Initialize the Meijer client
-print("🚀 Initializing Meijer client...")
+print("[ROCKET] Initializing Meijer client...")
 client = Meijer()
 
 # Check authentication status
 if client.auth_status.name == "AUTHENTICATED":
-    print("✅ Successfully authenticated!")
+    print("[OK] Successfully authenticated!")
 else:
-    print("❌ Authentication failed. Please check your credentials.")
+    print("[X] Authentication failed. Please check your credentials.")
     print("   Ensure you have auth.txt or ~/.config/meijer.txt configured")""")
     )
 
@@ -95,7 +95,7 @@ The store search allows you to find Meijer stores within a specified radius of c
 
     nb.cells.append(
         new_code_cell("""# Search for stores near Grand Rapids, MI
-print("🔍 Searching for stores near Grand Rapids...")
+print("[MAGNIFYING] Searching for stores near Grand Rapids...")
 stores = client.get_stores(
     latitude=42.9634,
     longitude=-85.6681,
@@ -126,7 +126,7 @@ Each store object contains comprehensive information about services, hours, and 
         new_code_cell("""# Get detailed information for the first store
 if stores:
     store = stores[0]
-    print(f"🏪 Detailed Store Information: {store.name}")
+    print(f"[CONVENIENCE] Detailed Store Information: {store.name}")
     print("=" * 50)
 
     # Basic information
@@ -139,11 +139,11 @@ if stores:
 
     # Services
     print("Services Available:")
-    print(f"  • Pharmacy: {'Yes' if store.has_pharmacy else 'No'}")
-    print(f"  • Curbside Pickup: {'Yes' if store.has_curbside_pickup else 'No'}")
-    print(f"  • Delivery: {'Yes' if store.has_delivery else 'No'}")
-    print(f"  • Self Checkout: {'Yes' if store.has_self_checkout else 'No'}")
-    print(f"  • Gas Station: {'Yes' if store.has_gas_station() else 'No'}")
+    print(f"  - Pharmacy: {'Yes' if store.has_pharmacy else 'No'}")
+    print(f"  - Curbside Pickup: {'Yes' if store.has_curbside_pickup else 'No'}")
+    print(f"  - Delivery: {'Yes' if store.has_delivery else 'No'}")
+    print(f"  - Self Checkout: {'Yes' if store.has_self_checkout else 'No'}")
+    print(f"  - Gas Station: {'Yes' if store.has_gas_station() else 'No'}")
     print()
 
     # Store type and characteristics
@@ -154,11 +154,11 @@ if stores:
     # Operating hours
     if store.hours:
         print("Operating Hours:")
-        print(f"  • Open: {store.hours.open_time.strftime('%I:%M %p')}")
-        print(f"  • Close: {store.hours.close_time.strftime('%I:%M %p')}")
-        print(f"  • 24 Hours: {'Yes' if store.hours.is_24_hours else 'No'}")
-        print(f"  • Days Open: {', '.join(store.hours.days_open)}")
-        print(f"  • Currently Open: {'Yes' if store.is_currently_open() else 'No'}")
+        print(f"  - Open: {store.hours.open_time.strftime('%I:%M %p')}")
+        print(f"  - Close: {store.hours.close_time.strftime('%I:%M %p')}")
+        print(f"  - 24 Hours: {'Yes' if store.hours.is_24_hours else 'No'}")
+        print(f"  - Days Open: {', '.join(store.hours.days_open)}")
+        print(f"  - Currently Open: {'Yes' if store.is_currently_open() else 'No'}")
     else:
         print("Operating Hours: Not available")
     print()""")
@@ -187,28 +187,28 @@ if store.has_gas_station():
 
         # Amenities
         print("Amenities Available:")
-        print(f"  • Car Wash: {'Yes' if gas_station.has_car_wash else 'No'}")
-        print(f"  • Air Pump: {'Yes' if gas_station.has_air_pump else 'No'}")
-        print(f"  • Vacuum: {'Yes' if gas_station.has_vacuum else 'No'}")
-        print(f"  • Convenience Store: {'Yes' if gas_station.has_convenience_store else 'No'}")
-        print(f"  • Accepts Meijer Rewards: {'Yes' if gas_station.accepts_meijer_rewards else 'No'}")
-        print(f"  • Accepts Meijer Gift Cards: {'Yes' if gas_station.accepts_meijer_gift_cards else 'No'}")
+        print(f"  - Car Wash: {'Yes' if gas_station.has_car_wash else 'No'}")
+        print(f"  - Air Pump: {'Yes' if gas_station.has_air_pump else 'No'}")
+        print(f"  - Vacuum: {'Yes' if gas_station.has_vacuum else 'No'}")
+        print(f"  - Convenience Store: {'Yes' if gas_station.has_convenience_store else 'No'}")
+        print(f"  - Accepts Meijer Rewards: {'Yes' if gas_station.accepts_meijer_rewards else 'No'}")
+        print(f"  - Accepts Meijer Gift Cards: {'Yes' if gas_station.accepts_meijer_gift_cards else 'No'}")
         print()
 
         # Payment methods
         print("Payment Methods:")
         for method in gas_station.payment_methods:
-            print(f"  • {method}")
+            print(f"  - {method}")
         print()
 
         # Operating hours
         if gas_station.hours:
             print("Gas Station Hours:")
-            print(f"  • Open: {gas_station.hours.open_time.strftime('%I:%M %p')}")
-            print(f"  • Close: {gas_station.hours.close_time.strftime('%I:%M %p')}")
-            print(f"  • 24 Hours: {'Yes' if gas_station.hours.is_24_hours else 'No'}")
-            print(f"  • Days Open: {', '.join(gas_station.hours.days_open)}")
-            print(f"  • Currently Open: {'Yes' if gas_station.is_currently_open() else 'No'}")
+            print(f"  - Open: {gas_station.hours.open_time.strftime('%I:%M %p')}")
+            print(f"  - Close: {gas_station.hours.close_time.strftime('%I:%M %p')}")
+            print(f"  - 24 Hours: {'Yes' if gas_station.hours.is_24_hours else 'No'}")
+            print(f"  - Days Open: {', '.join(gas_station.hours.days_open)}")
+            print(f"  - Currently Open: {'Yes' if gas_station.is_currently_open() else 'No'}")
         else:
             print("Gas Station Hours: Not available")
         print()
@@ -217,9 +217,9 @@ if store.has_gas_station():
         print(f"Amenities Summary: {gas_station.get_amenities_summary()}")
 
     else:
-        print("❌ Gas station object could not be created")
+        print("[X] Gas station object could not be created")
 else:
-    print("❌ This store does not have a gas station")""")
+    print("[X] This store does not have a gas station")""")
     )
 
     # Store Operations Demo
@@ -231,7 +231,7 @@ The store objects provide various utility methods for calculations and data mani
 
     nb.cells.append(
         new_code_cell("""# Distance calculations
-print("📏 Distance Calculations")
+print("[RULER] Distance Calculations")
 print("=" * 30)
 
 # Calculate distance from current store to different locations
@@ -252,24 +252,24 @@ for location_name, lat, lon in test_locations:
 print()
 
 # Service summary
-print("🔧 Service Summary")
+print("[WRENCH] Service Summary")
 print("=" * 20)
 print(store.get_services_summary())
 print()
 
 # Store data as dictionary
-print("📊 Store Data Structure")
+print("[BAR] Store Data Structure")
 print("=" * 25)
 store_dict = store.to_dict()
 print(f"Total fields: {len(store_dict)}")
 print("Available fields:")
 for key in store_dict.keys():
-    print(f"  • {key}")
+    print(f"  - {key}")
 
 print()
 
 # Raw API data
-print("🔍 Raw API Data Sample")
+print("[MAGNIFYING] Raw API Data Sample")
 print("=" * 25)
 if store._raw_data:
     raw_keys = list(store._raw_data.keys())
@@ -281,7 +281,7 @@ if store._raw_data:
             value = value[:50] + "..."
         elif isinstance(value, list) and len(value) > 3:
             value = f"[{len(value)} items]"
-        print(f"  • {key}: {value}")
+        print(f"  - {key}: {value}")
 else:
     print("No raw data available")""")
     )
@@ -295,7 +295,7 @@ Compare different stores and their services to find the best option for your nee
 
     nb.cells.append(
         new_code_cell("""# Compare all found stores
-print("🏪 Store Comparison")
+print("[CONVENIENCE] Store Comparison")
 print("=" * 50)
 
 # Create comparison data
@@ -321,11 +321,11 @@ if comparison_data:
 
     # Summary statistics
     print("\\nSummary Statistics:")
-    print(f"  • Total stores: {len(stores)}")
-    print(f"  • Stores with pharmacy: {sum(1 for s in stores if s.has_pharmacy)}")
-    print(f"  • Stores with gas station: {sum(1 for s in stores if s.has_gas_station())}")
-    print(f"  • Stores with curbside pickup: {sum(1 for s in stores if s.has_curbside_pickup)}")
-    print(f"  • Stores with delivery: {sum(1 for s in stores if s.has_delivery)}")
+    print(f"  - Total stores: {len(stores)}")
+    print(f"  - Stores with pharmacy: {sum(1 for s in stores if s.has_pharmacy)}")
+    print(f"  - Stores with gas station: {sum(1 for s in stores if s.has_gas_station())}")
+    print(f"  - Stores with curbside pickup: {sum(1 for s in stores if s.has_curbside_pickup)}")
+    print(f"  - Stores with delivery: {sum(1 for s in stores if s.has_delivery)}")
 else:
     print("No stores to compare")""")
     )
@@ -339,7 +339,7 @@ Explore different search parameters and locations to find stores that meet speci
 
     nb.cells.append(
         new_code_cell("""# Search with different parameters
-print("🔍 Advanced Store Search Examples")
+print("[MAGNIFYING] Advanced Store Search Examples")
 print("=" * 40)
 
 # Example 1: Search by ZIP code (uses default coordinates)
@@ -373,7 +373,7 @@ print("4. Find stores with gas stations:")
 gas_stores = [s for s in stores if s.has_gas_station()]
 print(f"   Found {len(gas_stores)} stores with gas stations in current search")
 for store in gas_stores:
-    print(f"     • {store.name} - {store.city}, {store.state}")
+    print(f"     - {store.name} - {store.city}, {store.state}")
 
 print()
 
@@ -382,7 +382,7 @@ print("5. Find stores with curbside pickup:")
 curbside_stores = [s for s in stores if s.has_curbside_pickup]
 print(f"   Found {len(curbside_stores)} stores with curbside pickup")
 for store in curbside_stores:
-    print(f"     • {store.name} - {store.city}, {store.state}")""")
+    print(f"     - {store.name} - {store.city}, {store.state}")""")
     )
 
     # Store Data Export
@@ -394,7 +394,7 @@ Export store data for further analysis or use in other applications.""")
 
     nb.cells.append(
         new_code_cell("""# Export store data to different formats
-print("📤 Data Export and Analysis")
+print("[OUTBOX] Data Export and Analysis")
 print("=" * 35)
 
 # Export to JSON
@@ -413,7 +413,7 @@ if stores:
     # Save to file
     with open('store_export.json', 'w') as f:
         json.dump(export_data, f, indent=2, default=str)
-    print("   ✅ Saved to store_export.json")
+    print("   [OK] Saved to store_export.json")
     print()
 
 # Export to CSV via pandas
@@ -421,7 +421,7 @@ print("2. Exporting to CSV format...")
 if comparison_data:
     df = pd.DataFrame(comparison_data)
     df.to_csv('store_comparison.csv', index=False)
-    print("   ✅ Saved to store_comparison.csv")
+    print("   [OK] Saved to store_comparison.csv")
     print()
 
 # Data analysis
@@ -432,15 +432,15 @@ if stores:
     if valid_coords:
         avg_lat = sum(lat for lat, lon in valid_coords) / len(valid_coords)
         avg_lon = sum(lon for lat, lon in valid_coords) / len(valid_coords)
-        print(f"   • Average store coordinates: ({avg_lat:.4f}, {avg_lon:.4f})")
+        print(f"   - Average store coordinates: ({avg_lat:.4f}, {avg_lon:.4f})")
 
     # Service availability percentages
     total_stores = len(stores)
-    print(f"   • Total stores analyzed: {total_stores}")
-    print(f"   • Pharmacy availability: {sum(1 for s in stores if s.has_pharmacy) / total_stores * 100:.1f}%")
-    print(f"   • Gas station availability: {sum(1 for s in stores if s.has_gas_station()) / total_stores * 100:.1f}%")
-    print(f"   • Curbside pickup availability: {sum(1 for s in stores if s.has_curbside_pickup) / total_stores * 100:.1f}%")
-    print(f"   • Delivery availability: {sum(1 for s in stores if s.has_delivery) / total_stores * 100:.1f}%")
+    print(f"   - Total stores analyzed: {total_stores}")
+    print(f"   - Pharmacy availability: {sum(1 for s in stores if s.has_pharmacy) / total_stores * 100:.1f}%")
+    print(f"   - Gas station availability: {sum(1 for s in stores if s.has_gas_station()) / total_stores * 100:.1f}%")
+    print(f"   - Curbside pickup availability: {sum(1 for s in stores if s.has_curbside_pickup) / total_stores * 100:.1f}%")
+    print(f"   - Delivery availability: {sum(1 for s in stores if s.has_delivery) / total_stores * 100:.1f}%")
 
 print()""")
     )
@@ -454,31 +454,31 @@ Learn how to effectively use the store functionality in your applications.""")
 
     nb.cells.append(
         new_code_cell("""# Best practices and usage examples
-print("💡 Best Practices and Usage Examples")
+print("[BULB] Best Practices and Usage Examples")
 print("=" * 45)
 
 print("1. Efficient Store Searching:")
-print("   • Use appropriate radius values (25-100 miles for local, 300+ for regional)")
-print("   • Cache store results when possible")
-print("   • Filter stores by services you need")
+print("   - Use appropriate radius values (25-100 miles for local, 300+ for regional)")
+print("   - Cache store results when possible")
+print("   - Filter stores by services you need")
 print()
 
 print("2. Gas Station Integration:")
-print("   • Always check has_gas_station() before accessing gas data")
-print("   • Use get_gas_station() to get the MeijerGas object")
-print("   • Check gas station hours before planning visits")
+print("   - Always check has_gas_station() before accessing gas data")
+print("   - Use get_gas_station() to get the MeijerGas object")
+print("   - Check gas station hours before planning visits")
 print()
 
 print("3. Error Handling:")
-print("   • Handle cases where store data might be incomplete")
-print("   • Check for None values in optional fields")
-print("   • Use try-catch blocks for API calls")
+print("   - Handle cases where store data might be incomplete")
+print("   - Check for None values in optional fields")
+print("   - Use try-catch blocks for API calls")
 print()
 
 print("4. Performance Tips:")
-print("   • Search with appropriate radius to minimize API calls")
-print("   • Store frequently accessed data locally")
-print("   • Use distance calculations for proximity-based features")
+print("   - Search with appropriate radius to minimize API calls")
+print("   - Store frequently accessed data locally")
+print("   - Use distance calculations for proximity-based features")
 print()
 
 # Example: Robust store search function
@@ -549,12 +549,12 @@ print("   stores = robust_store_search(client, 42.9634, -85.6681, 50, ['pharmacy
 
 ### What We've Accomplished
 
-✅ **Store Search**: Successfully implemented working store search functionality
-✅ **Store Objects**: Created comprehensive MeijerStore objects with all store data
-✅ **Gas Station Integration**: Full MeijerGas functionality for stores with fuel services
-✅ **Service Detection**: Automatic detection of pharmacy, curbside, delivery, and other services
-✅ **Distance Calculations**: Haversine formula for accurate distance calculations
-✅ **Data Export**: JSON and CSV export capabilities for further analysis
+[OK] **Store Search**: Successfully implemented working store search functionality
+[OK] **Store Objects**: Created comprehensive MeijerStore objects with all store data
+[OK] **Gas Station Integration**: Full MeijerGas functionality for stores with fuel services
+[OK] **Service Detection**: Automatic detection of pharmacy, curbside, delivery, and other services
+[OK] **Distance Calculations**: Haversine formula for accurate distance calculations
+[OK] **Data Export**: JSON and CSV export capabilities for further analysis
 
 ### Key Features Demonstrated
 
@@ -600,25 +600,25 @@ try:
     # Test 1: Store search
     print("1. Testing store search...")
     test_stores = client.get_stores(latitude=42.9634, longitude=-85.6681, radius=100)
-    print(f"   ✅ Found {len(test_stores)} stores")
+    print(f"   [OK] Found {len(test_stores)} stores")
 
     if test_stores:
         # Test 2: Store object functionality
         print("2. Testing store object functionality...")
         test_store = test_stores[0]
-        print(f"   ✅ Store: {test_store.name}")
-        print(f"   ✅ Services: {test_store.get_services_summary()}")
-        print(f"   ✅ Coordinates: ({test_store.latitude}, {test_store.longitude})")
+        print(f"   [OK] Store: {test_store.name}")
+        print(f"   [OK] Services: {test_store.get_services_summary()}")
+        print(f"   [OK] Coordinates: ({test_store.latitude}, {test_store.longitude})")
 
         # Test 3: Gas station functionality
         print("3. Testing gas station functionality...")
         if test_store.has_gas_station():
             gas = test_store.get_gas_station()
             if gas:
-                print(f"   ✅ Gas station: {gas.station_id}")
-                print(f"   ✅ Amenities: {gas.get_amenities_summary()}")
+                print(f"   [OK] Gas station: {gas.station_id}")
+                print(f"   [OK] Amenities: {gas.get_amenities_summary()}")
             else:
-                print("   ❌ Gas station object creation failed")
+                print("   [X] Gas station object creation failed")
         else:
             print("   ℹ️ Store does not have gas station")
 
@@ -626,26 +626,26 @@ try:
         print("4. Testing distance calculations...")
         distance = test_store.get_distance_from(42.9716, -85.5671)
         if distance:
-            print(f"   ✅ Distance calculation: {distance:.1f} miles")
+            print(f"   [OK] Distance calculation: {distance:.1f} miles")
         else:
-            print("   ❌ Distance calculation failed")
+            print("   [X] Distance calculation failed")
 
         # Test 5: Data export
         print("5. Testing data export...")
         store_dict = test_store.to_dict()
-        print(f"   ✅ Data export: {len(store_dict)} fields")
+        print(f"   [OK] Data export: {len(store_dict)} fields")
 
-        print("\\n🎉 All tests passed! Store functionality is working correctly.")
+        print("\\n[PARTY] All tests passed! Store functionality is working correctly.")
 
     else:
-        print("   ❌ No stores found - check search parameters")
+        print("   [X] No stores found - check search parameters")
 
 except Exception as e:
-    print(f"   ❌ Test failed with error: {e}")
+    print(f"   [X] Test failed with error: {e}")
     print("   Check authentication and API connectivity")
 
 print("\\n" + "=" * 40)
-print("🏪 Store Functionality Demo Complete!")
+print("[CONVENIENCE] Store Functionality Demo Complete!")
 print("All features are working and ready for use.")""")
     )
 
@@ -664,25 +664,27 @@ def main():
     with open(filename, "w", encoding="utf-8") as f:
         nbf.write(nb, f)
 
-    print(f"✅ Notebook created successfully: {filename}")
-    print(f"📊 Total cells: {len(nb.cells)}")
+    print(f"[OK] Notebook created successfully: {filename}")
+    print(f"[BAR] Total cells: {len(nb.cells)}")
     print(
-        f"📝 Markdown cells: {len([c for c in nb.cells if c.cell_type == 'markdown'])}"
+        f"[MEMO] Markdown cells: {len([c for c in nb.cells if c.cell_type == 'markdown'])}"
     )
-    print(f"💻 Code cells: {len([c for c in nb.cells if c.cell_type == 'code'])}")
+    print(
+        f"[COMPUTER] Code cells: {len([c for c in nb.cells if c.cell_type == 'code'])}"
+    )
 
     # Display notebook structure
-    print("\n📚 Notebook Structure:")
+    print("\n[BOOKS] Notebook Structure:")
     for i, cell in enumerate(nb.cells, 1):
         if cell.cell_type == "markdown":
             # Extract first line of markdown for title
             first_line = cell.source.split("\n")[0].strip("# ")
-            print(f"  {i:2d}. 📝 {first_line}")
+            print(f"  {i:2d}. [MEMO] {first_line}")
         else:
-            print(f"  {i:2d}. 💻 Code cell")
+            print(f"  {i:2d}. [COMPUTER] Code cell")
 
     print(
-        f"\n🚀 You can now open {filename} in Jupyter to explore the store functionality!"
+        f"\n[ROCKET] You can now open {filename} in Jupyter to explore the store functionality!"
     )
 
 

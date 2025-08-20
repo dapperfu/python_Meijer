@@ -55,10 +55,38 @@ class MeijerAuth(AuthBase):
 
     def __call__(self, request):
         # Ensure we have a valid token before making the request
-        tokens = self.token_storage.get_valid_tokens()
+        tokens = self._ensure_valid_tokens()
         if tokens:
             request.headers["Authorization"] = f"Bearer {tokens.access_token}"
         return request
+    
+    def _ensure_valid_tokens(self) -> Optional[AuthTokens]:
+        """
+        Ensure we have valid tokens, refreshing if necessary.
+        
+        This method is called before every API request to ensure tokens are fresh.
+        """
+        tokens = self.token_storage.get_valid_tokens()
+        if not tokens:
+            self.logger.warning("❌ No valid tokens available")
+            return None
+            
+        # Check if token is close to expiring (within 10 minutes)
+        if tokens.is_expired(buffer_seconds=600):  # 10 minutes buffer
+            self.logger.info("🔄 Token expiring soon, proactively refreshing...")
+            if self.token_storage.refresh_tokens(tokens.refresh_token):
+                # Reload the refreshed tokens
+                tokens = self.token_storage.load_tokens()
+                if tokens:
+                    self.logger.info("✅ Tokens refreshed successfully")
+                else:
+                    self.logger.error("❌ Failed to load refreshed tokens")
+                    return None
+            else:
+                self.logger.error("❌ Failed to refresh tokens")
+                return None
+                
+        return tokens
 
 
 class TokenStorage:

@@ -7,8 +7,9 @@ This module provides shared fixtures and utilities for testing with hybrid authe
 - Mocked client when not authenticated
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from meijer import Meijer
 
@@ -17,7 +18,7 @@ from meijer import Meijer
 def hybrid_client():
     """
     Fixture that provides either a real authenticated client or a mocked client.
-    
+
     Returns:
         tuple: (client, use_real_client, mperks, search, stores, etc.)
     """
@@ -32,17 +33,15 @@ def hybrid_client():
     if use_real_client:
         # Use real authenticated client
         client = real_client
-        print(f"✅ Using REAL authenticated client for testing")
+        print("✅ Using REAL authenticated client for testing")
     else:
         # Fall back to mocked client
         client = Mock()
         client.logger = Mock()
         client.api_base_url = "https://api.meijer.com"
-        client._get_api_headers.return_value = {
-            "Authorization": "Bearer test"
-        }
+        client._get_api_headers.return_value = {"Authorization": "Bearer test"}
         client._make_request.return_value = Mock(status_code=200)
-        print(f"⚠️ Using MOCKED client for testing (no real authentication)")
+        print("⚠️ Using MOCKED client for testing (no real authentication)")
 
     return client, use_real_client
 
@@ -51,10 +50,10 @@ def hybrid_client():
 def hybrid_mperks(hybrid_client):
     """Fixture for MPerksEarnedRewards with hybrid authentication."""
     from meijer.mperks import MPerksEarnedRewards
-    
+
     client, use_real_client = hybrid_client
     mperks = MPerksEarnedRewards(client)
-    
+
     return mperks, use_real_client
 
 
@@ -62,10 +61,10 @@ def hybrid_mperks(hybrid_client):
 def hybrid_search(hybrid_client):
     """Fixture for Search with hybrid authentication."""
     from meijer.search import Search
-    
+
     client, use_real_client = hybrid_client
     search = Search(client)
-    
+
     return search, use_real_client
 
 
@@ -73,9 +72,9 @@ def hybrid_search(hybrid_client):
 def hybrid_stores(hybrid_client):
     """Fixture for stores module with hybrid authentication."""
     from meijer.stores import MeijerStore
-    
+
     client, use_real_client = hybrid_client
-    
+
     return MeijerStore, use_real_client
 
 
@@ -83,10 +82,10 @@ def hybrid_stores(hybrid_client):
 def hybrid_coupons(hybrid_client):
     """Fixture for MeijerCouponManager with hybrid authentication."""
     from meijer.coupons import MeijerCouponManager
-    
+
     client, use_real_client = hybrid_client
     coupons = MeijerCouponManager(client)
-    
+
     return coupons, use_real_client
 
 
@@ -99,14 +98,14 @@ def skip_if_no_real_auth(use_real_client, reason="Real authentication required")
 def run_real_or_mock(use_real_client, real_func, mock_func, *args, **kwargs):
     """
     Helper to run either real or mock functions based on authentication status.
-    
+
     Args:
         use_real_client: Boolean indicating if real client is available
         real_func: Function to call with real client
         mock_func: Function to call with mock client
         *args: Arguments to pass to functions
         **kwargs: Keyword arguments to pass to functions
-    
+
     Returns:
         Result from either real or mock function
     """

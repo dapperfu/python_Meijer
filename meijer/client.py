@@ -221,12 +221,20 @@ class Meijer:
         # First check if we have stored tokens
         if self.token_storage.has_tokens():
             self.logger.info("🔍 Found existing tokens, testing refresh...")
-
+            
             # Try to refresh tokens first
             try:
                 tokens = self.token_storage.get_valid_tokens()
                 if tokens:
-                    self.logger.info("✅ Token refresh successful")
+                    # Check if token is close to expiring
+                    if tokens.is_expired(buffer_seconds=600):  # 10 minutes buffer
+                        self.logger.info("🔄 Token expiring soon, proactively refreshing...")
+                        if self.token_storage.refresh_tokens(tokens.refresh_token):
+                            self.logger.info("✅ Token refreshed proactively")
+                        else:
+                            self.logger.warning("❌ Proactive refresh failed")
+                    else:
+                        self.logger.info("✅ Token refresh successful")
                     return True
                 else:
                     self.logger.warning("❌ Token refresh failed")
@@ -238,7 +246,7 @@ class Meijer:
                 # Show Unicode red X for failed refresh
                 print("❌ Token refresh failed - falling back to login method")
                 return False
-
+        
         # No tokens or refresh failed, need to authenticate
         tokens = self.token_storage.get_valid_tokens()
         if not tokens:

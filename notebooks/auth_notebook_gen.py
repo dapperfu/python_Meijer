@@ -54,7 +54,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 
-print("✅ All authentication classes imported successfully!")
+print("[OK] All authentication classes imported successfully!")
 print("Available components:")
 print("  - MeijerAuth")
 print("  - TokenStorage")
@@ -81,13 +81,13 @@ The `MeijerAuth` class is a custom authentication class that implements the `req
 bearer_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.token"
 auth = MeijerAuth(bearer_token)
 
-print("🔐 MeijerAuth Created:")
+print("[LOCK] MeijerAuth Created:")
 print(f"Bearer Token: {bearer_token[:20]}...")
 print(f"Auth Type: {type(auth).__name__}")
 print(f"Base Class: {auth.__class__.__bases__[0].__name__}")
 
 # Test the authentication mechanism
-print(f"\\n📋 Authentication Details:")
+print(f"\\n[CLIPBOARD] Authentication Details:")
 print(f"Token Length: {len(bearer_token)} characters")
 print(f"Token Prefix: {bearer_token[:10]}...")
 print(f"Token Suffix: ...{bearer_token[-10:]}")
@@ -102,23 +102,23 @@ class MockRequest:
 
 # Test the __call__ method
 mock_request = MockRequest()
-print(f"\\n📤 Before Auth: {mock_request}")
+print(f"\\n[OUTBOX] Before Auth: {mock_request}")
 print(f"Headers: {mock_request.headers}")
 
 # Apply authentication
 modified_request = auth(mock_request)
-print(f"\\n📥 After Auth: {modified_request}")
+print(f"\\n[INBOX] After Auth: {modified_request}")
 print(f"Headers: {modified_request.headers}")
 print(f"Authorization Header: {modified_request.headers.get('Authorization', 'Not set')}")
 
 # Verify the Bearer token format
 auth_header = modified_request.headers.get('Authorization', '')
 if auth_header.startswith('Bearer '):
-    print(f"✅ Authorization header correctly formatted: Bearer + token")
+    print(f"[OK] Authorization header correctly formatted: Bearer + token")
     token_part = auth_header[7:]  # Remove 'Bearer ' prefix
     print(f"   Token part: {token_part[:20]}...")
 else:
-    print(f"❌ Authorization header incorrectly formatted: {auth_header}")""")
+    print(f"[X] Authorization header incorrectly formatted: {auth_header}")""")
 
     # TokenStorage section
     token_storage_section = nbf.v4.new_markdown_cell("""## TokenStorage Class
@@ -140,7 +140,7 @@ The `TokenStorage` class handles persistent storage of authentication tokens usi
 temp_dir = tempfile.mkdtemp()
 test_storage_file = os.path.join(temp_dir, "test_tokens.pkl")
 
-print("💾 TokenStorage Demo")
+print("[FLOPPY] TokenStorage Demo")
 print("=" * 30)
 
 # Create TokenStorage instance
@@ -171,7 +171,7 @@ class MockAuthTokens:
         )
 
 # Test token operations
-print(f"\\n🔑 Testing Token Operations:")
+print(f"\\n[KEY] Testing Token Operations:")
 
 # Create sample tokens
 sample_tokens = MockAuthTokens(
@@ -186,7 +186,7 @@ print(f"  Refresh Token: {sample_tokens.refresh_token[:30]}...")
 print(f"  Expires At: {sample_tokens.expires_at}")
 
 # Save tokens
-print(f"\\n💾 Saving Tokens...")
+print(f"\\n[FLOPPY] Saving Tokens...")
 save_success = storage.save_tokens(sample_tokens)
 print(f"Save Success: {save_success}")
 print(f"File Exists: {os.path.exists(test_storage_file)}")
@@ -194,18 +194,18 @@ print(f"File Size: {os.path.getsize(test_storage_file)} bytes")
 print(f"Has Tokens: {storage.has_tokens()}")
 
 # Load tokens
-print(f"\\n📂 Loading Tokens...")
+print(f"\\n[OPEN] Loading Tokens...")
 loaded_tokens = storage.load_tokens()
 if loaded_tokens:
-    print(f"Load Success: ✅")
+    print(f"Load Success: [OK]")
     print(f"  Access Token: {loaded_tokens.access_token[:30]}...")
     print(f"  Refresh Token: {loaded_tokens.refresh_token[:30]}...")
     print(f"  Expires At: {loaded_tokens.expires_at}")
 else:
-    print(f"Load Failed: ❌")
+    print(f"Load Failed: [X]")
 
 # Test clearing tokens
-print(f"\\n🗑️ Clearing Tokens...")
+print(f"\\n[FILE]️ Clearing Tokens...")
 clear_success = storage.clear_tokens()
 print(f"Clear Success: {clear_success}")
 print(f"File Exists: {os.path.exists(test_storage_file)}")
@@ -221,12 +221,12 @@ print(f"\\n🧹 Cleaned up temporary files")""")
 
 This notebook has demonstrated the authentication system available in the Meijer API client:
 
-✅ **MeijerAuth**: Custom authentication class for Bearer token requests
-✅ **TokenStorage**: Persistent storage and management of authentication tokens
-✅ **Configuration Loading**: Support for multiple auth file formats
-✅ **JSON Config Support**: Structured configuration file loading
-✅ **Flexible Auth Files**: Support for bearer tokens and username/password
-✅ **Integration Ready**: Seamless integration with requests library
+[OK] **MeijerAuth**: Custom authentication class for Bearer token requests
+[OK] **TokenStorage**: Persistent storage and management of authentication tokens
+[OK] **Configuration Loading**: Support for multiple auth file formats
+[OK] **JSON Config Support**: Structured configuration file loading
+[OK] **Flexible Auth Files**: Support for bearer tokens and username/password
+[OK] **Integration Ready**: Seamless integration with requests library
 
 ### Key Benefits
 
@@ -243,7 +243,7 @@ This notebook has demonstrated the authentication system available in the Meijer
 - Discover shopping list and coupon management features
 - Understand the complete API workflow
 
-The authentication system provides a robust foundation for building secure Meijer API applications! 🚀
+The authentication system provides a robust foundation for building secure Meijer API applications! [ROCKET]
 """)
 
     # Add all cells to notebook
@@ -261,7 +261,7 @@ The authentication system provides a robust foundation for building secure Meije
     with open("auth.ipynb", "w") as f:
         nbf.write(nb, f)
 
-    print("✅ auth.ipynb created successfully!")
+    print("[OK] auth.ipynb created successfully!")
 
 
 if __name__ == "__main__":
