@@ -5,6 +5,7 @@ This module contains all the Click command groups and individual commands.
 """
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -1134,9 +1135,10 @@ def auth_command(log_file: str = None):
         except (ImportError, Exception) as jwt_error:
             logger.debug(f"JWT decoding failed: {jwt_error}")
 
-        # Save to ~/.config/meijer.txt
-        config_path = os.path.expanduser("~/.config/meijer.txt")
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        # Save to cross-platform config directory
+        from ..auth import get_meijer_config_path
+        config_path = Path(get_meijer_config_path("auth.txt"))
+        
         logger.debug(f"Saving tokens to: {config_path}")
 
         config = {

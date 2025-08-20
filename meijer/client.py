@@ -10,6 +10,7 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+import os
 
 from .auth import MeijerAuth, TokenStorage
 from .coupon_operations import CouponOperations
@@ -172,8 +173,11 @@ class Meijer:
             raise
 
     def _load_auth_from_config(self):
-        """Load authentication from ~/.config/meijer.txt."""
-        config_path = Path.home() / ".config" / "meijer.txt"
+        """Load authentication from cross-platform config directory."""
+        # Get cross-platform config path
+        from .auth import get_meijer_config_path
+        config_path = Path(get_meijer_config_path("auth.txt"))
+            
         if config_path.exists():
             try:
                 with open(config_path, "r") as f:

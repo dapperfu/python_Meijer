@@ -18,6 +18,34 @@ from requests.auth import AuthBase
 from .models import AuthTokens
 
 
+def get_meijer_config_path(filename: str) -> str:
+    """
+    Get cross-platform config path for Meijer authentication files.
+    
+    Args:
+        filename: Name of the file to get path for
+        
+    Returns:
+        Full path to the config file
+    """
+    # Get home directory for current OS
+    home_dir = Path.home()
+    
+    # Create config directory path
+    if os.name == 'nt':  # Windows
+        config_dir = home_dir / "AppData" / "Local" / "Meijer"
+    elif os.name == 'posix':  # Unix-like (Linux, macOS, FreeBSD)
+        config_dir = home_dir / ".config" / "meijer"
+    else:
+        # Fallback for other OS
+        config_dir = home_dir / ".meijer"
+    
+    # Ensure config directory exists
+    config_dir.mkdir(parents=True, exist_ok=True)
+    
+    return str(config_dir / filename)
+
+
 class MeijerAuth(AuthBase):
     """Custom authentication class for Meijer API requests with automatic token refresh."""
 
@@ -36,8 +64,12 @@ class MeijerAuth(AuthBase):
 class TokenStorage:
     """Handles persistent storage and automatic refresh of authentication tokens."""
 
-    def __init__(self, storage_file: str = "meijer_tokens.pkl"):
-        self.storage_file = storage_file
+    def __init__(self, storage_file: str = None):
+        if storage_file is None:
+            # Use cross-platform config directory
+            self.storage_file = get_meijer_config_path("meijer_tokens.pkl")
+        else:
+            self.storage_file = storage_file
         self.logger = logging.getLogger(__name__)
 
         # OAuth2 configuration based on log analysis
@@ -46,6 +78,18 @@ class TokenStorage:
 
         # Token refresh settings
         self.refresh_buffer_seconds = 300  # 5 minutes before expiry
+
+    def _get_config_path(self, filename: str) -> str:
+        """
+        Get cross-platform config path for Meijer authentication files.
+        
+        Args:
+            filename: Name of the file to get path for
+            
+        Returns:
+            Full path to the config file
+        """
+        return get_meijer_config_path(filename)
 
     def save_tokens(self, tokens: AuthTokens) -> bool:
         """Save tokens to persistent storage."""
@@ -352,19 +396,18 @@ def load_auth_from_config_file(
     config_file_path: Optional[Union[str, Path]] = None,
 ) -> Optional[Tuple[str, str]]:
     """
-    Load authentication from .config/meijer.txt JSON config file.
+    Load authentication from cross-platform config directory.
 
     Args:
-        config_file_path: Optional path to config file, defaults to ~/.config/meijer.txt
+        config_file_path: Optional path to config file, defaults to cross-platform auth.txt
 
     Returns:
         Tuple of (bearer_token, user_agent) if found, None otherwise
     """
     try:
         if config_file_path is None:
-            # Use default ~/.config/meijer.txt
-            home_dir = Path.home()
-            config_file_path = home_dir / ".config" / "meijer.txt"
+            # Use cross-platform config directory
+            config_file_path = Path(get_meijer_config_path("auth.txt"))
         else:
             config_file_path = Path(config_file_path)
 
