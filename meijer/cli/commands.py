@@ -5,7 +5,6 @@ This module contains all the Click command groups and individual commands.
 """
 
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -918,6 +917,526 @@ def coupons_list(clipped: bool, available: bool):
         raise click.ClickException(f"❌ Failed to list coupons: {e}")
 
 
+# Stores Commands
+@click.group()
+def stores_group():
+    """Manage store information and search."""
+    pass
+
+
+@stores_group.command("search")
+@click.option("--city", "-c", help="Search for stores in a specific city")
+@click.option("--zip", "-z", help="Search for stores near a ZIP code")
+@click.option("--near", "-n", help="Search for stores near coordinates (lat,lng)")
+@click.option("--radius", "-r", default=50, help="Search radius in miles (default: 50)")
+@click.option(
+    "--services",
+    "-s",
+    multiple=True,
+    help="Filter by services (curbside, delivery, pharmacy, gas)",
+)
+@click.option(
+    "--limit", "-l", default=20, help="Maximum number of stores to return (default: 20)"
+)
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["table", "json", "csv"]),
+    default="table",
+    help="Output format",
+)
+def stores_search(
+    city: str,
+    zip: str,
+    near: str,
+    radius: int,
+    services: tuple,
+    limit: int,
+    format: str,
+):
+    """Search for Meijer stores with various filters."""
+    logger = logging.getLogger(__name__)
+    logger.debug(
+        f"Stores search called: city={city}, zip={zip}, near={near}, radius={radius}, services={services}, limit={limit}"
+    )
+
+    try:
+        client = get_meijer_client()
+        stores = []
+
+        # Determine search method
+        if near:
+            try:
+                lat_str, lng_str = near.split(",")
+                latitude = float(lat_str.strip())
+                longitude = float(lng_str.strip())
+                logger.debug(f"Searching near coordinates: {latitude}, {longitude}")
+                stores = client.find_stores_nearby(latitude, longitude, radius, limit)
+            except ValueError:
+                raise click.ClickException(
+                    "❌ Invalid coordinates format. Use 'lat,lng' (e.g., '42.2808,-83.7430')"
+                )
+        elif city:
+            logger.debug(f"Searching for stores in city: {city}")
+            stores = client.get_stores(city=city)
+        elif zip:
+            logger.debug(f"Searching for stores near ZIP: {zip}")
+            stores = client.get_stores(zip_code=zip)
+        else:
+            logger.debug("Searching for all stores")
+            stores = client.get_stores()
+
+        if not stores:
+            click.echo("🏪 No stores found matching your criteria!")
+            return
+
+        # Apply service filters
+        if services:
+            logger.debug(f"Filtering by services: {services}")
+            filtered_stores = []
+            for store in stores:
+                store_services = []
+                if store.has_curbside_pickup:
+                    store_services.append("curbside")
+                if store.has_delivery:
+                    store_services.append("delivery")
+                if store.has_pharmacy:
+                    store_services.append("pharmacy")
+                if store.gas_station and store.gas_station.fuel_prices:
+                    store_services.append("gas")
+
+                # Check if store has any of the requested services
+                if any(
+                    service.lower() in [s.lower() for s in store_services]
+                    for service in services
+                ):
+                    filtered_stores.append(store)
+            stores = filtered_stores
+
+        # Limit results
+        stores = stores[:limit]
+
+        if not stores:
+            click.echo("🏪 No stores found matching your service criteria!")
+            return
+
+        # Display results
+        if format == "json":
+            import json
+
+            stores_data = []
+            for store in stores:
+                store_dict = {
+                    "unit_id": store.unit_id,
+                    "name": store.name,
+                    "address": store.address,
+                    "city": store.city,
+                    "state": store.state,
+                    "zip_code": store.zip_code,
+                    "phone": store.phone_number,
+                    "latitude": store.latitude,
+                    "longitude": store.longitude,
+                    "services": {
+                        "curbside_pickup": store.has_curbside_pickup,
+                        "delivery": store.has_delivery,
+                        "pharmacy": store.has_pharmacy,
+                        "gas_station": store.gas_station is not None,
+                    },
+                    "hours": str(store.hours) if store.hours else None,
+                }
+                stores_data.append(store_dict)
+            click.echo(json.dumps(stores_data, indent=2))
+        elif format == "csv":
+            import csv
+            import io
+
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(
+                [
+                    "Unit ID",
+                    "Name",
+                    "Address",
+                    "City",
+                    "State",
+                    "ZIP",
+                    "Phone",
+                    "Curbside",
+                    "Delivery",
+                    "Pharmacy",
+                    "Gas",
+                ]
+            )
+            for store in stores:
+                writer.writerow(
+                    [
+                        store.unit_id,
+                        store.name,
+                        store.address,
+                        store.city,
+                        store.state,
+                        store.zip_code,
+                        store.phone_number,
+                        "Yes" if store.has_curbside_pickup else "No",
+                        "Yes" if store.has_delivery else "No",
+                        "Yes" if store.has_pharmacy else "No",
+                        "Yes" if store.gas_station else "No",
+                    ]
+                )
+            click.echo(output.getvalue())
+        else:
+            # Default table format
+            from rich.console import Console
+            from rich.table import Table
+
+            console = Console()
+            table = Table(
+                title=f"Meijer Stores ({len(stores)} found)",
+                show_header=True,
+                header_style="bold cyan",
+            )
+
+            table.add_column("#", style="cyan", no_wrap=True)
+            table.add_column("Name", style="cyan", no_wrap=True)
+            table.add_column("Location", style="cyan", no_wrap=True)
+            table.add_column("Phone", style="cyan", no_wrap=True)
+            table.add_column("Services", style="cyan", no_wrap=True)
+
+            for i, store in enumerate(stores, 1):
+                location = f"{store.city}, {store.state} {store.zip_code}"
+                services = []
+                if store.has_curbside_pickup:
+                    services.append("🚗")
+                if store.has_delivery:
+                    services.append("📦")
+                if store.has_pharmacy:
+                    services.append("💊")
+                if store.gas_station:
+                    services.append("⛽")
+
+                services_str = " ".join(services) if services else "None"
+
+                table.add_row(
+                    str(i),
+                    store.name,
+                    location,
+                    store.phone_number or "N/A",
+                    services_str,
+                )
+
+            console.print(table)
+
+        logger.debug(f"Displayed {len(stores)} stores")
+
+    except Exception as e:
+        logger.error(f"Failed to search stores: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to search stores: {e}")
+
+
+@stores_group.command("show")
+@click.argument("store_id")
+def stores_show(store_id: str):
+    """Show detailed information for a specific store."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Stores show called for store ID: {store_id}")
+
+    try:
+        client = get_meijer_client()
+        store = client.get_store_by_id(store_id)
+
+        if not store:
+            raise click.ClickException(f"❌ Store with ID {store_id} not found")
+
+        # Display store details
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.table import Table
+
+        console = Console()
+
+        # Store header
+        header = f"🏪 {store.name}"
+        console.print(Panel(header, style="bold cyan"))
+
+        # Basic info
+        basic_info = Table(show_header=False, box=None)
+        basic_info.add_column("Field", style="bold")
+        basic_info.add_column("Value")
+
+        basic_info.add_row("Unit ID", store.unit_id)
+        basic_info.add_row("Address", store.address)
+        basic_info.add_row("City", f"{store.city}, {store.state} {store.zip_code}")
+        basic_info.add_row("Phone", store.phone_number or "N/A")
+        if store.latitude and store.longitude:
+            basic_info.add_row(
+                "Coordinates", f"{store.latitude:.6f}, {store.longitude:.6f}"
+            )
+
+        console.print(basic_info)
+        console.print()
+
+        # Services
+        services = Table(title="Available Services", show_header=False, box=None)
+        services.add_column("Service", style="bold")
+        services.add_column("Status", style="bold")
+
+        services.add_row(
+            "Curbside Pickup", "✅ Yes" if store.has_curbside_pickup else "❌ No"
+        )
+        services.add_row("Delivery", "✅ Yes" if store.has_delivery else "❌ No")
+        services.add_row("Pharmacy", "✅ Yes" if store.has_pharmacy else "❌ No")
+        services.add_row("Gas Station", "✅ Yes" if store.gas_station else "❌ No")
+
+        console.print(services)
+        console.print()
+
+        # Store hours
+        if store.hours:
+            hours_table = Table(title="Store Hours", show_header=False, box=None)
+            hours_table.add_column("Day", style="bold")
+            hours_table.add_column("Hours")
+
+            if store.hours.is_24_hours:
+                hours_table.add_row("All Days", "24 Hours")
+            else:
+                hours_table.add_row(
+                    "Weekdays",
+                    f"{store.hours.open_time.strftime('%I:%M %p')} - {store.hours.close_time.strftime('%I:%M %p')}",
+                )
+                hours_table.add_row(
+                    "Weekends",
+                    f"{store.hours.open_time.strftime('%I:%M %p')} - {store.hours.close_time.strftime('%I:%M %p')}",
+                )
+
+            console.print(hours_table)
+            console.print()
+
+        # Gas station info
+        if store.gas_station and store.gas_station.fuel_prices:
+            gas_table = Table(
+                title="Gas Station", show_header=True, header_style="bold cyan"
+            )
+            gas_table.add_column("Fuel Type", style="cyan")
+            gas_table.add_column("Price", style="cyan")
+            gas_table.add_column("Updated", style="cyan")
+
+            for fuel in store.gas_station.fuel_prices:
+                gas_table.add_row(
+                    fuel.fuel_type,
+                    f"${fuel.price:.3f}",
+                    fuel.price_effective_date.strftime("%m/%d/%Y %I:%M %p")
+                    if fuel.price_effective_date
+                    else "N/A",
+                )
+
+            console.print(gas_table)
+
+        logger.debug(f"Displayed details for store {store_id}")
+
+    except Exception as e:
+        logger.error(f"Failed to show store details: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to show store details: {e}")
+
+
+@stores_group.command("nearby")
+@click.option(
+    "--latitude", "-lat", type=float, required=True, help="Latitude coordinate"
+)
+@click.option(
+    "--longitude", "-lng", type=float, required=True, help="Longitude coordinate"
+)
+@click.option("--radius", "-r", default=25, help="Search radius in miles (default: 25)")
+@click.option(
+    "--limit", "-l", default=10, help="Maximum number of stores to return (default: 10)"
+)
+@click.option(
+    "--sort",
+    "-s",
+    type=click.Choice(["distance", "name"]),
+    default="distance",
+    help="Sort order",
+)
+def stores_nearby(
+    latitude: float, longitude: float, radius: int, limit: int, sort: str
+):
+    """Find stores near specific coordinates."""
+    logger = logging.getLogger(__name__)
+    logger.debug(
+        f"Stores nearby called: lat={latitude}, lng={longitude}, radius={radius}, limit={limit}, sort={sort}"
+    )
+
+    try:
+        client = get_meijer_client()
+        stores = client.find_stores_nearby(latitude, longitude, radius, limit)
+
+        if not stores:
+            click.echo("🏪 No stores found within the specified radius!")
+            return
+
+        # Sort stores
+        if sort == "distance":
+            # Note: API already returns stores sorted by distance
+            pass
+        elif sort == "name":
+            stores = sorted(stores, key=lambda s: s.name)
+
+        # Display results
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console()
+        table = Table(
+            title=f"Stores within {radius} miles of ({latitude:.6f}, {longitude:.6f})",
+            show_header=True,
+            header_style="bold cyan",
+        )
+
+        table.add_column("#", style="cyan", no_wrap=True)
+        table.add_column("Name", style="cyan", no_wrap=True)
+        table.add_column("Distance", style="cyan", no_wrap=True)
+        table.add_column("Location", style="cyan", no_wrap=True)
+        table.add_column("Services", style="cyan", no_wrap=True)
+
+        for i, store in enumerate(stores, 1):
+            location = f"{store.city}, {store.state}"
+            services = []
+            if store.has_curbside_pickup:
+                services.append("🚗")
+            if store.has_delivery:
+                services.append("📦")
+            if store.has_pharmacy:
+                services.append("💊")
+            if store.gas_station:
+                services.append("⛽")
+
+            services_str = " ".join(services) if services else "None"
+
+            table.add_row(
+                str(i),
+                store.name,
+                f"{getattr(store, 'distance', 'N/A')} mi"
+                if hasattr(store, "distance")
+                else "N/A",
+                location,
+                services_str,
+            )
+
+        console.print(table)
+
+        logger.debug(f"Displayed {len(stores)} nearby stores")
+
+    except Exception as e:
+        logger.error(f"Failed to find nearby stores: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to find nearby stores: {e}")
+
+
+@stores_group.command("gas")
+@click.option("--city", "-c", help="Show gas prices for stores in a specific city")
+@click.option("--zip", "-z", help="Show gas prices for stores near a ZIP code")
+@click.option("--radius", "-r", default=25, help="Search radius in miles (default: 25)")
+def stores_gas(city: str, zip: str, radius: int):
+    """Show gas station information and prices."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Stores gas called: city={city}, zip={zip}, radius={radius}")
+
+    try:
+        client = get_meijer_client()
+        stores = []
+
+        if city:
+            stores = client.get_stores(city=city)
+        elif zip:
+            stores = client.get_stores(zip_code=zip)
+        else:
+            # Get stores near default location (Ann Arbor)
+            stores = client.find_stores_nearby(42.2808, -83.7430, radius)
+
+        # Filter stores with gas stations
+        gas_stores = [
+            store
+            for store in stores
+            if store.gas_station and store.gas_station.fuel_prices
+        ]
+
+        if not gas_stores:
+            click.echo("⛽ No gas stations found in the specified area!")
+            return
+
+        # Display gas prices
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console()
+        table = Table(
+            title=f"Gas Prices ({len(gas_stores)} stations)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+
+        table.add_column("Store", style="cyan", no_wrap=True)
+        table.add_column("Location", style="cyan", no_wrap=True)
+        table.add_column("Regular", style="cyan", no_wrap=True)
+        table.add_column("Mid", style="cyan", no_wrap=True)
+        table.add_column("Premium", style="cyan", no_wrap=True)
+        table.add_column("Diesel", style="cyan", no_wrap=True)
+        table.add_column("Updated", style="cyan", no_wrap=True)
+
+        for store in gas_stores:
+            gas = store.gas_station
+            prices = {}
+
+            # Extract prices by fuel type
+            for fuel in gas.fuel_prices:
+                if (
+                    "regular" in fuel.fuel_type.lower()
+                    or "unl" in fuel.fuel_type.lower()
+                ):
+                    prices["regular"] = fuel.price
+                elif "mid" in fuel.fuel_type.lower():
+                    prices["mid"] = fuel.price
+                elif (
+                    "premium" in fuel.fuel_type.lower()
+                    or "prem" in fuel.fuel_type.lower()
+                ):
+                    prices["premium"] = fuel.price
+                elif (
+                    "diesel" in fuel.fuel_type.lower()
+                    or "dsl" in fuel.fuel_type.lower()
+                ):
+                    prices["diesel"] = fuel.price
+
+            location = f"{store.city}, {store.state}"
+            updated = (
+                gas.fuel_prices[0].price_effective_date.strftime("%m/%d %I:%M %p")
+                if gas.fuel_prices
+                else "N/A"
+            )
+
+            table.add_row(
+                store.name,
+                location,
+                f"${prices.get('regular', 'N/A'):.3f}"
+                if prices.get("regular")
+                else "N/A",
+                f"${prices.get('mid', 'N/A'):.3f}" if prices.get("mid") else "N/A",
+                f"${prices.get('premium', 'N/A'):.3f}"
+                if prices.get("premium")
+                else "N/A",
+                f"${prices.get('diesel', 'N/A'):.3f}"
+                if prices.get("diesel")
+                else "N/A",
+                updated,
+            )
+
+        console.print(table)
+
+        logger.debug(f"Displayed gas prices for {len(gas_stores)} stations")
+
+    except Exception as e:
+        logger.error(f"Failed to show gas prices: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to show gas prices: {e}")
+
+
 # Cart Commands
 @click.group()
 def cart_group():
@@ -998,7 +1517,9 @@ def auth_command():
             tokens = token_storage.get_valid_tokens()
             if tokens and tokens.refresh_token and tokens.refresh_token.strip():
                 if token_storage.refresh_tokens(tokens.refresh_token):
-                    click.echo("✅ Token refresh successful! No need to extract from logs.")
+                    click.echo(
+                        "✅ Token refresh successful! No need to extract from logs."
+                    )
                     click.echo(f"🔑 Access token: {tokens.access_token[:30]}...")
                     click.echo(f"🔄 Refresh token: {tokens.refresh_token[:30]}...")
                     click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
@@ -1007,7 +1528,9 @@ def auth_command():
                 else:
                     click.echo("❌ Token refresh failed")
             else:
-                click.echo("⚠️ No refresh token available - tokens cannot be refreshed automatically")
+                click.echo(
+                    "⚠️ No refresh token available - tokens cannot be refreshed automatically"
+                )
         except Exception as e:
             click.echo(f"❌ Error during token refresh: {e}")
 
@@ -1015,11 +1538,13 @@ def auth_command():
 
     # Find the most recent log file
     import glob
-    import os
+
     log_files = glob.glob("meijer_mitm_*.log")
     if not log_files:
         click.echo("❌ No meijer mitmproxy log files found!")
-        click.echo("💡 Make sure you have captured authentication traffic with mitmproxy")
+        click.echo(
+            "💡 Make sure you have captured authentication traffic with mitmproxy"
+        )
         return
 
     # Sort by modification time, newest first
@@ -1030,49 +1555,62 @@ def auth_command():
     # Run the enhanced token extraction
     import subprocess
     import sys
-    
+
     try:
         # Run the enhanced extraction tool
-        result = subprocess.run([
-            sys.executable, 
-            "tools/extract_bearer_token.py", 
-            latest_log
-        ], capture_output=True, text=True, cwd=os.getcwd())
-        
+        result = subprocess.run(
+            [sys.executable, "tools/extract_bearer_token.py", latest_log],
+            capture_output=True,
+            text=True,
+            cwd=os.getcwd(),
+        )
+
         if result.returncode == 0:
             click.echo("\n" + result.stdout)
-            
+
             # Check if we got OAuth2 tokens with refresh capability
             if "✅ Tokens can be refreshed automatically!" in result.stdout:
                 click.echo("\n🎉 Success! You now have tokens with refresh capability.")
-                click.echo("   These tokens can be refreshed automatically when they expire.")
-            elif "⚠️ No refresh token - tokens cannot be refreshed automatically" in result.stdout:
+                click.echo(
+                    "   These tokens can be refreshed automatically when they expire."
+                )
+            elif (
+                "⚠️ No refresh token - tokens cannot be refreshed automatically"
+                in result.stdout
+            ):
                 click.echo("\n⚠️ Note: These tokens cannot be refreshed automatically.")
-                click.echo("   To get refreshable tokens, you need to capture an OAuth2 token exchange.")
-                click.echo("   Try logging in to the Meijer app again and capture the authentication flow.")
-            
+                click.echo(
+                    "   To get refreshable tokens, you need to capture an OAuth2 token exchange."
+                )
+                click.echo(
+                    "   Try logging in to the Meijer app again and capture the authentication flow."
+                )
+
             # Now test the extracted tokens with an API call
             click.echo("\n🧪 Testing extracted tokens with API call...")
             try:
                 # Create a temporary client to test the tokens
                 from ..client import Meijer
+
                 test_client = Meijer()
-                
+
                 # Try to get the shopping list to verify tokens work
                 items = test_client.list.get()
                 click.echo("✅ API call successful! Extracted tokens are working.")
                 click.echo(f"📋 Found {len(items)} items in shopping list")
-                
+
             except Exception as e:
                 click.echo(f"❌ API call failed: {e}")
                 click.echo("💡 The extracted tokens may be expired or invalid")
-                
+
         else:
             click.echo(f"❌ Token extraction failed: {result.stderr}")
-            
+
     except Exception as e:
         click.echo(f"❌ Error running token extraction: {e}")
-        click.echo("💡 Make sure the extraction tool is available at tools/extract_bearer_token.py")
+        click.echo(
+            "💡 Make sure the extraction tool is available at tools/extract_bearer_token.py"
+        )
 
     click.echo("\n💡 To get refreshable tokens:")
     click.echo("   1. Clear your current tokens: rm ~/.config/meijer/meijer_tokens.pkl")

@@ -34,6 +34,7 @@ from .commands import (
     list_group,
     settings_group,
     status_command,
+    stores_group,
 )
 
 
@@ -87,6 +88,7 @@ def cli(verbose: int):
     • list - Manage shopping list operations
     • coupons - Manage coupons and offers
     • cart - Manage shopping cart and fulfillment
+    • stores - Manage store information and search
     • settings - Manage account settings and preferences
     • auth - Extract authentication tokens
     • status - Show authentication status
@@ -106,6 +108,7 @@ def cli(verbose: int):
 cli.add_command(list_group, name="list")
 cli.add_command(coupons_group, name="coupons")
 cli.add_command(cart_group, name="cart")
+cli.add_command(stores_group, name="stores")
 cli.add_command(settings_group, name="settings")
 
 # Add individual commands with cleaner names
