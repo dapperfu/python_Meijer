@@ -841,6 +841,177 @@ class TestSearch:
 
         assert filters == {}
 
+    def test_get_popular_searches_success(self):
+        """Test get_popular_searches functionality."""
+        # This method returns hardcoded popular terms from log analysis
+        popular = self.search.get_popular_searches()
+
+        assert len(popular) == 8  # Returns 8 hardcoded terms
+        assert "milk" in popular
+        assert "lego" in popular
+
+    def test_get_popular_searches_static(self):
+        """Test get_popular_searches returns static data."""
+        # This method always returns the same data regardless of API calls
+        popular = self.search.get_popular_searches()
+
+        expected_terms = [
+            "lego",
+            "milk",
+            "lego/search",
+            "mi",
+            "milk/search",
+            "milk/click_through",
+            "lego/select",
+            "lego/click_through",
+        ]
+        assert popular == expected_terms
+
+    def test_track_search_behavior_success(self):
+        """Test track_search_behavior functionality."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+
+        self.mock_client._make_request.return_value = mock_response
+
+        # Test tracking search behavior with correct parameters
+        result = self.search.track_search_behavior(
+            search_term="milk",
+            num_results=10,
+            customer_ids=["customer123"]
+        )
+
+        # Method doesn't return a boolean, it tracks behavior
+        # Just test that it doesn't raise an exception
+        assert result is None
+
+    def test_track_search_behavior_minimal(self):
+        """Test track_search_behavior with minimal parameters."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+
+        self.mock_client._make_request.return_value = mock_response
+
+        # Test with minimal required parameters
+        result = self.search.track_search_behavior(
+            search_term="milk",
+            num_results=5
+        )
+
+        assert result is None
+
+    def test_track_search_behavior_exception(self):
+        """Test track_search_behavior with exception."""
+        self.mock_client._make_request.side_effect = Exception("Network error")
+
+        # Should handle exceptions gracefully
+        result = self.search.track_search_behavior(
+            search_term="milk",
+            num_results=5
+        )
+
+        assert result is None
+
+    def test_browse_by_category_namespace(self):
+        """Test the module-level browse function."""
+        # Check if there's a module-level browse function
+        try:
+            from meijer.search import browse as module_browse
+            
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {
+                "response": {
+                    "results": [
+                        {
+                            "data": {
+                                "id": "prod123",
+                                "description": "Category Product",
+                                "price": 9.99,
+                            },
+                            "value": "Category Product",
+                        }
+                    ],
+                    "total_num_results": 1,
+                }
+            }
+
+            self.mock_client._make_request.return_value = mock_response
+
+            result = module_browse(self.mock_client, "category:beverages", results_per_page=24, page=1)
+
+            assert result.total_results == 1
+            assert len(result.results) == 1
+            assert result.query == "category:beverages"
+        except ImportError:
+            # No module-level browse function, skip test
+            pass
+
+    def test_search_with_store_id(self):
+        """Test search with store ID parameter."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {"results": [], "total_num_results": 0}
+        }
+
+        self.mock_client._make_request.return_value = mock_response
+
+        result = self.search.search("milk", store_id="STORE001")
+
+        # Verify the request was made with store ID
+        call_args = self.mock_client._make_request.call_args
+        params = call_args[1]["params"]
+        # Check for the specific store filter format
+        assert params.get("filters[availableInStores]") == "STORE001"
+
+    def test_search_with_various_sorts(self):
+        """Test search with different sort options."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {"results": [], "total_num_results": 0}
+        }
+
+        self.mock_client._make_request.return_value = mock_response
+
+        # Test various sort options
+        sort_options = ["relevance", "price_asc", "price_desc", "name_asc", "name_desc"]
+        
+        for sort_by in sort_options:
+            result = self.search.search("test", sort_by=sort_by)
+            assert result.sort_by == sort_by
+
+    def test_search_pagination(self):
+        """Test search pagination calculations."""
+        # Test with enough results for multiple pages
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {"results": [], "total_num_results": 100}
+        }
+
+        self.mock_client._make_request.return_value = mock_response
+
+        # Test page 2 with 10 results per page
+        result = self.search.search("test", results_per_page=10, page=2)
+
+        assert result.total_results == 100
+        assert result.current_page == 2
+        assert result.total_pages == 10  # 100 / 10 = 10 pages
+
+    def test_autocomplete_empty_suggestions(self):
+        """Test autocomplete with empty suggestions."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"suggestions": []}
+
+        self.mock_client._make_request.return_value = mock_response
+
+        suggestions = self.search.autocomplete("xyz", limit=5)
+
+        assert suggestions == []
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
