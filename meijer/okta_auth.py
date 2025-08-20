@@ -2,14 +2,13 @@
 """
 OKTA Authentication Module for Meijer API
 
-This module implements a simplified OAuth2 authentication flow
-that bypasses the complex IDX flow and directly authenticates
-using username/password credentials.
+This module implements OAuth2 authentication by following the actual
+flow used by the Meijer mobile app, based on analysis of mitmproxy logs.
 
 Authentication Flow:
 1. Establish session cookies by visiting OKTA domain
-2. Make direct OAuth2 authorization request
-3. Handle the redirect to get authorization code
+2. Make OAuth2 authorization request with proper parameters
+3. Handle the redirect flow to get authorization code
 4. Exchange authorization code for tokens
 
 Author: Claude Sonnet 4 via Cursor IDE
@@ -17,12 +16,9 @@ Author: Claude Sonnet 4 via Cursor IDE
 
 import base64
 import hashlib
-import json
 import secrets
-import time
 import uuid
 from typing import Dict, Optional
-from urllib.parse import urlparse, parse_qs
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -33,9 +29,9 @@ from .models.base import AuthTokens
 
 class OktaAuthenticator:
     """
-    Simplified OKTA OAuth2 Authentication client for Meijer.
+    OKTA OAuth2 Authentication client for Meijer.
 
-    Implements a direct OAuth2 flow that bypasses the complex IDX flow.
+    Implements the OAuth2 flow based on actual app behavior from logs.
     """
 
     def __init__(self):
@@ -50,10 +46,6 @@ class OktaAuthenticator:
         self.base_url = f"https://{self.okta_domain}"
         self.oauth_authorize_url = f"{self.base_url}/oauth2/default/v1/authorize"
         self.oauth_token_url = f"{self.base_url}/oauth2/default/v1/token"
-        
-        # Alternative endpoints for direct authentication
-        self.login_url = f"{self.base_url}/login"
-        self.auth_url = f"{self.base_url}/auth"
 
         # Session setup
         self.session = requests.Session()
@@ -67,7 +59,7 @@ class OktaAuthenticator:
                 "Sec-Fetch-Site": "none",
                 "Sec-Fetch-Mode": "navigate",
                 "Sec-Fetch-User": "?1",
-                "Sec-Fetch-Dest": "document"
+                "Sec-Fetch-Dest": "document",
             }
         )
 
@@ -86,6 +78,10 @@ class OktaAuthenticator:
         self.code_challenge = None
         self.state = None
         self.nonce = None
+
+        # Credentials (set during authentication)
+        self.username = None
+        self.password = None
 
     def _generate_pkce_params(self) -> Dict[str, str]:
         """Generate PKCE (Proof Key for Code Exchange) parameters."""
@@ -114,7 +110,7 @@ class OktaAuthenticator:
     def _generate_oauth_params(self) -> Dict[str, str]:
         """Generate OAuth2 parameters for the authorization flow."""
         pkce_params = self._generate_pkce_params()
-        
+
         # Generate state and nonce for security
         self.state = str(uuid.uuid4())
         self.nonce = str(uuid.uuid4())
@@ -134,23 +130,17 @@ class OktaAuthenticator:
     def _establish_initial_session(self) -> bool:
         """
         Establish initial session cookies by visiting the OKTA domain.
-        
-        This step is crucial for getting the initial session cookies that
-        are required for subsequent authentication requests.
         """
         try:
             print("🔍 Step 1: Establishing initial session...")
-            
+
             # Visit the main OKTA domain to establish session cookies
-            response = self.session.get(
-                f"{self.base_url}/",
-                allow_redirects=True
-            )
-            
+            response = self.session.get(f"{self.base_url}/", allow_redirects=True)
+
             if response.status_code == 200:
                 print("✅ Initial session established successfully")
                 print(f"📊 Response size: {len(response.content)} bytes")
-                
+
                 # Check if we got any cookies
                 cookies = self.session.cookies
                 if cookies:
@@ -159,397 +149,604 @@ class OktaAuthenticator:
                         print(f"   - {cookie.name}: {cookie.value[:30]}...")
                 else:
                     print("⚠️ No cookies were set during initial session")
-                
+
                 return True
             else:
                 print(f"❌ Failed to establish initial session: {response.status_code}")
                 return False
-                
+
         except Exception as e:
             print(f"❌ Error establishing initial session: {e}")
             return False
 
-    def _get_login_page(self) -> Optional[str]:
+    def _start_oauth2_flow(self) -> Optional[str]:
         """
-        Get the login page to extract any required tokens or forms.
-        """
-        try:
-            print("🔍 Step 2: Getting login page...")
-            
-            response = self.session.get(
-                self.login_url,
-                allow_redirects=True
-            )
-            
-            if response.status_code == 200:
-                print("✅ Login page loaded successfully")
-                print(f"📊 Response size: {len(response.content)} bytes")
-                
-                # Look for any hidden tokens or forms in the login page
-                content = response.content.decode('utf-8', errors='ignore')
-                
-                # Look for CSRF tokens or other required fields
-                import re
-                
-                # Pattern 1: Look for CSRF token
-                csrf_pattern = r'name=["\']csrf["\'][^>]*value=["\']([^"\']+)["\']'
-                match = re.search(csrf_pattern, content)
-                if match:
-                    csrf_token = match.group(1)
-                    print(f"✅ CSRF token found: {csrf_token[:30]}...")
-                    return csrf_token
-                
-                # Pattern 2: Look for any hidden input with token-like values
-                hidden_pattern = r'<input[^>]*type=["\']hidden["\'][^>]*value=["\']([^"\']+)["\']'
-                matches = re.findall(hidden_pattern, content)
-                if matches:
-                    print(f"🔍 Found {len(matches)} hidden input fields")
-                    # Look for the most likely token (longest value)
-                    longest_token = max(matches, key=len)
-                    if len(longest_token) > 20:  # Only consider long values as tokens
-                        print(f"💡 Potential token found: {longest_token[:30]}...")
-                        return longest_token
-                
-                print("ℹ️ No specific tokens found in login page")
-                return None
-            else:
-                print(f"❌ Failed to load login page: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            print(f"❌ Error getting login page: {e}")
-            return None
+        Start the OAuth2 authorization flow.
 
-    def _submit_credentials(self, username: str, password: str, csrf_token: Optional[str] = None) -> Optional[str]:
-        """
-        Submit username and password to the login form.
-        
-        This attempts to authenticate directly through the login form
-        rather than going through the complex OAuth2 flow.
+        This is the key step - we make the authorization request and
+        follow the redirects to see where the flow takes us.
         """
         try:
-            print(f"🔍 Step 3: Submitting credentials for {username}...")
-            
-            # Prepare the login data
-            login_data = {
-                "username": username,
-                "password": password,
-            }
-            
-            # Add CSRF token if we have one
-            if csrf_token:
-                login_data["csrf"] = csrf_token
-            
-            # Try to submit to the login endpoint
-            response = self.session.post(
-                self.login_url,
-                data=login_data,
-                allow_redirects=False,  # Don't follow redirects to see what happens
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Origin": self.base_url,
-                    "Referer": self.login_url,
-                }
-            )
-            
-            print(f"📥 Login response status: {response.status_code}")
-            print(f"📥 Response headers: {dict(response.headers)}")
-            
-            if response.status_code in [301, 302, 303, 307, 308]:
-                # We got a redirect - this is good!
-                location = response.headers.get("Location", "")
-                print(f"✅ Got redirect to: {location}")
-                
-                # Check if this redirect contains an authorization code
-                if "code=" in location:
-                    auth_code = location.split("code=")[1].split("&")[0]
-                    print(f"🎉 Authorization code found in redirect: {auth_code[:20]}...")
-                    return auth_code
-                else:
-                    print("ℹ️ Redirect doesn't contain authorization code")
-                    print("💡 This might be a different type of redirect")
-                    return None
-                    
-            elif response.status_code == 200:
-                # Check if we got a success page or error
-                content = response.content.decode('utf-8', errors='ignore')
-                
-                if "error" in content.lower() or "invalid" in content.lower():
-                    print("❌ Login failed - error message found in response")
-                    return None
-                elif "success" in content.lower() or "welcome" in content.lower():
-                    print("✅ Login appears successful")
-                    # Look for any tokens in the success page
-                    return self._extract_tokens_from_content(content)
-                else:
-                    print("ℹ️ Login response is ambiguous")
-                    return None
-            else:
-                print(f"❌ Login failed with status: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            print(f"❌ Error submitting credentials: {e}")
-            return None
+            print("🔍 Step 2: Starting OAuth2 authorization flow...")
 
-    def _extract_tokens_from_content(self, content: str) -> Optional[str]:
-        """
-        Extract tokens from HTML content after successful login.
-        """
-        try:
-            import re
-            
-            # Look for authorization code in the content
-            code_pattern = r'code=([a-zA-Z0-9_-]+)'
-            match = re.search(code_pattern, content)
-            if match:
-                auth_code = match.group(1)
-                print(f"✅ Authorization code found in content: {auth_code[:20]}...")
-                return auth_code
-            
-            # Look for access token
-            token_pattern = r'access_token["\']?\s*[:=]\s*["\']([^"\']+)["\']'
-            match = re.search(token_pattern, content)
-            if match:
-                access_token = match.group(1)
-                print(f"✅ Access token found in content: {access_token[:30]}...")
-                # If we found an access token directly, we need to handle this differently
-                return None
-            
-            print("ℹ️ No tokens found in content")
-            return None
-            
-        except Exception as e:
-            print(f"❌ Error extracting tokens from content: {e}")
-            return None
-
-    def _try_oauth2_flow(self, username: str, password: str) -> Optional[str]:
-        """
-        Try the standard OAuth2 authorization flow.
-        
-        This is the fallback approach if direct login doesn't work.
-        """
-        try:
-            print("🔍 Step 4: Trying OAuth2 authorization flow...")
-            
             # Generate OAuth2 parameters
             oauth_params = self._generate_oauth_params()
-            
+
+            print("📤 OAuth2 parameters:")
+            for key, value in oauth_params.items():
+                if key in ["code_verifier", "code_challenge"]:
+                    print(f"   {key}: {value[:20]}...")
+                else:
+                    print(f"   {key}: {value}")
+
             # Make the authorization request
             response = self.session.get(
-                self.oauth_authorize_url,
-                params=oauth_params,
-                allow_redirects=False
+                self.oauth_authorize_url, params=oauth_params, allow_redirects=False
             )
-            
+
             print(f"📥 OAuth2 authorization response status: {response.status_code}")
-            
+            print(f"📥 Response headers: {dict(response.headers)}")
+
             if response.status_code == 200:
                 print("✅ OAuth2 authorization page loaded")
                 print(f"📊 Response size: {len(response.content)} bytes")
-                
-                # The authorization page should contain a login form
-                # We need to submit credentials to this form
-                content = response.content.decode('utf-8', errors='ignore')
-                
-                # Debug: Show a preview of the content
-                print("💡 Content preview (first 1000 chars):")
-                print(content[:1000] + "..." if len(content) > 1000 else content)
-                
-                # Look for the login form and submit credentials
-                return self._submit_oauth2_credentials(content, username, password)
-                
+
+                # This page should contain the login form or redirect us to it
+                # Let's examine the content to understand what we're dealing with
+                content = response.content.decode("utf-8", errors="ignore")
+
+                # Look for any redirect URLs or forms in the content
+                return self._analyze_authorization_page(content)
+
             elif response.status_code in [301, 302, 303, 307, 308]:
-                # We got a redirect - check if it contains an authorization code
+                # We got a redirect - follow it
                 location = response.headers.get("Location", "")
                 print(f"✅ Got OAuth2 redirect to: {location}")
-                
+
+                # Follow the redirect to see where it takes us
+                return self._follow_redirect(location)
+            else:
+                print(f"❌ OAuth2 authorization failed: {response.status_code}")
+                if response.content:
+                    print(
+                        f"   Response preview: {response.content.decode('utf-8', errors='ignore')[:500]}..."
+                    )
+                return None
+
+        except Exception as e:
+            print(f"❌ Error starting OAuth2 flow: {e}")
+            return None
+
+    def _analyze_authorization_page(self, content: str) -> Optional[str]:
+        """
+        Analyze the OAuth2 authorization page to understand the flow.
+        """
+        try:
+            print("🔍 Analyzing OAuth2 authorization page...")
+
+            import re
+
+            # Look for any JavaScript that might contain redirect logic
+            js_redirects = re.findall(
+                r'window\.location\s*=\s*["\']([^"\']+)["\']', content
+            )
+            if js_redirects:
+                print(f"🔍 Found JavaScript redirects: {js_redirects}")
+                for redirect in js_redirects:
+                    if redirect.startswith("/") or redirect.startswith("http"):
+                        print(f"💡 Following JavaScript redirect: {redirect}")
+                        return self._follow_redirect(redirect)
+
+            # Look for meta refresh redirects
+            meta_refresh = re.search(
+                r'<meta[^>]*http-equiv=["\']refresh["\'][^>]*content=["\'][^"\']*url=([^"\']+)["\']',
+                content,
+            )
+            if meta_refresh:
+                redirect_url = meta_refresh.group(1)
+                print(f"💡 Found meta refresh redirect: {redirect_url}")
+                return self._follow_redirect(redirect_url)
+
+            # Look for step-up authentication URLs with stateToken
+            # These are the key URLs that contain the encrypted session state
+            stepup_pattern = r'https\\\\x3A\\\\x2F\\\\x2Fid\.meijer\.com\\\\x2Flogin\\\\x2Dstep\\\\x2Dup\\\\x2Fredirect\\\\x3FstateToken\\\\x3D([^"\'\\\\]+)'
+            stepup_match = re.search(stepup_pattern, content)
+
+            if stepup_match:
+                state_token = stepup_match.group(1)
+                print(
+                    f"🎯 Found step-up authentication stateToken: {state_token[:50]}..."
+                )
+
+                # Decode the escaped URL properly
+                stepup_url = f"https://id.meijer.com/login/step-up/redirect?stateToken={state_token}"
+                print(f"💡 Step-up authentication URL: {stepup_url}")
+
+                # This is the key URL - it contains the encrypted session state
+                # We need to authenticate through this endpoint
+                return self._authenticate_step_up(stepup_url)
+
+            # Look for any URLs that might be login endpoints (handle escaped URLs)
+            login_urls = re.findall(
+                r'["\']([^"\']*(?:login|signin|auth)[^"\']*)["\']',
+                content,
+                re.IGNORECASE,
+            )
+            if login_urls:
+                print(f"🔍 Found potential login URLs: {len(login_urls)}")
+
+                # Filter and decode escaped URLs
+                decoded_urls = []
+                for url in login_urls:
+                    if "\\x" in url:
+                        # This is an escaped URL - decode it
+                        decoded_url = url
+                        decoded_url = decoded_url.replace("\\x3A", ":")  # :
+                        decoded_url = decoded_url.replace("\\x2F", "/")  # /
+                        decoded_url = decoded_url.replace("\\x2D", "-")  # -
+                        decoded_url = decoded_url.replace("\\x3F", "?")  # ?
+                        decoded_url = decoded_url.replace("\\x26", "&")  # &
+                        decoded_url = decoded_url.replace("\\x3D", "=")  # =
+                        decoded_url = decoded_url.replace("\\x2B", "+")  # +
+                        decoded_url = decoded_url.replace("\\x20", " ")  # space
+                        decoded_urls.append(decoded_url)
+                        print(f"   Decoded: {url[:50]}... -> {decoded_url[:50]}...")
+                    else:
+                        decoded_urls.append(url)
+
+                # Look for step-up URLs in the decoded URLs
+                for url in decoded_urls:
+                    if "login/step-up/redirect" in url and "stateToken" in url:
+                        print(f"🎯 Found step-up URL in decoded URLs: {url[:100]}...")
+
+                        # Extract the stateToken from the URL
+                        state_token_match = re.search(r"stateToken=([^&\s]+)", url)
+                        if state_token_match:
+                            state_token = state_token_match.group(1)
+                            print(f"💡 Extracted stateToken: {state_token[:50]}...")
+
+                            # Clean up the URL to make it properly formatted
+                            clean_url = f"https://id.meijer.com/login/step-up/redirect?stateToken={state_token}"
+                            print(f"💡 Clean step-up URL: {clean_url}")
+
+                            return self._authenticate_step_up(clean_url)
+
+                # Try the decoded URLs
+                for url in decoded_urls:
+                    if url.startswith("/") or url.startswith("http"):
+                        print(f"💡 Trying decoded login URL: {url}")
+                        result = self._try_login_url(url)
+                        if result:
+                            return result
+
+            # Look for any forms that might be login forms
+            forms = re.findall(r"<form[^>]*>", content)
+            if forms:
+                print(f"🔍 Found {len(forms)} forms:")
+                for i, form in enumerate(forms):
+                    print(f"   Form {i+1}: {form}")
+
+                # Look for login-related forms
+                login_forms = [
+                    f for f in forms if "login" in f.lower() or "signin" in f.lower()
+                ]
+                if login_forms:
+                    print(f"💡 Found {len(login_forms)} login-related forms")
+                    # Try to submit credentials to the first login form
+                    return self._submit_to_login_form(content, login_forms[0])
+
+            print("❌ Could not determine how to proceed from authorization page")
+            print("💡 This suggests the OAuth2 flow is more complex than expected")
+            return None
+
+        except Exception as e:
+            print(f"❌ Error analyzing authorization page: {e}")
+            return None
+
+    def _authenticate_step_up(self, stepup_url: str) -> Optional[str]:
+        """
+        Authenticate through the step-up authentication flow.
+
+        This is the key method that handles the actual authentication
+        using the stateToken from the OAuth2 authorization page.
+        """
+        try:
+            print(f"🔐 Step-up authentication using: {stepup_url}")
+
+            # First, visit the step-up URL to establish the authentication context
+            response = self.session.get(stepup_url, allow_redirects=False)
+            print(f"📥 Step-up GET response: {response.status_code}")
+
+            if response.status_code == 200:
+                # We got the authentication page - submit credentials
+                print("✅ Got step-up authentication page")
+
+                # Look for the login form in the response
+                content = response.content.decode("utf-8", errors="ignore")
+
+                # Look for forms
+                import re
+
+                forms = re.findall(r"<form[^>]*>", content)
+                if forms:
+                    print(f"🔍 Found {len(forms)} forms in step-up page")
+
+                    # Look for login forms
+                    login_forms = [
+                        f
+                        for f in forms
+                        if "login" in f.lower() or "signin" in f.lower()
+                    ]
+                    if login_forms:
+                        print(f"💡 Found {len(login_forms)} login forms")
+                        return self._submit_to_login_form(content, login_forms[0])
+
+                    # If no specific login forms, try the first form
+                    print("💡 No specific login forms found, trying first form")
+                    return self._submit_to_login_form(content, forms[0])
+                else:
+                    print("❌ No forms found in step-up page")
+                    return None
+
+            elif response.status_code in [301, 302, 303, 307, 308]:
+                # We got a redirect - follow it
+                location = response.headers.get("Location", "")
+                print(f"✅ Step-up redirect to: {location}")
+
+                if "code=" in location:
+                    auth_code = location.split("code=")[1].split("&")[0]
+                    print(
+                        f"🎉 Authorization code found in step-up redirect: {auth_code[:20]}..."
+                    )
+                    return auth_code
+
+                # Check if this is a redirect to the main Meijer site (which suggests we need to continue the flow differently)
+                if "www.meijer.com" in location:
+                    print(
+                        "💡 Redirected to main Meijer site - this suggests the step-up flow continues differently"
+                    )
+                    print(
+                        "💡 Let me check if there's a login form or authentication endpoint on this page"
+                    )
+
+                    # Follow the redirect to see what's on the main site
+                    redirect_response = self.session.get(
+                        location, allow_redirects=False
+                    )
+                    if redirect_response.status_code == 200:
+                        content = redirect_response.content.decode(
+                            "utf-8", errors="ignore"
+                        )
+                        print(f"📊 Main site content size: {len(content)} bytes")
+
+                        # Check if we have any authentication-related cookies or session state
+                        print(
+                            f"🍪 Cookies after step-up redirect: {len(self.session.cookies)} cookies"
+                        )
+                        for cookie in self.session.cookies:
+                            if (
+                                "auth" in cookie.name.lower()
+                                or "token" in cookie.name.lower()
+                                or "session" in cookie.name.lower()
+                            ):
+                                print(
+                                    f"   🔑 Auth cookie: {cookie.name} = {cookie.value[:50]}..."
+                                )
+
+                        # Look for any success indicators in the content
+                        if (
+                            "welcome" in content.lower()
+                            or "dashboard" in content.lower()
+                            or "account" in content.lower()
+                        ):
+                            print("💡 Found potential success indicators in content")
+
+                        # Check if we can now access the OAuth2 token endpoint
+                        token_url = f"{self.base_url}/oauth2/default/v1/token"
+                        print(f"💡 Trying to access token endpoint: {token_url}")
+
+                        # Try to make a request to see if we're authenticated
+                        token_response = self.session.get(
+                            token_url, allow_redirects=False
+                        )
+                        print(
+                            f"📥 Token endpoint response: {token_response.status_code}"
+                        )
+
+                        if token_response.status_code == 200:
+                            print(
+                                "🎉 Successfully authenticated! Token endpoint accessible"
+                            )
+                            # Try to extract authorization code from the response
+                            token_content = token_response.content.decode(
+                                "utf-8", errors="ignore"
+                            )
+                            if "code=" in token_content:
+                                auth_code_match = re.search(
+                                    r"code=([^&\s]+)", token_content
+                                )
+                                if auth_code_match:
+                                    auth_code = auth_code_match.group(1)
+                                    print(
+                                        f"🎉 Authorization code found: {auth_code[:20]}..."
+                                    )
+                                    return auth_code
+
+                        # Check if we can now access the original OAuth2 authorization endpoint with our new session
+                        print(
+                            "💡 Trying to access OAuth2 authorization endpoint with new session"
+                        )
+                        auth_response = self.session.get(
+                            self.oauth_authorize_url, allow_redirects=False
+                        )
+                        print(
+                            f"📥 OAuth2 authorization response with new session: {auth_response.status_code}"
+                        )
+
+                        if auth_response.status_code == 200:
+                            print("🎉 OAuth2 authorization accessible with new session")
+                            # Analyze the response to see if we get a different result
+                            auth_content = auth_response.content.decode(
+                                "utf-8", errors="ignore"
+                            )
+                            print(
+                                f"📊 New OAuth2 response size: {len(auth_content)} bytes"
+                            )
+
+                            # Look for authorization code in the response
+                            if "code=" in auth_content:
+                                auth_code_match = re.search(
+                                    r"code=([^&\s]+)", auth_content
+                                )
+                                if auth_code_match:
+                                    auth_code = auth_code_match.group(1)
+                                    print(
+                                        f"🎉 Authorization code found in new OAuth2 response: {auth_code[:20]}..."
+                                    )
+                                    return auth_code
+
+                        # Print a sample of the main site content to understand what we're getting
+                        print(
+                            f"📄 Main site content sample (first 500 chars): {content[:500]}"
+                        )
+                        if len(content) > 500:
+                            print(
+                                f"📄 Main site content sample (last 500 chars): {content[-500:]}"
+                            )
+
+                        # Look for login forms or authentication endpoints
+                        import re
+
+                        forms = re.findall(r"<form[^>]*>", content)
+                        if forms:
+                            print(f"🔍 Found {len(forms)} forms on main site")
+                            for i, form in enumerate(forms):
+                                print(f"   Form {i+1}: {form[:100]}...")
+
+                            # Look for login forms
+                            login_forms = [
+                                f
+                                for f in forms
+                                if "login" in f.lower() or "signin" in f.lower()
+                            ]
+                            if login_forms:
+                                print(
+                                    f"💡 Found {len(login_forms)} login forms on main site"
+                                )
+                                return self._submit_to_login_form(
+                                    content, login_forms[0]
+                                )
+
+                        # Look for any authentication-related URLs
+                        auth_urls = re.findall(
+                            r'["\']([^"\']*(?:login|signin|auth)[^"\']*)["\']',
+                            content,
+                            re.IGNORECASE,
+                        )
+                        if auth_urls:
+                            print(
+                                f"🔍 Found {len(auth_urls)} authentication URLs on main site"
+                            )
+                            for url in auth_urls:
+                                if url.startswith("/") or url.startswith("http"):
+                                    print(f"💡 Trying authentication URL: {url}")
+                                    result = self._try_login_url(url)
+                                    if result:
+                                        return result
+
+                        # Look for any JavaScript that might handle authentication
+                        js_auth = re.findall(
+                            r'["\']([^"\']*(?:login|signin|auth)[^"\']*)["\']',
+                            content,
+                            re.IGNORECASE,
+                        )
+                        if js_auth:
+                            print(
+                                f"🔍 Found {len(js_auth)} JavaScript authentication references"
+                            )
+                            for js in js_auth[:5]:  # Limit to first 5
+                                print(f"   JS: {js[:100]}...")
+
+                        # Look for any iframes that might contain authentication
+                        iframes = re.findall(
+                            r'<iframe[^>]*src=["\']([^"\']*)["\'][^>]*>', content
+                        )
+                        if iframes:
+                            print(f"🔍 Found {len(iframes)} iframes on main site")
+                            for iframe in iframes:
+                                print(f"   Iframe: {iframe}")
+                                if (
+                                    "login" in iframe.lower()
+                                    or "auth" in iframe.lower()
+                                ):
+                                    print(f"💡 Found authentication iframe: {iframe}")
+                                    result = self._try_login_url(iframe)
+                                    if result:
+                                        return result
+
+                    print("❌ Could not find authentication flow on main Meijer site")
+                    return None
+
+                # Follow other redirects normally
+                return self._follow_redirect(location)
+            else:
+                print(f"❌ Step-up authentication failed: {response.status_code}")
+                return None
+
+        except Exception as e:
+            print(f"❌ Error in step-up authentication: {e}")
+            return None
+
+    def _follow_redirect(self, url: str) -> Optional[str]:
+        """
+        Follow a redirect URL and see where it takes us.
+        """
+        try:
+            print(f"🔄 Following redirect: {url}")
+
+            # If it's a relative URL, make it absolute
+            if url.startswith("/"):
+                url = f"{self.base_url}{url}"
+
+            response = self.session.get(url, allow_redirects=False)
+            print(f"📥 Redirect response status: {response.status_code}")
+
+            if response.status_code in [301, 302, 303, 307, 308]:
+                # Another redirect
+                location = response.headers.get("Location", "")
+                print(f"🔄 Another redirect to: {location}")
+                return self._follow_redirect(location)
+            elif response.status_code == 200:
+                # We got a page - analyze it
+                content = response.content.decode("utf-8", errors="ignore")
+                return self._analyze_authorization_page(content)
+            else:
+                print(f"❌ Redirect failed with status: {response.status_code}")
+                return None
+
+        except Exception as e:
+            print(f"❌ Error following redirect: {e}")
+            return None
+
+    def _submit_to_login_form(self, content: str, form_html: str) -> Optional[str]:
+        """
+        Try to submit credentials to a login form found in the content.
+        """
+        try:
+            print("🔍 Attempting to submit to login form...")
+
+            import re
+
+            # Extract form action
+            action_match = re.search(r'action=["\']([^"\']+)["\']', form_html)
+            if not action_match:
+                print("❌ No form action found")
+                return None
+
+            form_action = action_match.group(1)
+            print(f"💡 Form action: {form_action}")
+
+            # If it's a relative URL, make it absolute
+            if form_action.startswith("/"):
+                form_action = f"{self.base_url}{form_action}"
+
+            # Prepare login data using stored credentials
+            login_data = {
+                "username": self.username,
+                "password": self.password,
+            }
+
+            # Submit the form
+            response = self.session.post(
+                form_action,
+                data=login_data,
+                allow_redirects=False,
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Origin": self.base_url,
+                    "Referer": self.oauth_authorize_url,
+                },
+            )
+
+            print(f"📥 Form submission response: {response.status_code}")
+
+            if response.status_code in [301, 302, 303, 307, 308]:
+                location = response.headers.get("Location", "")
+                print(f"✅ Form submission redirect: {location}")
+
                 if "code=" in location:
                     auth_code = location.split("code=")[1].split("&")[0]
                     print(f"🎉 Authorization code found: {auth_code[:20]}...")
                     return auth_code
-                else:
-                    print("ℹ️ OAuth2 redirect doesn't contain authorization code")
-                    return None
-            else:
-                print(f"❌ OAuth2 authorization failed: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            print(f"❌ Error in OAuth2 flow: {e}")
+
+                # Follow the redirect
+                return self._follow_redirect(location)
+
             return None
 
-    def _submit_oauth2_credentials(self, content: str, username: str, password: str) -> Optional[str]:
+        except Exception as e:
+            print(f"❌ Error submitting to login form: {e}")
+            return None
+
+    def _try_login_url(self, url: str) -> Optional[str]:
         """
-        Submit credentials to the OAuth2 authorization page.
+        Try to use a login URL directly.
         """
         try:
-            print("🔍 Submitting credentials to OAuth2 authorization page...")
-            
-            # Look for the form action URL
-            import re
-            
-            # Pattern 1: Look for form with action attribute
-            form_pattern = r'<form[^>]*action=["\']([^"\']+)["\']'
-            match = re.search(form_pattern, content)
-            
-            if match:
-                form_action = match.group(1)
-                print(f"✅ Found form action: {form_action}")
-                
-                # Make the form submission
-                form_data = {
-                    "username": username,
-                    "password": password,
+            print(f"🔍 Trying login URL: {url}")
+
+            # If it's a relative URL, make it absolute
+            if url.startswith("/"):
+                url = f"{self.base_url}{url}"
+
+            # Try to GET the URL first
+            response = self.session.get(url, allow_redirects=False)
+            print(f"   GET response: {response.status_code}")
+
+            if response.status_code == 200:
+                # Try to submit credentials using stored credentials
+                login_data = {
+                    "username": self.username,
+                    "password": self.password,
                 }
-                
-                # If the form action is relative, make it absolute
-                if form_action.startswith("/"):
-                    form_action = f"{self.base_url}{form_action}"
-                
+
                 response = self.session.post(
-                    form_action,
-                    data=form_data,
+                    url,
+                    data=login_data,
                     allow_redirects=False,
                     headers={
                         "Content-Type": "application/x-www-form-urlencoded",
                         "Origin": self.base_url,
-                        "Referer": self.oauth_authorize_url,
-                    }
+                        "Referer": url,
+                    },
                 )
-                
-                print(f"📥 Form submission response status: {response.status_code}")
-                
+
+                print(f"   POST response: {response.status_code}")
+
                 if response.status_code in [301, 302, 303, 307, 308]:
                     location = response.headers.get("Location", "")
-                    print(f"✅ Got form redirect to: {location}")
-                    
+                    print(f"   ✅ Redirect to: {location}")
+
                     if "code=" in location:
                         auth_code = location.split("code=")[1].split("&")[0]
                         print(f"🎉 Authorization code found: {auth_code[:20]}...")
                         return auth_code
-                
-                print("ℹ️ Form submission didn't yield authorization code")
-                return None
-            else:
-                print("❌ No form found in OAuth2 authorization page")
-                print("💡 Let me analyze the content more carefully...")
-                
-                # Pattern 2: Look for any form tags
-                all_forms = re.findall(r'<form[^>]*>', content)
-                if all_forms:
-                    print(f"🔍 Found {len(all_forms)} form tags:")
-                    for i, form in enumerate(all_forms):
-                        print(f"   Form {i+1}: {form}")
-                
-                # Pattern 3: Look for input fields
-                inputs = re.findall(r'<input[^>]*>', content)
-                if inputs:
-                    print(f"🔍 Found {len(inputs)} input fields:")
-                    for i, inp in enumerate(inputs):
-                        print(f"   Input {i+1}: {inp}")
-                
-                # Pattern 4: Look for any POST endpoints or login-related URLs
-                post_urls = re.findall(r'action=["\']([^"\']*login[^"\']*)["\']', content, re.IGNORECASE)
-                if post_urls:
-                    print(f"🔍 Found potential login URLs: {post_urls}")
-                
-                # Try a different approach - look for the actual login endpoint
-                return self._try_direct_login_endpoint(username, password)
-                
-        except Exception as e:
-            print(f"❌ Error submitting OAuth2 credentials: {e}")
+
+                    # Follow the redirect
+                    return self._follow_redirect(location)
+
             return None
 
-    def _try_direct_login_endpoint(self, username: str, password: str) -> Optional[str]:
-        """
-        Try to find and use a direct login endpoint.
-        """
-        try:
-            print("🔍 Trying to find direct login endpoint...")
-            
-            # Common login endpoint patterns
-            login_endpoints = [
-                f"{self.base_url}/login",
-                f"{self.base_url}/auth/login",
-                f"{self.base_url}/signin",
-                f"{self.base_url}/authenticate",
-                f"{self.base_url}/oauth2/default/v1/login",
-                f"{self.base_url}/idp/idx/login",
-            ]
-            
-            for endpoint in login_endpoints:
-                print(f"🔍 Trying endpoint: {endpoint}")
-                
-                try:
-                    # First try to GET the endpoint to see if it exists
-                    response = self.session.get(endpoint, allow_redirects=False)
-                    print(f"   GET response: {response.status_code}")
-                    
-                    if response.status_code == 200:
-                        print(f"✅ Endpoint {endpoint} exists and returns 200")
-                        
-                        # Try to submit credentials to this endpoint
-                        login_data = {
-                            "username": username,
-                            "password": password,
-                        }
-                        
-                        response = self.session.post(
-                            endpoint,
-                            data=login_data,
-                            allow_redirects=False,
-                            headers={
-                                "Content-Type": "application/x-www-form-urlencoded",
-                                "Origin": self.base_url,
-                                "Referer": endpoint,
-                            }
-                        )
-                        
-                        print(f"   POST response: {response.status_code}")
-                        
-                        if response.status_code in [301, 302, 303, 307, 308]:
-                            location = response.headers.get("Location", "")
-                            print(f"   ✅ Got redirect to: {location}")
-                            
-                            if "code=" in location:
-                                auth_code = location.split("code=")[1].split("&")[0]
-                                print(f"🎉 Authorization code found: {auth_code[:20]}...")
-                                return auth_code
-                        
-                        # Check if we got a success response
-                        if response.status_code == 200:
-                            content = response.content.decode('utf-8', errors='ignore')
-                            if "error" not in content.lower() and "invalid" not in content.lower():
-                                print(f"   ✅ Login appears successful at {endpoint}")
-                                # Look for tokens in the response
-                                return self._extract_tokens_from_content(content)
-                    
-                    elif response.status_code in [301, 302, 303, 307, 308]:
-                        # Follow the redirect to see where it goes
-                        location = response.headers.get("Location", "")
-                        print(f"   Redirect to: {location}")
-                        
-                        if "code=" in location:
-                            auth_code = location.split("code=")[1].split("&")[0]
-                            print(f"🎉 Authorization code found in redirect: {auth_code[:20]}...")
-                            return auth_code
-                            
-                except Exception as e:
-                    print(f"   ❌ Error with {endpoint}: {e}")
-                    continue
-            
-            print("❌ No working login endpoint found")
-            return None
-            
         except Exception as e:
-            print(f"❌ Error trying direct login endpoints: {e}")
+            print(f"   ❌ Error with login URL: {e}")
             return None
 
-    def _exchange_code_for_tokens(self, authorization_code: str) -> Optional[AuthTokens]:
+    def _exchange_code_for_tokens(
+        self, authorization_code: str
+    ) -> Optional[AuthTokens]:
         """Exchange authorization code for access and refresh tokens."""
         try:
-            print("🎟️ Step 5: Exchanging authorization code for tokens...")
+            print("🎟️ Step 3: Exchanging authorization code for tokens...")
 
             response = self.session.post(
                 self.oauth_token_url,
@@ -588,51 +785,47 @@ class OktaAuthenticator:
     def authenticate(self, username: str, password: str) -> Optional[AuthTokens]:
         """
         Perform complete OKTA authentication with username/password.
-        
+
         Args:
             username: User's email address
             password: User's password
-            
+
         Returns:
             AuthTokens object with access and refresh tokens, or None if failed
         """
         try:
-            print("🔐 Starting simplified OKTA authentication flow...")
+            print("🔐 Starting OKTA OAuth2 authentication flow...")
             print("=" * 50)
-            
+
+            # Store credentials for use in form submissions
+            self.username = username
+            self.password = password
+
             # Step 1: Establish initial session to get cookies
             if not self._establish_initial_session():
                 print("❌ Failed to establish initial session - cannot proceed")
                 return None
-            
-            # Step 2: Get login page and extract any required tokens
-            csrf_token = self._get_login_page()
-            
-            # Step 3: Try direct login first
-            authorization_code = self._submit_credentials(username, password, csrf_token)
-            
-            # Step 4: If direct login didn't work, try OAuth2 flow
-            if not authorization_code:
-                print("🔄 Direct login didn't work, trying OAuth2 flow...")
-                authorization_code = self._try_oauth2_flow(username, password)
-            
+
+            # Step 2: Start OAuth2 flow and follow redirects
+            authorization_code = self._start_oauth2_flow()
+
             if not authorization_code:
                 print("❌ Failed to get authorization code - cannot proceed")
                 return None
-            
-            # Step 5: Exchange authorization code for tokens
+
+            # Step 3: Exchange authorization code for tokens
             tokens = self._exchange_code_for_tokens(authorization_code)
             if not tokens:
                 print("❌ Failed to exchange authorization code for tokens")
                 return None
-            
+
             print("🎉 Authentication flow completed successfully!")
             print(f"🔑 Access token: {tokens.access_token[:30]}...")
             print(f"🔄 Refresh token: {tokens.refresh_token[:30]}...")
             print(f"⏰ Expires in: {tokens.expires_in} seconds")
-            
+
             return tokens
-            
+
         except Exception as e:
             print(f"❌ Authentication failed with exception: {e}")
             return None
