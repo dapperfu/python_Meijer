@@ -217,7 +217,7 @@ def analyze_auth_patterns(auth_flows: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 def main():
     """Main analysis function."""
-    log_file = "meijer_mitm_20250820_100511.log"
+    log_file = "meijer_mitm_20250820_110853.log"
 
     print(f"🔍 Analyzing authentication flows from: {log_file}")
     print("=" * 60)
