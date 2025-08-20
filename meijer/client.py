@@ -173,7 +173,12 @@ class Meijer:
             raise
 
     def _load_auth_from_config(self):
-        """Load authentication from cross-platform config directory."""
+        """Load authentication from cross-platform config directory or token storage."""
+        # First check if we already have tokens in storage
+        if self.token_storage.has_tokens():
+            self.logger.info("✅ Found existing tokens in storage")
+            return
+            
         # Get cross-platform config path
         from .auth import get_meijer_config_path
         config_path = Path(get_meijer_config_path("auth.txt"))
@@ -214,7 +219,7 @@ class Meijer:
             except Exception as e:
                 self.logger.warning(f"⚠️ Failed to load config file: {e}")
 
-        self.logger.info("ℹ️ No authentication found in config file")
+        self.logger.info("ℹ️ No authentication found in config file or token storage")
 
     def _ensure_authenticated(self) -> bool:
         """Ensure we have a valid access token."""
@@ -226,6 +231,13 @@ class Meijer:
             try:
                 tokens = self.token_storage.get_valid_tokens()
                 if tokens:
+                    # Check if we have a refresh token
+                    if not tokens.refresh_token or tokens.refresh_token.strip() == "":
+                        self.logger.warning("⚠️ No refresh token available - tokens cannot be refreshed automatically")
+                        print("⚠️ Your current tokens cannot be refreshed automatically (no refresh token)")
+                        print("💡 Run 'meijer auth' to re-authenticate and get new tokens with refresh capability")
+                        return False
+                    
                     # Check if token is close to expiring
                     if tokens.is_expired(buffer_seconds=600):  # 10 minutes buffer
                         self.logger.info("🔄 Token expiring soon, proactively refreshing...")
@@ -233,6 +245,8 @@ class Meijer:
                             self.logger.info("✅ Token refreshed proactively")
                         else:
                             self.logger.warning("❌ Proactive refresh failed")
+                            print("❌ Token refresh failed - you may need to re-authenticate")
+                            return False
                     else:
                         self.logger.info("✅ Token refresh successful")
                     return True
@@ -349,6 +363,7 @@ class Meijer:
     def get_stores(
         self,
         zip_code: Optional[str] = None,
+        city: Optional[str] = None,
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         radius: Optional[int] = None,
@@ -358,6 +373,7 @@ class Meijer:
 
         Args:
             zip_code: Optional ZIP code for location-based search
+            city: Optional city name for location-based search (case-insensitive, partial matching)
             latitude: Optional latitude for location-based search
             longitude: Optional longitude for location-based search
             radius: Optional radius in miles for proximity search (uses enhanced API)
@@ -369,20 +385,29 @@ class Meijer:
         if radius and latitude and longitude:
             return self.find_stores_nearby(latitude, longitude, radius)
 
-        # Otherwise, use the working storeInfo endpoint with default coordinates
+        # Otherwise, use the working storeInfo endpoint with provided or default coordinates
         try:
             # Use the working storeInfo endpoint instead of the non-existent /stores
             url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
 
-            # Use coordinates near the center of Michigan as a starting point
-            # This will return stores that can be filtered by zip_code if provided
-            params = {
-                "latitude": 44.3148,  # Center of Michigan
-                "longitude": -85.6024,
-                "miles": 500,  # Large radius to get stores across the region
-                "numToReturn": 100,  # Get more stores
-                "dataVariant": 2,
-            }
+            # Use provided coordinates or default to center of Michigan
+            if latitude and longitude:
+                params = {
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "miles": radius or 50,  # Use provided radius or default to 50 miles
+                    "numToReturn": 100,
+                    "dataVariant": 2,
+                }
+            else:
+                # Default coordinates near the center of Michigan
+                params = {
+                    "latitude": 44.3148,  # Center of Michigan
+                    "longitude": -85.6024,
+                    "miles": 500,  # Large radius to get stores across the region
+                    "numToReturn": 100,  # Get more stores
+                    "dataVariant": 2,
+                }
 
             # Headers required by storeInfo APIs
             headers = {
@@ -405,9 +430,10 @@ class Meijer:
 
             if response.status_code == 200:
                 data = response.json()
+                self.logger.info(f"🔍 Stores API response: {data}")
                 stores = []
 
-                for store_data in data.get("stores", []):
+                for store_data in data.get("store", []):
                     try:
                         # Ensure UnitId is present and not empty
                         if not store_data.get("UnitId"):
@@ -419,6 +445,22 @@ class Meijer:
                         # Filter by zip_code if provided
                         if zip_code and store_data.get("Zip") != zip_code:
                             continue
+
+                        # Filter by city if provided (case-insensitive, partial matching)
+                        if city:
+                            store_city = store_data.get("City", "")
+                            if not store_city:
+                                continue
+                            
+                            # Normalize city names for better matching
+                            search_city = city.lower().replace(" ", "").replace("-", "")
+                            store_city_normalized = store_city.lower().replace(" ", "").replace("-", "")
+                            
+                            # Check if search city is contained in store city (normalized)
+                            if search_city not in store_city_normalized:
+                                # Also try reverse: check if store city is contained in search city
+                                if store_city_normalized not in search_city:
+                                    continue
 
                         store = MeijerStore.from_api_data(store_data, self)
                         stores.append(store)
@@ -492,7 +534,7 @@ class Meijer:
                 stores = []
 
                 # Parse the response data into MeijerStore objects
-                for store_data in data.get("stores", []):
+                for store_data in data.get("store", []):
                     try:
                         # Ensure UnitId is present and not empty
                         if not store_data.get("UnitId"):
@@ -741,7 +783,7 @@ class Meijer:
 
     def get_shopping_list(self) -> List[ListItem]:
         """Get current shopping list items."""
-        return self.shopping_list.get_list()
+        return self.shopping_list.get()
 
     def get_favorites(self) -> List[ListItem]:
         """Get current favorites list items."""
@@ -761,9 +803,9 @@ class Meijer:
             True if successful, False otherwise
         """
         if isinstance(item, str):
-            return self.shopping_list.add_item(item, quantity)
+            return self.shopping_list.add(item, quantity)
         else:
-            return self.shopping_list.add_item(item.title, quantity, item.upc)
+            return self.shopping_list.add_item_with_details(item.upc, quantity, item.title)
 
     def add_to_favorites(self, item: Union[str, MeijerItem]) -> bool:
         """

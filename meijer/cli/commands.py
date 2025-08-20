@@ -985,223 +985,98 @@ def settings_group():
 
 # Authentication Commands
 @click.command()
-@click.option("--log-file", help="Specific mitmproxy log file to use")
-def auth_command(log_file: str = None):
-    """Extract authentication tokens from mitmproxy logs."""
-    logger = logging.getLogger(__name__)
-    logger.debug(f"Auth command called with log_file: {log_file}")
+def auth_command():
+    """Authenticate with Meijer API by extracting tokens from mitmproxy logs."""
+    click.echo("🔐 Meijer Authentication")
+    click.echo("=" * 50)
 
-    try:
-        # First check if existing tokens exist and test refresh
-        from ..auth import TokenStorage
-
-        token_storage = TokenStorage()
-
-        if token_storage.has_tokens():
-            click.echo("🔍 Found existing tokens, testing refresh...")
-
-            try:
-                # Try to refresh tokens first
-                tokens = token_storage.get_valid_tokens()
-                if tokens:
-                    click.echo(
-                        "✅ Token refresh successful! No need to extract from logs."
-                    )
-                    click.echo(f"🔑 Access token: {tokens.access_token[:50]}...")
+    # First check if we have existing tokens and try to refresh them
+    token_storage = TokenStorage()
+    if token_storage.has_tokens():
+        click.echo("🔍 Found existing tokens, testing refresh...")
+        try:
+            tokens = token_storage.get_valid_tokens()
+            if tokens and tokens.refresh_token and tokens.refresh_token.strip():
+                if token_storage.refresh_tokens(tokens.refresh_token):
+                    click.echo("✅ Token refresh successful! No need to extract from logs.")
+                    click.echo(f"🔑 Access token: {tokens.access_token[:30]}...")
+                    click.echo(f"🔄 Refresh token: {tokens.refresh_token[:30]}...")
+                    click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
+                    click.echo("\n🎉 Your tokens are fresh and ready to use!")
                     return
                 else:
-                    click.echo(
-                        "❌ Token refresh failed - falling back to log extraction method"
-                    )
-                    # Show Unicode red X for failed refresh
-                    click.echo(
-                        "❌ Token refresh failed - falling back to log extraction method"
-                    )
-            except Exception as e:
-                logger.error(f"Exception during token refresh: {e}")
-                click.echo(
-                    "❌ Token refresh failed - falling back to log extraction method"
-                )
-        else:
-            click.echo("ℹ️ No existing tokens found, proceeding with log extraction...")
+                    click.echo("❌ Token refresh failed")
+            else:
+                click.echo("⚠️ No refresh token available - tokens cannot be refreshed automatically")
+        except Exception as e:
+            click.echo(f"❌ Error during token refresh: {e}")
 
-        # If no log file specified, automatically find the latest one
-        if not log_file:
-            import glob
-            import os
+    click.echo("📋 Extracting tokens from mitmproxy logs...")
 
-            logger.debug(
-                "No log file specified, searching for latest meijer_mitm_*.log"
-            )
-            # Find all meijer_mitm_*.log files
-            log_pattern = "meijer_mitm_*.log"
-            log_files = glob.glob(log_pattern)
-            logger.debug(f"Found log files: {log_files}")
+    # Find the most recent log file
+    import glob
+    import os
+    log_files = glob.glob("meijer_mitm_*.log")
+    if not log_files:
+        click.echo("❌ No meijer mitmproxy log files found!")
+        click.echo("💡 Make sure you have captured authentication traffic with mitmproxy")
+        return
 
-            if not log_files:
-                logger.error("No mitmproxy log files found")
-                raise click.ClickException(
-                    "❌ No mitmproxy log files found. Expected pattern: meijer_mitm_*.log"
-                )
+    # Sort by modification time, newest first
+    log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+    latest_log = log_files[0]
+    click.echo(f"📁 Using log file: {latest_log}")
 
-            # Sort by modification time and get the latest
-            log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-            log_file = log_files[0]
-            logger.debug(f"Selected latest log file: {log_file}")
-
-            click.echo(f"🔍 Automatically found latest log file: {log_file}")
-        else:
-            logger.debug(f"Using specified log file: {log_file}")
-            click.echo(f"🔍 Using specified log file: {log_file}")
-
-        click.echo("⏳ This may take a moment for large log files...")
-
-        # Use the existing extract_bearer_token.py tool
-        import os
-        import subprocess
-        import sys
-
-        # Get the path to the tools directory
-        tools_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tools"
-        )
-        extract_script = os.path.join(tools_dir, "extract_bearer_token.py")
-        logger.debug(f"Extract script path: {extract_script}")
-
-        if not os.path.exists(extract_script):
-            logger.error(f"Extract script not found: {extract_script}")
-            raise click.ClickException(f"❌ Tool not found: {extract_script}")
-
-        # Run the extract_bearer_token.py tool
-        logger.debug("Running extract_bearer_token.py tool")
-        click.echo("🔧 Using extract_bearer_token.py tool...")
-        result = subprocess.run(
-            [sys.executable, extract_script, log_file],
-            capture_output=True,
-            text=True,
-            cwd=os.getcwd(),
-        )
-
-        if result.returncode != 0:
-            logger.error(f"Extract tool failed with return code: {result.returncode}")
-            logger.error(f"Tool stderr: {result.stderr}")
-            click.echo(f"⚠️  Tool output: {result.stderr}")
-            raise click.ClickException("❌ Failed to run extract_bearer_token.py tool")
-
-        # Check if the tool created output files
-        bearer_auth_json = "bearer_auth.json"
-        if not os.path.exists(bearer_auth_json):
-            logger.error("No bearer_auth.json file created by extract tool")
-            raise click.ClickException("❌ No authentication tokens found in log file")
-
-        # Load the extracted token
-        import json
-        from datetime import datetime
-
-        logger.debug("Loading extracted token data")
-        with open(bearer_auth_json, "r") as f:
-            token_data = json.load(f)
-        logger.debug(f"Token data keys: {list(token_data.keys())}")
-
-        # Convert to the format expected by the client
-        tokens = {
-            "access_token": token_data["bearer_token"],
-            "refresh_token": "",  # Not available from request headers
-            "id_token": token_data["bearer_token"],  # Use as ID token
-            "expires_in": 28800,  # Default, could be extracted from JWT
-            "token_type": "Bearer",
-            "scope": "",
-            "user_agent": token_data.get("user_agent", ""),
-        }
-
-        # Try to extract expiration from JWT if possible
-        try:
-            import jwt
-
-            logger.debug("Attempting to decode JWT for expiry information")
-            payload = jwt.decode(
-                tokens["access_token"], options={"verify_signature": False}
-            )
-            if payload.get("exp"):
-                import time
-
-                expires_in = payload.get("exp") - int(time.time())
-                if expires_in > 0:
-                    tokens["expires_in"] = expires_in
-                    tokens["expires_at"] = payload.get("exp")
-                    logger.debug(f"JWT expiry extracted: {expires_in} seconds")
-                else:
-                    logger.warning("JWT has already expired")
-        except (ImportError, Exception) as jwt_error:
-            logger.debug(f"JWT decoding failed: {jwt_error}")
-
-        # Save to cross-platform config directory
-        from ..auth import get_meijer_config_path
-        config_path = Path(get_meijer_config_path("auth.txt"))
+    # Run the enhanced token extraction
+    import subprocess
+    import sys
+    
+    try:
+        # Run the enhanced extraction tool
+        result = subprocess.run([
+            sys.executable, 
+            "tools/extract_bearer_token.py", 
+            latest_log
+        ], capture_output=True, text=True, cwd=os.getcwd())
         
-        logger.debug(f"Saving tokens to: {config_path}")
-
-        config = {
-            **tokens,
-            "updated_at": datetime.now().isoformat(),
-            "source": f"Extracted from {log_file}",
-            "extracted_at": datetime.now().isoformat(),
-        }
-
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=2)
-
-        # Also save to TokenStorage pickle file for refresh functionality
-        try:
-            from ..models import AuthTokens
-            auth_tokens = AuthTokens(
-                access_token=tokens["access_token"],
-                refresh_token=tokens.get("refresh_token", ""),
-                expires_in=tokens["expires_in"],
-                token_type=tokens["token_type"],
-            )
-            if token_storage.save_tokens(auth_tokens):
-                logger.debug("✅ Tokens also saved to TokenStorage for refresh functionality")
-            else:
-                logger.warning("⚠️ Failed to save tokens to TokenStorage")
-        except Exception as e:
-            logger.warning(f"⚠️ Could not save tokens to TokenStorage: {e}")
-
-        logger.debug("Tokens saved successfully")
-        click.echo(f"💾 Tokens saved to {config_path}")
-        click.echo("✅ Authentication file updated successfully!")
-        click.echo(f"🔑 Access token: {tokens['access_token'][:50]}...")
-        click.echo(f"⏰ Expires in: {tokens['expires_in']} seconds")
-
-        # Test the extracted tokens by making a simple API call
-        click.echo("\n🧪 Testing extracted tokens with a simple API call...")
-        try:
-            # Create a temporary client to test the tokens
-            from ..client import Meijer
-            test_client = Meijer()
+        if result.returncode == 0:
+            click.echo("\n" + result.stdout)
             
-            # Try to get the shopping list to prove authentication works
-            click.echo("📝 Attempting to fetch shopping list...")
-            shopping_list = test_client.list.get()
+            # Check if we got OAuth2 tokens with refresh capability
+            if "✅ Tokens can be refreshed automatically!" in result.stdout:
+                click.echo("\n🎉 Success! You now have tokens with refresh capability.")
+                click.echo("   These tokens can be refreshed automatically when they expire.")
+            elif "⚠️ No refresh token - tokens cannot be refreshed automatically" in result.stdout:
+                click.echo("\n⚠️ Note: These tokens cannot be refreshed automatically.")
+                click.echo("   To get refreshable tokens, you need to capture an OAuth2 token exchange.")
+                click.echo("   Try logging in to the Meijer app again and capture the authentication flow.")
             
-            if shopping_list:
-                click.echo(f"✅ Authentication successful! Retrieved {len(shopping_list)} shopping list items")
-                click.echo("🎉 Your tokens are working correctly!")
-            else:
-                click.echo("⚠️ Authentication successful but no shopping list items found")
+            # Now test the extracted tokens with an API call
+            click.echo("\n🧪 Testing extracted tokens with API call...")
+            try:
+                # Create a temporary client to test the tokens
+                from ..client import Meijer
+                test_client = Meijer()
                 
-        except Exception as e:
-            click.echo(f"❌ Token test failed: {e}")
-            click.echo("⚠️ Tokens were extracted but may not be valid for API calls")
-            logger.warning(f"Token test failed: {e}")
-
-        # Clean up temporary files
-        for temp_file in ["bearer_auth.json", "bearer_token_analysis.json"]:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-                logger.debug(f"Cleaned up temporary file: {temp_file}")
-                click.echo(f"🧹 Cleaned up {temp_file}")
-
+                # Try to get the shopping list to verify tokens work
+                items = test_client.list.get()
+                click.echo("✅ API call successful! Extracted tokens are working.")
+                click.echo(f"📋 Found {len(items)} items in shopping list")
+                
+            except Exception as e:
+                click.echo(f"❌ API call failed: {e}")
+                click.echo("💡 The extracted tokens may be expired or invalid")
+                
+        else:
+            click.echo(f"❌ Token extraction failed: {result.stderr}")
+            
     except Exception as e:
-        logger.error(f"Failed to extract authentication: {e}", exc_info=True)
-        raise click.ClickException(f"❌ Failed to extract authentication: {e}")
+        click.echo(f"❌ Error running token extraction: {e}")
+        click.echo("💡 Make sure the extraction tool is available at tools/extract_bearer_token.py")
+
+    click.echo("\n💡 To get refreshable tokens:")
+    click.echo("   1. Clear your current tokens: rm ~/.config/meijer/meijer_tokens.pkl")
+    click.echo("   2. Log out of the Meijer app")
+    click.echo("   3. Start mitmproxy capture")
+    click.echo("   4. Log back into the Meijer app")
+    click.echo("   5. Run 'meijer auth' again")

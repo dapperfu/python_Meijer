@@ -193,6 +193,12 @@ class TokenStorage:
         Returns:
             True if refresh successful, False otherwise
         """
+        # Check if we have a valid refresh token
+        if not refresh_token or refresh_token.strip() == "":
+            self.logger.error("❌ No refresh token available - cannot refresh access token")
+            self.logger.info("💡 You need to re-authenticate using 'meijer auth' to get new tokens with refresh capability")
+            return False
+            
         try:
             # Prepare refresh request based on log analysis
             refresh_data = {

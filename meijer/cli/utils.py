@@ -29,15 +29,9 @@ def get_meijer_client() -> Meijer:
     logger.debug("Initializing Meijer client")
 
     try:
-        # First try to load from local auth.txt file
-        local_auth_path = "auth.txt"
-        if os.path.exists(local_auth_path):
-            logger.debug(f"Found local auth file: {local_auth_path}")
-            client = Meijer(auth=local_auth_path)
-        else:
-            logger.debug("No local auth.txt found, using default authentication")
-            # Fall back to default behavior
-            client = Meijer()
+        # Use the new token storage system instead of local auth.txt files
+        logger.debug("Using token storage system for authentication")
+        client = Meijer()
 
         logger.debug(f"Client authentication status: {client.auth_status.name}")
 
@@ -47,7 +41,7 @@ def get_meijer_client() -> Meijer:
             )
             raise click.ClickException(
                 "❌ Authentication failed! Please check your credentials.\n"
-                "   Ensure you have auth.txt or ~/.config/meijer.txt configured"
+                "   Run 'meijer auth' to extract new tokens from mitmproxy logs"
             )
 
         logger.debug("Meijer client initialized successfully")

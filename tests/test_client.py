@@ -401,5 +401,100 @@ class TestMeijerClient:
             assert stores[0].city == "Test City"
 
 
+class TestMeijerClientLive:
+    """Test the main Meijer client class with live API endpoints.
+    
+    These tests require a working authentication token and will make real API calls.
+    Use with caution in CI/CD environments.
+    """
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.client = Meijer()
+
+    def test_live_authentication(self):
+        """Test that the client can authenticate with live endpoints."""
+        assert self.client.is_authenticated()
+        # Check the actual auth status value (case may vary)
+        auth_status = self.client.auth_status.value
+        assert auth_status in ["AUTHENTICATED", "authenticated"]
+
+    def test_live_get_stores_default(self):
+        """Test getting stores with default parameters using live API."""
+        stores = self.client.get_stores()
+        assert len(stores) > 0
+        assert all(hasattr(store, 'unit_id') for store in stores)
+        assert all(hasattr(store, 'name') for store in stores)
+        assert all(hasattr(store, 'city') for store in stores)
+        assert all(hasattr(store, 'state') for store in stores)
+
+    def test_live_get_stores_by_city(self):
+        """Test getting stores by city name using live API."""
+        # Test with "grandrapids" (no spaces)
+        stores = self.client.get_stores(city="grandrapids")
+        assert len(stores) > 0
+        # All stores should be in Grand Rapids
+        for store in stores:
+            assert "grand rapids" in store.city.lower() or "grandrapids" in store.city.lower().replace(" ", "")
+
+        # Test with "holland"
+        stores = self.client.get_stores(city="holland")
+        assert len(stores) > 0
+        # All stores should be in Holland
+        for store in stores:
+            assert "holland" in store.city.lower()
+
+        # Test with "ann arbor" (with spaces)
+        stores = self.client.get_stores(city="ann arbor")
+        assert len(stores) > 0
+        # All stores should be in Ann Arbor
+        for store in stores:
+            assert "ann arbor" in store.city.lower()
+
+    def test_live_find_stores_nearby(self):
+        """Test finding stores near coordinates using live API."""
+        # Test with coordinates near Ann Arbor, MI
+        stores = self.client.find_stores_nearby(
+            latitude=42.2808, 
+            longitude=-83.7430, 
+            radius_miles=50
+        )
+        assert len(stores) > 0
+        assert len(stores) <= 50  # Should respect max_results
+        assert all(hasattr(store, 'unit_id') for store in stores)
+
+    def test_live_get_store_by_id(self):
+        """Test getting a specific store by ID using live API."""
+        # Test with store ID 217 (N Holland Twp)
+        store = self.client.get_store_by_id("217")
+        assert store is not None
+        assert store.unit_id == "217"
+        assert store.name == "N Holland Twp"
+        assert store.city == "Holland"
+        assert store.state == "MI"
+
+    def test_live_coupons(self):
+        """Test getting coupons using live API."""
+        coupons = self.client.get_coupons()
+        assert len(coupons) > 0
+        assert all(hasattr(coupon, 'meijer_offer_id') for coupon in coupons)
+
+    def test_live_shopping_list(self):
+        """Test getting shopping list using live API."""
+        shopping_list = self.client.get_shopping_list()
+        # Shopping list might be empty, but should not raise an error
+        assert isinstance(shopping_list, list)
+
+    def test_live_search_functionality(self):
+        """Test basic search functionality using live API."""
+        # Test with a common product search
+        search_results = self.client.search_products("milk")
+        # Search returns a SearchResult object with results list
+        assert hasattr(search_results, 'results')
+        assert isinstance(search_results.results, list)
+        assert hasattr(search_results, 'total_results')
+        assert search_results.total_results > 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
