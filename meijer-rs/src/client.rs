@@ -76,6 +76,44 @@ impl MeijerClient {
         Ok(response)
     }
 
+    pub fn _make_request_with_json(&self, method: &str, url: &str, headers: HashMap<String, String>, json_data: Option<serde_json::Value>) -> Result<reqwest::blocking::Response> {
+        println!("🌐 Making {} request to: {}", method, url);
+        println!("📋 Headers:");
+        for (key, value) in &headers {
+            if key.to_lowercase() == "authorization" {
+                println!("   {}: Bearer [REDACTED]", key);
+            } else {
+                println!("   {}: {}", key, value);
+            }
+        }
+        
+        let request = match method.to_uppercase().as_str() {
+            "GET" => self.http_client.get(url),
+            "POST" => self.http_client.post(url),
+            "PUT" => self.http_client.put(url),
+            "DELETE" => self.http_client.delete(url),
+            "PATCH" => self.http_client.patch(url),
+            _ => return Err(anyhow!("Unsupported HTTP method: {}", method)),
+        };
+
+        let mut request_builder = request;
+        for (key, value) in headers {
+            request_builder = request_builder.header(key, value);
+        }
+
+        // Add JSON data if provided
+        if let Some(json) = json_data {
+            request_builder = request_builder.json(&json);
+            println!("📦 JSON Body: {}", serde_json::to_string_pretty(&json)?);
+        }
+
+        let response = request_builder.send()?;
+        
+        println!("📡 Response status: {}", response.status());
+        
+        Ok(response)
+    }
+
     pub fn get_tokens(&self) -> Option<AuthTokens> {
         self.token_storage.get_valid_tokens()
     }

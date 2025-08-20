@@ -49,12 +49,20 @@ pub fn handle_add(item_name: String, quantity: i32, notes: Option<String>) -> Re
     let client = MeijerClient::new();
     let shopping_list = MeijerList::new(client);
     
-    // TODO: Implement add_item functionality
     println!("➕ Adding item: {} (quantity: {})", item_name, quantity);
-    if let Some(note) = notes {
+    if let Some(ref note) = notes {
         println!("   Notes: {}", note);
     }
-    println!("🔄 Add functionality coming soon!");
+    
+    // Add the item using the shopping list API
+    let success = shopping_list.add(&item_name, quantity, notes.as_deref())?;
+    
+    if success {
+        println!("✅ Successfully added '{}' to shopping list!", item_name);
+    } else {
+        println!("❌ Failed to add '{}' to shopping list", item_name);
+        return Err(anyhow::anyhow!("Failed to add item to shopping list"));
+    }
     
     Ok(())
 }
@@ -63,9 +71,16 @@ pub fn handle_clear() -> Result<()> {
     let client = MeijerClient::new();
     let shopping_list = MeijerList::new(client);
     
-    // TODO: Implement clear completed functionality
     println!("🧹 Clearing completed items from shopping list...");
-    println!("🔄 Clear functionality coming soon!");
+    
+    let success = shopping_list.clear_completed()?;
+    
+    if success {
+        println!("✅ Successfully cleared completed items from shopping list!");
+    } else {
+        println!("❌ Failed to clear completed items");
+        return Err(anyhow::anyhow!("Failed to clear completed items"));
+    }
     
     Ok(())
 }
@@ -74,9 +89,16 @@ pub fn handle_clearall() -> Result<()> {
     let client = MeijerClient::new();
     let shopping_list = MeijerList::new(client);
     
-    // TODO: Implement clear all functionality
     println!("🗑️ Clearing all items from shopping list...");
-    println!("🔄 Clear all functionality coming soon!");
+    
+    let success = shopping_list.clear_list()?;
+    
+    if success {
+        println!("✅ Successfully cleared all items from shopping list!");
+    } else {
+        println!("❌ Failed to clear all items");
+        return Err(anyhow::anyhow!("Failed to clear all items"));
+    }
     
     Ok(())
 }
@@ -119,9 +141,26 @@ pub fn handle_favorites() -> Result<()> {
     let client = MeijerClient::new();
     let shopping_list = MeijerList::new(client);
     
-    // TODO: Implement favorites functionality
-    println!("⭐ Showing favorite items...");
-    println!("🔄 Favorites functionality coming soon!");
+    println!("⭐ Getting favorite items...");
+    
+    let favorites = shopping_list.get_favorites()?;
+    
+    if favorites.is_empty() {
+        println!("📝 You have no favorite items!");
+        return Ok(());
+    }
+    
+    println!("\n⭐ Favorite Items ({} items):", favorites.len());
+    println!("{}", "─".repeat(50));
+    
+    for (i, item) in favorites.iter().enumerate() {
+        let quantity = if item.quantity > 1 { format!(" (x{})", item.quantity) } else { String::new() };
+        let notes = item.notes.as_ref().map(|n| format!(" - {}", n)).unwrap_or_default();
+        
+        println!("{}. ⭐ {}{}{}", i + 1, item.name(), quantity, notes);
+    }
+    
+    println!("\n📊 Total favorites: {}", favorites.len());
     
     Ok(())
 }

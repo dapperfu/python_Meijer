@@ -428,6 +428,79 @@ class TokenStorage:
             self.logger.error(f"❌ Failed to extract tokens from log: {e}")
             return None
 
+    def load_credentials_from_file(self) -> Optional[Tuple[str, str]]:
+        """
+        Load username and password from login.txt file as fallback.
+        
+        Returns:
+            Tuple of (username, password) or None if file doesn't exist
+        """
+        try:
+            login_file = get_meijer_config_path("login.txt")
+            if not os.path.exists(login_file):
+                return None
+                
+            with open(login_file, "r") as f:
+                lines = f.readlines()
+                
+            if len(lines) >= 2:
+                username = lines[0].strip()
+                password = lines[1].strip()
+                
+                if username and password:
+                    self.logger.info("✅ Loaded credentials from login.txt fallback file")
+                    return username, password
+                    
+            self.logger.warning("⚠️ login.txt file exists but format is invalid (need 2 lines: username, password)")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to load credentials from login.txt: {e}")
+            return None
+
+    def save_credentials_to_file(self, username: str, password: str) -> bool:
+        """
+        Save username and password to login.txt file for fallback use.
+        
+        Args:
+            username: User's email address
+            password: User's password
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            login_file = get_meijer_config_path("login.txt")
+            
+            with open(login_file, "w") as f:
+                f.write(f"{username}\n{password}\n")
+                
+            self.logger.info("✅ Credentials saved to login.txt fallback file")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to save credentials to login.txt: {e}")
+            return False
+
+    def clear_credentials_file(self) -> bool:
+        """
+        Remove the login.txt credentials file.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            login_file = get_meijer_config_path("login.txt")
+            if os.path.exists(login_file):
+                os.remove(login_file)
+                self.logger.info("✅ Credentials file cleared")
+                return True
+            return True  # File didn't exist, so "cleared" successfully
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to clear credentials file: {e}")
+            return False
+
 
 def load_auth_from_config_file(
     config_file_path: Optional[Union[str, Path]] = None,
