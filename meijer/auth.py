@@ -8,7 +8,6 @@ Authentication classes and utilities for the Meijer API client.
 import json
 import logging
 import os
-import pickle
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
@@ -21,28 +20,28 @@ from .models import AuthTokens
 def get_meijer_config_path(filename: str) -> str:
     """
     Get cross-platform config path for Meijer authentication files.
-    
+
     Args:
         filename: Name of the file to get path for
-        
+
     Returns:
         Full path to the config file
     """
     # Get home directory for current OS
     home_dir = Path.home()
-    
+
     # Create config directory path
-    if os.name == 'nt':  # Windows
+    if os.name == "nt":  # Windows
         config_dir = home_dir / "AppData" / "Local" / "Meijer"
-    elif os.name == 'posix':  # Unix-like (Linux, macOS, FreeBSD)
+    elif os.name == "posix":  # Unix-like (Linux, macOS, FreeBSD)
         config_dir = home_dir / ".config" / "meijer"
     else:
         # Fallback for other OS
         config_dir = home_dir / ".meijer"
-    
+
     # Ensure config directory exists
     config_dir.mkdir(parents=True, exist_ok=True)
-    
+
     return str(config_dir / filename)
 
 
@@ -59,18 +58,18 @@ class MeijerAuth(AuthBase):
         if tokens:
             request.headers["Authorization"] = f"Bearer {tokens.access_token}"
         return request
-    
+
     def _ensure_valid_tokens(self) -> Optional[AuthTokens]:
         """
         Ensure we have valid tokens, refreshing if necessary.
-        
+
         This method is called before every API request to ensure tokens are fresh.
         """
         tokens = self.token_storage.get_valid_tokens()
         if not tokens:
             self.logger.warning("❌ No valid tokens available")
             return None
-            
+
         # Check if token is close to expiring (within 10 minutes)
         if tokens.is_expired(buffer_seconds=600):  # 10 minutes buffer
             self.logger.info("🔄 Token expiring soon, proactively refreshing...")
@@ -85,7 +84,7 @@ class MeijerAuth(AuthBase):
             else:
                 self.logger.error("❌ Failed to refresh tokens")
                 return None
-                
+
         return tokens
 
 
@@ -110,10 +109,10 @@ class TokenStorage:
     def _get_config_path(self, filename: str) -> str:
         """
         Get cross-platform config path for Meijer authentication files.
-        
+
         Args:
             filename: Name of the file to get path for
-            
+
         Returns:
             Full path to the config file
         """
@@ -195,10 +194,14 @@ class TokenStorage:
         """
         # Check if we have a valid refresh token
         if not refresh_token or refresh_token.strip() == "":
-            self.logger.error("❌ No refresh token available - cannot refresh access token")
-            self.logger.info("💡 You need to re-authenticate using 'meijer auth' to get new tokens with refresh capability")
+            self.logger.error(
+                "❌ No refresh token available - cannot refresh access token"
+            )
+            self.logger.info(
+                "💡 You need to re-authenticate using 'meijer auth' to get new tokens with refresh capability"
+            )
             return False
-            
+
         try:
             # Prepare refresh request based on log analysis
             refresh_data = {

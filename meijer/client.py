@@ -10,7 +10,6 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-import os
 
 from .auth import MeijerAuth, TokenStorage
 from .coupon_operations import CouponOperations
@@ -178,11 +177,12 @@ class Meijer:
         if self.token_storage.has_tokens():
             self.logger.info("✅ Found existing tokens in storage")
             return
-            
+
         # Get cross-platform config path
         from .auth import get_meijer_config_path
+
         config_path = Path(get_meijer_config_path("auth.json"))
-            
+
         if config_path.exists():
             try:
                 with open(config_path, "r") as f:
@@ -226,26 +226,36 @@ class Meijer:
         # First check if we have stored tokens
         if self.token_storage.has_tokens():
             self.logger.info("🔍 Found existing tokens, testing refresh...")
-            
+
             # Try to refresh tokens first
             try:
                 tokens = self.token_storage.get_valid_tokens()
                 if tokens:
                     # Check if we have a refresh token
                     if not tokens.refresh_token or tokens.refresh_token.strip() == "":
-                        self.logger.warning("⚠️ No refresh token available - tokens cannot be refreshed automatically")
-                        print("⚠️ Your current tokens cannot be refreshed automatically (no refresh token)")
-                        print("💡 Run 'meijer auth' to re-authenticate and get new tokens with refresh capability")
+                        self.logger.warning(
+                            "⚠️ No refresh token available - tokens cannot be refreshed automatically"
+                        )
+                        print(
+                            "⚠️ Your current tokens cannot be refreshed automatically (no refresh token)"
+                        )
+                        print(
+                            "💡 Run 'meijer auth' to re-authenticate and get new tokens with refresh capability"
+                        )
                         return False
-                    
+
                     # Check if token is close to expiring
                     if tokens.is_expired(buffer_seconds=600):  # 10 minutes buffer
-                        self.logger.info("🔄 Token expiring soon, proactively refreshing...")
+                        self.logger.info(
+                            "🔄 Token expiring soon, proactively refreshing..."
+                        )
                         if self.token_storage.refresh_tokens(tokens.refresh_token):
                             self.logger.info("✅ Token refreshed proactively")
                         else:
                             self.logger.warning("❌ Proactive refresh failed")
-                            print("❌ Token refresh failed - you may need to re-authenticate")
+                            print(
+                                "❌ Token refresh failed - you may need to re-authenticate"
+                            )
                             return False
                     else:
                         self.logger.info("✅ Token refresh successful")
@@ -260,7 +270,7 @@ class Meijer:
                 # Show Unicode red X for failed refresh
                 print("❌ Token refresh failed - falling back to login method")
                 return False
-        
+
         # No tokens or refresh failed, need to authenticate
         tokens = self.token_storage.get_valid_tokens()
         if not tokens:
@@ -297,45 +307,6 @@ class Meijer:
         if tokens and tokens.expires_at:
             return tokens.expires_at
         return None
-
-    @property
-    def auth_status(self) -> str:
-        """
-        Get the current authentication status.
-        
-        Returns:
-            String representing authentication status
-        """
-        tokens = self.token_storage.get_valid_tokens()
-        if not tokens:
-            return "Not Authenticated"
-        if tokens.is_expired():
-            return "Expired"
-        return "Authenticated"
-
-    @property
-    def user_id(self) -> Optional[str]:
-        """
-        Get the user ID from the current tokens.
-        
-        Returns:
-            User ID string or None if not available
-        """
-        # This would need to be extracted from the JWT token
-        # For now, return a placeholder
-        return "User ID not available"
-
-    @property
-    def home_store_id(self) -> Optional[str]:
-        """
-        Get the home store ID from the current tokens.
-        
-        Returns:
-            Home store ID string or None if not available
-        """
-        # This would need to be extracted from the JWT token or API call
-        # For now, return a placeholder
-        return "Home store ID not available"
 
     def _make_request(
         self,
@@ -503,11 +474,13 @@ class Meijer:
                             store_city = store_data.get("City", "")
                             if not store_city:
                                 continue
-                            
+
                             # Normalize city names for better matching
                             search_city = city.lower().replace(" ", "").replace("-", "")
-                            store_city_normalized = store_city.lower().replace(" ", "").replace("-", "")
-                            
+                            store_city_normalized = (
+                                store_city.lower().replace(" ", "").replace("-", "")
+                            )
+
                             # Check if search city is contained in store city (normalized)
                             if search_city not in store_city_normalized:
                                 # Also try reverse: check if store city is contained in search city
@@ -857,7 +830,9 @@ class Meijer:
         if isinstance(item, str):
             return self.shopping_list.add(item, quantity)
         else:
-            return self.shopping_list.add_item_with_details(item.upc, quantity, item.title)
+            return self.shopping_list.add_item_with_details(
+                item.upc, quantity, item.title
+            )
 
     def add_to_favorites(self, item: Union[str, MeijerItem]) -> bool:
         """
