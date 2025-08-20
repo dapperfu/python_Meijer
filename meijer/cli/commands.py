@@ -991,6 +991,39 @@ def auth_command(log_file: str = None):
     logger.debug(f"Auth command called with log_file: {log_file}")
 
     try:
+        # First check if existing tokens exist and test refresh
+        from ..auth import TokenStorage
+
+        token_storage = TokenStorage()
+
+        if token_storage.has_tokens():
+            click.echo("🔍 Found existing tokens, testing refresh...")
+
+            try:
+                # Try to refresh tokens first
+                tokens = token_storage.get_valid_tokens()
+                if tokens:
+                    click.echo(
+                        "✅ Token refresh successful! No need to extract from logs."
+                    )
+                    click.echo(f"🔑 Access token: {tokens.access_token[:50]}...")
+                    return
+                else:
+                    click.echo(
+                        "❌ Token refresh failed - falling back to log extraction method"
+                    )
+                    # Show Unicode red X for failed refresh
+                    click.echo(
+                        "❌ Token refresh failed - falling back to log extraction method"
+                    )
+            except Exception as e:
+                logger.error(f"Exception during token refresh: {e}")
+                click.echo(
+                    "❌ Token refresh failed - falling back to log extraction method"
+                )
+        else:
+            click.echo("ℹ️ No existing tokens found, proceeding with log extraction...")
+
         # If no log file specified, automatically find the latest one
         if not log_file:
             import glob
