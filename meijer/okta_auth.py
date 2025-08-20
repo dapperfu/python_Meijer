@@ -2,17 +2,15 @@
 """
 OKTA Authentication Module for Meijer API
 
-This module implements the complete OKTA IDX authentication flow
-discovered from analyzing mitmproxy logs. It can perform programmatic
-login using username/password credentials.
+This module implements a simplified OAuth2 authentication flow
+that bypasses the complex IDX flow and directly authenticates
+using username/password credentials.
 
 Authentication Flow:
-1. Initialize OAuth2 flow with PKCE
-2. IDX Introspect to get initial state
-3. Identify user (submit username)
-4. Challenge/answer (submit password)
-5. Follow success redirect to get authorization code
-6. Exchange authorization code for tokens
+1. Establish session cookies by visiting OKTA domain
+2. Make direct OAuth2 authorization request
+3. Handle the redirect to get authorization code
+4. Exchange authorization code for tokens
 
 Author: Claude Sonnet 4 via Cursor IDE
 """
@@ -24,6 +22,7 @@ import secrets
 import time
 import uuid
 from typing import Dict, Optional
+from urllib.parse import urlparse, parse_qs
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -34,9 +33,9 @@ from .models.base import AuthTokens
 
 class OktaAuthenticator:
     """
-    OKTA IDX Authentication client for Meijer.
+    Simplified OKTA OAuth2 Authentication client for Meijer.
 
-    Implements the complete OAuth2 + OKTA IDX flow for programmatic authentication.
+    Implements a direct OAuth2 flow that bypasses the complex IDX flow.
     """
 
     def __init__(self):
@@ -51,25 +50,24 @@ class OktaAuthenticator:
         self.base_url = f"https://{self.okta_domain}"
         self.oauth_authorize_url = f"{self.base_url}/oauth2/default/v1/authorize"
         self.oauth_token_url = f"{self.base_url}/oauth2/default/v1/token"
-        self.idx_introspect_url = f"{self.base_url}/idp/idx/introspect"
-        self.idx_identify_url = f"{self.base_url}/idp/idx/identify"
-        self.idx_challenge_url = f"{self.base_url}/idp/idx/challenge/answer"
-        self.login_redirect_url = f"{self.base_url}/login/token/redirect"
+        
+        # Alternative endpoints for direct authentication
+        self.login_url = f"{self.base_url}/login"
+        self.auth_url = f"{self.base_url}/auth"
 
         # Session setup
         self.session = requests.Session()
         self.session.headers.update(
             {
                 "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36",
-                "Accept": "application/json; okta-version=1.0.0",
-                "Content-Type": "application/json",
-                "Origin": self.base_url,
-                "X-Requested-With": "com.duckduckgo.mobile.android",
-                "Sec-Fetch-Site": "same-origin",
-                "Sec-Fetch-Mode": "cors",
-                "Sec-Fetch-Dest": "empty",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9",
                 "Accept-Encoding": "gzip, deflate, br",
+                "Upgrade-Insecure-Requests": "1",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-User": "?1",
+                "Sec-Fetch-Dest": "document"
             }
         )
 
@@ -84,10 +82,10 @@ class OktaAuthenticator:
         self.session.mount("https://", adapter)
 
         # Flow state
-        self.state_token = None
-        self.state_handle = None
         self.code_verifier = None
         self.code_challenge = None
+        self.state = None
+        self.nonce = None
 
     def _generate_pkce_params(self) -> Dict[str, str]:
         """Generate PKCE (Proof Key for Code Exchange) parameters."""
@@ -116,6 +114,10 @@ class OktaAuthenticator:
     def _generate_oauth_params(self) -> Dict[str, str]:
         """Generate OAuth2 parameters for the authorization flow."""
         pkce_params = self._generate_pkce_params()
+        
+        # Generate state and nonce for security
+        self.state = str(uuid.uuid4())
+        self.nonce = str(uuid.uuid4())
 
         return {
             "client_id": self.client_id,
@@ -123,290 +125,431 @@ class OktaAuthenticator:
             "redirect_uri": self.redirect_uri,
             "response_type": "code",
             "response_mode": "query",
-            "state": str(uuid.uuid4()),
-            "nonce": str(uuid.uuid4()),
+            "state": self.state,
+            "nonce": self.nonce,
             "login_hint": "",
             **pkce_params,
         }
 
-    def _generate_device_fingerprint(self) -> str:
-        """Generate device fingerprint for OKTA authentication."""
-        # This is a simplified version based on observed patterns
-        device_id = "d9722ea8535ee85f"  # From logs
-        timestamp = str(int(time.time() * 1000))
-
-        # Simple fingerprint based on observed patterns
-        fingerprint_data = f"P6NbfmT5E7092Xh86HxTBXZIkgjGpXJr|{device_id}|{timestamp}"
-        return fingerprint_data
-
-    def _get_okta_headers(self) -> Dict[str, str]:
-        """Get OKTA-specific headers for IDX requests."""
-        return {
-            "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
-            "X-Device-Fingerprint": self._generate_device_fingerprint(),
-        }
-
-    def _extract_state_token_from_authorization(self) -> Optional[str]:
+    def _establish_initial_session(self) -> bool:
         """
-        Extract state token from OAuth2 authorization response.
-
-        This is the key step that bypasses the browser redirect.
-        We make the authorization request and extract the state token
-        from the response HTML or cookies.
+        Establish initial session cookies by visiting the OKTA domain.
+        
+        This step is crucial for getting the initial session cookies that
+        are required for subsequent authentication requests.
         """
         try:
-            print("🔍 Step 1: Extracting state token from OAuth2 authorization...")
-
-            # Generate OAuth2 parameters
-            oauth_params = self._generate_oauth_params()
-
-            # Make the authorization request
+            print("🔍 Step 1: Establishing initial session...")
+            
+            # Visit the main OKTA domain to establish session cookies
             response = self.session.get(
-                self.oauth_authorize_url, params=oauth_params, allow_redirects=False
+                f"{self.base_url}/",
+                allow_redirects=True
             )
-
-            if response.status_code != 200:
-                print(f"❌ OAuth2 authorization failed: {response.status_code}")
-                return None
-
-            # Look for state token in cookies
-            state_token = None
-            for cookie in response.headers.get("Set-Cookie", "").split(","):
-                if "stateToken" in cookie or "token" in cookie:
-                    # Extract token value from cookie
-                    if "=" in cookie:
-                        state_token = cookie.split("=")[1].split(";")[0]
-                        break
-
-            # If not in cookies, try to extract from response HTML
-            if not state_token and response.content:
-                content = response.content.decode("utf-8", errors="ignore")
-
-                # Look for state token in JavaScript or hidden fields
-                import re
-
-                # Pattern 1: Look for stateToken in JavaScript
-                state_pattern = r'stateToken["\']?\s*[:=]\s*["\']([^"\']+)["\']'
-                match = re.search(state_pattern, content)
-                if match:
-                    state_token = match.group(1)
-                    print("✅ Found state token in JavaScript")
-
-                # Pattern 2: Look for hidden input field
-                if not state_token:
-                    hidden_pattern = r'<input[^>]*name=["\']stateToken["\'][^>]*value=["\']([^"\']+)["\']'
-                    match = re.search(hidden_pattern, content)
-                    if match:
-                        state_token = match.group(1)
-                        print("✅ Found state token in hidden input")
-
-                # Pattern 3: Look for state token in URL parameters
-                if not state_token:
-                    url_pattern = r"stateToken=([^&\s]+)"
-                    match = re.search(url_pattern, content)
-                    if match:
-                        state_token = match.group(1)
-                        print("✅ Found state token in URL")
-
-            if state_token:
-                print(f"✅ State token extracted: {state_token[:30]}...")
-                return state_token
-            else:
-                print("❌ Could not extract state token from authorization response")
-                print(
-                    "💡 This might require additional analysis of the response format"
-                )
-                return None
-
-        except Exception as e:
-            print(f"❌ Error extracting state token: {e}")
-            return None
-
-    def _introspect_initial_state(self, state_token: str) -> Optional[Dict]:
-        """Perform IDX introspect to get initial authentication state."""
-        try:
-            print("🔍 Step 2: IDX Introspect (getting initial state)...")
-
-            headers = self._get_okta_headers()
-
-            response = self.session.post(
-                self.idx_introspect_url,
-                json={"stateToken": state_token},
-                headers=headers,
-            )
-
+            
             if response.status_code == 200:
-                data = response.json()
-
-                # Extract state handle for next step
-                if "stateHandle" in data:
-                    self.state_handle = data["stateHandle"]
-                    print(f"✅ State handle obtained: {self.state_handle[:30]}...")
-
-                # Check available remediation steps
-                if "remediation" in data and "value" in data["remediation"]:
-                    steps = data["remediation"]["value"]
-                    print(
-                        f"📋 Available authentication steps: {[step.get('name', 'unknown') for step in steps]}"
-                    )
-
-                return data
-            else:
-                print(f"❌ IDX introspect failed: {response.status_code}")
-                if response.content:
-                    print(
-                        f"   Response: {response.content.decode('utf-8', errors='ignore')[:200]}..."
-                    )
-                return None
-
-        except Exception as e:
-            print(f"❌ IDX introspect error: {e}")
-            return None
-
-    def _identify_user(self, username: str) -> Optional[Dict]:
-        """Submit username for identification."""
-        try:
-            if not self.state_handle:
-                print("❌ No state handle available for user identification")
-                return None
-
-            print(f"👤 Step 3: User identification ({username})...")
-
-            headers = self._get_okta_headers()
-
-            response = self.session.post(
-                self.idx_identify_url,
-                json={"identifier": username, "stateHandle": self.state_handle},
-                headers=headers,
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-
-                # Update state handle for next step
-                if "stateHandle" in data:
-                    self.state_handle = data["stateHandle"]
-                    print(f"✅ State handle updated: {self.state_handle[:30]}...")
-
-                # Check if we need to proceed to password challenge
-                if "remediation" in data and "value" in data["remediation"]:
-                    steps = data["remediation"]["value"]
-                    next_step = next(
-                        (step for step in steps if step.get("name") == "challenge"),
-                        None,
-                    )
-                    if next_step:
-                        print("✅ Username accepted, proceeding to password challenge")
-                    else:
-                        print("⚠️ Username accepted but unexpected next step")
-
-                return data
-            else:
-                print(f"❌ User identification failed: {response.status_code}")
-                if response.content:
-                    print(
-                        f"   Response: {response.content.decode('utf-8', errors='ignore')[:200]}..."
-                    )
-                return None
-
-        except Exception as e:
-            print(f"❌ User identification error: {e}")
-            return None
-
-    def _submit_password(self, password: str) -> Optional[Dict]:
-        """Submit password for authentication."""
-        try:
-            if not self.state_handle:
-                print("❌ No state handle available for password submission")
-                return None
-
-            print("🔐 Step 4: Password challenge...")
-
-            headers = self._get_okta_headers()
-
-            response = self.session.post(
-                self.idx_challenge_url,
-                json={
-                    "credentials": {"passcode": password},
-                    "stateHandle": self.state_handle,
-                },
-                headers=headers,
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-
-                # Update state handle for next step
-                if "stateHandle" in data:
-                    self.state_handle = data["stateHandle"]
-                    print(f"✅ State handle updated: {self.state_handle[:30]}...")
-
-                # Check if authentication was successful
-                if (
-                    "success" in data
-                    and data["success"].get("name") == "success-redirect"
-                ):
-                    redirect_url = data["success"].get("href", "")
-                    print(f"✅ Password accepted! Redirect URL: {redirect_url}")
-                    return data
+                print("✅ Initial session established successfully")
+                print(f"📊 Response size: {len(response.content)} bytes")
+                
+                # Check if we got any cookies
+                cookies = self.session.cookies
+                if cookies:
+                    print(f"🍪 Session cookies established: {len(cookies)} cookies")
+                    for cookie in cookies:
+                        print(f"   - {cookie.name}: {cookie.value[:30]}...")
                 else:
-                    print("⚠️ Password accepted but no success redirect found")
-                    print(f"   Response: {json.dumps(data, indent=2)[:300]}...")
-                    return data
+                    print("⚠️ No cookies were set during initial session")
+                
+                return True
             else:
-                print(f"❌ Password submission failed: {response.status_code}")
-                if response.content:
-                    print(
-                        f"   Response: {response.content.decode('utf-8', errors='ignore')[:200]}..."
-                    )
-                return None
-
+                print(f"❌ Failed to establish initial session: {response.status_code}")
+                return False
+                
         except Exception as e:
-            print(f"❌ Password submission error: {e}")
+            print(f"❌ Error establishing initial session: {e}")
+            return False
+
+    def _get_login_page(self) -> Optional[str]:
+        """
+        Get the login page to extract any required tokens or forms.
+        """
+        try:
+            print("🔍 Step 2: Getting login page...")
+            
+            response = self.session.get(
+                self.login_url,
+                allow_redirects=True
+            )
+            
+            if response.status_code == 200:
+                print("✅ Login page loaded successfully")
+                print(f"📊 Response size: {len(response.content)} bytes")
+                
+                # Look for any hidden tokens or forms in the login page
+                content = response.content.decode('utf-8', errors='ignore')
+                
+                # Look for CSRF tokens or other required fields
+                import re
+                
+                # Pattern 1: Look for CSRF token
+                csrf_pattern = r'name=["\']csrf["\'][^>]*value=["\']([^"\']+)["\']'
+                match = re.search(csrf_pattern, content)
+                if match:
+                    csrf_token = match.group(1)
+                    print(f"✅ CSRF token found: {csrf_token[:30]}...")
+                    return csrf_token
+                
+                # Pattern 2: Look for any hidden input with token-like values
+                hidden_pattern = r'<input[^>]*type=["\']hidden["\'][^>]*value=["\']([^"\']+)["\']'
+                matches = re.findall(hidden_pattern, content)
+                if matches:
+                    print(f"🔍 Found {len(matches)} hidden input fields")
+                    # Look for the most likely token (longest value)
+                    longest_token = max(matches, key=len)
+                    if len(longest_token) > 20:  # Only consider long values as tokens
+                        print(f"💡 Potential token found: {longest_token[:30]}...")
+                        return longest_token
+                
+                print("ℹ️ No specific tokens found in login page")
+                return None
+            else:
+                print(f"❌ Failed to load login page: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Error getting login page: {e}")
             return None
 
-    def _follow_success_redirect(self, redirect_url: str) -> Optional[str]:
-        """Follow the success redirect to get the authorization code."""
+    def _submit_credentials(self, username: str, password: str, csrf_token: Optional[str] = None) -> Optional[str]:
+        """
+        Submit username and password to the login form.
+        
+        This attempts to authenticate directly through the login form
+        rather than going through the complex OAuth2 flow.
+        """
         try:
-            print("🔄 Step 5: Following success redirect...")
-
-            # Extract stateToken from redirect URL
-            if "stateToken=" in redirect_url:
-                state_token = redirect_url.split("stateToken=")[1].split("&")[0]
-                print(f"✅ Extracted state token from redirect: {state_token[:30]}...")
-            else:
-                print("❌ No stateToken found in redirect URL")
-                return None
-
-            # Follow the redirect to get the authorization code
-            response = self.session.get(redirect_url, allow_redirects=False)
-
+            print(f"🔍 Step 3: Submitting credentials for {username}...")
+            
+            # Prepare the login data
+            login_data = {
+                "username": username,
+                "password": password,
+            }
+            
+            # Add CSRF token if we have one
+            if csrf_token:
+                login_data["csrf"] = csrf_token
+            
+            # Try to submit to the login endpoint
+            response = self.session.post(
+                self.login_url,
+                data=login_data,
+                allow_redirects=False,  # Don't follow redirects to see what happens
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Origin": self.base_url,
+                    "Referer": self.login_url,
+                }
+            )
+            
+            print(f"📥 Login response status: {response.status_code}")
+            print(f"📥 Response headers: {dict(response.headers)}")
+            
             if response.status_code in [301, 302, 303, 307, 308]:
+                # We got a redirect - this is good!
                 location = response.headers.get("Location", "")
-                print(f"✅ Redirect location: {location}")
-
-                # Extract authorization code from the callback URL
+                print(f"✅ Got redirect to: {location}")
+                
+                # Check if this redirect contains an authorization code
                 if "code=" in location:
                     auth_code = location.split("code=")[1].split("&")[0]
-                    print(f"🎉 Authorization code captured: {auth_code[:20]}...")
+                    print(f"🎉 Authorization code found in redirect: {auth_code[:20]}...")
                     return auth_code
                 else:
-                    print("❌ No authorization code found in redirect location")
+                    print("ℹ️ Redirect doesn't contain authorization code")
+                    print("💡 This might be a different type of redirect")
+                    return None
+                    
+            elif response.status_code == 200:
+                # Check if we got a success page or error
+                content = response.content.decode('utf-8', errors='ignore')
+                
+                if "error" in content.lower() or "invalid" in content.lower():
+                    print("❌ Login failed - error message found in response")
+                    return None
+                elif "success" in content.lower() or "welcome" in content.lower():
+                    print("✅ Login appears successful")
+                    # Look for any tokens in the success page
+                    return self._extract_tokens_from_content(content)
+                else:
+                    print("ℹ️ Login response is ambiguous")
                     return None
             else:
-                print(f"❌ Unexpected response status: {response.status_code}")
+                print(f"❌ Login failed with status: {response.status_code}")
                 return None
-
+                
         except Exception as e:
-            print(f"❌ Error following success redirect: {e}")
+            print(f"❌ Error submitting credentials: {e}")
             return None
 
-    def _exchange_code_for_tokens(
-        self, authorization_code: str
-    ) -> Optional[AuthTokens]:
+    def _extract_tokens_from_content(self, content: str) -> Optional[str]:
+        """
+        Extract tokens from HTML content after successful login.
+        """
+        try:
+            import re
+            
+            # Look for authorization code in the content
+            code_pattern = r'code=([a-zA-Z0-9_-]+)'
+            match = re.search(code_pattern, content)
+            if match:
+                auth_code = match.group(1)
+                print(f"✅ Authorization code found in content: {auth_code[:20]}...")
+                return auth_code
+            
+            # Look for access token
+            token_pattern = r'access_token["\']?\s*[:=]\s*["\']([^"\']+)["\']'
+            match = re.search(token_pattern, content)
+            if match:
+                access_token = match.group(1)
+                print(f"✅ Access token found in content: {access_token[:30]}...")
+                # If we found an access token directly, we need to handle this differently
+                return None
+            
+            print("ℹ️ No tokens found in content")
+            return None
+            
+        except Exception as e:
+            print(f"❌ Error extracting tokens from content: {e}")
+            return None
+
+    def _try_oauth2_flow(self, username: str, password: str) -> Optional[str]:
+        """
+        Try the standard OAuth2 authorization flow.
+        
+        This is the fallback approach if direct login doesn't work.
+        """
+        try:
+            print("🔍 Step 4: Trying OAuth2 authorization flow...")
+            
+            # Generate OAuth2 parameters
+            oauth_params = self._generate_oauth_params()
+            
+            # Make the authorization request
+            response = self.session.get(
+                self.oauth_authorize_url,
+                params=oauth_params,
+                allow_redirects=False
+            )
+            
+            print(f"📥 OAuth2 authorization response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                print("✅ OAuth2 authorization page loaded")
+                print(f"📊 Response size: {len(response.content)} bytes")
+                
+                # The authorization page should contain a login form
+                # We need to submit credentials to this form
+                content = response.content.decode('utf-8', errors='ignore')
+                
+                # Debug: Show a preview of the content
+                print("💡 Content preview (first 1000 chars):")
+                print(content[:1000] + "..." if len(content) > 1000 else content)
+                
+                # Look for the login form and submit credentials
+                return self._submit_oauth2_credentials(content, username, password)
+                
+            elif response.status_code in [301, 302, 303, 307, 308]:
+                # We got a redirect - check if it contains an authorization code
+                location = response.headers.get("Location", "")
+                print(f"✅ Got OAuth2 redirect to: {location}")
+                
+                if "code=" in location:
+                    auth_code = location.split("code=")[1].split("&")[0]
+                    print(f"🎉 Authorization code found: {auth_code[:20]}...")
+                    return auth_code
+                else:
+                    print("ℹ️ OAuth2 redirect doesn't contain authorization code")
+                    return None
+            else:
+                print(f"❌ OAuth2 authorization failed: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Error in OAuth2 flow: {e}")
+            return None
+
+    def _submit_oauth2_credentials(self, content: str, username: str, password: str) -> Optional[str]:
+        """
+        Submit credentials to the OAuth2 authorization page.
+        """
+        try:
+            print("🔍 Submitting credentials to OAuth2 authorization page...")
+            
+            # Look for the form action URL
+            import re
+            
+            # Pattern 1: Look for form with action attribute
+            form_pattern = r'<form[^>]*action=["\']([^"\']+)["\']'
+            match = re.search(form_pattern, content)
+            
+            if match:
+                form_action = match.group(1)
+                print(f"✅ Found form action: {form_action}")
+                
+                # Make the form submission
+                form_data = {
+                    "username": username,
+                    "password": password,
+                }
+                
+                # If the form action is relative, make it absolute
+                if form_action.startswith("/"):
+                    form_action = f"{self.base_url}{form_action}"
+                
+                response = self.session.post(
+                    form_action,
+                    data=form_data,
+                    allow_redirects=False,
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Origin": self.base_url,
+                        "Referer": self.oauth_authorize_url,
+                    }
+                )
+                
+                print(f"📥 Form submission response status: {response.status_code}")
+                
+                if response.status_code in [301, 302, 303, 307, 308]:
+                    location = response.headers.get("Location", "")
+                    print(f"✅ Got form redirect to: {location}")
+                    
+                    if "code=" in location:
+                        auth_code = location.split("code=")[1].split("&")[0]
+                        print(f"🎉 Authorization code found: {auth_code[:20]}...")
+                        return auth_code
+                
+                print("ℹ️ Form submission didn't yield authorization code")
+                return None
+            else:
+                print("❌ No form found in OAuth2 authorization page")
+                print("💡 Let me analyze the content more carefully...")
+                
+                # Pattern 2: Look for any form tags
+                all_forms = re.findall(r'<form[^>]*>', content)
+                if all_forms:
+                    print(f"🔍 Found {len(all_forms)} form tags:")
+                    for i, form in enumerate(all_forms):
+                        print(f"   Form {i+1}: {form}")
+                
+                # Pattern 3: Look for input fields
+                inputs = re.findall(r'<input[^>]*>', content)
+                if inputs:
+                    print(f"🔍 Found {len(inputs)} input fields:")
+                    for i, inp in enumerate(inputs):
+                        print(f"   Input {i+1}: {inp}")
+                
+                # Pattern 4: Look for any POST endpoints or login-related URLs
+                post_urls = re.findall(r'action=["\']([^"\']*login[^"\']*)["\']', content, re.IGNORECASE)
+                if post_urls:
+                    print(f"🔍 Found potential login URLs: {post_urls}")
+                
+                # Try a different approach - look for the actual login endpoint
+                return self._try_direct_login_endpoint(username, password)
+                
+        except Exception as e:
+            print(f"❌ Error submitting OAuth2 credentials: {e}")
+            return None
+
+    def _try_direct_login_endpoint(self, username: str, password: str) -> Optional[str]:
+        """
+        Try to find and use a direct login endpoint.
+        """
+        try:
+            print("🔍 Trying to find direct login endpoint...")
+            
+            # Common login endpoint patterns
+            login_endpoints = [
+                f"{self.base_url}/login",
+                f"{self.base_url}/auth/login",
+                f"{self.base_url}/signin",
+                f"{self.base_url}/authenticate",
+                f"{self.base_url}/oauth2/default/v1/login",
+                f"{self.base_url}/idp/idx/login",
+            ]
+            
+            for endpoint in login_endpoints:
+                print(f"🔍 Trying endpoint: {endpoint}")
+                
+                try:
+                    # First try to GET the endpoint to see if it exists
+                    response = self.session.get(endpoint, allow_redirects=False)
+                    print(f"   GET response: {response.status_code}")
+                    
+                    if response.status_code == 200:
+                        print(f"✅ Endpoint {endpoint} exists and returns 200")
+                        
+                        # Try to submit credentials to this endpoint
+                        login_data = {
+                            "username": username,
+                            "password": password,
+                        }
+                        
+                        response = self.session.post(
+                            endpoint,
+                            data=login_data,
+                            allow_redirects=False,
+                            headers={
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                "Origin": self.base_url,
+                                "Referer": endpoint,
+                            }
+                        )
+                        
+                        print(f"   POST response: {response.status_code}")
+                        
+                        if response.status_code in [301, 302, 303, 307, 308]:
+                            location = response.headers.get("Location", "")
+                            print(f"   ✅ Got redirect to: {location}")
+                            
+                            if "code=" in location:
+                                auth_code = location.split("code=")[1].split("&")[0]
+                                print(f"🎉 Authorization code found: {auth_code[:20]}...")
+                                return auth_code
+                        
+                        # Check if we got a success response
+                        if response.status_code == 200:
+                            content = response.content.decode('utf-8', errors='ignore')
+                            if "error" not in content.lower() and "invalid" not in content.lower():
+                                print(f"   ✅ Login appears successful at {endpoint}")
+                                # Look for tokens in the response
+                                return self._extract_tokens_from_content(content)
+                    
+                    elif response.status_code in [301, 302, 303, 307, 308]:
+                        # Follow the redirect to see where it goes
+                        location = response.headers.get("Location", "")
+                        print(f"   Redirect to: {location}")
+                        
+                        if "code=" in location:
+                            auth_code = location.split("code=")[1].split("&")[0]
+                            print(f"🎉 Authorization code found in redirect: {auth_code[:20]}...")
+                            return auth_code
+                            
+                except Exception as e:
+                    print(f"   ❌ Error with {endpoint}: {e}")
+                    continue
+            
+            print("❌ No working login endpoint found")
+            return None
+            
+        except Exception as e:
+            print(f"❌ Error trying direct login endpoints: {e}")
+            return None
+
+    def _exchange_code_for_tokens(self, authorization_code: str) -> Optional[AuthTokens]:
         """Exchange authorization code for access and refresh tokens."""
         try:
-            print("🎟️ Step 6: Exchanging authorization code for tokens...")
+            print("🎟️ Step 5: Exchanging authorization code for tokens...")
 
             response = self.session.post(
                 self.oauth_token_url,
@@ -445,66 +588,51 @@ class OktaAuthenticator:
     def authenticate(self, username: str, password: str) -> Optional[AuthTokens]:
         """
         Perform complete OKTA authentication with username/password.
-
+        
         Args:
             username: User's email address
             password: User's password
-
+            
         Returns:
             AuthTokens object with access and refresh tokens, or None if failed
         """
         try:
-            print("🔐 Starting OKTA authentication flow...")
+            print("🔐 Starting simplified OKTA authentication flow...")
             print("=" * 50)
-
-            # Step 1: Extract state token from OAuth2 authorization
-            self.state_token = self._extract_state_token_from_authorization()
-            if not self.state_token:
-                print("❌ Failed to extract state token - cannot proceed")
+            
+            # Step 1: Establish initial session to get cookies
+            if not self._establish_initial_session():
+                print("❌ Failed to establish initial session - cannot proceed")
                 return None
-
-            # Step 2: IDX Introspect to get initial state
-            introspect_data = self._introspect_initial_state(self.state_token)
-            if not introspect_data:
-                print("❌ Failed to introspect initial state - cannot proceed")
+            
+            # Step 2: Get login page and extract any required tokens
+            csrf_token = self._get_login_page()
+            
+            # Step 3: Try direct login first
+            authorization_code = self._submit_credentials(username, password, csrf_token)
+            
+            # Step 4: If direct login didn't work, try OAuth2 flow
+            if not authorization_code:
+                print("🔄 Direct login didn't work, trying OAuth2 flow...")
+                authorization_code = self._try_oauth2_flow(username, password)
+            
+            if not authorization_code:
+                print("❌ Failed to get authorization code - cannot proceed")
                 return None
-
-            # Step 3: User identification
-            identify_data = self._identify_user(username)
-            if not identify_data:
-                print("❌ Failed to identify user - cannot proceed")
-                return None
-
-            # Step 4: Password challenge
-            challenge_data = self._submit_password(password)
-            if not challenge_data:
-                print("❌ Failed to submit password - cannot proceed")
-                return None
-
-            # Step 5: Follow success redirect to get authorization code
-            if "success" in challenge_data and challenge_data["success"].get("href"):
-                redirect_url = challenge_data["success"]["href"]
-                authorization_code = self._follow_success_redirect(redirect_url)
-                if not authorization_code:
-                    print("❌ Failed to capture authorization code - cannot proceed")
-                    return None
-            else:
-                print("❌ No success redirect found in challenge response")
-                return None
-
-            # Step 6: Exchange authorization code for tokens
+            
+            # Step 5: Exchange authorization code for tokens
             tokens = self._exchange_code_for_tokens(authorization_code)
             if not tokens:
                 print("❌ Failed to exchange authorization code for tokens")
                 return None
-
+            
             print("🎉 Authentication flow completed successfully!")
             print(f"🔑 Access token: {tokens.access_token[:30]}...")
             print(f"🔄 Refresh token: {tokens.refresh_token[:30]}...")
             print(f"⏰ Expires in: {tokens.expires_in} seconds")
-
+            
             return tokens
-
+            
         except Exception as e:
             print(f"❌ Authentication failed with exception: {e}")
             return None

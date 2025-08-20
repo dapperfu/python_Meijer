@@ -32,6 +32,7 @@ from .commands import (
     coupons_group,
     gas_command,
     list_group,
+    login_command,
     settings_group,
     status_command,
     stores_group,
@@ -90,7 +91,8 @@ def cli(verbose: int):
     • cart - Manage shopping cart and fulfillment
     • stores - Manage store information and search
     • settings - Manage account settings and preferences
-    • auth - Extract authentication tokens
+    • login - Login with username/password (OKTA authentication)
+    • auth - Extract authentication tokens from mitmproxy logs
     • status - Show authentication status
     • ads - Browse weekly ad items
     • gas - Show gas station information
@@ -116,6 +118,7 @@ cli.add_command(auth_command, name="auth")
 cli.add_command(status_command, name="status")
 cli.add_command(ad_command, name="ads")
 cli.add_command(gas_command, name="gas")
+cli.add_command(login_command, name="login")
 
 
 if __name__ == "__main__":
