@@ -35,6 +35,9 @@ chrono = { version = "0.4", features = ["serde"] }
 # URL handling
 url = "2.4"
 
+# Pickle support for Python compatibility
+# pickle = "0.1"  # Not available
+
 # Table formatting (equivalent to rich in Python)
 tabled = "0.14"
 
