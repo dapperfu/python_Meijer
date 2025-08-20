@@ -15,6 +15,7 @@ from .utils import (
     add_items_from_file,
     display_items_table,
     export_to_csv,
+    export_to_excel,
     export_to_json,
     export_to_text,
     get_meijer_client,
@@ -536,7 +537,9 @@ def list_export(filename: str):
 
         # Auto-detect format from filename
         file_extension = file_path.suffix.lower()
-        if file_extension == ".csv":
+        if file_extension in [".xlsx", ".xls"]:
+            format = "excel"
+        elif file_extension == ".csv":
             format = "csv"
         elif file_extension == ".json":
             format = "json"
@@ -550,6 +553,8 @@ def list_export(filename: str):
             export_to_csv(items, file_path)
         elif format == "json":
             export_to_json(items, file_path)
+        elif format == "excel":
+            export_to_excel(items, file_path)
 
         click.echo(f"✅ Exported {len(items)} items to {filename}")
         click.echo(f"📁 File saved to: {file_path.absolute()}")
