@@ -62,28 +62,35 @@ class OktaJSWidgetSimulator:
         print("=" * 50)
 
         try:
-            # The key insight: do everything in one continuous session to avoid token expiration
-            # Step 1: Load OAuth2 page, extract config, and immediately call IDX introspect
-            print("📡 Step 1: Loading OAuth2 page and extracting stateToken...")
+            # NEW APPROACH: Skip the problematic IDX introspect and go straight to credential submission
+            # Step 1: Load OAuth2 page to establish session
+            print("📡 Step 1: Loading OAuth2 page to establish session...")
             if not self._initialize_widget():
                 return None
 
-            print("📡 Step 2: Extracting widget configuration...")
+            # Step 2: Extract minimal config (just what we need)
+            print("📡 Step 2: Extracting minimal widget configuration...")
             if not self._extract_widget_config():
                 return None
 
-            # Immediately call IDX introspect while stateToken is fresh
+            # Step 3: SKIP IDX introspect (it's causing session expiration issues)
+            # Instead, go straight to credential submission
             print(
-                "📡 Step 3: Immediately calling IDX introspect (to avoid session expiration)..."
+                "📡 Step 3: Skipping IDX introspect (bypassing session expiration)..."
             )
-            if not self._simulate_widget_init():
-                return None
 
-            # Step 4: Submit credentials through widget API
-            print("📡 Step 4: Submitting credentials through widget...")
-            auth_result = self._submit_credentials_via_widget()
+            # Step 4: Try alternative authentication endpoints first (bypass Akamai)
+            print("📡 Step 4: Trying alternative authentication endpoints...")
+            auth_result = self._try_alternative_auth_endpoints()
+
+            # If alternative endpoints fail, try direct submission as fallback
             if not auth_result:
-                return None
+                print(
+                    "📡 Step 4b: Alternative endpoints failed, trying direct submission..."
+                )
+                auth_result = self._submit_credentials_direct()
+                if not auth_result:
+                    return None
 
             # Step 5: Handle authentication response
             print("📡 Step 5: Processing authentication response...")
@@ -157,6 +164,43 @@ class OktaJSWidgetSimulator:
             else:
                 print("❌ Could not extract stateToken")
                 return False
+
+            # NEW: Analyze the OAuth2 page content to find alternative authentication methods
+            print("🔍 Analyzing OAuth2 page content for authentication methods...")
+
+            # Look for login forms
+            if "login" in self.oauth_page_content.lower():
+                print("✅ Found login-related content in OAuth2 page")
+
+                # Look for form action URLs
+                form_action_pattern = r'<form[^>]*action="([^"]*)"'
+                form_actions = re.findall(form_action_pattern, self.oauth_page_content)
+                if form_actions:
+                    print(f"📝 Found form actions: {form_actions}")
+                    self.widget_config["form_actions"] = form_actions
+
+                # Look for signin endpoints
+                signin_pattern = r'["\']([^"\']*signin[^"\']*)["\']'
+                signin_urls = re.findall(signin_pattern, self.oauth_page_content)
+                if signin_urls:
+                    print(f"🔐 Found signin URLs: {signin_urls}")
+                    self.widget_config["signin_urls"] = signin_urls
+
+                # Look for authentication endpoints
+                auth_pattern = r'["\']([^"\']*auth[^"\']*)["\']'
+                auth_urls = re.findall(auth_pattern, self.oauth_page_content)
+                if auth_urls:
+                    print(f"🔑 Found auth URLs: {auth_urls}")
+                    self.widget_config["auth_urls"] = auth_urls
+
+                # Look for JavaScript authentication calls
+                js_auth_pattern = r'["\']([^"\']*authenticate[^"\']*)["\']'
+                js_auth_urls = re.findall(js_auth_pattern, self.oauth_page_content)
+                if js_auth_urls:
+                    print(f"⚡ Found JavaScript auth URLs: {js_auth_urls}")
+                    self.widget_config["js_auth_urls"] = js_auth_urls
+            else:
+                print("⚠️ No login content found in OAuth2 page")
 
             # Extract other widget configuration
             self.widget_config.update(
@@ -367,10 +411,10 @@ class OktaJSWidgetSimulator:
                     return None
             elif response.status_code == 403:
                 print(
-                    "❌ Widget submission blocked by Akamai - trying alternative methods..."
+                    "❌ Direct submission blocked by Akamai - trying alternative endpoints..."
                 )
-                # Try alternative widget approaches
-                return self._try_alternative_widget_methods()
+                # Try alternative authentication endpoints found in the OAuth2 page
+                return self._try_alternative_auth_endpoints()
             else:
                 print(f"❌ Widget submission failed: {response.status_code}")
                 print(f"📄 Response: {response.text[:500]}...")
@@ -406,28 +450,47 @@ class OktaJSWidgetSimulator:
         except Exception:
             return False
 
-    def _extract_auth_code_from_response(
-        self, response_data: Dict[str, Any]
-    ) -> Optional[str]:
-        """Extract authorization code from response data."""
-        try:
-            # Look for various auth code patterns
-            response_str = json.dumps(response_data)
+    def _extract_auth_code_from_response(self, response_content: Any) -> Optional[str]:
+        """
+        Extract authorization code from various response formats.
 
+        Args:
+            response_content: Response content (string, dict, or response object)
+
+        Returns:
+            Authorization code if found, None otherwise
+        """
+        try:
+            # Handle different input types
+            if hasattr(response_content, "text"):
+                content = response_content.text
+            elif isinstance(response_content, dict):
+                content = str(response_content)
+            else:
+                content = str(response_content)
+
+            # Look for authorization code in various formats
             patterns = [
                 r'code=([^&\s"\']+)',
                 r'"code":"([^"]+)"',
                 r"'code':'([^']+)'",
                 r'authorization_code["\']?\s*:\s*["\']([^"\']+)["\']',
+                r'["\']access_token["\']?\s*:\s*["\']([^"\']+)["\']',
+                r'["\']token["\']?\s*:\s*["\']([^"\']+)["\']',
             ]
 
             for pattern in patterns:
-                match = re.search(pattern, response_str)
+                match = re.search(pattern, content)
                 if match:
-                    return match.group(1)
+                    auth_code = match.group(1)
+                    print(f"✅ Found authorization code: {auth_code[:20]}...")
+                    return auth_code
 
+            print("❌ No authorization code found in response")
             return None
-        except Exception:
+
+        except Exception as e:
+            print(f"❌ Error extracting authorization code: {e}")
             return None
 
     def _try_alternative_widget_methods(self) -> Optional[Dict[str, Any]]:
@@ -524,94 +587,464 @@ class OktaJSWidgetSimulator:
             print(f"❌ Error in alternative widget methods: {e}")
             return None
 
-    def _process_auth_response(self, auth_result: Dict[str, Any]) -> Optional[str]:
-        """Process the authentication response to extract the authorization code."""
+    def _try_alternative_auth_endpoints(self) -> Optional[Dict[str, Any]]:
+        """
+        Try alternative authentication endpoints found in the OAuth2 page content.
+        These might bypass Akamai blocking.
+        """
         try:
-            # Check if we already have an authorization code
-            if "auth_code" in auth_result:
-                return auth_result["auth_code"]
+            print("🔄 Trying alternative authentication endpoints from OAuth2 page...")
 
-            # Check if we have response content to analyze
-            if "content" in auth_result:
-                content = auth_result["content"]
+            # Try signin URLs first (these are often the actual login endpoints)
+            if "signin_urls" in self.widget_config:
+                for signin_url in self.widget_config["signin_urls"]:
+                    if signin_url.startswith("http"):
+                        full_url = signin_url
+                    else:
+                        full_url = f"{self.base_url}{signin_url}"
 
-                # Look for authorization code in various formats
-                patterns = [
-                    r'code=([^&\s"\']+)',
-                    r'"code":"([^"]+)"',
-                    r"'code':'([^']+)'",
-                    r'authorization_code["\']?\s*:\s*["\']([^"\']+)["\']',
-                ]
+                    print(f"🌐 Trying signin endpoint: {full_url}")
 
-                for pattern in patterns:
-                    match = re.search(pattern, content)
-                    if match:
-                        auth_code = match.group(1)
-                        print(f"✅ Found authorization code: {auth_code[:20]}...")
-                        return auth_code
-
-                # Check for redirects or other success indicators
-                if any(
-                    indicator in content.lower()
-                    for indicator in ["success", "redirect", "callback"]
-                ):
+                    # Try a GET request first to see what this endpoint contains
+                    response = self.session.get(full_url, headers=self.session.headers)
                     print(
-                        "💡 Authentication appears successful but no code found directly"
+                        f"📥 Signin GET response: {response.status_code} ({len(response.content)} bytes)"
                     )
-                    print("💡 May need to follow additional redirects")
 
-            # If we have a successful response but no code, the flow might continue
-            if auth_result.get("success"):
-                print("💡 Authentication step completed - may need additional steps")
-                return self._follow_auth_completion(auth_result)
+                    if response.status_code == 200:
+                        print("✅ Signin endpoint accessible - analyzing content...")
 
+                        # Look for login forms in this content
+                        if (
+                            "login" in response.text.lower()
+                            or "username" in response.text.lower()
+                        ):
+                            print("🎯 Found login form in signin endpoint!")
+                            return self._submit_to_signin_endpoint(full_url)
+
+                    # Try POST with credentials
+                    auth_data = {
+                        "username": self.username,
+                        "password": self.password,
+                        "stateToken": self.widget_config.get("stateToken", ""),
+                    }
+
+                    response = self.session.post(
+                        full_url, data=auth_data, headers=self.session.headers
+                    )
+                    print(
+                        f"📥 Signin POST response: {response.status_code} ({len(response.content)} bytes)"
+                    )
+
+                    if response.status_code == 200:
+                        print("✅ Signin POST successful!")
+                        return self._process_signin_response(response)
+
+            # Try auth URLs
+            if "auth_urls" in self.widget_config:
+                for auth_url in self.widget_config["auth_urls"]:
+                    if auth_url.startswith("http"):
+                        full_url = auth_url
+                    else:
+                        full_url = f"{self.base_url}{auth_url}"
+
+                    print(f"🌐 Trying auth endpoint: {full_url}")
+
+                    auth_data = {
+                        "username": self.username,
+                        "password": self.password,
+                        "stateToken": self.widget_config.get("stateToken", ""),
+                    }
+
+                    response = self.session.post(
+                        full_url, data=auth_data, headers=self.session.headers
+                    )
+                    print(
+                        f"📥 Auth POST response: {response.status_code} ({len(response.content)} bytes)"
+                    )
+
+                    if response.status_code == 200:
+                        print("✅ Auth endpoint successful!")
+                        return self._process_auth_response(response)
+
+            # Try JavaScript auth URLs
+            if "js_auth_urls" in self.widget_config:
+                for js_auth_url in self.widget_config["js_auth_urls"]:
+                    if js_auth_url.startswith("http"):
+                        full_url = js_auth_url
+                    else:
+                        full_url = f"{self.base_url}{js_auth_url}"
+
+                    print(f"🌐 Trying JavaScript auth endpoint: {full_url}")
+
+                    # Use JSON format for JavaScript endpoints
+                    auth_data = {
+                        "identifier": self.username,
+                        "credentials": {"passcode": self.password},
+                        "stateToken": self.widget_config.get("stateToken", ""),
+                    }
+
+                    headers = self.session.headers.copy()
+                    headers["Content-Type"] = "application/json"
+
+                    response = self.session.post(
+                        full_url, json=auth_data, headers=headers
+                    )
+                    print(
+                        f"📥 JS auth POST response: {response.status_code} ({len(response.content)} bytes)"
+                    )
+
+                    if response.status_code == 200:
+                        print("✅ JavaScript auth endpoint successful!")
+                        return self._process_js_auth_response(response)
+
+            print("❌ No alternative endpoints worked")
             return None
+
+        except Exception as e:
+            print(f"❌ Error trying alternative endpoints: {e}")
+            return None
+
+    def _submit_to_signin_endpoint(self, signin_url: str) -> Optional[Dict[str, Any]]:
+        """Submit credentials to a signin endpoint."""
+        try:
+            print(f"📝 Submitting to signin endpoint: {signin_url}")
+
+            # Try different data formats
+            auth_data_formats = [
+                {"username": self.username, "password": self.password},
+                {"identifier": self.username, "passcode": self.password},
+                {"email": self.username, "password": self.password},
+                {"user": self.username, "pass": self.password},
+            ]
+
+            for i, auth_data in enumerate(auth_data_formats):
+                print(f"🔄 Trying format {i+1}: {list(auth_data.keys())}")
+
+                response = self.session.post(
+                    signin_url, data=auth_data, headers=self.session.headers
+                )
+                print(
+                    f"📥 Format {i+1} response: {response.status_code} ({len(response.content)} bytes)"
+                )
+
+                if response.status_code == 200:
+                    print(f"✅ Format {i+1} successful!")
+                    return self._process_signin_response(response)
+                elif response.status_code == 302:
+                    print(f"🔄 Format {i+1} redirect - following...")
+                    # Follow redirect
+                    redirect_response = self.session.get(
+                        response.headers.get("Location", "")
+                    )
+                    if redirect_response.status_code == 200:
+                        return self._process_signin_response(redirect_response)
+
+            print("❌ No signin format worked")
+            return None
+
+        except Exception as e:
+            print(f"❌ Error submitting to signin endpoint: {e}")
+            return None
+
+    def _process_signin_response(self, response) -> Optional[Dict[str, Any]]:
+        """Process response from signin endpoint."""
+        try:
+            print("📄 Processing signin response...")
+
+            # Check if we got redirected to a success page
+            if "success" in response.text.lower() or "welcome" in response.text.lower():
+                print("✅ Signin appears successful!")
+                return {"success": True, "response": response}
+
+            # Check for authorization code
+            auth_code = self._extract_auth_code_from_response(response.text)
+            if auth_code:
+                print(f"🔑 Found authorization code: {auth_code[:20]}...")
+                return {"auth_code": auth_code}
+
+            # Check for tokens
+            if (
+                "access_token" in response.text.lower()
+                or "bearer" in response.text.lower()
+            ):
+                print("🔑 Found token information!")
+                return {"has_tokens": True, "response": response}
+
+            print("⚠️ Signin response unclear")
+            return {"unclear": True, "response": response}
+
+        except Exception as e:
+            print(f"❌ Error processing signin response: {e}")
+            return None
+
+    def _process_auth_response(self, response) -> Optional[Dict[str, Any]]:
+        """Process response from auth endpoint."""
+        try:
+            print("📄 Processing auth response...")
+
+            if response.status_code == 200:
+                try:
+                    response_data = response.json()
+                    return self._process_json_auth_response(response_data)
+                except json.JSONDecodeError:
+                    return self._process_text_auth_response(response.text)
+
+            return {"status_code": response.status_code, "response": response}
 
         except Exception as e:
             print(f"❌ Error processing auth response: {e}")
             return None
 
-    def _follow_auth_completion(self, auth_result: Dict[str, Any]) -> Optional[str]:
-        """Follow the authentication completion flow to get the final code."""
+    def _process_js_auth_response(self, response) -> Optional[Dict[str, Any]]:
+        """Process response from JavaScript auth endpoint."""
         try:
-            print("💡 Following authentication completion flow...")
+            print("📄 Processing JavaScript auth response...")
 
-            # The widget might redirect or make additional calls
-            # Try to follow the OAuth2 callback flow
-            callback_url = "https://www.meijer.com/bin/meijer/signin/v3/callback"
+            if response.status_code == 200:
+                try:
+                    response_data = response.json()
+                    return self._process_json_auth_response(response_data)
+                except json.JSONDecodeError:
+                    return self._process_text_auth_response(response.text)
 
-            # Add any state or session parameters
-            params = {"state": "https://www.meijer.com/"}
+            return {"status_code": response.status_code, "response": response}
 
-            print(f"🌐 Following callback: {callback_url}")
-            response = self.session.get(
-                callback_url,
-                params=params,
-                headers={
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Referer": self.oauth_authorize_url,
-                },
+        except Exception as e:
+            print(f"❌ Error processing JavaScript auth response: {e}")
+            return None
+
+    def _process_json_auth_response(
+        self, response_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Process JSON auth response."""
+        try:
+            print(
+                f"📄 Processing JSON response with keys: {list(response_data.keys())}"
             )
 
+            # Check for MFA requirements
+            if self._check_mfa_required(response_data):
+                return {"requires_mfa": True, "response_data": response_data}
+
+            # Look for authorization code
+            auth_code = self._extract_auth_code_from_response(response_data)
+            if auth_code:
+                return {"auth_code": auth_code}
+
+            # Check for success indicators
+            if "success" in response_data or "status" in response_data:
+                return {"success": True, "response_data": response_data}
+
+            return {"response_data": response_data}
+
+        except Exception as e:
+            print(f"❌ Error processing JSON auth response: {e}")
+            return None
+
+    def _process_text_auth_response(
+        self, response_text: str
+    ) -> Optional[Dict[str, Any]]:
+        """Process text auth response."""
+        try:
+            print("📄 Processing text response...")
+
+            # Check for success indicators
+            if "success" in response_text.lower() or "welcome" in response_text.lower():
+                return {"success": True, "response_text": response_text}
+
+            # Look for authorization code
+            auth_code = self._extract_auth_code_from_response(response_text)
+            if auth_code:
+                return {"auth_code": auth_code}
+
+            return {"response_text": response_text}
+
+        except Exception as e:
+            print(f"❌ Error processing text auth response: {e}")
+            return None
+
+    def _submit_credentials_direct(self) -> Optional[Dict[str, Any]]:
+        """
+        Submit credentials directly to the identify endpoint without IDX introspect.
+        This bypasses the session expiration issues with the IDX flow.
+        """
+        try:
+            print("💡 Direct credential submission (bypassing IDX introspect)...")
+
+            # Use the exact headers that work for direct API calls
+            headers = {
+                "Accept": "application/ion+json; okta-version=1.0.0",
+                "Content-Type": "application/ion+json; okta-version=1.0.0",
+                "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
+                "Origin": "https://id.meijer.com",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Accept-Encoding": "gzip, deflate, br, zstd",
+                "X-Requested-With": "XMLHttpRequest",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+            }
+
+            # Try the direct identify endpoint first (this is what the working direct API approach uses)
+            identify_url = f"{self.base_url}/idp/idx/identify"
+
+            # Prepare the request body for direct credential submission
+            data = {
+                "identifier": self.username,
+                "credentials": {"passcode": self.password},
+            }
+
+            print(f"🌐 Direct submission to: {identify_url}")
+            print(f"👤 Username: {self.username}")
+            print(f"🔑 Password: {'*' * len(self.password)}")
+            print(f"🍪 Session cookies: {len(self.session.cookies)} cookies")
+
+            # Print key cookies for debugging
+            for cookie in self.session.cookies:
+                if any(
+                    key in cookie.name.lower()
+                    for key in ["session", "jsession", "dt", "bm_"]
+                ):
+                    print(f"   🔑 {cookie.name}: {cookie.value[:30]}...")
+
+            response = self.session.post(identify_url, json=data, headers=headers)
             print(
-                f"📥 Callback response: {response.status_code} ({len(response.content)} bytes)"
+                f"📥 Direct submission response: {response.status_code} ({len(response.content)} bytes)"
             )
 
             if response.status_code == 200:
-                content = response.text
-                # Look for authorization code in the callback response
-                code_match = re.search(r'code=([^&\s"\']+)', content)
-                if code_match:
-                    auth_code = code_match.group(1)
-                    print(
-                        f"✅ Found authorization code in callback: {auth_code[:20]}..."
-                    )
-                    return auth_code
+                try:
+                    response_data = response.json()
+                    print("✅ Direct credential submission successful!")
+                    print(f"📄 Response keys: {list(response_data.keys())}")
 
-            return None
+                    # Check for MFA requirements or success indicators
+                    if self._check_mfa_required(response_data):
+                        print("📱 MFA required - this is expected behavior")
+                        return {"requires_mfa": True, "response_data": response_data}
+
+                    # Look for authorization code or success indicators
+                    auth_code = self._extract_auth_code_from_response(response_data)
+                    if auth_code:
+                        return {"auth_code": auth_code}
+
+                    # Check if we need to handle additional steps
+                    if "remediation" in response_data:
+                        print("🔄 Additional authentication steps required")
+                        return self._handle_remediation_steps(response_data)
+
+                    return response_data
+
+                except json.JSONDecodeError:
+                    print("❌ Failed to parse direct response as JSON")
+                    print(f"📄 Response content: {response.text[:500]}...")
+                    return None
+            elif response.status_code == 403:
+                print("❌ Direct submission blocked by Akamai")
+                print(f"📄 Response: {response.text[:500]}...")
+                return None
+            else:
+                print(f"❌ Direct submission failed: {response.status_code}")
+                print(f"📄 Response: {response.text[:500]}...")
+                return None
 
         except Exception as e:
-            print(f"❌ Error following auth completion: {e}")
+            print(f"❌ Error in direct credential submission: {e}")
+            return None
+
+    def _handle_remediation_steps(
+        self, response_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Handle additional authentication steps (like MFA challenges).
+        """
+        try:
+            remediation = response_data.get("remediation", {})
+            if isinstance(remediation, dict) and remediation.get("type") == "array":
+                value = remediation.get("value", [])
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            name = item.get("name", "")
+                            print(f"🔄 Found remediation step: {name}")
+
+                            # Handle different types of remediation
+                            if "challenge" in name.lower():
+                                return self._handle_challenge_step(item)
+                            elif "verify" in name.lower():
+                                return self._handle_verify_step(item)
+                            elif "enroll" in name.lower():
+                                return self._handle_enroll_step(item)
+
+            print("⚠️ Unknown remediation step - returning current response")
+            return response_data
+
+        except Exception as e:
+            print(f"❌ Error handling remediation steps: {e}")
+            return response_data
+
+    def _handle_challenge_step(
+        self, challenge_item: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Handle MFA challenge steps (like SMS verification).
+        """
+        try:
+            print(
+                f"📱 Handling challenge step: {challenge_item.get('name', 'Unknown')}"
+            )
+
+            # For now, we'll return the challenge info
+            # In a real implementation, you'd prompt the user for the challenge response
+            return {
+                "requires_challenge": True,
+                "challenge_type": challenge_item.get("name", "Unknown"),
+                "challenge_data": challenge_item,
+            }
+        except Exception as e:
+            print(f"❌ Error handling challenge step: {e}")
+            return None
+
+    def _handle_verify_step(
+        self, verify_item: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Handle verification steps (like MFA verification).
+        """
+        try:
+            print(f"✅ Handling verify step: {verify_item.get('name', 'Unknown')}")
+
+            # For now, we'll return the verification info
+            return {
+                "requires_verification": True,
+                "verification_type": verify_item.get("name", "Unknown"),
+                "verification_data": verify_item,
+            }
+        except Exception as e:
+            print(f"❌ Error handling verify step: {e}")
+            return None
+
+    def _handle_enroll_step(
+        self, enroll_item: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Handle enrollment steps (like setting up MFA).
+        """
+        try:
+            print(f"📝 Handling enroll step: {enroll_item.get('name', 'Unknown')}")
+
+            # For now, we'll return the enrollment info
+            return {
+                "requires_enrollment": True,
+                "enrollment_type": enroll_item.get("name", "Unknown"),
+                "enrollment_data": enroll_item,
+            }
+        except Exception as e:
+            print(f"❌ Error handling enroll step: {e}")
             return None
 
 

@@ -1626,16 +1626,29 @@ def auth_command():
 @click.command()
 @click.option("--user", "-u", help="Username/email for authentication")
 @click.option("--password", "-p", help="Password for authentication")
-@click.option("--save-credentials", is_flag=True, help="Save credentials to login.txt for fallback use")
-@click.option("--clear-credentials", is_flag=True, help="Clear saved credentials from login.txt")
-def login_command(user: Optional[str], password: Optional[str], save_credentials: bool, clear_credentials: bool):
+@click.option(
+    "--save-credentials",
+    is_flag=True,
+    help="Save credentials to login.txt for fallback use",
+)
+@click.option(
+    "--clear-credentials", is_flag=True, help="Clear saved credentials from login.txt"
+)
+def login_command(
+    user: Optional[str],
+    password: Optional[str],
+    save_credentials: bool,
+    clear_credentials: bool,
+):
     """Authenticate with Meijer using username/password or fallback credentials."""
     logger = logging.getLogger(__name__)
-    logger.debug(f"Login command called with user={user}, save_credentials={save_credentials}, clear_credentials={clear_credentials}")
+    logger.debug(
+        f"Login command called with user={user}, save_credentials={save_credentials}, clear_credentials={clear_credentials}"
+    )
 
     try:
         from meijer.enhanced_auth import EnhancedMeijerAuth
-        
+
         # Handle credential clearing
         if clear_credentials:
             auth = EnhancedMeijerAuth()
@@ -1648,25 +1661,28 @@ def login_command(user: Optional[str], password: Optional[str], save_credentials
         # Smart fallback logic: check login.txt before prompting
         fallback_username = None
         fallback_password = None
-        
+
         if not user or not password:
-            from meijer.auth import get_meijer_config_path
             import os
-            
+
+            from meijer.auth import get_meijer_config_path
+
             login_file = os.path.join(get_meijer_config_path(""), "login.txt")
             if os.path.exists(login_file):
                 try:
                     with open(login_file, "r") as f:
                         lines = [line.strip() for line in f.readlines()]
-                    
+
                     if len(lines) >= 1 and lines[0]:  # First line has username
                         fallback_username = lines[0]
-                        click.echo(f"👤 Found username in login.txt: {fallback_username}")
-                    
+                        click.echo(
+                            f"👤 Found username in login.txt: {fallback_username}"
+                        )
+
                     if len(lines) >= 2 and lines[1]:  # Second line has password
                         fallback_password = lines[1]
                         click.echo("🔑 Found password in login.txt")
-                    
+
                 except Exception as e:
                     logger.warning(f"Failed to read login.txt: {e}")
                     click.echo("⚠️ Error reading login.txt, will prompt for credentials")
@@ -1675,11 +1691,11 @@ def login_command(user: Optional[str], password: Optional[str], save_credentials
         if not user and fallback_username:
             user = fallback_username
             click.echo(f"✅ Using username from login.txt: {user}")
-        
+
         if not password and fallback_password:
             password = fallback_password
             click.echo("✅ Using password from login.txt")
-        
+
         # Prompt for any missing credentials
         if not user:
             user = click.prompt("👤 Username/Email", type=str)
@@ -1688,7 +1704,7 @@ def login_command(user: Optional[str], password: Optional[str], save_credentials
 
         # Create enhanced authentication instance
         auth = EnhancedMeijerAuth(user, password)
-        
+
         # Save credentials if requested
         if save_credentials:
             if auth.token_storage.save_credentials_to_file(user, password):
@@ -1696,15 +1712,15 @@ def login_command(user: Optional[str], password: Optional[str], save_credentials
             else:
                 click.echo("⚠️ Failed to save credentials to login.txt")
 
-        # Attempt authentication
-        click.echo("🔐 Attempting authentication...")
-        tokens = auth.authenticate()
+        # Attempt authentication (force fresh login)
+        click.echo("🔐 Attempting fresh authentication...")
+        tokens = auth.authenticate(force_login=True)
 
         if tokens:
             click.echo("🎉 Authentication successful!")
             click.echo(f"🔑 Access token: {tokens.access_token[:30]}...")
             click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
-            
+
             # Test API call capability
             auth_header = auth.get_auth_header()
             if auth_header:

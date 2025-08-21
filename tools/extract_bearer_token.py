@@ -29,17 +29,19 @@ def extract_oauth2_tokens(flows: List[HTTPFlow]) -> List[Dict[str, Any]]:
     for flow in flows:
         if not flow.response or not flow.response.content:
             continue
-            
+
         # Look for OAuth2 token endpoint responses
         if (
-            "oauth2" in flow.request.pretty_url.lower() 
+            "oauth2" in flow.request.pretty_url.lower()
             and "token" in flow.request.pretty_url.lower()
             and flow.request.method == "POST"
         ):
             try:
                 # Try to parse response as JSON
-                response_data = json.loads(flow.response.content.decode('utf-8', errors='ignore'))
-                
+                response_data = json.loads(
+                    flow.response.content.decode("utf-8", errors="ignore")
+                )
+
                 # Check if this is a token response with refresh token
                 if "access_token" in response_data and "refresh_token" in response_data:
                     token_info = {
@@ -53,10 +55,10 @@ def extract_oauth2_tokens(flows: List[HTTPFlow]) -> List[Dict[str, Any]]:
                         "token_type": response_data.get("token_type", "Bearer"),
                         "scope": response_data.get("scope", ""),
                         "response_data": response_data,
-                        "source": "oauth2_token_exchange"
+                        "source": "oauth2_token_exchange",
                     }
                     oauth2_responses.append(token_info)
-                    
+
             except (json.JSONDecodeError, UnicodeDecodeError):
                 # Skip if response isn't valid JSON
                 continue
@@ -94,7 +96,7 @@ def extract_bearer_tokens(flows: List[HTTPFlow]) -> List[Dict[str, Any]]:
                     "path": flow.request.path,
                     "user_agent": headers.get("user-agent", ""),
                     "all_headers": headers,
-                    "source": "request_header"
+                    "source": "request_header",
                 }
 
                 bearer_requests.append(request_data)
@@ -149,38 +151,53 @@ def extract_meijer_api_calls(flows: List[HTTPFlow]) -> List[Dict[str, Any]]:
 
 
 def find_best_tokens(
-    oauth2_responses: List[Dict[str, Any]],
-    bearer_requests: List[Dict[str, Any]]
+    oauth2_responses: List[Dict[str, Any]], bearer_requests: List[Dict[str, Any]]
 ) -> Optional[Dict[str, Any]]:
     """Find the best available tokens, preferring OAuth2 responses with refresh tokens."""
-    
+
     # First priority: OAuth2 token exchange with refresh token
     if oauth2_responses:
         for response in oauth2_responses:
-            if (response.get("refresh_token") and 
-                response.get("refresh_token").strip() and
-                response.get("response_status") == 200):
+            if (
+                response.get("refresh_token")
+                and response.get("refresh_token").strip()
+                and response.get("response_status") == 200
+            ):
                 return response
-    
+
     # Second priority: Successful Bearer token from Meijer API calls
     for request in bearer_requests:
-        if (request.get("status_code") and 
-            200 <= request.get("status_code") < 300 and
-            "meijer.com" in request.get("host", "")):
+        if (
+            request.get("status_code")
+            and 200 <= request.get("status_code") < 300
+            and "meijer.com" in request.get("host", "")
+        ):
             return request
-    
+
     # Fallback: Most recent Bearer token
     if bearer_requests:
         return bearer_requests[0]
-    
+
     return None
 
 
-def save_tokens(token_info: Dict[str, Any], output_file: str = "auth.txt"):
-    """Save the tokens to a file for use by other scripts."""
-    
+def save_tokens(token_info: Dict[str, Any], output_file: str = None):
+    """Save the tokens to the Meijer config directory in the new auth.json format."""
+
+    # Use the Meijer config directory
+    import os
+
+    from meijer.auth import get_meijer_config_path
+
+    config_dir = get_meijer_config_path("")
+    if not output_file:
+        output_file = os.path.join(config_dir, "auth.json")
+
+    # Ensure config directory exists
+    os.makedirs(config_dir, exist_ok=True)
+
     if token_info.get("source") == "oauth2_token_exchange":
-        # Save OAuth2 token response
+        # Save OAuth2 token response in new format
         auth_data = {
             "access_token": token_info["access_token"],
             "refresh_token": token_info["refresh_token"],
@@ -188,38 +205,64 @@ def save_tokens(token_info: Dict[str, Any], output_file: str = "auth.txt"):
             "token_type": token_info["token_type"],
             "scope": token_info["scope"],
             "extracted_at": token_info["timestamp"],
-            "source": "oauth2_token_exchange"
+            "source": "oauth2_token_exchange",
         }
-        
+
         with open(output_file, "w") as f:
             json.dump(auth_data, f, indent=2)
-            
+
         print(f"💾 OAuth2 tokens saved to {output_file}")
         print(f"   ✅ Access token: {token_info['access_token'][:30]}...")
         print(f"   ✅ Refresh token: {token_info['refresh_token'][:30]}...")
         print(f"   ✅ Expires in: {token_info['expires_in']} seconds")
-        
+
     else:
-        # Save Bearer token from request header
+        # Save Bearer token from request header in new format
+        auth_data = {
+            "access_token": token_info["bearer_token"],
+            "refresh_token": None,  # No refresh token available
+            "expires_in": None,  # Unknown expiration
+            "token_type": "Bearer",
+            "scope": "",
+            "extracted_at": token_info["timestamp"],
+            "source": "request_header",
+            "url": token_info["url"],
+            "status_code": token_info.get("status_code"),
+            "user_agent": token_info.get("user_agent", ""),
+        }
+
         with open(output_file, "w") as f:
+            json.dump(auth_data, f, indent=2)
+
+        print(f"💾 Bearer token saved to {output_file}")
+        print(f"   ⚠️ Access token: {token_info['bearer_token'][:30]}...")
+        print("   ❌ No refresh token - tokens cannot be refreshed automatically")
+
+    # Also save a copy in the current directory for backward compatibility
+    current_dir_file = "auth.json"
+    with open(current_dir_file, "w") as f:
+        json.dump(auth_data, f, indent=2)
+
+    print(f"   📄 JSON data also saved to {current_dir_file}")
+
+    # Also save the old auth.txt format for backward compatibility
+    old_auth_file = os.path.join(config_dir, "auth.txt")
+    if token_info.get("source") == "oauth2_token_exchange":
+        with open(old_auth_file, "w") as f:
+            json.dump(auth_data, f, indent=2)
+    else:
+        with open(old_auth_file, "w") as f:
             f.write("# Bearer token extracted from request header\n")
             f.write(f"# Timestamp: {token_info['timestamp']}\n")
             f.write(f"# From URL: {token_info['url']}\n")
             f.write(f"# Status: {token_info.get('status_code', 'Unknown')}\n")
             f.write(f"bearer_token={token_info['bearer_token']}\n")
-            f.write(f"user_agent={token_info['user_agent']}\n")
-            f.write(f"# Note: No refresh token available - tokens cannot be refreshed automatically\n")
-            
-        print(f"💾 Bearer token saved to {output_file}")
-        print(f"   ⚠️ Access token: {token_info['bearer_token'][:30]}...")
-        print(f"   ❌ No refresh token - tokens cannot be refreshed automatically")
+            f.write(f"user_agent={token_info.get('user_agent', '')}\n")
+            f.write(
+                "# Note: No refresh token available - tokens cannot be refreshed automatically\n"
+            )
 
-    # Also save as JSON for programmatic access
-    json_file = output_file.replace('.txt', '.json')
-    with open(json_file, "w") as f:
-        json.dump(token_info, f, indent=2)
-    
-    print(f"   📄 JSON data saved to {json_file}")
+    print(f"   📄 Legacy format also saved to {old_auth_file}")
 
 
 def main():
@@ -232,6 +275,7 @@ def main():
         # Look for the most recent meijer mitm log
         import glob
         import os
+
         log_files = glob.glob("meijer_mitm_*.log")
         if log_files:
             # Sort by modification time, newest first
@@ -266,9 +310,7 @@ def main():
     if oauth2_responses:
         print("\n🔑 OAuth2 Token Responses (newest first):")
         for i, response in enumerate(oauth2_responses[:5]):  # Show first 5
-            print(
-                f"   {i + 1}. {response['method']} {response['url'][:60]}..."
-            )
+            print(f"   {i + 1}. {response['method']} {response['url'][:60]}...")
             print(f"      Status: {response['response_status']}")
             print(f"      Access Token: {response['access_token'][:30]}...")
             print(f"      Refresh Token: {response['refresh_token'][:30]}...")
@@ -296,32 +338,36 @@ def main():
     if best_tokens:
         print("\n✅ Selected Best Available Tokens:")
         if best_tokens.get("source") == "oauth2_token_exchange":
-            print(f"   Source: OAuth2 Token Exchange")
+            print("   Source: OAuth2 Token Exchange")
             print(f"   URL: {best_tokens['url']}")
             print(f"   Status: {best_tokens['response_status']}")
             print(f"   Access Token: {best_tokens['access_token'][:30]}...")
             print(f"   Refresh Token: {best_tokens['refresh_token'][:30]}...")
             print(f"   Expires: {best_tokens['expires_in']} seconds")
-            print(f"   ✅ Tokens can be refreshed automatically!")
+            print("   ✅ Tokens can be refreshed automatically!")
         else:
-            print(f"   Source: Request Header")
+            print("   Source: Request Header")
             print(f"   URL: {best_tokens['url']}")
             print(f"   Status: {best_tokens.get('status_code', 'Unknown')}")
             print(f"   Token: {best_tokens['bearer_token'][:30]}...")
-            print(f"   ⚠️ No refresh token - tokens cannot be refreshed automatically")
+            print("   ⚠️ No refresh token - tokens cannot be refreshed automatically")
         print(f"   Timestamp: {best_tokens['timestamp']}")
 
-        # Save the tokens
+        # Save the tokens to the config directory
         save_tokens(best_tokens)
-        
+
         # Provide guidance
         if best_tokens.get("source") == "oauth2_token_exchange":
             print("\n🎉 Perfect! You now have tokens with refresh capability.")
             print("   These tokens can be refreshed automatically when they expire.")
         else:
             print("\n⚠️ Note: These tokens cannot be refreshed automatically.")
-            print("   To get refreshable tokens, you need to capture an OAuth2 token exchange.")
-            print("   Try logging in to the Meijer app again and capture the authentication flow.")
+            print(
+                "   To get refreshable tokens, you need to capture an OAuth2 token exchange."
+            )
+            print(
+                "   Try logging in to the Meijer app again and capture the authentication flow."
+            )
 
     else:
         print("\n❌ No tokens found in the log")

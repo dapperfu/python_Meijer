@@ -28,48 +28,60 @@ class EnhancedMeijerAuth:
         self.token_storage = TokenStorage()
         self.logger = logging.getLogger(__name__)
 
-    def authenticate(self) -> Optional[AuthTokens]:
+    def authenticate(self, force_login: bool = False) -> Optional[AuthTokens]:
         """
         Perform authentication using the best available method.
-        
+
         Strategy:
-        1. Check if we have valid existing tokens
-        2. If tokens are expired, try to refresh them
-        3. If refresh fails, try to load credentials from login.txt fallback
-        4. If we have credentials, try widget simulation
-        5. If all else fails, prompt user to run 'meijer auth'
-        
+        1. If force_login=True, skip existing token check and go straight to login
+        2. Check if we have valid existing tokens
+        3. If tokens are expired, try to refresh them
+        4. If refresh fails, try to load credentials from login.txt fallback
+        5. If we have credentials, try widget simulation
+        6. If all else fails, prompt user to run 'meijer auth'
+
+        Args:
+            force_login: If True, bypass existing token check and force fresh authentication
+
         Returns:
             Valid AuthTokens if successful, None otherwise
         """
         print("🔐 Enhanced Meijer Authentication")
         print("=" * 40)
-        
-        # Step 1: Check for existing valid tokens
-        print("📡 Step 1: Checking for existing tokens...")
-        tokens = self.token_storage.get_valid_tokens()
-        
-        if tokens:
-            print("✅ Found valid existing tokens")
-            print(f"🔑 Access token: {tokens.access_token[:30]}...")
-            print(f"⏰ Expires in: {tokens.expires_in} seconds")
-            return tokens
-        
-        # Step 2: Check if we have tokens that can be refreshed
-        print("📡 Step 2: Checking for refreshable tokens...")
-        stored_tokens = self.token_storage.load_tokens()
-        
-        if stored_tokens and stored_tokens.refresh_token:
-            print("🔄 Found tokens with refresh capability - attempting refresh...")
-            if self.token_storage.refresh_tokens(stored_tokens.refresh_token):
-                refreshed_tokens = self.token_storage.get_valid_tokens()
-                if refreshed_tokens:
-                    print("✅ Token refresh successful!")
-                    print(f"🔑 New access token: {refreshed_tokens.access_token[:30]}...")
-                    return refreshed_tokens
-            else:
-                print("❌ Token refresh failed")
-        
+
+        # Step 1: Check for existing valid tokens (unless forcing fresh login)
+        if not force_login:
+            print("📡 Step 1: Checking for existing tokens...")
+            tokens = self.token_storage.get_valid_tokens()
+
+            if tokens:
+                print("✅ Found valid existing tokens")
+                print(f"🔑 Access token: {tokens.access_token[:30]}...")
+                print(f"⏰ Expires in: {tokens.expires_in} seconds")
+                return tokens
+        else:
+            print("📡 Step 1: Skipping existing token check (force_login=True)")
+
+        # Step 2: Check if we have tokens that can be refreshed (unless forcing fresh login)
+        if not force_login:
+            print("📡 Step 2: Checking for refreshable tokens...")
+            stored_tokens = self.token_storage.load_tokens()
+
+            if stored_tokens and stored_tokens.refresh_token:
+                print("🔄 Found tokens with refresh capability - attempting refresh...")
+                if self.token_storage.refresh_tokens(stored_tokens.refresh_token):
+                    refreshed_tokens = self.token_storage.get_valid_tokens()
+                    if refreshed_tokens:
+                        print("✅ Token refresh successful!")
+                        print(
+                            f"🔑 New access token: {refreshed_tokens.access_token[:30]}..."
+                        )
+                        return refreshed_tokens
+                else:
+                    print("❌ Token refresh failed")
+        else:
+            print("📡 Step 2: Skipping token refresh check (force_login=True)")
+
         # Step 3: Try to load fallback credentials from login.txt
         print("📡 Step 3: Checking for fallback credentials...")
         fallback_creds = self.token_storage.load_credentials_from_file()
@@ -77,18 +89,20 @@ class EnhancedMeijerAuth:
             username, password = fallback_creds
             print(f"✅ Found fallback credentials for: {username}")
             print("🔄 Attempting authentication with fallback credentials...")
-            
+
             # Try JavaScript widget simulation with fallback credentials
             auth_code = authenticate_with_js_widget(username, password)
             if auth_code:
                 print("✅ Widget simulation successful with fallback credentials!")
                 print(f"🔑 Authorization code: {auth_code[:30]}...")
-                
+
                 # Exchange authorization code for tokens
                 print("🔄 Exchanging authorization code for tokens...")
                 tokens = self.token_storage.exchange_authorization_code(auth_code)
                 if tokens:
-                    print("🎉 Authentication completed successfully with fallback credentials!")
+                    print(
+                        "🎉 Authentication completed successfully with fallback credentials!"
+                    )
                     return tokens
                 else:
                     print("❌ Failed to exchange authorization code for tokens")
@@ -96,40 +110,96 @@ class EnhancedMeijerAuth:
                 print("❌ Widget simulation failed with fallback credentials")
         else:
             print("💡 No fallback credentials found in login.txt")
-        
+
         # Step 4: Try JavaScript widget simulation if we have credentials
+        print("📡 Step 4: Attempting JavaScript widget simulation...")
         if self.username and self.password:
-            print("📡 Step 4: Attempting JavaScript widget simulation...")
             print(f"👤 Username: {self.username}")
             print(f"🔑 Password: {'*' * len(self.password)}")
-            
+
+            # Try JavaScript widget simulation first
             auth_code = authenticate_with_js_widget(self.username, self.password)
-            
             if auth_code:
-                print("✅ Widget simulation successful!")
+                print("✅ JavaScript widget simulation successful!")
                 print(f"🔑 Authorization code: {auth_code[:30]}...")
-                
+
                 # Exchange authorization code for tokens
                 print("🔄 Exchanging authorization code for tokens...")
                 tokens = self.token_storage.exchange_authorization_code(auth_code)
                 if tokens:
-                    print("🎉 Authentication completed successfully!")
+                    print(
+                        "🎉 Authentication completed successfully with JavaScript widget!"
+                    )
                     return tokens
                 else:
                     print("❌ Failed to exchange authorization code for tokens")
             else:
-                print("❌ Widget simulation failed")
+                print("❌ JavaScript widget simulation failed")
+
+                # FALLBACK: Try Selenium authentication
+                print("🔄 Trying Selenium authentication as fallback...")
+                try:
+                    from .okta_selenium_auth import authenticate_with_selenium
+
+                    print("🌐 Starting Selenium browser authentication...")
+                    selenium_result = authenticate_with_selenium(
+                        self.username, self.password, headless=False
+                    )
+
+                    if selenium_result and selenium_result.get("success"):
+                        print("✅ Selenium authentication successful!")
+
+                        # Check if we got an authorization code
+                        if "authorization_code" in selenium_result:
+                            auth_code = selenium_result["authorization_code"]
+                            print(
+                                f"🔑 Authorization code from Selenium: {auth_code[:30]}..."
+                            )
+
+                            # Exchange authorization code for tokens
+                            print("🔄 Exchanging authorization code for tokens...")
+                            tokens = self.token_storage.exchange_authorization_code(
+                                auth_code
+                            )
+                            if tokens:
+                                print(
+                                    "🎉 Authentication completed successfully with Selenium!"
+                                )
+                                return tokens
+                            else:
+                                print(
+                                    "❌ Failed to exchange authorization code for tokens"
+                                )
+                        else:
+                            print(
+                                "⚠️ Selenium succeeded but no authorization code found"
+                            )
+                            print(f"📄 Result: {selenium_result}")
+                    else:
+                        print("❌ Selenium authentication failed")
+                        if selenium_result:
+                            print(f"📄 Result: {selenium_result}")
+
+                except ImportError:
+                    print(
+                        "⚠️ Selenium not available - install with: pip install selenium"
+                    )
+                except Exception as e:
+                    print(f"❌ Error in Selenium authentication: {e}")
         else:
-            print("💡 Step 4: Skipped widget simulation - no credentials provided")
-        
-        # Step 5: All methods failed
-        print("❌ All authentication methods failed")
+            print("💡 No credentials provided for widget simulation")
+
+        # Step 5: All authentication methods failed
+        print("📡 Step 5: All authentication methods failed")
         print("\n💡 Recommendations:")
         print("   1. Run 'meijer auth' to capture tokens from browser login")
-        print("   2. Create login.txt with username/password for fallback")
-        print("   3. Provide username/password for widget simulation")
-        print("   4. Check network connectivity and credentials")
-        
+        print("   2. Check your username and password")
+        print("   3. Ensure network connectivity")
+        print("   4. Try again later if there are temporary issues")
+        print(
+            "   5. Install Selenium for automated browser authentication: pip install selenium"
+        )
+
         return None
 
     def ensure_authenticated(self) -> bool:
@@ -157,7 +227,7 @@ class EnhancedMeijerAuth:
     def set_credentials(self, username: str, password: str):
         """
         Set credentials for JavaScript widget simulation.
-        
+
         Args:
             username: User's email address
             password: User's password
@@ -165,7 +235,7 @@ class EnhancedMeijerAuth:
         self.username = username
         self.password = password
         print(f"✅ Credentials set for user: {username}")
-        
+
         # Also save to login.txt for fallback use
         if self.token_storage.save_credentials_to_file(username, password):
             print("💾 Credentials also saved to login.txt for fallback use")
@@ -177,7 +247,7 @@ class EnhancedMeijerAuth:
         self.username = None
         self.password = None
         print("✅ Credentials cleared")
-        
+
         # Also clear the login.txt file
         if self.token_storage.clear_credentials_file():
             print("🗑️ Login.txt fallback file also cleared")
@@ -187,7 +257,7 @@ class EnhancedMeijerAuth:
     def has_fallback_credentials(self) -> bool:
         """
         Check if fallback credentials exist in login.txt.
-        
+
         Returns:
             True if fallback credentials exist, False otherwise
         """
@@ -196,7 +266,7 @@ class EnhancedMeijerAuth:
     def get_fallback_credentials(self) -> Optional[Tuple[str, str]]:
         """
         Get fallback credentials from login.txt.
-        
+
         Returns:
             Tuple of (username, password) or None if not available
         """
