@@ -34,7 +34,6 @@ from .commands import (
     gas_command,
     list_group,
     login_command,
-    login_selenium,
     settings_group,
     status_command,
     stores_group,
@@ -94,8 +93,7 @@ def cli(verbose: int):
     • stores - Manage store information and search
     • settings - Manage account settings and preferences
     • email-2fa - Manage email 2FA configuration and testing
-    • login - Login with username/password (OKTA authentication)
-    • login-selenium - Login using Selenium WebDriver with debugging options
+    • login - Login with username/password (enhanced or Selenium methods)
     • auth - Extract authentication tokens from mitmproxy logs
     • status - Show authentication status
     • ads - Browse weekly ad items
@@ -124,7 +122,6 @@ cli.add_command(status_command, name="status")
 cli.add_command(ad_command, name="ads")
 cli.add_command(gas_command, name="gas")
 cli.add_command(login_command, name="login")
-cli.add_command(login_selenium, name="login-selenium")
 
 
 if __name__ == "__main__":

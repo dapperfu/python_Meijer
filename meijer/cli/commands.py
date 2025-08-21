@@ -1714,17 +1714,6 @@ def auth_command():
     click.echo("   5. Run 'meijer auth' again")
 
 
-@click.command()
-@click.option("--user", "-u", help="Username/email for authentication")
-@click.option("--password", "-p", help="Password for authentication")
-@click.option(
-    "--save-credentials",
-    is_flag=True,
-    help="Save credentials to login.txt for fallback use",
-)
-@click.option(
-    "--clear-credentials", is_flag=True, help="Clear saved credentials from login.txt"
-)
 @click.command("selenium")
 @click.option("--headless", is_flag=True, default=True, help="Run browser in headless mode")
 @click.option("--keep-open", is_flag=True, help="Keep browser open for debugging")
@@ -1760,16 +1749,42 @@ def login_selenium(headless: bool, keep_open: bool):
         raise click.ClickException(f"❌ Selenium authentication failed: {e}")
 
 
+@click.command()
+@click.option("--user", "-u", help="Username/email for authentication")
+@click.option("--password", "-p", help="Password for authentication")
+@click.option(
+    "--save-credentials",
+    is_flag=True,
+    help="Save credentials to login.txt for fallback use",
+)
+@click.option(
+    "--clear-credentials", is_flag=True, help="Clear saved credentials from login.txt"
+)
+@click.option(
+    "--method", "-m", 
+    type=click.Choice(["enhanced", "selenium"]), 
+    default="enhanced",
+    help="Authentication method to use (default: enhanced)"
+)
+@click.option(
+    "--headless", is_flag=True, default=True, help="Run browser in headless mode (selenium only)"
+)
+@click.option(
+    "--keep-open", is_flag=True, help="Keep browser open for debugging (selenium only)"
+)
 def login_command(
     user: Optional[str],
     password: Optional[str],
     save_credentials: bool,
     clear_credentials: bool,
+    method: str,
+    headless: bool,
+    keep_open: bool,
 ):
     """Authenticate with Meijer using username/password or fallback credentials."""
     logger = logging.getLogger(__name__)
     logger.debug(
-        f"Login command called with user={user}, save_credentials={save_credentials}, clear_credentials={clear_credentials}"
+        f"Login command called with user={user}, method={method}, headless={headless}, keep_open={keep_open}, save_credentials={save_credentials}, clear_credentials={clear_credentials}"
     )
 
     try:
@@ -1828,39 +1843,74 @@ def login_command(
         if not password:
             password = click.prompt("🔑 Password", type=str, hide_input=True)
 
-        # Create enhanced authentication instance
-        auth = EnhancedMeijerAuth(user, password)
+        # Handle authentication based on selected method
+        if method == "selenium":
+            click.echo("🌐 Using Selenium WebDriver authentication method")
+            
+            try:
+                if keep_open:
+                    from meijer.okta_selenium_auth import authenticate_with_selenium_and_keep_open
+                    click.echo("🔍 Starting Selenium authentication with browser kept open for debugging...")
+                    result = authenticate_with_selenium_and_keep_open(user, password, headless)
+                else:
+                    from meijer.okta_selenium_auth import authenticate_with_selenium
+                    click.echo("🚀 Starting Selenium authentication...")
+                    result = authenticate_with_selenium(user, password, headless)
+                
+                if result and result.get("success"):
+                    click.echo("🎉 Selenium authentication successful!")
+                    click.echo(f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}")
+                    click.echo(f"🌐 Final URL: {result.get('url', 'N/A')}")
+                    
+                    if keep_open:
+                        click.echo("\n🔍 Browser window is still open for debugging")
+                        click.echo("💡 Close it manually when done")
+                else:
+                    click.echo("❌ Selenium authentication failed")
+                    if result:
+                        click.echo(f"📊 Result: {result}")
+                    return
+                    
+            except Exception as e:
+                raise click.ClickException(f"❌ Selenium authentication failed: {e}")
+                
+        else:  # enhanced method (default)
+            click.echo("🔐 Using enhanced authentication method")
+            
+            # Create enhanced authentication instance
+            auth = EnhancedMeijerAuth(user, password)
 
-        # Save credentials if requested
-        if save_credentials:
-            if auth.token_storage.save_credentials_to_file(user, password):
-                click.echo("💾 Credentials saved to login.txt for fallback use")
+            # Save credentials if requested
+            if save_credentials:
+                if auth.token_storage.save_credentials_to_file(user, password):
+                    click.echo("💾 Credentials saved to login.txt for fallback use")
+                else:
+                    click.echo("⚠️ Failed to save credentials to login.txt")
+
+            # Attempt authentication (force fresh login)
+            click.echo("🔐 Attempting fresh authentication...")
+            tokens = auth.authenticate(force_login=True)
+
+            if tokens:
+                click.echo("🎉 Enhanced authentication successful!")
+                click.echo(f"🔑 Access token: {tokens.access_token[:30]}...")
+                click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
+
+                # Test API call capability
+                auth_header = auth.get_auth_header()
+                if auth_header:
+                    click.echo(f"🔒 Auth header ready: {auth_header[:50]}...")
+                    click.echo("🎉 Ready for API calls!")
+                else:
+                    click.echo("❌ No auth header available")
             else:
-                click.echo("⚠️ Failed to save credentials to login.txt")
-
-        # Attempt authentication (force fresh login)
-        click.echo("🔐 Attempting fresh authentication...")
-        tokens = auth.authenticate(force_login=True)
-
-        if tokens:
-            click.echo("🎉 Authentication successful!")
-            click.echo(f"🔑 Access token: {tokens.access_token[:30]}...")
-            click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
-
-            # Test API call capability
-            auth_header = auth.get_auth_header()
-            if auth_header:
-                click.echo(f"🔒 Auth header ready: {auth_header[:50]}...")
-                click.echo("🎉 Ready for API calls!")
-            else:
-                click.echo("❌ No auth header available")
-        else:
-            click.echo("❌ Authentication failed")
-            click.echo("\n💡 Try these alternatives:")
-            click.echo("   1. Run 'meijer auth' to capture tokens from browser login")
-            click.echo("   2. Check your username and password")
-            click.echo("   3. Ensure network connectivity")
-            click.echo("   4. Try again later if there are temporary issues")
+                click.echo("❌ Enhanced authentication failed")
+                click.echo("\n💡 Try these alternatives:")
+                click.echo("   1. Try Selenium method: meijer login --method selenium")
+                click.echo("   2. Run 'meijer auth' to capture tokens from browser login")
+                click.echo("   3. Check your username and password")
+                click.echo("   4. Ensure network connectivity")
+                click.echo("   5. Try again later if there are temporary issues")
 
     except Exception as e:
         logger.error(f"Failed to authenticate: {e}", exc_info=True)
