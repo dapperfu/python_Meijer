@@ -6,6 +6,7 @@ This script uses mitmdump's Python API to read the log file and analyze
 headers from authentication flows.
 """
 
+import asyncio
 import json
 import sys
 from collections import defaultdict
@@ -140,16 +141,14 @@ class HeaderAnalyzer:
                 "url": flow.request.pretty_url,
                 "method": flow.request.method,
                 "request_headers": dict(flow.request.headers),
-                "request_content": flow.request.content.decode("utf-8", errors="ignore")
+                "request_content": flow.request.content.decode("utf-8", "ignore")
                 if flow.request.content
                 else "",
                 "response_status": flow.response.status_code if flow.response else 0,
                 "response_headers": dict(flow.response.headers)
                 if flow.response
                 else {},
-                "response_content": flow.response.content.decode(
-                    "utf-8", errors="ignore"
-                )
+                "response_content": flow.request.content.decode("utf-8", "ignore")
                 if flow.response and flow.response.content
                 else "",
             }
@@ -163,7 +162,7 @@ class HeaderAnalyzer:
         print(f"\n💾 Detailed report saved to: {output_file}")
 
 
-def main():
+async def main():
     """Main function to run the header analyzer."""
     # Create options
     opts = options.Options()
@@ -192,4 +191,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
