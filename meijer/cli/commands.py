@@ -582,11 +582,24 @@ def list_clearall():
     is_flag=True,
     help="Alternate B aisle sorting (B1 ascending, B2 descending, etc.)",
 )
-def list_defrag(store_id: Optional[str], reverse: bool, zig: bool):
+@click.option(
+    "-s", "--show", is_flag=True, help="Show shopping list before and after defrag"
+)
+def list_defrag(store_id: Optional[str], reverse: bool, zig: bool, show: bool):
     """Defragment shopping list by organizing items by aisle."""
     client = get_meijer_client()
 
     try:
+        # Show items before defrag if requested
+        if show:
+            click.echo("📋 Shopping List Before Defrag:")
+            items_before = client.list.get()
+            if items_before:
+                display_items_table(items_before, "Before Defrag")
+            else:
+                click.echo("📝 Shopping list is empty")
+            click.echo()
+
         click.echo("🔧 Starting shopping list defrag...")
         click.echo("⏳ This may take a moment to search for product locations...")
 
@@ -604,6 +617,16 @@ def list_defrag(store_id: Optional[str], reverse: bool, zig: bool):
             click.echo(
                 "📋 Your shopping list is now organized by aisle for efficient shopping!"
             )
+            
+            # Show items after defrag if requested
+            if show:
+                click.echo()
+                click.echo("📋 Shopping List After Defrag:")
+                items_after = client.list.get()
+                if items_after:
+                    display_items_table(items_after, "After Defrag")
+                else:
+                    click.echo("📝 Shopping list is empty after defrag")
         else:
             raise click.ClickException("❌ Defrag failed!")
     except Exception as e:
@@ -653,6 +676,27 @@ def list_export(filename: str):
 
     except Exception as e:
         raise click.ClickException(f"❌ Export failed: {e}")
+
+
+@list_group.command("export-defragmented")
+@click.option("--store-id", "-s", help="Store ID for location lookup")
+@click.option("--output", "-o", type=click.Path(), help="Output file path (default: defragmented_shopping_list.json)")
+def list_export_defragmented(store_id: Optional[str], output: Optional[str]):
+    """Export defragmented shopping list to JSON with organized aisle groups."""
+    client = get_meijer_client()
+
+    try:
+        click.echo("🔧 Exporting defragmented shopping list...")
+        click.echo("⏳ This will run defrag and export the organized results...")
+        
+        # Use the new export_defragmented method
+        client.list.export_defragmented(store_id=store_id, output_path=output)
+        
+        output_path = output or "defragmented_shopping_list.json"
+        click.echo(f"📁 File saved to: {Path(output_path).absolute()}")
+        
+    except Exception as e:
+        raise click.ClickException(f"❌ Export defragmented failed: {e}")
 
 
 @list_group.command("import")

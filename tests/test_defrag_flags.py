@@ -89,6 +89,16 @@ def test_defrag_flags() -> None:
         print("   Command: client.list.defrag(reverse=True, zig=True)")
         print("   Result: Zig-zag B aisle sorting + reverse overall order")
 
+        # Test 5: Show flag
+        print("\n📋 Test 5: Show before/after")
+        print("   Command: client.list.defrag(show=True)")
+        print("   Result: Display shopping list before and after defrag")
+
+        # Test 6: Combined with show
+        print("\n📋 Test 6: Combined with show")
+        print("   Command: client.list.defrag(reverse=True, zig=True, show=True)")
+        print("   Result: All options + display before/after")
+
         # Show CLI usage examples
         print("\n3. 💻 CLI Usage Examples")
         print("-" * 40)
@@ -105,9 +115,17 @@ meijer list defrag -r
 meijer list defrag --zig
 meijer list defrag -z
 
+# Show before/after defrag
+meijer list defrag --show
+meijer list defrag -s
+
 # Combined flags
 meijer list defrag --reverse --zig
 meijer list defrag -r -z
+
+# Combined with show
+meijer list defrag --reverse --zig --show
+meijer list defrag -r -z -s
 
 # With store ID
 meijer list defrag --store-id 123 --reverse --zig
@@ -129,8 +147,14 @@ client.list.defrag(reverse=True)
 # Zig-zag B aisle defrag
 client.list.defrag(zig=True)
 
+# Show before/after defrag
+client.list.defrag(show=True)
+
 # Combined flags
 client.list.defrag(reverse=True, zig=True)
+
+# Combined with show
+client.list.defrag(reverse=True, zig=True, show=True)
 
 # With store ID
 client.list.defrag(store_id="123", reverse=True, zig=True)
@@ -175,6 +199,11 @@ This minimizes backtracking and creates a smooth shopping flow.
    • When you want zig-zag B aisle pattern but in reverse overall order
    • Useful if entering from opposite end but still want B aisle efficiency
    • More complex sorting that may be harder to follow
+
+🔵 --show (-s):
+   • When you want to see the shopping list before and after defrag
+   • Useful for understanding how items were reorganized
+   • Good for debugging or verifying defrag results
 
 ⚪ No flags (default):
    • Standard ascending aisle order
@@ -494,9 +523,17 @@ def create_defrag_flags_notebook() -> Dict[str, Any]:
                     "meijer list defrag --zig\n",
                     "meijer list defrag -z\n",
                     "\n",
+                    "# Show before/after defrag\n",
+                    "meijer list defrag --show\n",
+                    "meijer list defrag -s\n",
+                    "\n",
                     "# Combined flags\n",
                     "meijer list defrag --reverse --zig\n",
                     "meijer list defrag -r -z\n",
+                    "\n",
+                    "# Combined with show\n",
+                    "meijer list defrag --reverse --zig --show\n",
+                    "meijer list defrag -r -z -s\n",
                     "\n",
                     "# With store ID\n",
                     "meijer list defrag --store-id 123 --reverse --zig\n",
@@ -532,8 +569,14 @@ def create_defrag_flags_notebook() -> Dict[str, Any]:
                     "# Zig-zag B aisle defrag\n",
                     "client.list.defrag(zig=True)\n",
                     "\n",
+                    "# Show before/after defrag\n",
+                    "client.list.defrag(show=True)\n",
+                    "\n",
                     "# Combined flags\n",
                     "client.list.defrag(reverse=True, zig=True)\n",
+                    "\n",
+                    "# Combined with show\n",
+                    "client.list.defrag(reverse=True, zig=True, show=True)\n",
                     "\n",
                     "# With store ID\n",
                     'client.list.defrag(store_id="123", reverse=True, zig=True)\n',
@@ -724,6 +767,11 @@ def create_defrag_flags_notebook() -> Dict[str, Any]:
                     "   • When you want zig-zag B aisle pattern but in reverse overall order\n",
                     "   • Useful if entering from opposite end but still want B aisle efficiency\n",
                     "   • More complex sorting that may be harder to follow\n",
+                    "\n",
+                    "🔵 --show (-s):\n",
+                    "   • When you want to see the shopping list before and after defrag\n",
+                    "   • Useful for understanding how items were reorganized\n",
+                    "   • Good for debugging or verifying defrag results\n",
                     "\n",
                     "⚪ No flags (default):\n",
                     "   • Standard ascending aisle order\n",
