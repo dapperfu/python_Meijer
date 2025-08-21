@@ -35,6 +35,9 @@ Examples:
          
          # Login using hybrid method (browser + requests)
          python meijer_login.py --method hybrid
+         
+         # Login using hybrid method in headless mode
+         python meijer_login.py --method hybrid --headless
 
   # Save tokens to custom file
   python meijer_login.py --output my_tokens.json
@@ -50,6 +53,12 @@ Examples:
         choices=["requests", "selenium", "hybrid"],
         default="requests",
         help="Authentication method (default: requests)",
+    )
+    
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run browser in headless mode (only applies to selenium/hybrid methods)",
     )
 
     parser.add_argument(
@@ -76,7 +85,11 @@ Examples:
     print()
 
     try:
-        success = perform_login_and_save(args.method, args.output)
+        # For hybrid method, we need to handle headless flag
+        if args.method == "hybrid" and args.headless:
+            print("⚠️  Note: Using headless mode for hybrid method (less debugging info)")
+        
+        success = perform_login_and_save(args.method, args.output, headless=args.headless)
 
         if success:
             print(f"\n✅ Login successful! Tokens saved to {args.output}")

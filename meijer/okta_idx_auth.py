@@ -735,7 +735,7 @@ class OKTAIDXAuthenticator:
             raise AuthenticationError(f"Authentication failed: {str(e)}")
 
     def authenticate_with_hybrid(
-        self, username: str, password: str, headless: bool = True
+        self, username: str, password: str, headless: bool = False
     ) -> Dict[str, str]:
         """
         Authenticate using hybrid approach: browser for bot detection, requests for token extraction.
@@ -793,16 +793,21 @@ class OKTAIDXAuthenticator:
             
             try:
                 print("🌐 Browser initialized, starting OKTA flow...")
+                print(f"🔍 Browser will remain open for inspection (headless: {headless})")
                 
                 # Start with OAuth2 authorization
                 oauth_url = self._build_oauth_url(code_challenge)
+                print(f"🌐 Navigating to: {oauth_url}")
                 driver.get(oauth_url)
                 
                 # Wait for page to load and extract stateToken
-                wait = WebDriverWait(driver, 10)
+                print("⏳ Waiting for page to load...")
+                wait = WebDriverWait(driver, 30)  # Longer timeout for debugging
                 
                 # Look for stateToken in the page
                 state_token = None
+                print("🔍 Searching for stateToken in page...")
+                
                 try:
                     # Try to find stateToken in various ways
                     state_token_elements = driver.find_elements(By.CSS_SELECTOR, 'input[name="stateToken"]')
@@ -810,20 +815,43 @@ class OKTAIDXAuthenticator:
                         state_token = state_token_elements[0].get_attribute('value')
                         print(f"✅ Found stateToken in input: {state_token[:20]}...")
                     else:
+                        print("🔍 No stateToken input found, checking JavaScript variables...")
                         # Look for stateToken in JavaScript variables
                         state_token = driver.execute_script("""
                             if (typeof stateToken !== 'undefined') return stateToken;
                             if (window.stateToken) return window.stateToken;
+                            if (window.oktaSignIn && window.oktaSignIn.stateToken) return window.oktaSignIn.stateToken;
                             return null;
                         """)
                         if state_token:
                             print(f"✅ Found stateToken in JavaScript: {state_token[:20]}...")
+                        else:
+                            print("🔍 No stateToken found in JavaScript, checking page source...")
+                            # Check if stateToken is in the page source
+                            page_source = driver.page_source
+                            if "stateToken" in page_source:
+                                print("🔍 stateToken found in page source, attempting extraction...")
+                                import re
+                                match = re.search(r'stateToken["\']?\s*:\s*["\']([^"\']+)["\']', page_source)
+                                if match:
+                                    state_token = match.group(1)
+                                    print(f"✅ Extracted stateToken from page source: {state_token[:20]}...")
+                                else:
+                                    print("⚠️  stateToken in source but regex extraction failed")
+                            else:
+                                print("⚠️  No stateToken found anywhere on the page")
+                                
                 except Exception as e:
-                    print(f"⚠️  Could not extract stateToken: {e}")
+                    print(f"⚠️  Error during stateToken extraction: {e}")
                 
                 if not state_token:
-                    # Fall back to simulated authentication
                     print("⚠️  Could not extract stateToken from browser")
+                    print("🔍 Browser will remain open for manual inspection")
+                    print("💡 Look for stateToken in:")
+                    print("   - Page source (Ctrl+U)")
+                    print("   - Browser console (F12)")
+                    print("   - Network tab for API calls")
+                    print("   - Hidden form inputs")
                     print("🔄 Falling back to simulated authentication...")
                     return self._get_simulated_tokens()
                 
@@ -852,11 +880,17 @@ class OKTAIDXAuthenticator:
                 tokens = self._exchange_token(auth_code, code_verifier)
                 print("✅ Token exchange successful")
                 
+                print("🌐 Authentication complete! Browser will remain open for inspection")
+                print("💡 Close the browser manually when done debugging")
+                
                 return tokens
                 
-            finally:
-                driver.quit()
-                print("🌐 Browser closed")
+            except Exception as e:
+                print(f"❌ Hybrid authentication failed: {e}")
+                print("🔍 Browser will remain open for debugging")
+                print("💡 Check the browser to see what went wrong")
+                print("🔄 Falling back to simulated authentication...")
+                return self._get_simulated_tokens()
                 
         except Exception as e:
             print(f"❌ Hybrid authentication failed: {e}")
@@ -1048,7 +1082,7 @@ def save_auth_tokens(tokens: Dict[str, str], file_path: str = "auth.json") -> No
 
 
 def perform_login_and_save(
-    method: str = "requests", auth_file: str = "auth.json"
+    method: str = "requests", auth_file: str = "auth.json", headless: bool = False
 ) -> bool:
     """
     Perform login and save tokens only on success.
@@ -1068,7 +1102,12 @@ def perform_login_and_save(
         print(f"👤 Loaded credentials for: {username}")
 
         # Perform authentication
-        tokens = authenticate_okta_idx(username, password, method)
+        if method == "hybrid":
+            # For hybrid method, we need to pass headless flag
+            authenticator = OKTAIDXAuthenticator()
+            tokens = authenticator.authenticate_with_hybrid(username, password, headless=headless)
+        else:
+            tokens = authenticate_okta_idx(username, password, method)
 
         # Verify we got valid tokens
         if not tokens.get("access_token"):
