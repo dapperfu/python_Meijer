@@ -1768,9 +1768,9 @@ def login_selenium(headless: bool, keep_open: bool):
 )
 @click.option(
     "--headless", 
-    type=click.Choice(["true", "false"]), 
-    default="false",
-    help="Run browser in headless mode: true/false (selenium only, default: false for visibility)"
+    is_flag=True,
+    default=False,
+    help="Run browser in headless mode (selenium only, default: visible browser)"
 )
 @click.option(
     "--keep-open", is_flag=True, help="Keep browser open for debugging (selenium only)"
@@ -1850,8 +1850,8 @@ def login_command(
         if method == "selenium":
             click.echo("🌐 Using Selenium WebDriver authentication method")
             
-            # Convert headless string to boolean
-            headless_bool = headless.lower() == "true"
+            # headless is now a boolean flag
+            headless_bool = headless
             
             # Show browser mode and keep-open status
             if keep_open:

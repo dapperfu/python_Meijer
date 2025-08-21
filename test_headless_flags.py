@@ -19,31 +19,30 @@ def test_flag_combinations():
     
     print("Expected behavior:")
     print("• meijer login --method selenium (default: visible browser)")
-    print("• meijer login --method selenium --headless true (headless)")
-    print("• meijer login --method selenium --headless false (visible)")
+    print("• meijer login --method selenium --headless (headless)")
     print("• meijer login --method selenium --keep-open (visible, stays open)")
-    print("• meijer login --method selenium --headless true --keep-open (visible, stays open)")
+    print("• meijer login --method selenium --headless --keep-open (visible, stays open)")
     print()
     
-    print("The key changes:")
-    print("✅ Default headless is now 'false' (visible browser)")
-    print("✅ --keep-open works with any headless setting")
-    print("✅ No more forcing headless=false when using --keep-open")
-    print("✅ More intuitive: visible by default for debugging")
+    print("The key improvements:")
+    print("✅ --headless is now a simple boolean flag (no strings needed)")
+    print("✅ Default is visible browser (great for debugging)")
+    print("✅ --keep-open works naturally with any headless setting")
+    print("✅ Much cleaner and more intuitive syntax")
     print()
     
     print("To test the actual behavior:")
     print("1. meijer login --method selenium --keep-open")
     print("   (Should open visible browser and keep it open)")
     print()
-    print("2. meijer login --method selenium --headless true")
+    print("2. meijer login --method selenium --headless")
     print("   (Should run headless)")
     print()
-    print("3. meijer login --method selenium --headless false --keep-open")
+    print("3. meijer login --method selenium --headless --keep-open")
     print("   (Should open visible browser and keep it open)")
     print()
     
-    print("The flags should now work as expected!")
+    print("The flags should now work exactly as expected!")
 
 
 if __name__ == "__main__":
