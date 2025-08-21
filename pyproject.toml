@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meijer-cli"
+version = "1.0.0"
+description = "A comprehensive CLI tool for managing Meijer shopping lists"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Claude Sonnet 4", email = "claude@anthropic.com"}
+]
+maintainers = [
+    {name = "Claude Sonnet 4", email = "claude@anthropic.com"}
+]
+keywords = ["meijer", "shopping", "list", "cli", "grocery", "retail"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Office/Business",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "click>=8.0.0",
+    "rich>=12.0.0",
+    "requests>=2.25.0",
+    "urllib3>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0.0",
+    "black>=21.0.0",
+    "mypy>=0.910",
+    "rich>=12.0.0",
+]
+interactive = [
+    "rich>=12.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dapperfu/python_Meijer"
+Documentation = "https://github.com/dapperfu/python_Meijer#readme"
+Repository = "https://github.com/dapperfu/python_Meijer"
+Issues = "https://github.com/dapperfu/python_Meijer/issues"
+
+[project.scripts]
+meijer = "meijer.cli.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+"*" = ["*.txt", "*.md", "*.json", "*.yaml", "*.yml"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.pyc", "*.pyo", "__pycache__", "*.egg-info", ".git*", ".vscode*", "venv*", "tests*", "examples*", "demos*", "tools*", "notebooks*", "htmlcov*", ".pytest_cache*", ".mypy_cache*", ".coverage*"]
