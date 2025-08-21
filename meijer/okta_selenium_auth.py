@@ -216,15 +216,15 @@ class OktaSeleniumAuth:
         """Submit username and password through the two-step login form."""
         try:
             print("👤 Looking for login form...")
-            
+
             # Wait for the login form to appear
             wait = WebDriverWait(self.driver, 15)
-            
+
             # For debugging: add a pause to see the page
             if not self.headless:
-                print("⏸️ Pausing for 3 seconds so you can see the page...")
-                time.sleep(3)
-            
+                print("⏸️ Pausing for 1 second so you can see the page...")
+                time.sleep(1)
+
             # STEP 1: Find and fill username field
             print("📡 Step 1: Looking for username field...")
             username_selectors = [
@@ -236,9 +236,9 @@ class OktaSeleniumAuth:
                 "input[placeholder*='username' i]",
                 "input[id*='username' i]",
                 "input[id*='email' i]",
-                "input[id*='identifier' i]"
+                "input[id*='identifier' i]",
             ]
-            
+
             username_field = None
             for selector in username_selectors:
                 try:
@@ -249,28 +249,30 @@ class OktaSeleniumAuth:
                     break
                 except TimeoutException:
                     continue
-            
+
             if not username_field:
                 print("❌ Username field not found")
                 print("🔍 Available form elements:")
                 try:
                     inputs = self.driver.find_elements(By.TAG_NAME, "input")
                     for i, inp in enumerate(inputs):
-                        print(f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}")
+                        print(
+                            f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
+                        )
                 except Exception as e:
                     print(f"   Error listing inputs: {e}")
                 return False
-            
+
             # Fill username
             print("🔑 Entering username...")
             username_field.clear()
             username_field.send_keys(self.username)
             print(f"👤 Username entered: {self.username}")
-            
+
             # For debugging: pause to see username entered
             if not self.headless:
-                time.sleep(1)
-            
+                time.sleep(0.5)
+
             # STEP 2: Find and click Next/Submit button to go to password page
             print("📡 Step 2: Looking for Next/Submit button...")
             next_button_selectors = [
@@ -287,9 +289,9 @@ class OktaSeleniumAuth:
                 "button[class*='submit' i]",
                 "input[class*='next' i]",
                 "input[class*='continue' i]",
-                "input[class*='submit' i]"
+                "input[class*='submit' i]",
             ]
-            
+
             next_button = None
             for selector in next_button_selectors:
                 try:
@@ -300,52 +302,58 @@ class OktaSeleniumAuth:
                     break
                 except TimeoutException:
                     continue
-            
+
             if not next_button:
                 print("❌ Next/Submit button not found")
                 print("🔍 Available buttons:")
                 try:
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
                     for i, btn in enumerate(buttons):
-                        print(f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}")
-                    
+                        print(
+                            f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                        )
+
                     # Also look for submit inputs
-                    submit_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[type='submit']")
+                    submit_inputs = self.driver.find_elements(
+                        By.CSS_SELECTOR, "input[type='submit']"
+                    )
                     for i, inp in enumerate(submit_inputs):
-                        print(f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}")
-                        
+                        print(
+                            f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
+                        )
+
                 except Exception as e:
                     print(f"   Error listing buttons: {e}")
-                
+
                 # Take screenshot for debugging
                 self._take_screenshot("next_button_not_found")
                 return False
-            
+
             # Click Next/Submit to go to password page
             print("🚀 Clicking Next/Submit to go to password page...")
             next_button.click()
-            
+
             # For debugging: wait to see the transition
             if not self.headless:
-                print("⏸️ Waiting 3 seconds to see transition to password page...")
-                time.sleep(3)
+                print("⏸️ Waiting 1 second to see transition to password page...")
+                time.sleep(1)
             else:
-                time.sleep(2)
-            
+                time.sleep(0.5)
+
             print(f"📄 After Next click - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
-            
+
             # Take screenshot of password page
             self._take_screenshot("password_page_loaded")
-            
+
             # STEP 3: Find and fill password field on the second page
             print("📡 Step 3: Looking for password field on second page...")
-            
+
             # Wait a bit more for password field to appear
             if not self.headless:
-                print("⏸️ Waiting additional 2 seconds for password field to load...")
-                time.sleep(2)
-            
+                print("⏸️ Waiting additional 1 second for password field to load...")
+                time.sleep(1)
+
             # Look for password field with comprehensive selectors
             password_selectors = [
                 "input[name='password']",
@@ -355,9 +363,9 @@ class OktaSeleniumAuth:
                 "input[id*='passcode' i]",
                 "input[placeholder*='password' i]",
                 "input[placeholder*='passcode' i]",
-                "input[placeholder*='pass' i]"
+                "input[placeholder*='pass' i]",
             ]
-            
+
             password_field = None
             for selector in password_selectors:
                 try:
@@ -369,38 +377,45 @@ class OktaSeleniumAuth:
                     break
                 except TimeoutException:
                     continue
-            
+
             if not password_field:
                 print("❌ Password field not found on second page")
                 print("🔍 Available form elements on second page:")
                 try:
                     inputs = self.driver.find_elements(By.TAG_NAME, "input")
                     for i, inp in enumerate(inputs):
-                        print(f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}")
-                    
+                        print(
+                            f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
+                        )
+
                     # Also look for any password-like elements
                     print("🔍 Looking for password-like elements...")
-                    all_elements = self.driver.find_elements(By.XPATH, "//*[contains(text(), 'password') or contains(text(), 'Password') or contains(text(), 'passcode') or contains(text(), 'Passcode')]")
+                    all_elements = self.driver.find_elements(
+                        By.XPATH,
+                        "//*[contains(text(), 'password') or contains(text(), 'Password') or contains(text(), 'passcode') or contains(text(), 'Passcode')]",
+                    )
                     for elem in all_elements:
-                        print(f"   Password-related element: {elem.tag_name} - {elem.text[:50]}...")
-                        
+                        print(
+                            f"   Password-related element: {elem.tag_name} - {elem.text[:50]}..."
+                        )
+
                 except Exception as e:
                     print(f"   Error listing elements: {e}")
-                
+
                 # Take screenshot for debugging
                 self._take_screenshot("password_field_not_found")
                 return False
-            
+
             # Fill password
             print("🔑 Entering password...")
             password_field.clear()
             password_field.send_keys(self.password)
             print("🔑 Password entered: ********")
-            
+
             # For debugging: pause to see password entered
             if not self.headless:
-                time.sleep(1)
-            
+                time.sleep(0.5)
+
             # STEP 4: Find and click final Submit button
             print("📡 Step 4: Looking for final Submit button...")
             final_submit_selectors = [
@@ -419,9 +434,9 @@ class OktaSeleniumAuth:
                 "button[class*='login' i]",
                 "input[class*='submit' i]",
                 "input[class*='signin' i]",
-                "input[class*='login' i]"
+                "input[class*='login' i]",
             ]
-            
+
             final_submit_button = None
             for selector in final_submit_selectors:
                 try:
@@ -432,41 +447,47 @@ class OktaSeleniumAuth:
                     break
                 except TimeoutException:
                     continue
-            
+
             if not final_submit_button:
                 print("❌ Final Submit button not found")
                 print("🔍 Available buttons on password page:")
                 try:
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
                     for i, btn in enumerate(buttons):
-                        print(f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}")
-                    
+                        print(
+                            f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                        )
+
                     # Also look for submit inputs
-                    submit_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[type='submit']")
+                    submit_inputs = self.driver.find_elements(
+                        By.CSS_SELECTOR, "input[type='submit']"
+                    )
                     for i, inp in enumerate(submit_inputs):
-                        print(f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}")
-                        
+                        print(
+                            f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
+                        )
+
                 except Exception as e:
                     print(f"   Error listing buttons: {e}")
-                
+
                 # Take screenshot for debugging
                 self._take_screenshot("final_submit_button_not_found")
                 return False
-            
+
             # Submit the final form
             print("🚀 Submitting final login form...")
             final_submit_button.click()
-            
+
             # For debugging: longer wait to see the submission process
             if not self.headless:
-                print("⏸️ Waiting 5 seconds to see submission process...")
-                time.sleep(5)
+                print("⏸️ Waiting 2 seconds to see submission process...")
+                time.sleep(2)
             else:
-                time.sleep(3)
-            
+                time.sleep(1)
+
             print(f"📄 After final submission - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
-            
+
             return True
 
         except Exception as e:
@@ -474,59 +495,299 @@ class OktaSeleniumAuth:
             return False
 
     def _handle_mfa_if_required(self) -> Optional[bool]:
-        """Handle MFA if it's required during authentication."""
+        """Handle MFA if required during authentication."""
         try:
             print("📱 Checking for MFA requirements...")
 
-            # Look for MFA indicators
+            # Wait a bit for the page to load
+            time.sleep(2)
+
+            # Check if we're on an MFA page
+            current_title = self.driver.title.lower()
+            current_url = self.driver.current_url.lower()
+
             mfa_indicators = [
-                "text()='Enter code'",
-                "text()='Verification code'",
-                "text()='MFA'",
-                "text()='Two-factor'",
-                "text()='2FA'",
-                "text()='Authenticator'",
-                "text()='SMS'",
-                "text()='Email'",
+                "verify",
+                "verification",
+                "mfa",
+                "2fa",
+                "two-factor",
+                "two factor",
+                "authenticator",
+                "code",
+                "sms",
+                "email",
+                "phone",
+                "security",
             ]
 
-            mfa_required = False
-            for indicator in mfa_indicators:
-                try:
-                    element = self.driver.find_element(
-                        By.XPATH, f"//*[contains({indicator})]"
-                    )
-                    if element:
-                        mfa_required = True
-                        print(f"📱 MFA required: {indicator}")
-                        break
-                except NoSuchElementException:
-                    continue
+            is_mfa_page = any(
+                indicator in current_title for indicator in mfa_indicators
+            ) or any(indicator in current_url for indicator in mfa_indicators)
 
-            if not mfa_required:
-                print("✅ No MFA required")
+            if not is_mfa_page:
+                print("✅ No MFA required - proceeding with authentication")
                 return True
 
-            # For now, we'll just wait and see if the MFA step completes automatically
-            # In a real implementation, you'd prompt the user for the MFA code
-            print("📱 MFA detected - waiting for user input or automatic completion...")
-            print("💡 Note: MFA codes must be entered manually in the browser")
+            print("🔐 MFA page detected - looking for verification options...")
 
-            # Wait up to 60 seconds for MFA completion
-            wait_time = 60
-            print(f"⏰ Waiting up to {wait_time} seconds for MFA completion...")
+            # Take screenshot of MFA page
+            self._take_screenshot("mfa_page_detected")
 
-            start_time = time.time()
-            while time.time() - start_time < wait_time:
-                current_url = self.driver.current_url
-                if "callback" in current_url or "success" in current_url.lower():
-                    print("✅ MFA appears to be completed")
-                    return True
+            # First, try to find and click the email option
+            print("📧 Looking for 'Send Mail' verification option...")
+            email_selectors = [
+                "//*[contains(text(), 'Send Mail')]",
+                "//*[contains(text(), 'send mail')]",
+                "//*[contains(text(), 'Send mail')]",
+                "//*[contains(text(), 'Email') and contains(text(), 'Send')]",
+                "//*[contains(text(), 'Email') and contains(text(), 'send')]",
+                "//button[contains(text(), 'Send Mail')]",
+                "//button[contains(text(), 'send mail')]",
+                "//button[contains(text(), 'Send mail')]",
+                "//input[contains(@value, 'Send Mail')]",
+                "//input[contains(@value, 'send mail')]",
+                "//input[contains(@value, 'Send mail')]",
+                "//label[contains(text(), 'Send Mail')]",
+                "//label[contains(text(), 'send mail')]",
+                "//label[contains(text(), 'Send mail')]",
+                "//div[contains(text(), 'Send Mail')]",
+                "//div[contains(text(), 'send mail')]",
+                "//div[contains(text(), 'Send mail')]",
+                "//span[contains(text(), 'Send Mail')]",
+                "//span[contains(text(), 'send mail')]",
+                "//span[contains(text(), 'Send mail')]",
+                "//*[contains(text(), 'Email')]",
+                "//button[contains(text(), 'Email')]",
+                "//input[contains(@value, 'Email')]",
+                "//label[contains(text(), 'Email')]",
+                "//div[contains(text(), 'Email')]",
+                "//span[contains(text(), 'Email')]",
+            ]
 
-                time.sleep(2)
+            email_option = None
+            for xpath in email_selectors:
+                try:
+                    email_option = self.driver.find_element(By.XPATH, xpath)
+                    print(f"✅ Found email option: {xpath}")
+                    break
+                except Exception:
+                    continue
 
-            print("⚠️ MFA timeout - authentication may have failed")
-            return False
+            if email_option:
+                print("📧 'Send Mail' verification option found - clicking it...")
+                try:
+                    # Try to click the email option
+                    email_option.click()
+                    print("✅ 'Send Mail' option clicked successfully")
+
+                    # Wait for the email verification page to load
+                    if not self.headless:
+                        print(
+                            "⏸️ Waiting 2 seconds for email verification page to load..."
+                        )
+                        time.sleep(2)
+                    else:
+                        time.sleep(1)
+
+                    # Take screenshot after selecting email
+                    self._take_screenshot("send_mail_option_selected")
+
+                    print(f"📄 Current URL: {self.driver.current_url}")
+                    print(f"📄 Page title: {self.driver.title}")
+
+                    # Now look for the email code input field
+                    print("📧 Looking for email code input field...")
+                    code_input_selectors = [
+                        "input[name='code']",
+                        "input[name='verificationCode']",
+                        "input[name='verification_code']",
+                        "input[name='passcode']",
+                        "input[name='answer']",
+                        "input[placeholder*='code' i]",
+                        "input[placeholder*='verification' i]",
+                        "input[placeholder*='enter' i]",
+                        "input[placeholder*='verification code' i]",
+                        "input[placeholder*='verification code']",
+                        "input[type='text']",
+                        "input[id*='code' i]",
+                        "input[id*='verification' i]",
+                        "input[id*='passcode' i]",
+                        "input[id*='answer' i]",
+                    ]
+
+                    code_input = None
+                    for selector in code_input_selectors:
+                        try:
+                            code_input = WebDriverWait(self.driver, 8).until(
+                                EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                            )
+                            print(f"✅ Found code input field: {selector}")
+                            break
+                        except TimeoutException:
+                            continue
+
+                    if code_input:
+                        print("📧 Email code input field found")
+                        print(
+                            "💡 For now, this is a manual step - please enter the email code in the browser"
+                        )
+
+                        if not self.headless:
+                            print("⏸️ Waiting for manual email code entry...")
+                            print(
+                                "📱 Please check your email and enter the verification code in the browser"
+                            )
+                            print(
+                                "⏸️ Press Enter in the terminal when the code is entered..."
+                            )
+
+                            # Take screenshot of code input page
+                            self._take_screenshot("email_code_input_page")
+
+                            # Wait for user input (this is just for debugging)
+                            try:
+                                input("Press Enter when email code is entered...")
+                            except:
+                                pass
+
+                            print("✅ Continuing after email code entry...")
+                            return True
+                        else:
+                            print(
+                                "⚠️ Headless mode - cannot handle email code entry interactively"
+                            )
+                            return False
+
+                    # If code input field not found, continue with improved logic
+                    print("📧 Email code input field not found initially")
+                    print("🔍 Available form elements on verification page:")
+                    try:
+                        inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                        for i, inp in enumerate(inputs):
+                            print(
+                                f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
+                            )
+
+                        # Also look for any verification-related elements
+                        print("🔍 Looking for verification-related elements...")
+                        all_elements = self.driver.find_elements(
+                            By.XPATH,
+                            "//*[contains(text(), 'verification') or contains(text(), 'code') or contains(text(), 'enter') or contains(text(), 'verification code')]",
+                        )
+                        for elem in all_elements:
+                            try:
+                                text = elem.text.strip()
+                                if text:
+                                    print(
+                                        f"   Verification element: {elem.tag_name} - {text[:100]}..."
+                                    )
+                            except:
+                                continue
+
+                    except Exception as e:
+                        print(f"   Error listing elements: {e}")
+
+                    # Check if we need to wait for the email to be sent first
+                    current_title = self.driver.title.lower()
+                    if (
+                        "get a verification email" in current_title
+                        or "verification email" in current_title
+                    ):
+                        print("📧 This appears to be a 'Get Verification Email' page")
+                        print(
+                            "💡 The email verification code input field may appear after the email is sent"
+                        )
+                        print(
+                            "⏸️ Waiting for the page to update with the code input field..."
+                        )
+
+                        # Wait a bit longer for the page to potentially update
+                        if not self.headless:
+                            print("⏸️ Waiting 5 seconds for page to update...")
+                            time.sleep(5)
+
+                            # Take another screenshot to see if anything changed
+                            self._take_screenshot("verification_page_after_wait")
+
+                            # Try to find the code input field again
+                            print("🔍 Trying to find code input field again...")
+                            for selector in code_input_selectors:
+                                try:
+                                    code_input = WebDriverWait(self.driver, 5).until(
+                                        EC.element_to_be_clickable(
+                                            (By.CSS_SELECTOR, selector)
+                                        )
+                                    )
+                                    print(
+                                        f"✅ Found code input field after wait: {selector}"
+                                    )
+                                    break
+                                except TimeoutException:
+                                    continue
+
+                            if code_input:
+                                print("📧 Email code input field found after waiting")
+                                print(
+                                    "💡 For now, this is a manual step - please enter the email code in the browser"
+                                )
+
+                                print("⏸️ Waiting for manual email code entry...")
+                                print(
+                                    "📱 Please check your email and enter the verification code in the browser"
+                                )
+                                print(
+                                    "⏸️ Press Enter in the terminal when the code is entered..."
+                                )
+
+                                # Take screenshot of code input page
+                                self._take_screenshot("email_code_input_page_found")
+
+                                # Wait for user input (this is just for debugging)
+                                try:
+                                    input("Press Enter when email code is entered...")
+                                except:
+                                    pass
+
+                                print("✅ Continuing after email code entry...")
+                                return True
+                            else:
+                                print(
+                                    "❌ Code input field still not found after waiting"
+                                )
+                                return False
+                        else:
+                            print(
+                                "⚠️ Headless mode - cannot wait for page updates interactively"
+                            )
+                            return False
+                    else:
+                        print("❌ Not a 'Get Verification Email' page - cannot proceed")
+                        return False
+
+                except Exception as e:
+                    print(f"❌ Error clicking 'Send Mail' option: {e}")
+                    return False
+            else:
+                print("❌ Email verification option not found")
+                print("🔍 Available MFA options:")
+                try:
+                    # Look for any clickable elements that might be MFA options
+                    clickable_elements = self.driver.find_elements(
+                        By.XPATH,
+                        "//button | //input[@type='submit'] | //a[contains(@class, 'button')]",
+                    )
+                    for i, elem in enumerate(clickable_elements):
+                        try:
+                            text = elem.text.strip()
+                            if text:
+                                print(f"   Option {i+1}: {elem.tag_name} - {text}")
+                        except:
+                            continue
+                except Exception as e:
+                    print(f"   Error listing options: {e}")
+
+                return False
 
         except Exception as e:
             print(f"❌ Error handling MFA: {e}")
