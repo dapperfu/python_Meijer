@@ -30,6 +30,7 @@ from .commands import (
     auth_command,
     cart_group,
     coupons_group,
+    email_2fa_group,
     gas_command,
     list_group,
     login_command,
@@ -91,6 +92,7 @@ def cli(verbose: int):
     • cart - Manage shopping cart and fulfillment
     • stores - Manage store information and search
     • settings - Manage account settings and preferences
+    • email-2fa - Manage email 2FA configuration and testing
     • login - Login with username/password (OKTA authentication)
     • auth - Extract authentication tokens from mitmproxy logs
     • status - Show authentication status
@@ -112,6 +114,7 @@ cli.add_command(coupons_group, name="coupons")
 cli.add_command(cart_group, name="cart")
 cli.add_command(stores_group, name="stores")
 cli.add_command(settings_group, name="settings")
+cli.add_command(email_2fa_group, name="email-2fa")
 
 # Add individual commands with cleaner names
 cli.add_command(auth_command, name="auth")

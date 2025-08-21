@@ -26,6 +26,97 @@ from .utils import (
 )
 
 
+# Email 2FA Commands
+@click.group()
+def email_2fa_group():
+    """Manage email 2FA configuration and testing."""
+    pass
+
+
+@email_2fa_group.command("setup")
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing configuration")
+def email_2fa_setup(force: bool):
+    """Create email configuration template for 2FA."""
+    try:
+        from meijer.email_2fa import create_email_config_template
+
+        if force:
+            click.echo(
+                "🔄 Creating email configuration template (overwriting existing)..."
+            )
+        else:
+            click.echo("📧 Creating email configuration template...")
+
+        create_email_config_template()
+        click.echo("\n📝 Next steps:")
+        click.echo("1. Edit the created email.txt file with your server details")
+        click.echo(
+            "2. For Gmail, generate an 'App Password' in your Google Account settings"
+        )
+        click.echo("3. Test the connection with: meijer email-2fa test")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to create email configuration: {e}")
+
+
+@email_2fa_group.command("test")
+def email_2fa_test():
+    """Test email 2FA connection and authentication."""
+    try:
+        from meijer.email_2fa import Email2FAHandler
+
+        click.echo("🧪 Testing email 2FA connection...")
+
+        email_handler = Email2FAHandler()
+
+        if email_handler.test_connection():
+            click.echo("✅ Email connection test successful!")
+
+            # Test getting latest verification code
+            click.echo("🔍 Checking for existing verification codes...")
+            code = email_handler.get_latest_verification_code()
+
+            if code:
+                click.echo(f"📧 Found verification code: {code}")
+            else:
+                click.echo("📧 No recent verification codes found")
+
+        else:
+            click.echo("❌ Email connection test failed!")
+            click.echo("💡 Check your email configuration and try again")
+
+    except FileNotFoundError:
+        click.echo("❌ Email configuration file not found!")
+        click.echo("💡 Run 'meijer email-2fa setup' to create the configuration")
+    except Exception as e:
+        raise click.ClickException(f"❌ Email 2FA test failed: {e}")
+
+
+@email_2fa_group.command("wait")
+@click.option("--timeout", "-t", default=300, help="Timeout in seconds (default: 300)")
+def email_2fa_wait(timeout: int):
+    """Wait for a verification code to arrive via email."""
+    try:
+        from meijer.email_2fa import Email2FAHandler
+
+        click.echo(f"⏳ Waiting for verification code (timeout: {timeout}s)...")
+
+        email_handler = Email2FAHandler()
+
+        code = email_handler.wait_for_verification_code(timeout)
+
+        if code:
+            click.echo(f"✅ Verification code received: {code}")
+        else:
+            click.echo("❌ No verification code received within timeout")
+
+    except FileNotFoundError:
+        click.echo("❌ Email configuration file not found!")
+        click.echo("💡 Run 'meijer email-2fa setup' to create the configuration")
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to wait for verification code: {e}")
+
+
 # Shopping List Commands
 @click.group()
 def list_group():

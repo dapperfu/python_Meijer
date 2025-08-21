@@ -584,17 +584,109 @@ class OktaSeleniumAuth:
                     # Wait for the email verification page to load
                     if not self.headless:
                         print(
-                            "⏸️ Waiting 2 seconds for email verification page to load..."
+                            "⏸️ Waiting 1 second for email verification page to load..."
                         )
-                        time.sleep(2)
-                    else:
                         time.sleep(1)
+                    else:
+                        time.sleep(0.5)
 
                     # Take screenshot after selecting email
                     self._take_screenshot("send_mail_option_selected")
 
                     print(f"📄 Current URL: {self.driver.current_url}")
                     print(f"📄 Page title: {self.driver.title}")
+
+                    # Check if we're on a confirmation page first
+                    current_title = self.driver.title.lower()
+                    if (
+                        "get a verification email" in current_title
+                        or "verification email" in current_title
+                    ):
+                        print(
+                            "📧 On email confirmation page - looking for confirmation button..."
+                        )
+
+                        # Look for confirmation/continue/send button
+                        confirm_selectors = [
+                            "button[type='submit']",
+                            "input[type='submit']",
+                            "button:contains('Send')",
+                            "button:contains('Continue')",
+                            "button:contains('Confirm')",
+                            "button:contains('Yes')",
+                            "button:contains('Submit')",
+                            "input[value*='Send' i]",
+                            "input[value*='Continue' i]",
+                            "input[value*='Confirm' i]",
+                            "input[value*='Submit' i]",
+                            "button[class*='confirm' i]",
+                            "button[class*='send' i]",
+                            "button[class*='continue' i]",
+                            "button[class*='submit' i]",
+                        ]
+
+                        confirm_button = None
+                        for selector in confirm_selectors:
+                            try:
+                                confirm_button = WebDriverWait(self.driver, 5).until(
+                                    EC.element_to_be_clickable(
+                                        (By.CSS_SELECTOR, selector)
+                                    )
+                                )
+                                print(f"✅ Found confirmation button: {selector}")
+                                break
+                            except TimeoutException:
+                                continue
+
+                        if confirm_button:
+                            print("🚀 Clicking confirmation button to send email...")
+                            confirm_button.click()
+
+                            # Wait for the actual verification code page to load
+                            if not self.headless:
+                                print(
+                                    "⏸️ Waiting 3 seconds for verification code page to load..."
+                                )
+                                time.sleep(3)
+                            else:
+                                time.sleep(2)
+
+                            # Take screenshot after confirmation
+                            self._take_screenshot("email_confirmation_sent")
+
+                            print(
+                                f"📄 After confirmation - URL: {self.driver.current_url}"
+                            )
+                            print(f"📄 Page title: {self.driver.title}")
+
+                            # Wait a bit more for the page to fully load and potentially show the code input field
+                            if not self.headless:
+                                print(
+                                    "⏸️ Waiting additional 2 seconds for page to fully load..."
+                                )
+                                time.sleep(2)
+                            else:
+                                time.sleep(1)
+
+                            # Take another screenshot to see the final state
+                            self._take_screenshot("verification_code_page_loaded")
+
+                            print(f"📄 Final page - URL: {self.driver.current_url}")
+                            print(f"📄 Final page title: {self.driver.title}")
+                        else:
+                            print("❌ Confirmation button not found")
+                            print("🔍 Available buttons on confirmation page:")
+                            try:
+                                buttons = self.driver.find_elements(
+                                    By.TAG_NAME, "button"
+                                )
+                                for i, btn in enumerate(buttons):
+                                    print(
+                                        f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                                    )
+                            except Exception as e:
+                                print(f"   Error listing buttons: {e}")
+                            return False
 
                     # Now look for the email code input field
                     print("📧 Looking for email code input field...")
@@ -704,8 +796,8 @@ class OktaSeleniumAuth:
 
                         # Wait a bit longer for the page to potentially update
                         if not self.headless:
-                            print("⏸️ Waiting 5 seconds for page to update...")
-                            time.sleep(5)
+                            print("⏸️ Waiting 3 seconds for page to update...")
+                            time.sleep(3)
 
                             # Take another screenshot to see if anything changed
                             self._take_screenshot("verification_page_after_wait")
@@ -714,7 +806,7 @@ class OktaSeleniumAuth:
                             print("🔍 Trying to find code input field again...")
                             for selector in code_input_selectors:
                                 try:
-                                    code_input = WebDriverWait(self.driver, 5).until(
+                                    code_input = WebDriverWait(self.driver, 3).until(
                                         EC.element_to_be_clickable(
                                             (By.CSS_SELECTOR, selector)
                                         )
