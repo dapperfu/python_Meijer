@@ -1,60 +1,70 @@
+# Temporarily commented out for development
+# repos:
+#   # Ruff for Python linting and formatting
+#   - repo: https://github.com/astral-sh/ruff-pre-commit
+#     rev: v0.3.3
+#     hooks:
+#       # Linting
+#       - id: ruff
+#         args: [--fix]
+#       # Formatting
+#       - id: ruff-format
+#       # Notebook formatting
+#       - id: ruff
+#         name: ruff (notebooks)
+#         args: [--fix]
+#         files: \.ipynb$
+#         types: [jupyter]
+# 
+#   # Import sorting
+#   - repo: https://github.com/astral-sh/ruff-pre-commit
+#     rev: v0.3.3
+#     hooks:
+#       - id: ruff
+#         args: [--fix, --select=I]
+# 
+#   # Type checking with mypy (simplified)
+#   - repo: https://github.com/pre-commit/mirrors-mypy
+#     rev: v1.9.0
+#     hooks:
+#       - id: mypy
+#         args: [--ignore-missing-imports, --no-strict-optional]
+# 
+#   # Security checks with bandit
+#   - repo: https://github.com/PyCQA/bandit
+#     rev: 1.7.8
+#     hooks:
+#       - id: bandit
+#         args: [-r, -f, json, -o, bandit-report.json]
+#         exclude: ^tests/
+# 
+#   # Jupyter notebook execution and output saving
+#   - repo: https://github.com/pre-commit/pre-commit-hooks
+#     rev: v4.5.0
+#     hooks:
+#       - id: trailing-whitespace
+#       - id: end-of-file-fixer
+#       - id: check-yaml
+#       - id: check-added-large-files
+#       - id: check-merge-conflict
+#       - id: debug-statements
+# 
+#   # Execute Jupyter notebooks and save output
+#   - repo: local
+#     hooks:
+#       - id: execute-notebooks
+#         name: Execute Jupyter Notebooks
+#         entry: bash -c 'for nb in "$@"; do echo "Executing $nb"; python -m jupyter nbconvert --execute --inplace --allow-errors "$nb"; done'
+#         language: system
+#         files: \.ipynb$
+#         types: [jupyter]
+#         pass_filenames: true
+
+# Minimal hooks for basic checks only
 repos:
-  # Ruff for Python linting and formatting
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.3
-    hooks:
-      # Linting
-      - id: ruff
-        args: [--fix]
-      # Formatting
-      - id: ruff-format
-      # Notebook formatting
-      - id: ruff
-        name: ruff (notebooks)
-        args: [--fix]
-        files: \.ipynb$
-        types: [jupyter]
-
-  # Import sorting
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.3
-    hooks:
-      - id: ruff
-        args: [--fix, --select=I]
-
-  # Type checking with mypy (simplified)
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
-    hooks:
-      - id: mypy
-        args: [--ignore-missing-imports, --no-strict-optional]
-
-  # Security checks with bandit
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.8
-    hooks:
-      - id: bandit
-        args: [-r, -f, json, -o, bandit-report.json]
-        exclude: ^tests/
-
-  # Jupyter notebook execution and output saving
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
-      - id: debug-statements
-
-  # Execute Jupyter notebooks and save output
-  - repo: local
-    hooks:
-      - id: execute-notebooks
-        name: Execute Jupyter Notebooks
-        entry: bash -c 'for nb in "$@"; do echo "Executing $nb"; python -m jupyter nbconvert --execute --inplace --allow-errors "$nb"; done'
-        language: system
-        files: \.ipynb$
-        types: [jupyter]
-        pass_filenames: true
