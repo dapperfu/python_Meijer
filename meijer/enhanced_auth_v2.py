@@ -20,7 +20,7 @@ from typing import Dict, Optional, Tuple
 import requests
 
 from .email_2fa import Email2FAHandler
-from .exceptions import AuthenticationError, MFARequiredError
+from .exceptions import MeijerAuthenticationError, MFARequiredError
 
 
 @dataclass
@@ -138,7 +138,7 @@ class EnhancedMeijerAuthV2:
         response = self.session.get(url, params=params)
 
         if response.status_code != 200:
-            raise AuthenticationError(
+            raise MeijerAuthenticationError(
                 f"Failed to get authorization page: {response.status_code}"
             )
 
@@ -159,14 +159,14 @@ class EnhancedMeijerAuthV2:
         if match:
             self.flow_state.state_token = match.group(1)
         else:
-            raise AuthenticationError(
+            raise MeijerAuthenticationError(
                 "Could not extract state token from authorization page"
             )
 
     def _idx_introspect(self) -> Dict:
         """Step 2: Call IDX introspect to get the state handle."""
         if not self.flow_state.state_token:
-            raise AuthenticationError("No state token available for introspect")
+            raise MeijerAuthenticationError("No state token available for introspect")
 
         url = f"{self.base_url}/idp/idx/introspect"
 
@@ -181,7 +181,9 @@ class EnhancedMeijerAuthV2:
         response = self.session.post(url, headers=headers, json=data)
 
         if response.status_code != 200:
-            raise AuthenticationError(f"IDX introspect failed: {response.status_code}")
+            raise MeijerAuthenticationError(
+                f"IDX introspect failed: {response.status_code}"
+            )
 
         result = response.json()
 
@@ -204,7 +206,7 @@ class EnhancedMeijerAuthV2:
         response = self.session.get(url, headers=headers)
 
         if response.status_code != 200:
-            raise AuthenticationError(
+            raise MeijerAuthenticationError(
                 f"Device fingerprint request failed: {response.status_code}"
             )
 
@@ -219,7 +221,7 @@ class EnhancedMeijerAuthV2:
     def _submit_identifier(self) -> Dict:
         """Step 4: Submit username/email identifier."""
         if not self.flow_state.state_handle:
-            raise AuthenticationError(
+            raise MeijerAuthenticationError(
                 "No state handle available for identifier submission"
             )
 
@@ -239,7 +241,7 @@ class EnhancedMeijerAuthV2:
         response = self.session.post(url, headers=headers, json=data)
 
         if response.status_code != 200:
-            raise AuthenticationError(
+            raise MeijerAuthenticationError(
                 f"Identifier submission failed: {response.status_code}"
             )
 
@@ -254,7 +256,7 @@ class EnhancedMeijerAuthV2:
     def _submit_password(self) -> Dict:
         """Step 5: Submit password challenge."""
         if not self.flow_state.state_handle:
-            raise AuthenticationError(
+            raise MeijerAuthenticationError(
                 "No state handle available for password submission"
             )
 
@@ -274,7 +276,7 @@ class EnhancedMeijerAuthV2:
         response = self.session.post(url, headers=headers, json=data)
 
         if response.status_code != 200:
-            raise AuthenticationError(
+            raise MeijerAuthenticationError(
                 f"Password submission failed: {response.status_code}"
             )
 
@@ -307,30 +309,32 @@ class EnhancedMeijerAuthV2:
     def _handle_mfa(self) -> str:
         """Handle multi-factor authentication."""
         if not self.email_2fa_config:
-            raise AuthenticationError("Email 2FA configuration required for MFA")
+            raise MeijerAuthenticationError("Email 2FA configuration required for MFA")
 
         try:
             email_handler = Email2FAHandler(self.email_2fa_config)
 
             # Test connection first
             if not email_handler.test_connection():
-                raise AuthenticationError("Failed to connect to email server")
+                raise MeijerAuthenticationError("Failed to connect to email server")
 
             # Wait for verification code
             code = email_handler.wait_for_verification_code()
 
             if not code:
-                raise AuthenticationError("Failed to receive verification code")
+                raise MeijerAuthenticationError("Failed to receive verification code")
 
             return code
 
         except Exception as e:
-            raise AuthenticationError(f"Email 2FA failed: {str(e)}")
+            raise MeijerAuthenticationError(f"Email 2FA failed: {str(e)}")
 
     def _submit_mfa_code(self, code: str) -> Dict:
         """Submit MFA verification code."""
         if not self.flow_state.state_handle:
-            raise AuthenticationError("No state handle available for MFA submission")
+            raise MeijerAuthenticationError(
+                "No state handle available for MFA submission"
+            )
 
         url = f"{self.base_url}/idp/idx/challenge/answer"
 
@@ -348,7 +352,9 @@ class EnhancedMeijerAuthV2:
         response = self.session.post(url, headers=headers, json=data)
 
         if response.status_code != 200:
-            raise AuthenticationError(f"MFA submission failed: {response.status_code}")
+            raise MeijerAuthenticationError(
+                f"MFA submission failed: {response.status_code}"
+            )
 
         result = response.json()
 
@@ -361,7 +367,9 @@ class EnhancedMeijerAuthV2:
     def _exchange_code_for_tokens(self) -> Dict:
         """Step 6: Exchange authorization code for tokens."""
         if not hasattr(self.flow_state, "code_verifier"):
-            raise AuthenticationError("No code verifier available for token exchange")
+            raise MeijerAuthenticationError(
+                "No code verifier available for token exchange"
+            )
 
         url = f"{self.oauth_url}/token"
 
@@ -378,7 +386,9 @@ class EnhancedMeijerAuthV2:
         response = self.session.post(url, headers=headers, data=data)
 
         if response.status_code != 200:
-            raise AuthenticationError(f"Token exchange failed: {response.status_code}")
+            raise MeijerAuthenticationError(
+                f"Token exchange failed: {response.status_code}"
+            )
 
         return response.json()
 
@@ -390,7 +400,7 @@ class EnhancedMeijerAuthV2:
             Dict containing access_token, refresh_token, and other tokens
 
         Raises:
-            AuthenticationError: If authentication fails
+            MeijerAuthenticationError: If authentication fails
             MFARequiredError: If MFA is required but not handled
         """
         try:
@@ -420,7 +430,7 @@ class EnhancedMeijerAuthV2:
             return tokens
 
         except Exception as e:
-            raise AuthenticationError(f"Authentication flow failed: {str(e)}")
+            raise MeijerAuthenticationError(f"Authentication flow failed: {str(e)}")
 
     def get_session_cookies(self) -> Dict[str, str]:
         """Get the current session cookies."""
@@ -446,7 +456,7 @@ def authenticate_with_fake_headers(
         Dict containing authentication tokens
 
     Raises:
-        AuthenticationError: If authentication fails
+        MeijerAuthenticationError: If authentication fails
     """
     auth = EnhancedMeijerAuthV2(username, password, email_2fa_config)
     return auth.authenticate()

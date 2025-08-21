@@ -18,8 +18,26 @@ class MeijerAuthenticationError(MeijerError):
     pass
 
 
+class AuthenticationError(MeijerAuthenticationError):
+    """Raised when authentication fails (alias for compatibility)."""
+
+    pass
+
+
+class MFARequiredError(MeijerError):
+    """Raised when multi-factor authentication is required."""
+
+    pass
+
+
 class MeijerAPIError(MeijerError):
     """Raised when API requests fail."""
+
+    pass
+
+
+class OKTAError(MeijerError):
+    """Raised when OKTA-specific errors occur."""
 
     pass
 
