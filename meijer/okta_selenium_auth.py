@@ -216,15 +216,15 @@ class OktaSeleniumAuth:
         """Submit username and password through the login form."""
         try:
             print("👤 Looking for login form...")
-
+            
             # Wait for the login form to appear
             wait = WebDriverWait(self.driver, 15)
-
+            
             # For debugging: add a pause to see the page
             if not self.headless:
                 print("⏸️ Pausing for 3 seconds so you can see the page...")
                 time.sleep(3)
-
+            
             # Look for username field (try multiple selectors)
             username_selectors = [
                 "input[name='username']",
@@ -235,9 +235,9 @@ class OktaSeleniumAuth:
                 "input[placeholder*='username' i]",
                 "input[id*='username' i]",
                 "input[id*='email' i]",
-                "input[id*='identifier' i]",
+                "input[id*='identifier' i]"
             ]
-
+            
             username_field = None
             for selector in username_selectors:
                 try:
@@ -248,63 +248,87 @@ class OktaSeleniumAuth:
                     break
                 except TimeoutException:
                     continue
-
+            
             if not username_field:
                 print("❌ Username field not found")
                 print("🔍 Available form elements:")
                 try:
                     inputs = self.driver.find_elements(By.TAG_NAME, "input")
                     for i, inp in enumerate(inputs):
-                        print(
-                            f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
-                        )
+                        print(f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}")
                 except Exception as e:
                     print(f"   Error listing inputs: {e}")
                 return False
-
-            # Look for password field
+            
+            # For debugging: wait a bit more for password field to appear
+            if not self.headless:
+                print("⏸️ Waiting additional 2 seconds for password field to load...")
+                time.sleep(2)
+            
+            # Look for password field with more comprehensive selectors
             password_selectors = [
                 "input[name='password']",
                 "input[name='passcode']",
                 "input[type='password']",
                 "input[id*='password' i]",
                 "input[id*='passcode' i]",
+                "input[placeholder*='password' i]",
+                "input[placeholder*='passcode' i]",
+                "input[placeholder*='pass' i]"
             ]
-
+            
             password_field = None
             for selector in password_selectors:
                 try:
-                    password_field = wait.until(
+                    # Try to find password field with shorter timeout
+                    password_field = WebDriverWait(self.driver, 5).until(
                         EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
                     )
                     print(f"✅ Found password field: {selector}")
                     break
                 except TimeoutException:
                     continue
-
+            
             if not password_field:
                 print("❌ Password field not found")
+                print("🔍 Available form elements after username field:")
+                try:
+                    inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                    for i, inp in enumerate(inputs):
+                        print(f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}")
+                    
+                    # Also look for any password-like elements
+                    print("🔍 Looking for password-like elements...")
+                    all_elements = self.driver.find_elements(By.XPATH, "//*[contains(text(), 'password') or contains(text(), 'Password') or contains(text(), 'passcode') or contains(text(), 'Passcode')]")
+                    for elem in all_elements:
+                        print(f"   Password-related element: {elem.tag_name} - {elem.text[:50]}...")
+                        
+                except Exception as e:
+                    print(f"   Error listing elements: {e}")
+                
+                # Take screenshot for debugging
+                self._take_screenshot("password_field_not_found")
                 return False
-
+            
             # Clear fields and enter credentials
             print("🔑 Entering credentials...")
             username_field.clear()
             username_field.send_keys(self.username)
             print(f"👤 Username entered: {self.username}")
-
+            
             # For debugging: pause to see username entered
             if not self.headless:
                 time.sleep(1)
-
+            
             password_field.clear()
             password_field.send_keys(self.password)
             print("🔑 Password entered: ********")
-
+            
             # For debugging: pause to see password entered
             if not self.headless:
                 time.sleep(1)
-
-            # Look for submit button
+            
+            # Look for submit button with more comprehensive selectors
             submit_selectors = [
                 "input[type='submit']",
                 "button[type='submit']",
@@ -314,8 +338,14 @@ class OktaSeleniumAuth:
                 "input[value*='Sign' i]",
                 "input[value*='Log' i]",
                 "input[value*='Submit' i]",
+                "button[class*='submit' i]",
+                "button[class*='signin' i]",
+                "button[class*='login' i]",
+                "input[class*='submit' i]",
+                "input[class*='signin' i]",
+                "input[class*='login' i]"
             ]
-
+            
             submit_button = None
             for selector in submit_selectors:
                 try:
@@ -326,34 +356,41 @@ class OktaSeleniumAuth:
                     break
                 except TimeoutException:
                     continue
-
+            
             if not submit_button:
                 print("❌ Submit button not found")
                 print("🔍 Available buttons:")
                 try:
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
                     for i, btn in enumerate(buttons):
-                        print(
-                            f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
-                        )
+                        print(f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}")
+                    
+                    # Also look for submit inputs
+                    submit_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[type='submit']")
+                    for i, inp in enumerate(submit_inputs):
+                        print(f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}")
+                        
                 except Exception as e:
                     print(f"   Error listing buttons: {e}")
+                
+                # Take screenshot for debugging
+                self._take_screenshot("submit_button_not_found")
                 return False
-
+            
             # Submit the form
             print("🚀 Submitting login form...")
             submit_button.click()
-
+            
             # For debugging: longer wait to see the submission process
             if not self.headless:
                 print("⏸️ Waiting 5 seconds to see submission process...")
                 time.sleep(5)
             else:
                 time.sleep(3)
-
+            
             print(f"📄 After submission - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
-
+            
             return True
 
         except Exception as e:
