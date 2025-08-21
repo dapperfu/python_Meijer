@@ -804,86 +804,90 @@ class OKTAIDXAuthenticator:
                 print("⏳ Waiting for page to load...")
                 wait = WebDriverWait(driver, 30)  # Longer timeout for debugging
                 
-                # Look for stateToken in the page
-                state_token = None
-                print("🔍 Searching for stateToken in page...")
+                # HYBRID APPROACH: Use browser to establish session, then extract state for requests
+                print("🔄 HYBRID MODE: Browser establishes session, requests completes authentication")
                 
+                # Step 1: Let browser handle bot detection and get to login form
+                print("🌐 Step 1: Browser handling bot detection and session establishment...")
+                
+                # Wait for the login form to appear (this establishes the session)
+                print("⏳ Waiting for login form to appear...")
                 try:
-                    # Try to find stateToken in various ways
-                    state_token_elements = driver.find_elements(By.CSS_SELECTOR, 'input[name="stateToken"]')
-                    if state_token_elements:
-                        state_token = state_token_elements[0].get_attribute('value')
-                        print(f"✅ Found stateToken in input: {state_token[:20]}...")
+                    # Look for username/email input field
+                    username_input = wait.until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="identifier"], input[type="email"], input[placeholder*="email"], input[placeholder*="Email"]'))
+                    )
+                    print("✅ Found username input field - session established!")
+                    
+                    # Step 2: Extract the working session state from browser
+                    print("📡 Step 2: Extracting working session state from browser...")
+                    
+                    # Get all cookies from the browser session
+                    browser_cookies = driver.get_cookies()
+                    print(f"🍪 Browser has {len(browser_cookies)} cookies")
+                    
+                    # Transfer cookies to our requests session
+                    for cookie in browser_cookies:
+                        self.session.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'])
+                    print("✅ Transferred browser cookies to requests session")
+                    
+                    # Get the current page state
+                    current_url = driver.current_url
+                    page_source = driver.page_source
+                    
+                    # Extract stateToken from the current page
+                    state_token = None
+                    if "stateToken" in page_source:
+                        import re
+                        match = re.search(r'stateToken["\']?\s*:\s*["\']([^"\']+)["\']', page_source)
+                        if match:
+                            state_token = match.group(1)
+                            print(f"✅ Extracted stateToken: {state_token[:20]}...")
+                    
+                    if not state_token:
+                        print("⚠️  No stateToken found on current page")
+                        print("🔍 Browser will remain open for inspection")
+                        print("🔄 Falling back to simulated authentication...")
+                        return self._get_simulated_tokens()
+                    
+                    # Step 3: Use requests session with browser-established session to complete auth
+                    print("📡 Step 3: Using requests with browser session to complete authentication...")
+                    
+                    # Now use the extracted stateToken with our requests session (which has the browser cookies)
+                    state_handle = self._idx_introspect(state_token)
+                    print("✅ IDX introspect successful with browser session!")
+                    
+                    state_handle = self._idx_identify(username, state_handle)
+                    print("✅ User identification successful!")
+                    
+                    result = self._idx_challenge(password, state_handle)
+                    print("✅ Password challenge successful!")
+                    
+                    # Get authorization code
+                    if isinstance(result, str) and result.startswith("http"):
+                        auth_code = self._get_authorization_code(result)
                     else:
-                        print("🔍 No stateToken input found, checking JavaScript variables...")
-                        # Look for stateToken in JavaScript variables
-                        state_token = driver.execute_script("""
-                            if (typeof stateToken !== 'undefined') return stateToken;
-                            if (window.stateToken) return window.stateToken;
-                            if (window.oktaSignIn && window.oktaSignIn.stateToken) return window.oktaSignIn.stateToken;
-                            return null;
-                        """)
-                        if state_token:
-                            print(f"✅ Found stateToken in JavaScript: {state_token[:20]}...")
-                        else:
-                            print("🔍 No stateToken found in JavaScript, checking page source...")
-                            # Check if stateToken is in the page source
-                            page_source = driver.page_source
-                            if "stateToken" in page_source:
-                                print("🔍 stateToken found in page source, attempting extraction...")
-                                import re
-                                match = re.search(r'stateToken["\']?\s*:\s*["\']([^"\']+)["\']', page_source)
-                                if match:
-                                    state_token = match.group(1)
-                                    print(f"✅ Extracted stateToken from page source: {state_token[:20]}...")
-                                else:
-                                    print("⚠️  stateToken in source but regex extraction failed")
-                            else:
-                                print("⚠️  No stateToken found anywhere on the page")
-                                
+                        auth_code = self._get_authorization_code_from_state(result)
+                    
+                    print("✅ Authorization code obtained!")
+                    
+                    # Exchange for tokens
+                    tokens = self._exchange_token(auth_code, code_verifier)
+                    print("✅ Token exchange successful!")
+                    
+                    print("🎉 HYBRID AUTHENTICATION COMPLETE!")
+                    print("🌐 Browser established session, requests completed authentication")
+                    print("🔍 Browser will remain open for inspection")
+                    print("💡 Close the browser manually when done debugging")
+                    
+                    return tokens
+                    
                 except Exception as e:
-                    print(f"⚠️  Error during stateToken extraction: {e}")
-                
-                if not state_token:
-                    print("⚠️  Could not extract stateToken from browser")
-                    print("🔍 Browser will remain open for manual inspection")
-                    print("💡 Look for stateToken in:")
-                    print("   - Page source (Ctrl+U)")
-                    print("   - Browser console (F12)")
-                    print("   - Network tab for API calls")
-                    print("   - Hidden form inputs")
+                    print(f"❌ Error during hybrid authentication: {e}")
+                    print("🔍 Browser will remain open for debugging")
+                    print("💡 Check the browser to see what went wrong")
                     print("🔄 Falling back to simulated authentication...")
                     return self._get_simulated_tokens()
-                
-                # Now use the extracted stateToken with our requests session
-                print("📡 Using extracted stateToken with requests session...")
-                
-                # The browser has established the session, now use requests for the rest
-                state_handle = self._idx_introspect(state_token)
-                print("✅ IDX introspect successful")
-                
-                state_handle = self._idx_identify(username, state_handle)
-                print("✅ User identification successful")
-                
-                result = self._idx_challenge(password, state_handle)
-                print("✅ Password challenge successful")
-                
-                # Get authorization code
-                if isinstance(result, str) and result.startswith("http"):
-                    auth_code = self._get_authorization_code(result)
-                else:
-                    auth_code = self._get_authorization_code_from_state(result)
-                
-                print("✅ Authorization code obtained")
-                
-                # Exchange for tokens
-                tokens = self._exchange_token(auth_code, code_verifier)
-                print("✅ Token exchange successful")
-                
-                print("🌐 Authentication complete! Browser will remain open for inspection")
-                print("💡 Close the browser manually when done debugging")
-                
-                return tokens
                 
             except Exception as e:
                 print(f"❌ Hybrid authentication failed: {e}")
