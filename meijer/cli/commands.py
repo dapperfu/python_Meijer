@@ -1715,28 +1715,40 @@ def auth_command():
 
 
 @click.command("selenium")
-@click.option("--headless", is_flag=True, default=True, help="Run browser in headless mode")
+@click.option(
+    "--headless", is_flag=True, default=True, help="Run browser in headless mode"
+)
 @click.option("--keep-open", is_flag=True, help="Keep browser open for debugging")
 def login_selenium(headless: bool, keep_open: bool):
     """Login using Selenium WebDriver (OKTA authentication)."""
     username = click.prompt("👤 Username/Email", type=str)
     password = click.prompt("🔒 Password", type=str, hide_input=True)
-    
+
     try:
         if keep_open:
-            from meijer.okta_selenium_auth import authenticate_with_selenium_and_keep_open
-            click.echo("🔍 Starting Selenium authentication with browser kept open for debugging...")
-            result = authenticate_with_selenium_and_keep_open(username, password, headless)
+            from meijer.okta_selenium_auth import (
+                authenticate_with_selenium_and_keep_open,
+            )
+
+            click.echo(
+                "🔍 Starting Selenium authentication with browser kept open for debugging..."
+            )
+            result = authenticate_with_selenium_and_keep_open(
+                username, password, headless
+            )
         else:
             from meijer.okta_selenium_auth import authenticate_with_selenium
+
             click.echo("🚀 Starting Selenium authentication...")
             result = authenticate_with_selenium(username, password, headless)
-        
+
         if result and result.get("success"):
             click.echo("✅ Authentication successful!")
-            click.echo(f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}")
+            click.echo(
+                f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}"
+            )
             click.echo(f"🌐 Final URL: {result.get('url', 'N/A')}")
-            
+
             if keep_open:
                 click.echo("\n🔍 Browser window is still open for debugging")
                 click.echo("💡 Close it manually when done")
@@ -1744,7 +1756,7 @@ def login_selenium(headless: bool, keep_open: bool):
             click.echo("❌ Authentication failed")
             if result:
                 click.echo(f"📊 Result: {result}")
-            
+
     except Exception as e:
         raise click.ClickException(f"❌ Selenium authentication failed: {e}")
 
@@ -1761,16 +1773,17 @@ def login_selenium(headless: bool, keep_open: bool):
     "--clear-credentials", is_flag=True, help="Clear saved credentials from login.txt"
 )
 @click.option(
-    "--method", "-m", 
-    type=click.Choice(["enhanced", "selenium"]), 
+    "--method",
+    "-m",
+    type=click.Choice(["enhanced", "selenium", "fake-headers"]),
     default="enhanced",
-    help="Authentication method to use (default: enhanced)"
+    help="Authentication method to use (default: enhanced)",
 )
 @click.option(
-    "--headless", 
+    "--headless",
     is_flag=True,
     default=False,
-    help="Run browser in headless mode (selenium only, default: visible browser)"
+    help="Run browser in headless mode (selenium only, default: visible browser)",
 )
 @click.option(
     "--keep-open", is_flag=True, help="Keep browser open for debugging (selenium only)"
@@ -1849,35 +1862,53 @@ def login_command(
         # Handle authentication based on selected method
         if method == "selenium":
             click.echo("🌐 Using Selenium WebDriver authentication method")
-            
+
             # headless is now a boolean flag
             headless_bool = headless
-            
+
             # Show browser mode and keep-open status
             if keep_open:
-                click.echo("🔍 Starting Selenium authentication with browser kept open for debugging...")
-                click.echo(f"🌐 Browser mode: {'headless' if headless_bool else 'visible'}")
-                
+                click.echo(
+                    "🔍 Starting Selenium authentication with browser kept open for debugging..."
+                )
+                click.echo(
+                    f"🌐 Browser mode: {'headless' if headless_bool else 'visible'}"
+                )
+
                 try:
-                    from meijer.okta_selenium_auth import authenticate_with_selenium_and_keep_open
-                    result = authenticate_with_selenium_and_keep_open(user, password, headless_bool)
+                    from meijer.okta_selenium_auth import (
+                        authenticate_with_selenium_and_keep_open,
+                    )
+
+                    result = authenticate_with_selenium_and_keep_open(
+                        user, password, headless_bool
+                    )
                 except Exception as e:
-                    raise click.ClickException(f"❌ Selenium authentication failed: {e}")
+                    raise click.ClickException(
+                        f"❌ Selenium authentication failed: {e}"
+                    )
             else:
                 click.echo("🚀 Starting Selenium authentication...")
-                click.echo(f"🌐 Browser mode: {'headless' if headless_bool else 'visible'}")
-                
+                click.echo(
+                    f"🌐 Browser mode: {'headless' if headless_bool else 'visible'}"
+                )
+
                 try:
                     from meijer.okta_selenium_auth import authenticate_with_selenium
+
                     result = authenticate_with_selenium(user, password, headless_bool)
                 except Exception as e:
-                    raise click.ClickException(f"❌ Selenium authentication failed: {e}")
-            
+                    raise click.ClickException(
+                        f"❌ Selenium authentication failed: {e}"
+                    )
+
             if result and result.get("success"):
                 click.echo("🎉 Selenium authentication successful!")
-                click.echo(f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}")
+                click.echo(
+                    f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}"
+                )
                 click.echo(f"🌐 Final URL: {result.get('url', 'N/A')}")
-                
+
                 if keep_open:
                     click.echo("\n🔍 Browser window is still open for debugging")
                     click.echo("💡 Close it manually when done")
@@ -1886,10 +1917,57 @@ def login_command(
                 if result:
                     click.echo(f"📊 Result: {result}")
                 return
-                
+
+        elif method == "fake-headers":
+            click.echo("🎭 Using fake headers authentication method (no browser)")
+
+            # Check for email 2FA config
+            email_2fa_config = None
+            email_config_path = os.path.join(get_meijer_config_path(""), "email.txt")
+            if os.path.exists(email_config_path):
+                use_email_2fa = click.confirm(
+                    "📧 Email 2FA config found. Use it for MFA?"
+                )
+                if use_email_2fa:
+                    email_2fa_config = email_config_path
+                    click.echo("✅ Using email 2FA configuration")
+
+            try:
+                from meijer.enhanced_auth_v2 import authenticate_with_fake_headers
+
+                click.echo("🚀 Starting fake headers authentication...")
+                click.echo(
+                    "📋 Flow: OAuth2 → IDX → Device FP → Username → Password → Tokens"
+                )
+
+                tokens = authenticate_with_fake_headers(
+                    user, password, email_2fa_config
+                )
+
+                if tokens:
+                    click.echo("🎉 Fake headers authentication successful!")
+                    click.echo(
+                        f"🔑 Access token: {tokens.get('access_token', 'N/A')[:30]}..."
+                    )
+                    click.echo(
+                        f"🔄 Refresh token: {tokens.get('refresh_token', 'N/A')[:30]}..."
+                    )
+                    click.echo(f"🆔 ID token: {tokens.get('id_token', 'N/A')[:30]}...")
+                    click.echo("🎭 No browser required - pure HTTP requests!")
+                    click.echo("🎉 Ready for API calls!")
+                else:
+                    click.echo("❌ Fake headers authentication failed")
+                    click.echo("💡 Try enhanced or selenium methods instead")
+
+            except Exception as e:
+                click.echo(f"❌ Fake headers authentication failed: {e}")
+                click.echo(
+                    "💡 This method is experimental - try enhanced or selenium methods"
+                )
+
         else:  # enhanced method (default)
             click.echo("🔐 Using enhanced authentication method")
-            
+
             # Create enhanced authentication instance
             auth = EnhancedMeijerAuth(user, password)
 
@@ -1919,11 +1997,16 @@ def login_command(
             else:
                 click.echo("❌ Enhanced authentication failed")
                 click.echo("\n💡 Try these alternatives:")
-                click.echo("   1. Try Selenium method: meijer login --method selenium")
-                click.echo("   2. Run 'meijer auth' to capture tokens from browser login")
-                click.echo("   3. Check your username and password")
-                click.echo("   4. Ensure network connectivity")
-                click.echo("   5. Try again later if there are temporary issues")
+                click.echo(
+                    "   1. Try fake headers method: meijer login --method fake-headers"
+                )
+                click.echo("   2. Try Selenium method: meijer login --method selenium")
+                click.echo(
+                    "   3. Run 'meijer auth' to capture tokens from browser login"
+                )
+                click.echo("   4. Check your username and password")
+                click.echo("   5. Ensure network connectivity")
+                click.echo("   6. Try again later if there are temporary issues")
 
     except Exception as e:
         logger.error(f"Failed to authenticate: {e}", exc_info=True)
