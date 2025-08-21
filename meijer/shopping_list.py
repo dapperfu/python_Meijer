@@ -1653,3 +1653,167 @@ Unable to load shopping list: `{str(e)}`
         mapped_data.setdefault("promotion_end", None)  # Ensure this is always provided
 
         return mapped_data
+
+    def _extract_location_from_item(self, item: "ListItem") -> Optional[tuple[str, str]]:
+        """
+        Extract location information from shopping list item notes or description.
+        
+        This method provides 1:1 compatibility with the Rust version by parsing
+        location codes from item descriptions in the format "item - LOCATION | info"
+        
+        Args:
+            item: Shopping list item to extract location from
+            
+        Returns:
+            Tuple of (aisle, section) if location found, None otherwise
+        """
+        import re
+        
+        # Check if the item has location information in its notes or description
+        # Format: "item name - LOCATION | additional info"
+        
+        description = item.name
+        
+        # Look for pattern like "item - B7:15-3 | info"
+        if " - " in description:
+            after_dash = description.split(" - ", 1)[1]
+            
+            # Look for location pattern (e.g., "B7:15-3")
+            if " | " in after_dash:
+                location_part = after_dash.split(" | ", 1)[0]
+                location = self._parse_location_code(location_part)
+                if location:
+                    return location
+            else:
+                # No pipe, check if the whole part after dash is a location code
+                location = self._parse_location_code(after_dash)
+                if location:
+                    return location
+        
+        # Also check notes field for location information
+        if item.notes:
+            location = self._parse_location_code(item.notes)
+            if location:
+                return location
+        
+        return None
+
+    def _parse_location_code(self, location: str) -> Optional[tuple[str, str]]:
+        """
+        Parse location code in format like "B7:15-3" -> ("B7", "15-3").
+        
+        Args:
+            location: Location string to parse
+            
+        Returns:
+            Tuple of (aisle, section) if valid format, None otherwise
+        """
+        import re
+        
+        # Handle formats like:
+        # - "B7:15-3 | additional info" -> aisle: "B7", section: "15-3"
+        # - "A12:5-2 | more info" -> aisle: "A12", section: "5-2"
+        # - "C3:8 | description" -> aisle: "C3", section: "8"
+        
+        location = location.strip()
+        
+        if ":" in location:
+            parts = location.split(":", 1)
+            aisle = parts[0].strip()
+            after_colon = parts[1]
+            
+            # Extract section before the pipe (if any)
+            if " | " in after_colon:
+                section = after_colon.split(" | ", 1)[0].strip()
+            else:
+                section = after_colon.strip()
+            
+            # Validate that we have a proper aisle format (letter + number)
+            if aisle and section and self._is_valid_aisle_format(aisle):
+                return (aisle, section)
+        
+        return None
+
+    def _is_valid_aisle_format(self, aisle: str) -> bool:
+        """
+        Check if the aisle format is valid (e.g., "B7", "A12", "F5").
+        
+        Args:
+            aisle: Aisle string to validate
+            
+        Returns:
+            True if valid format, False otherwise
+        """
+        if not aisle:
+            return False
+        
+        # First character should be a letter
+        if not aisle[0].isalpha():
+            return False
+        
+        # Should have at least one digit
+        return any(c.isdigit() for c in aisle)
+
+    def _extract_aisle_number_from_name(self, aisle_name: str) -> Optional[int]:
+        """
+        Extract aisle number from aisle name (e.g., "B7" -> 7, "A12" -> 12).
+        
+        Args:
+            aisle_name: Aisle name to extract number from
+            
+        Returns:
+            Aisle number if found, None otherwise
+        """
+        import re
+        
+        # Look for numbers in the aisle name
+        numbers = re.findall(r'\d+', aisle_name)
+        if numbers:
+            return int(numbers[0])
+        return None
+
+    def export_defragmented(
+        self, store_id: Optional[str] = None, output_path: Optional[str] = None
+    ) -> None:
+        """
+        Export defragmented list to a structured format.
+        
+        This method provides 1:1 compatibility with the Rust version by exporting
+        the defragmented shopping list with organized aisle groups and statistics.
+        
+        Args:
+            store_id: Store ID for location lookup
+            output_path: Output file path (defaults to "defragmented_shopping_list.json")
+        """
+        from datetime import datetime, timezone
+        import json
+        
+        # Run defrag to get organized results
+        defrag_result = self.defrag(store_id=store_id)
+        
+        output_path = output_path or "defragmented_shopping_list.json"
+        self.logger.info(f"📤 Exporting defragmented list to: {output_path}")
+
+        # Create export data structure matching Rust version
+        export_data = {
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "defrag_stats": {
+                "total_items": len(self.get()),
+                "organized_count": sum(len(group.get("items", [])) for group in defrag_result.get("organized_by_aisle", [])),
+                "unorganized_count": len(defrag_result.get("unorganized_items", [])),
+                "efficiency_gain": defrag_result.get("efficiency_gain", 0.0)
+            },
+            "organized_by_aisle": defrag_result.get("organized_by_aisle", []),
+            "unorganized_items": defrag_result.get("unorganized_items", [])
+        }
+
+        # Write to file
+        try:
+            with open(output_path, 'w') as f:
+                json.dump(export_data, f, indent=2)
+            
+            self.logger.info(f"✅ Successfully exported defragmented list to {output_path}")
+            print(f"✅ Successfully exported defragmented list to {output_path}")
+        except Exception as e:
+            self.logger.error(f"❌ Failed to export defragmented list: {e}")
+            raise RuntimeError(f"Failed to export defragmented list: {e}")

@@ -1,0 +1,31 @@
+package com.google.android.gms.internal.pal;
+
+/* loaded from: classes6.dex */
+public final class Yd {
+
+    /* renamed from: a, reason: collision with root package name */
+    private static final F0 f83819a = new Xd();
+
+    public static int a(int i10) {
+        if (i10 != 1) {
+            return i10 - 2;
+        }
+        throw new IllegalArgumentException("Can't get the number of an unknown enum value.");
+    }
+
+    public static int b(int i10) {
+        if (i10 == 0) {
+            return 2;
+        }
+        if (i10 == 1) {
+            return 3;
+        }
+        if (i10 == 2) {
+            return 4;
+        }
+        if (i10 != 3) {
+            return i10 != 4 ? 0 : 6;
+        }
+        return 5;
+    }
+}

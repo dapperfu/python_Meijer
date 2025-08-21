@@ -1,0 +1,13 @@
+package gh;
+
+import android.os.Looper;
+
+/* loaded from: classes8.dex */
+public class s {
+    public static void a() {
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+        } else {
+            throw new IllegalStateException("Must be called from the main thread.");
+        }
+    }
+}

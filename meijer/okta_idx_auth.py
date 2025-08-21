@@ -1008,20 +1008,46 @@ class OKTAIDXAuthenticator:
                             # Look for and click the Next button after username entry
                             print("🔍 Looking for Next button...")
                             try:
-                                next_button = wait.until(
-                                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[value="Next"], button:contains("Next"), .next-button, [data-se="next-button"]'))
-                                )
-                                next_button.click()
-                                print("✅ Next button clicked")
+                                # Try multiple selectors for the Next button
+                                next_button_selectors = [
+                                    'input[value="Next"]',
+                                    'button[data-se="next-button"]',
+                                    '.next-button',
+                                    'input[type="submit"][value*="Next"]',
+                                    'button[type="submit"]',
+                                    '[data-se="next-button"]',
+                                    'button[data-se="next"]',
+                                    'input[data-se="next"]'
+                                ]
                                 
-                                # Wait for password field to appear
-                                print("⏳ Waiting for password field to appear...")
-                                password_input = wait.until(
-                                    EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]'))
-                                )
+                                next_button = None
+                                for selector in next_button_selectors:
+                                    try:
+                                        next_button = wait.until(
+                                            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                                        )
+                                        print(f"✅ Found Next button with selector: {selector}")
+                                        break
+                                    except:
+                                        continue
+                                
+                                if next_button:
+                                    next_button.click()
+                                    print("✅ Next button clicked")
+                                    
+                                    # Wait for password field to appear
+                                    print("⏳ Waiting for password field to appear...")
+                                    password_input = wait.until(
+                                        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]'))
+                                    )
+                                else:
+                                    print("⚠️  No Next button found, looking for password field directly...")
+                                    password_input = wait.until(
+                                        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]'))
+                                    )
                                 
                             except Exception as e:
-                                print(f"⚠️  Next button not found or not clickable: {e}")
+                                print(f"⚠️  Next button handling failed: {e}")
                                 print("🔍 Trying to find password field directly...")
                                 # Try to find password field directly if Next button approach fails
                                 password_input = wait.until(

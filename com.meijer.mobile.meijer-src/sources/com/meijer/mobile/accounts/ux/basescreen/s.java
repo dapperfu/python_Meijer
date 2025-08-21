@@ -1,0 +1,8 @@
+package com.meijer.mobile.accounts.ux.basescreen;
+
+/* loaded from: classes8.dex */
+public final class s {
+
+    /* renamed from: a, reason: collision with root package name */
+    public static String f95146a = "com.meijer.mobile.accounts.ux.basescreen.p";
+}

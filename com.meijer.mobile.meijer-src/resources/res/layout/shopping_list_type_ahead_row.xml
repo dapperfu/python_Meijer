@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:tag="layout/shopping_list_type_ahead_row_0"
+    android:padding="@dimen/shopping_list_typeahead_padding_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <ImageView
+        android:id="@+id/favorites_icon"
+        android:tag="binding_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="0x7f08050f"
+        android:contentDescription="@string/accessibility_shopping_list_typeahead_favorite"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.meijer.mobile.core.base.ui.textview.FullWordEllipsisTextView
+        android:id="@+id/title"
+        android:tag="binding_2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/suggestion_image_button"
+        app:layout_constraintStart_toEndOf="@+id/favorites_icon"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/Meijer.Widget.TextView.ShoppingList.ItemDescription"/>
+    <ImageButton
+        android:id="@+id/suggestion_image_button"
+        android:tag="binding_3"
+        android:background="?attr/actionBarItemBackground"
+        android:padding="10dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:contentDescription="@string/autofill_suggestion"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/title"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_icon_typeahead_arrow"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

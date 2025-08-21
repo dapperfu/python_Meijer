@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/list_item_container"
+    android:tag="layout/view_product_list_item_compose_0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:transitionName="@string/product_transition_container"
+    app:cardCornerRadius="0dp">
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/product_list_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</com.google.android.material.card.MaterialCardView>

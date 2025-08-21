@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <View
+        android:id="@+id/category_background"
+        android:background="@drawable/wayfinder_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@+id/thumb_scroller"
+        android:layout_alignLeft="@+id/table_of_contents"/>
+    <ImageView
+        android:id="@+id/thumb_scroller"
+        android:background="@drawable/ic_wayfinding_knob_background"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginRight="-8dp"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:src="0x7f080509"
+        android:layout_alignParentRight="true"
+        android:contentDescription="@string/AND_storefront_wayfinder_accessibility"
+        android:layout_marginEnd="-8dp"
+        android:layout_alignParentEnd="true"
+        android:elevation="2dp"/>
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/table_of_contents"
+        android:paddingLeft="32dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="32dp"
+        android:layout_toLeftOf="@+id/thumb_scroller"
+        android:paddingStart="32dp"
+        android:layout_marginEnd="32dp"/>
+</RelativeLayout>

@@ -1,0 +1,42 @@
+package Fd;
+
+import Df.b;
+import java.io.IOException;
+
+/* loaded from: classes6.dex */
+final class K4 implements Df.c {
+
+    /* renamed from: a, reason: collision with root package name */
+    static final K4 f9303a = new K4();
+
+    static {
+        b.C0116b c0116bA = Df.b.a("detectorOptions");
+        M0 m02 = new M0();
+        m02.a(1);
+        c0116bA.b(m02.b()).a();
+        b.C0116b c0116bA2 = Df.b.a("errorCodes");
+        M0 m03 = new M0();
+        m03.a(2);
+        c0116bA2.b(m03.b()).a();
+        b.C0116b c0116bA3 = Df.b.a("totalInitializationMs");
+        M0 m04 = new M0();
+        m04.a(3);
+        c0116bA3.b(m04.b()).a();
+        b.C0116b c0116bA4 = Df.b.a("loggingInitializationMs");
+        M0 m05 = new M0();
+        m05.a(4);
+        c0116bA4.b(m05.b()).a();
+        b.C0116b c0116bA5 = Df.b.a("otherErrors");
+        M0 m06 = new M0();
+        m06.a(5);
+        c0116bA5.b(m06.b()).a();
+    }
+
+    @Override // Df.c
+    public final /* bridge */ /* synthetic */ void a(Object obj, Object obj2) throws IOException {
+        throw null;
+    }
+
+    private K4() {
+    }
+}

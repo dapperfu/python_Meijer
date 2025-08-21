@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="16dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <ImageView
+        android:id="@+id/iconView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/sc_ic_hint_check"
+        android:scaleType="fitStart"
+        android:contentDescription="@null"
+        android:layout_marginEnd="8dp"/>
+    <TextView
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@+id/iconView"/>
+</merge>

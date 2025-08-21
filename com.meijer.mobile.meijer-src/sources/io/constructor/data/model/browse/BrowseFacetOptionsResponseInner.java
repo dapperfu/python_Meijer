@@ -1,0 +1,59 @@
+package io.constructor.data.model.browse;
+
+import com.squareup.moshi.g;
+import com.squareup.moshi.i;
+import io.constructor.data.model.common.FilterFacet;
+import java.io.Serializable;
+import java.util.List;
+import kotlin.Metadata;
+import kotlin.jvm.internal.Intrinsics;
+
+@i(generateAdapter = true)
+@Metadata(d1 = {"\u0000.\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010 \n\u0002\u0018\u0002\n\u0002\b\u0006\n\u0002\u0010\u000b\n\u0000\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u000e\n\u0000\b\u0087\b\u0018\u00002\u00020\u0001B\u0017\u0012\u0010\b\u0001\u0010\u0002\u001a\n\u0012\u0004\u0012\u00020\u0004\u0018\u00010\u0003¢\u0006\u0002\u0010\u0005J\u0011\u0010\b\u001a\n\u0012\u0004\u0012\u00020\u0004\u0018\u00010\u0003HÆ\u0003J\u001b\u0010\t\u001a\u00020\u00002\u0010\b\u0003\u0010\u0002\u001a\n\u0012\u0004\u0012\u00020\u0004\u0018\u00010\u0003HÆ\u0001J\u0013\u0010\n\u001a\u00020\u000b2\b\u0010\f\u001a\u0004\u0018\u00010\rHÖ\u0003J\t\u0010\u000e\u001a\u00020\u000fHÖ\u0001J\t\u0010\u0010\u001a\u00020\u0011HÖ\u0001R\u0019\u0010\u0002\u001a\n\u0012\u0004\u0012\u00020\u0004\u0018\u00010\u0003¢\u0006\b\n\u0000\u001a\u0004\b\u0006\u0010\u0007¨\u0006\u0012"}, d2 = {"Lio/constructor/data/model/browse/BrowseFacetOptionsResponseInner;", "Ljava/io/Serializable;", "facets", "", "Lio/constructor/data/model/common/FilterFacet;", "(Ljava/util/List;)V", "getFacets", "()Ljava/util/List;", "component1", "copy", "equals", "", "other", "", "hashCode", "", "toString", "", "library_release"}, k = 1, mv = {1, 5, 1}, xi = 48)
+/* loaded from: classes8.dex */
+public final /* data */ class BrowseFacetOptionsResponseInner implements Serializable {
+    private final List<FilterFacet> facets;
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public static /* synthetic */ BrowseFacetOptionsResponseInner copy$default(BrowseFacetOptionsResponseInner browseFacetOptionsResponseInner, List list, int i10, Object obj) {
+        if ((i10 & 1) != 0) {
+            list = browseFacetOptionsResponseInner.facets;
+        }
+        return browseFacetOptionsResponseInner.copy(list);
+    }
+
+    public final List<FilterFacet> component1() {
+        return this.facets;
+    }
+
+    public final BrowseFacetOptionsResponseInner copy(@g(name = "facets") List<FilterFacet> facets) {
+        return new BrowseFacetOptionsResponseInner(facets);
+    }
+
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        return (other instanceof BrowseFacetOptionsResponseInner) && Intrinsics.e(this.facets, ((BrowseFacetOptionsResponseInner) other).facets);
+    }
+
+    public int hashCode() {
+        List<FilterFacet> list = this.facets;
+        if (list == null) {
+            return 0;
+        }
+        return list.hashCode();
+    }
+
+    public String toString() {
+        return "BrowseFacetOptionsResponseInner(facets=" + this.facets + ")";
+    }
+
+    public final List<FilterFacet> getFacets() {
+        return this.facets;
+    }
+
+    public BrowseFacetOptionsResponseInner(@g(name = "facets") List<FilterFacet> list) {
+        this.facets = list;
+    }
+}

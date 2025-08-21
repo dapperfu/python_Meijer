@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="dialog_landscape">45%</dimen>
+    <dimen name="dialog_portrait">72%</dimen>
+</resources>

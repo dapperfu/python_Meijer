@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_horizontal"
+    android:orientation="horizontal"
+    android:tag="layout/view_animation_frame_options_0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.meijer.mobile.core.design.widget.enhancedtextinputlayoutview.EnhancedTextInputLayoutView
+        android:id="@+id/minFrameTextInputLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="@string/animations_min_frame"
+        android:layout_marginEnd="10dp"
+        style="?attr/enhancedTextInputLayoutStyle">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/minFrameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:digits="0,1,2,3,4,5,6,7,8,9"
+            android:inputType="number"/>
+    </com.meijer.mobile.core.design.widget.enhancedtextinputlayoutview.EnhancedTextInputLayoutView>
+    <com.meijer.mobile.core.design.widget.enhancedtextinputlayoutview.EnhancedTextInputLayoutView
+        android:id="@+id/maxFrameTextInputLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="@string/animations_max_frame"
+        style="?attr/enhancedTextInputLayoutStyle">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/maxFrameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:digits="0,1,2,3,4,5,6,7,8,9"
+            android:inputType="number"/>
+    </com.meijer.mobile.core.design.widget.enhancedtextinputlayoutview.EnhancedTextInputLayoutView>
+</LinearLayout>

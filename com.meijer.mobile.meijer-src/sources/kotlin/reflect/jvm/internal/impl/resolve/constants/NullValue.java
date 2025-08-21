@@ -1,0 +1,21 @@
+package kotlin.reflect.jvm.internal.impl.resolve.constants;
+
+import kotlin.jvm.internal.Intrinsics;
+import kotlin.reflect.jvm.internal.impl.descriptors.ModuleDescriptor;
+import kotlin.reflect.jvm.internal.impl.types.SimpleType;
+
+/* loaded from: classes14.dex */
+public final class NullValue extends ConstantValue<Void> {
+    public NullValue() {
+        super(null);
+    }
+
+    @Override // kotlin.reflect.jvm.internal.impl.resolve.constants.ConstantValue
+    /* renamed from: c, reason: merged with bridge method [inline-methods] */
+    public SimpleType a(ModuleDescriptor module) {
+        Intrinsics.j(module, "module");
+        SimpleType simpleTypeK = module.l().K();
+        Intrinsics.i(simpleTypeK, "getNullableNothingType(...)");
+        return simpleTypeK;
+    }
+}

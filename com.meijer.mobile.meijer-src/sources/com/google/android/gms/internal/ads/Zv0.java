@@ -1,0 +1,68 @@
+package com.google.android.gms.internal.ads;
+
+import libcore.io.Memory;
+import sun.misc.Unsafe;
+
+/* loaded from: classes6.dex */
+final class Zv0 extends AbstractC7646aw0 {
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final void d(long j10, byte[] bArr, long j11, long j12) {
+        Memory.peekByteArray(j10, bArr, (int) j11, (int) j12);
+    }
+
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final double b(Object obj, long j10) {
+        return Double.longBitsToDouble(this.f73527a.getLong(obj, j10));
+    }
+
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final float c(Object obj, long j10) {
+        return Float.intBitsToFloat(this.f73527a.getInt(obj, j10));
+    }
+
+    /* JADX WARN: Failed to inline method: com.google.android.gms.internal.ads.bw0.s(java.lang.Object, long, boolean):void */
+    /* JADX WARN: Failed to inline method: com.google.android.gms.internal.ads.bw0.t(java.lang.Object, long, boolean):void */
+    /* JADX WARN: Unknown register number '(r5v0 boolean)' in method call: com.google.android.gms.internal.ads.bw0.s(java.lang.Object, long, boolean):void */
+    /* JADX WARN: Unknown register number '(r5v0 boolean)' in method call: com.google.android.gms.internal.ads.bw0.t(java.lang.Object, long, boolean):void */
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final void e(Object obj, long j10, boolean z10) {
+        if (C7753bw0.f73868i) {
+            C7753bw0.s(obj, j10, z10);
+        } else {
+            C7753bw0.t(obj, j10, z10);
+        }
+    }
+
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final void f(Object obj, long j10, byte b10) {
+        if (C7753bw0.f73868i) {
+            C7753bw0.g(obj, j10, b10);
+        } else {
+            C7753bw0.h(obj, j10, b10);
+        }
+    }
+
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final boolean i(Object obj, long j10) {
+        return C7753bw0.f73868i ? C7753bw0.E(obj, j10) : C7753bw0.F(obj, j10);
+    }
+
+    Zv0(Unsafe unsafe) {
+        super(unsafe);
+    }
+
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final byte a(long j10) {
+        return Memory.peekByte(j10);
+    }
+
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final void g(Object obj, long j10, double d10) {
+        this.f73527a.putLong(obj, j10, Double.doubleToLongBits(d10));
+    }
+
+    @Override // com.google.android.gms.internal.ads.AbstractC7646aw0
+    public final void h(Object obj, long j10, float f10) {
+        this.f73527a.putInt(obj, j10, Float.floatToIntBits(f10));
+    }
+}

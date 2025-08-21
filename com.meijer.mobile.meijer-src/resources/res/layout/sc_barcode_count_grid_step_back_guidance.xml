@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_gravity="center"
+    android:layout_width="300dp"
+    android:layout_height="380dp">
+    <ImageView
+        android:id="@+id/sc_phone"
+        android:layout_width="115dp"
+        android:layout_height="220dp"
+        android:src="@drawable/sc_barcode_count_grid_phone"
+        android:adjustViewBounds="true"
+        android:layout_centerInParent="true"
+        android:contentDescription="@null"/>
+    <ImageView
+        android:id="@+id/sc_grid"
+        android:layout_width="80dp"
+        android:layout_height="100dp"
+        android:src="0x7f08060a"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:layout_centerInParent="true"
+        android:contentDescription="@null"/>
+    <TextView
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:id="@+id/sc_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_below="@+id/sc_phone"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="40dp"
+        android:layout_marginEnd="40dp"/>
+</RelativeLayout>

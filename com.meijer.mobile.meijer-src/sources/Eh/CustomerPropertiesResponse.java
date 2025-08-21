@@ -1,0 +1,51 @@
+package Eh;
+
+import j$.time.LocalDateTime;
+import kotlin.Metadata;
+import kotlin.jvm.internal.Intrinsics;
+
+@Metadata(d1 = {"\u0000$\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\u0010\u000b\n\u0002\b\u0002\n\u0002\b\u0004\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u000e\b\u0086\b\u0018\u00002\u00020\u0001B\u001f\u0012\u0006\u0010\u0003\u001a\u00020\u0002\u0012\u0006\u0010\u0004\u001a\u00020\u0002\u0012\u0006\u0010\u0006\u001a\u00020\u0005¢\u0006\u0004\b\u0007\u0010\bJ\u0010\u0010\n\u001a\u00020\tHÖ\u0001¢\u0006\u0004\b\n\u0010\u000bJ\u0010\u0010\r\u001a\u00020\fHÖ\u0001¢\u0006\u0004\b\r\u0010\u000eJ\u001a\u0010\u0010\u001a\u00020\u00022\b\u0010\u000f\u001a\u0004\u0018\u00010\u0001HÖ\u0003¢\u0006\u0004\b\u0010\u0010\u0011R\u0017\u0010\u0003\u001a\u00020\u00028\u0006¢\u0006\f\n\u0004\b\u0012\u0010\u0013\u001a\u0004\b\u0012\u0010\u0014R\u0017\u0010\u0004\u001a\u00020\u00028\u0006¢\u0006\f\n\u0004\b\u0015\u0010\u0013\u001a\u0004\b\u0004\u0010\u0014R\u0017\u0010\u0006\u001a\u00020\u00058\u0006¢\u0006\f\n\u0004\b\u0016\u0010\u0017\u001a\u0004\b\u0018\u0010\u0019¨\u0006\u001a"}, d2 = {"LEh/l;", "", "", "hasEmailVerified", "isAdmin", "j$/time/LocalDateTime", "savingsSinceDate", "<init>", "(ZZLj$/time/LocalDateTime;)V", "", "toString", "()Ljava/lang/String;", "", "hashCode", "()I", "other", "equals", "(Ljava/lang/Object;)Z", "a", "Z", "()Z", "b", "c", "Lj$/time/LocalDateTime;", "getSavingsSinceDate", "()Lj$/time/LocalDateTime;", "service_release"}, k = 1, mv = {2, 1, 0}, xi = 48)
+/* renamed from: Eh.l, reason: from toString */
+/* loaded from: classes8.dex */
+public final /* data */ class CustomerPropertiesResponse {
+
+    /* renamed from: a, reason: collision with root package name and from kotlin metadata and from toString */
+    private final boolean hasEmailVerified;
+
+    /* renamed from: b, reason: collision with root package name and from kotlin metadata and from toString */
+    private final boolean isAdmin;
+
+    /* renamed from: c, reason: collision with root package name and from kotlin metadata and from toString */
+    private final LocalDateTime savingsSinceDate;
+
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof CustomerPropertiesResponse)) {
+            return false;
+        }
+        CustomerPropertiesResponse customerPropertiesResponse = (CustomerPropertiesResponse) other;
+        return this.hasEmailVerified == customerPropertiesResponse.hasEmailVerified && this.isAdmin == customerPropertiesResponse.isAdmin && Intrinsics.e(this.savingsSinceDate, customerPropertiesResponse.savingsSinceDate);
+    }
+
+    public CustomerPropertiesResponse(boolean z10, boolean z11, LocalDateTime savingsSinceDate) {
+        Intrinsics.j(savingsSinceDate, "savingsSinceDate");
+        this.hasEmailVerified = z10;
+        this.isAdmin = z11;
+        this.savingsSinceDate = savingsSinceDate;
+    }
+
+    /* renamed from: a, reason: from getter */
+    public final boolean getHasEmailVerified() {
+        return this.hasEmailVerified;
+    }
+
+    public int hashCode() {
+        return (((Boolean.hashCode(this.hasEmailVerified) * 31) + Boolean.hashCode(this.isAdmin)) * 31) + this.savingsSinceDate.hashCode();
+    }
+
+    public String toString() {
+        return "CustomerPropertiesResponse(hasEmailVerified=" + this.hasEmailVerified + ", isAdmin=" + this.isAdmin + ", savingsSinceDate=" + this.savingsSinceDate + ')';
+    }
+}

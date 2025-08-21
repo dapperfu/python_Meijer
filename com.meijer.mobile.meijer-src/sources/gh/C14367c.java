@@ -1,0 +1,55 @@
+package gh;
+
+import android.graphics.Bitmap;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+/* renamed from: gh.c, reason: case insensitive filesystem */
+/* loaded from: classes8.dex */
+public class C14367c {
+
+    /* renamed from: a, reason: collision with root package name */
+    protected com.google.zxing.m f134197a;
+
+    /* renamed from: b, reason: collision with root package name */
+    protected r f134198b;
+
+    /* renamed from: c, reason: collision with root package name */
+    private final int f134199c = 2;
+
+    public static List<com.google.zxing.o> e(List<com.google.zxing.o> list, r rVar) {
+        ArrayList arrayList = new ArrayList(list.size());
+        Iterator<com.google.zxing.o> it = list.iterator();
+        while (it.hasNext()) {
+            arrayList.add(rVar.f(it.next()));
+        }
+        return arrayList;
+    }
+
+    public com.google.zxing.a a() {
+        return this.f134197a.b();
+    }
+
+    public Bitmap b() {
+        return this.f134198b.b(null, 2);
+    }
+
+    public byte[] c() {
+        return this.f134197a.c();
+    }
+
+    public Map<com.google.zxing.n, Object> d() {
+        return this.f134197a.d();
+    }
+
+    public String toString() {
+        return this.f134197a.f();
+    }
+
+    public C14367c(com.google.zxing.m mVar, r rVar) {
+        this.f134197a = mVar;
+        this.f134198b = rVar;
+    }
+}

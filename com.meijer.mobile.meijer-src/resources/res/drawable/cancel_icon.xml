@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:height="@dimen/gmp_sys_measurement_icon_size_medium"
+    android:width="@dimen/gmp_sys_measurement_icon_size_medium"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <path
+        android:fillColor="?attr/placesColorOnSurface"
+        android:pathData="m339,672 l141,-141 141,141 51,-51 -141,-141 141,-141 -51,-51 -141,141 -141,-141 -51,51 141,141 -141,141 51,51ZM480,864q-79,0 -149,-30t-122.5,-82.5Q156,699 126,629T96,480q0,-80 30,-149.5t82.5,-122Q261,156 331,126t149,-30q80,0 149.5,30t122,82.5Q804,261 834,330.5T864,480q0,79 -30,149t-82.5,122.5Q699,804 629.5,834T480,864ZM480,792q130,0 221,-91t91,-221q0,-130 -91,-221t-221,-91q-130,0 -221,91t-91,221q0,130 91,221t221,91ZM480,480Z"/>
+</vector>

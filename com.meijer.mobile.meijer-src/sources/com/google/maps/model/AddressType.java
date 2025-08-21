@@ -1,0 +1,172 @@
+package com.google.maps.model;
+
+import com.google.ads.interactivemedia.v3.impl.data.zzbz;
+import com.google.android.libraries.places.api.model.PlaceTypes;
+import com.google.maps.internal.StringJoin;
+
+/* loaded from: classes8.dex */
+public enum AddressType implements StringJoin.UrlValue {
+    STREET_ADDRESS(PlaceTypes.STREET_ADDRESS),
+    STREET_NUMBER(PlaceTypes.STREET_NUMBER),
+    FLOOR(PlaceTypes.FLOOR),
+    ROOM(PlaceTypes.ROOM),
+    POST_BOX(PlaceTypes.POST_BOX),
+    ROUTE(PlaceTypes.ROUTE),
+    INTERSECTION(PlaceTypes.INTERSECTION),
+    CONTINENT(PlaceTypes.CONTINENT),
+    POLITICAL(PlaceTypes.POLITICAL),
+    COUNTRY(PlaceTypes.COUNTRY),
+    ADMINISTRATIVE_AREA_LEVEL_1(PlaceTypes.ADMINISTRATIVE_AREA_LEVEL_1),
+    ADMINISTRATIVE_AREA_LEVEL_2(PlaceTypes.ADMINISTRATIVE_AREA_LEVEL_2),
+    ADMINISTRATIVE_AREA_LEVEL_3(PlaceTypes.ADMINISTRATIVE_AREA_LEVEL_3),
+    ADMINISTRATIVE_AREA_LEVEL_4(PlaceTypes.ADMINISTRATIVE_AREA_LEVEL_4),
+    ADMINISTRATIVE_AREA_LEVEL_5(PlaceTypes.ADMINISTRATIVE_AREA_LEVEL_5),
+    COLLOQUIAL_AREA(PlaceTypes.COLLOQUIAL_AREA),
+    LOCALITY(PlaceTypes.LOCALITY),
+    WARD("ward"),
+    SUBLOCALITY(PlaceTypes.SUBLOCALITY),
+    SUBLOCALITY_LEVEL_1(PlaceTypes.SUBLOCALITY_LEVEL_1),
+    SUBLOCALITY_LEVEL_2(PlaceTypes.SUBLOCALITY_LEVEL_2),
+    SUBLOCALITY_LEVEL_3(PlaceTypes.SUBLOCALITY_LEVEL_3),
+    SUBLOCALITY_LEVEL_4(PlaceTypes.SUBLOCALITY_LEVEL_4),
+    SUBLOCALITY_LEVEL_5(PlaceTypes.SUBLOCALITY_LEVEL_5),
+    NEIGHBORHOOD(PlaceTypes.NEIGHBORHOOD),
+    PREMISE(PlaceTypes.PREMISE),
+    SUBPREMISE(PlaceTypes.SUBPREMISE),
+    POSTAL_CODE(PlaceTypes.POSTAL_CODE),
+    POSTAL_CODE_PREFIX(PlaceTypes.POSTAL_CODE_PREFIX),
+    POSTAL_CODE_SUFFIX(PlaceTypes.POSTAL_CODE_SUFFIX),
+    PLUS_CODE(PlaceTypes.PLUS_CODE),
+    NATURAL_FEATURE(PlaceTypes.NATURAL_FEATURE),
+    AIRPORT(PlaceTypes.AIRPORT),
+    UNIVERSITY(PlaceTypes.UNIVERSITY),
+    PARK(PlaceTypes.PARK),
+    MUSEUM(PlaceTypes.MUSEUM),
+    POINT_OF_INTEREST(PlaceTypes.POINT_OF_INTEREST),
+    ESTABLISHMENT(PlaceTypes.ESTABLISHMENT),
+    BUS_STATION(PlaceTypes.BUS_STATION),
+    TRAIN_STATION(PlaceTypes.TRAIN_STATION),
+    SUBWAY_STATION(PlaceTypes.SUBWAY_STATION),
+    TRANSIT_STATION(PlaceTypes.TRANSIT_STATION),
+    LIGHT_RAIL_STATION(PlaceTypes.LIGHT_RAIL_STATION),
+    CHURCH(PlaceTypes.CHURCH),
+    PRIMARY_SCHOOL(PlaceTypes.PRIMARY_SCHOOL),
+    SECONDARY_SCHOOL(PlaceTypes.SECONDARY_SCHOOL),
+    FINANCE(PlaceTypes.FINANCE),
+    POST_OFFICE(PlaceTypes.POST_OFFICE),
+    PLACE_OF_WORSHIP(PlaceTypes.PLACE_OF_WORSHIP),
+    POSTAL_TOWN(PlaceTypes.POSTAL_TOWN),
+    SYNAGOGUE(PlaceTypes.SYNAGOGUE),
+    FOOD(PlaceTypes.FOOD),
+    GROCERY_OR_SUPERMARKET("grocery_or_supermarket"),
+    STORE(PlaceTypes.STORE),
+    DRUGSTORE(PlaceTypes.DRUGSTORE),
+    LAWYER(PlaceTypes.LAWYER),
+    HEALTH(PlaceTypes.HEALTH),
+    INSURANCE_AGENCY(PlaceTypes.INSURANCE_AGENCY),
+    GAS_STATION(PlaceTypes.GAS_STATION),
+    CAR_DEALER(PlaceTypes.CAR_DEALER),
+    CAR_REPAIR(PlaceTypes.CAR_REPAIR),
+    MEAL_TAKEAWAY(PlaceTypes.MEAL_TAKEAWAY),
+    FURNITURE_STORE(PlaceTypes.FURNITURE_STORE),
+    HOME_GOODS_STORE(PlaceTypes.HOME_GOODS_STORE),
+    SHOPPING_MALL(PlaceTypes.SHOPPING_MALL),
+    GYM(PlaceTypes.GYM),
+    ACCOUNTING(PlaceTypes.ACCOUNTING),
+    MOVING_COMPANY(PlaceTypes.MOVING_COMPANY),
+    LODGING(PlaceTypes.LODGING),
+    STORAGE(PlaceTypes.STORAGE),
+    CASINO(PlaceTypes.CASINO),
+    PARKING(PlaceTypes.PARKING),
+    STADIUM(PlaceTypes.STADIUM),
+    TRAVEL_AGENCY(PlaceTypes.TRAVEL_AGENCY),
+    NIGHT_CLUB(PlaceTypes.NIGHT_CLUB),
+    BEAUTY_SALON(PlaceTypes.BEAUTY_SALON),
+    HAIR_CARE(PlaceTypes.HAIR_CARE),
+    SPA(PlaceTypes.SPA),
+    SHOE_STORE(PlaceTypes.SHOE_STORE),
+    BAKERY(PlaceTypes.BAKERY),
+    PHARMACY(PlaceTypes.PHARMACY),
+    SCHOOL(PlaceTypes.SCHOOL),
+    BOOK_STORE(PlaceTypes.BOOK_STORE),
+    DEPARTMENT_STORE(PlaceTypes.DEPARTMENT_STORE),
+    RESTAURANT(PlaceTypes.RESTAURANT),
+    REAL_ESTATE_AGENCY(PlaceTypes.REAL_ESTATE_AGENCY),
+    BAR(PlaceTypes.BAR),
+    DOCTOR(PlaceTypes.DOCTOR),
+    HOSPITAL(PlaceTypes.HOSPITAL),
+    FIRE_STATION(PlaceTypes.FIRE_STATION),
+    SUPERMARKET(PlaceTypes.SUPERMARKET),
+    CITY_HALL(PlaceTypes.CITY_HALL),
+    LOCAL_GOVERNMENT_OFFICE(PlaceTypes.LOCAL_GOVERNMENT_OFFICE),
+    ATM(PlaceTypes.ATM),
+    BANK(PlaceTypes.BANK),
+    LIBRARY(PlaceTypes.LIBRARY),
+    CAR_WASH(PlaceTypes.CAR_WASH),
+    HARDWARE_STORE(PlaceTypes.HARDWARE_STORE),
+    AMUSEMENT_PARK(PlaceTypes.AMUSEMENT_PARK),
+    AQUARIUM(PlaceTypes.AQUARIUM),
+    ART_GALLERY(PlaceTypes.ART_GALLERY),
+    BICYCLE_STORE(PlaceTypes.BICYCLE_STORE),
+    BOWLING_ALLEY(PlaceTypes.BOWLING_ALLEY),
+    CAFE(PlaceTypes.CAFE),
+    CAMPGROUND(PlaceTypes.CAMPGROUND),
+    CAR_RENTAL(PlaceTypes.CAR_RENTAL),
+    CEMETERY(PlaceTypes.CEMETERY),
+    CLOTHING_STORE(PlaceTypes.CLOTHING_STORE),
+    CONVENIENCE_STORE(PlaceTypes.CONVENIENCE_STORE),
+    COURTHOUSE(PlaceTypes.COURTHOUSE),
+    DENTIST(PlaceTypes.DENTIST),
+    ELECTRICIAN(PlaceTypes.ELECTRICIAN),
+    ELECTRONICS_STORE(PlaceTypes.ELECTRONICS_STORE),
+    EMBASSY(PlaceTypes.EMBASSY),
+    FLORIST(PlaceTypes.FLORIST),
+    FUNERAL_HOME(PlaceTypes.FUNERAL_HOME),
+    GENERAL_CONTRACTOR(PlaceTypes.GENERAL_CONTRACTOR),
+    HINDU_TEMPLE(PlaceTypes.HINDU_TEMPLE),
+    JEWELRY_STORE(PlaceTypes.JEWELRY_STORE),
+    LAUNDRY(PlaceTypes.LAUNDRY),
+    LIQUOR_STORE(PlaceTypes.LIQUOR_STORE),
+    LOCKSMITH(PlaceTypes.LOCKSMITH),
+    MEAL_DELIVERY(PlaceTypes.MEAL_DELIVERY),
+    MOSQUE(PlaceTypes.MOSQUE),
+    MOVIE_RENTAL(PlaceTypes.MOVIE_RENTAL),
+    MOVIE_THEATER(PlaceTypes.MOVIE_THEATER),
+    PAINTER(PlaceTypes.PAINTER),
+    PET_STORE(PlaceTypes.PET_STORE),
+    PHYSIOTHERAPIST(PlaceTypes.PHYSIOTHERAPIST),
+    PLUMBER(PlaceTypes.PLUMBER),
+    POLICE(PlaceTypes.POLICE),
+    ROOFING_CONTRACTOR(PlaceTypes.ROOFING_CONTRACTOR),
+    RV_PARK(PlaceTypes.RV_PARK),
+    TAXI_STAND(PlaceTypes.TAXI_STAND),
+    VETERINARY_CARE(PlaceTypes.VETERINARY_CARE),
+    ZOO(PlaceTypes.ZOO),
+    ARCHIPELAGO(PlaceTypes.ARCHIPELAGO),
+    TOURIST_ATTRACTION(PlaceTypes.TOURIST_ATTRACTION),
+    TOWN_SQUARE(PlaceTypes.TOWN_SQUARE),
+    UNKNOWN(zzbz.UNKNOWN_CONTENT_TYPE);
+
+    private final String addressType;
+
+    @Override // java.lang.Enum
+    public String toString() {
+        return this.addressType;
+    }
+
+    @Override // com.google.maps.internal.StringJoin.UrlValue
+    public String toUrlValue() {
+        if (this != UNKNOWN) {
+            return this.addressType;
+        }
+        throw new UnsupportedOperationException("Shouldn't use AddressType.UNKNOWN in a request.");
+    }
+
+    AddressType(String str) {
+        this.addressType = str;
+    }
+
+    public String toCanonicalLiteral() {
+        return toString();
+    }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:height="72dp"
+    android:width="73dp"
+    android:viewportWidth="73"
+    android:viewportHeight="72">
+    <path
+        android:name="pulsating_background"
+        android:fillColor="@color/sc_barcode_unscanned_background_alt"
+        android:pathData="M36.5,36m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0"
+        android:strokeAlpha="0.5"
+        android:fillAlpha="0.5"/>
+</vector>

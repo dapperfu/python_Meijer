@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android" android:duration="@integer/medallia_fade_anim_duration">
+    <alpha
+        android:interpolator="@android:anim/accelerate_interpolator"
+        android:fromAlpha="0"
+        android:toAlpha="1"/>
+</set>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.meijer.mobile.core.design.widget.cards.ExpandableCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:title="Progress Spinner">
+    <LinearLayout
+        android:gravity="center"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <androidx.core.widget.ContentLoadingProgressBar
+            android:id="@+id/progress_bar_large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="?android:attr/progressBarStyleLarge"/>
+        <androidx.core.widget.ContentLoadingProgressBar
+            android:id="@+id/progress_bar_standard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            style="?android:attr/progressBarStyle"/>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+            <androidx.core.widget.ContentLoadingProgressBar
+                android:id="@+id/progress_bar_small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/progress_bar_text_view"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                style="?android:attr/progressBarStyleSmall"/>
+            <TextView
+                android:id="@+id/progress_bar_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/adding_to_cart"
+                android:layout_marginStart="10dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintStart_toEndOf="@+id/progress_bar_small"
+                app:layout_constraintTop_toTopOf="parent"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</com.meijer.mobile.core.design.widget.cards.ExpandableCardView>

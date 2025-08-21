@@ -1,0 +1,1226 @@
+package com.meijer.mobile.meijer.activity.orders;
+
+import Bm.C3011v;
+import Ki.LocalThemeScope;
+import android.content.res.Resources;
+import androidx.compose.runtime.Composer;
+import androidx.compose.runtime.ComposerKt;
+import androidx.compose.runtime.InterfaceC5872l0;
+import androidx.compose.runtime.J0;
+import androidx.compose.runtime.T0;
+import androidx.compose.runtime.internal.ComposableLambda;
+import androidx.compose.runtime.internal.ComposableLambdaKt;
+import androidx.compose.runtime.t1;
+import androidx.compose.ui.Modifier;
+import androidx.recyclerview.widget.RecyclerView;
+import com.meijer.mobile.meijer.activity.orders.U;
+import hn.OrderOutOfStockListDecorator;
+import hn.OrderSubstitutionsListDecorator;
+import in.C14818k;
+import j0.InterfaceC14882C;
+import j0.InterfaceC14888I;
+import j0.InterfaceC14902f;
+import java.util.List;
+import java.util.Locale;
+import ki.C15133B;
+import ki.InterfaceC15205y;
+import ki.j1;
+import ki.q1;
+import kotlin.C17983Z;
+import kotlin.C17987a1;
+import kotlin.Metadata;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
+import kotlin.jvm.functions.Function2;
+import kotlin.jvm.functions.Function3;
+import kotlin.jvm.functions.Function4;
+import kotlin.jvm.internal.Intrinsics;
+import kotlin.jvm.internal.Lambda;
+import kotlin.jvm.internal.SourceDebugExtension;
+import l0.InterfaceC15433c;
+import p1.C16338g;
+import pi.C16453n;
+import tr.C17284b;
+
+@Metadata(d1 = {"\u0000J\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000e\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\u0002\n\u0002\b\u0003\n\u0002\u0010 \n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\b\n\u0002\b\r\n\u0002\u0010\u000b\n\u0002\b\u0002\u001a\u009f\u0001\u0010\u0016\u001a\u00020\u0007*\u00020\u00002\b\b\u0002\u0010\u0002\u001a\u00020\u00012\n\u0010\u0005\u001a\u00060\u0003j\u0002`\u00042\f\u0010\b\u001a\b\u0012\u0004\u0012\u00020\u00070\u00062\f\u0010\t\u001a\b\u0012\u0004\u0012\u00020\u00070\u00062\f\u0010\n\u001a\b\u0012\u0004\u0012\u00020\u00070\u00062\f\u0010\r\u001a\b\u0012\u0004\u0012\u00020\f0\u000b2\f\u0010\u000f\u001a\b\u0012\u0004\u0012\u00020\u000e0\u000b2\u0006\u0010\u0011\u001a\u00020\u00102\u0012\u0010\u0014\u001a\u000e\u0012\u0004\u0012\u00020\u0013\u0012\u0004\u0012\u00020\u00070\u00122\u0012\u0010\u0015\u001a\u000e\u0012\u0004\u0012\u00020\u0013\u0012\u0004\u0012\u00020\u00070\u0012H\u0001¢\u0006\u0004\b\u0016\u0010\u0017\u001ai\u0010\u0018\u001a\u00020\u0007*\u00020\u00002\b\b\u0002\u0010\u0002\u001a\u00020\u00012\f\u0010\r\u001a\b\u0012\u0004\u0012\u00020\f0\u000b2\f\u0010\u000f\u001a\b\u0012\u0004\u0012\u00020\u000e0\u000b2\u0006\u0010\u0011\u001a\u00020\u00102\u0012\u0010\u0014\u001a\u000e\u0012\u0004\u0012\u00020\u0013\u0012\u0004\u0012\u00020\u00070\u00122\u0012\u0010\u0015\u001a\u000e\u0012\u0004\u0012\u00020\u0013\u0012\u0004\u0012\u00020\u00070\u0012H\u0003¢\u0006\u0004\b\u0018\u0010\u0019\u001a7\u0010\u001a\u001a\u00020\u0007*\u00020\u00002\f\u0010\t\u001a\b\u0012\u0004\u0012\u00020\u00070\u00062\f\u0010\n\u001a\b\u0012\u0004\u0012\u00020\u00070\u00062\u0006\u0010\u0011\u001a\u00020\u0010H\u0003¢\u0006\u0004\b\u001a\u0010\u001b\u001a\u001b\u0010\u001d\u001a\u00020\u0007*\u00020\u00002\u0006\u0010\u001c\u001a\u00020\u0013H\u0003¢\u0006\u0004\b\u001d\u0010\u001e\u001a\u001b\u0010 \u001a\u00020\u0007*\u00020\u00002\u0006\u0010\u001f\u001a\u00020\u0013H\u0003¢\u0006\u0004\b \u0010\u001e¨\u0006#²\u0006\f\u0010\"\u001a\u00020!8\nX\u008a\u0084\u0002"}, d2 = {"LKi/M;", "Landroidx/compose/ui/Modifier;", "modifier", "", "Lcom/meijer/mobile/core/model/common/ResourceId;", "orderId", "Lkotlin/Function0;", "", "onBackPressed", "onConfirmClicked", "onSkipClicked", "", "Lhn/q;", "substitutionItems", "Lhn/p;", "outOfStockItems", "Lvo/b;", "substitutionScreenType", "Lkotlin/Function1;", "", "onSubstitutionAccepted", "onSubstitutionRejected", "o", "(LKi/M;Landroidx/compose/ui/Modifier;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Ljava/util/List;Ljava/util/List;Lvo/b;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V", "k", "(LKi/M;Landroidx/compose/ui/Modifier;Ljava/util/List;Ljava/util/List;Lvo/b;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V", "h", "(LKi/M;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lvo/b;Landroidx/compose/runtime/Composer;I)V", "outOfStockItemsCount", "q", "(LKi/M;ILandroidx/compose/runtime/Composer;I)V", "substitutionsCount", "s", "", "subsConfirmed", "Meijer_playstoreRelease"}, k = 2, mv = {2, 1, 0}, xi = 48)
+@SourceDebugExtension
+/* loaded from: classes10.dex */
+public final class U {
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    static final class a implements Function3<InterfaceC14902f, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111320a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ Function0<Unit> f111321b;
+
+        /* renamed from: c, reason: collision with root package name */
+        final /* synthetic */ InterfaceC5872l0<Boolean> f111322c;
+
+        /* renamed from: d, reason: collision with root package name */
+        final /* synthetic */ Function0<Unit> f111323d;
+
+        @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+        /* renamed from: com.meijer.mobile.meijer.activity.orders.U$a$a, reason: collision with other inner class name */
+        static final class C1710a implements Function3<j1, Composer, Integer, Unit> {
+
+            /* renamed from: a, reason: collision with root package name */
+            final /* synthetic */ LocalThemeScope f111324a;
+
+            /* renamed from: b, reason: collision with root package name */
+            final /* synthetic */ Function0<Unit> f111325b;
+
+            /* renamed from: c, reason: collision with root package name */
+            final /* synthetic */ InterfaceC5872l0<Boolean> f111326c;
+
+            @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+            @SourceDebugExtension
+            /* renamed from: com.meijer.mobile.meijer.activity.orders.U$a$a$a, reason: collision with other inner class name */
+            static final class C1711a implements Function3<InterfaceC14888I, Composer, Integer, Unit> {
+
+                /* renamed from: a, reason: collision with root package name */
+                final /* synthetic */ LocalThemeScope f111327a;
+
+                /* renamed from: b, reason: collision with root package name */
+                final /* synthetic */ j1 f111328b;
+
+                /* renamed from: c, reason: collision with root package name */
+                final /* synthetic */ InterfaceC5872l0<Boolean> f111329c;
+
+                C1711a(LocalThemeScope localThemeScope, j1 j1Var, InterfaceC5872l0<Boolean> interfaceC5872l0) {
+                    this.f111327a = localThemeScope;
+                    this.f111328b = j1Var;
+                    this.f111329c = interfaceC5872l0;
+                }
+
+                public final void a(InterfaceC14888I AdsButton, Composer composer, int i10) {
+                    Intrinsics.j(AdsButton, "$this$AdsButton");
+                    if ((i10 & 17) == 16 && composer.j()) {
+                        composer.K();
+                        return;
+                    }
+                    if (ComposerKt.M()) {
+                        ComposerKt.U(18828906, i10, -1, "com.meijer.mobile.meijer.activity.orders.BottomBar.<anonymous>.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:164)");
+                    }
+                    LocalThemeScope localThemeScope = this.f111327a;
+                    q1.Label labelY = q1.Label.y(this.f111328b.getLabels().getEnabledLabel(), androidx.compose.foundation.layout.D.k(Modifier.INSTANCE, 0.0f, H1.h.p(5), 1, null), null, null, null, 0, false, 0, null, null, 510, null);
+                    String upperCase = C16338g.c(U.i(this.f111329c) ? C17284b.f163305W : C17284b.f163278I, composer, 0).toUpperCase(Locale.ROOT);
+                    Intrinsics.i(upperCase, "toUpperCase(...)");
+                    si.j.h(localThemeScope, labelY, upperCase, null, composer, LocalThemeScope.f17314g | (q1.Label.f142335j << 3), 4);
+                    if (ComposerKt.M()) {
+                        ComposerKt.T();
+                    }
+                }
+
+                @Override // kotlin.jvm.functions.Function3
+                public /* bridge */ /* synthetic */ Unit invoke(InterfaceC14888I interfaceC14888I, Composer composer, Integer num) {
+                    a(interfaceC14888I, composer, num.intValue());
+                    return Unit.f143329a;
+                }
+            }
+
+            C1710a(LocalThemeScope localThemeScope, Function0<Unit> function0, InterfaceC5872l0<Boolean> interfaceC5872l0) {
+                this.f111324a = localThemeScope;
+                this.f111325b = function0;
+                this.f111326c = interfaceC5872l0;
+            }
+
+            public final void a(j1 Assemble, Composer composer, int i10) {
+                Intrinsics.j(Assemble, "$this$Assemble");
+                if (ComposerKt.M()) {
+                    ComposerKt.U(-1317638147, i10, -1, "com.meijer.mobile.meijer.activity.orders.BottomBar.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:156)");
+                }
+                oi.E0.b(this.f111324a, q1.d.StandardButton.y(Assemble.getButtons().getEnabledButton(), false, null, null, null, null, null, null, androidx.compose.foundation.layout.J.h(Modifier.INSTANCE, 0.0f, 1, null), false, null, 895, null), this.f111325b, ComposableLambdaKt.c(18828906, true, new C1711a(this.f111324a, Assemble, this.f111326c), composer, 54), composer, LocalThemeScope.f17314g | 3072 | (q1.d.StandardButton.f142229k << 3));
+                if (ComposerKt.M()) {
+                    ComposerKt.T();
+                }
+            }
+
+            @Override // kotlin.jvm.functions.Function3
+            public /* bridge */ /* synthetic */ Unit invoke(j1 j1Var, Composer composer, Integer num) {
+                a(j1Var, composer, num.intValue());
+                return Unit.f143329a;
+            }
+        }
+
+        @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+        static final class b implements Function3<j1, Composer, Integer, Unit> {
+
+            /* renamed from: a, reason: collision with root package name */
+            final /* synthetic */ LocalThemeScope f111330a;
+
+            /* renamed from: b, reason: collision with root package name */
+            final /* synthetic */ Function0<Unit> f111331b;
+
+            @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+            /* renamed from: com.meijer.mobile.meijer.activity.orders.U$a$b$a, reason: collision with other inner class name */
+            static final class C1712a implements Function3<InterfaceC14888I, Composer, Integer, Unit> {
+
+                /* renamed from: a, reason: collision with root package name */
+                final /* synthetic */ LocalThemeScope f111332a;
+
+                /* renamed from: b, reason: collision with root package name */
+                final /* synthetic */ j1 f111333b;
+
+                C1712a(LocalThemeScope localThemeScope, j1 j1Var) {
+                    this.f111332a = localThemeScope;
+                    this.f111333b = j1Var;
+                }
+
+                public final void a(InterfaceC14888I AdsButton, Composer composer, int i10) {
+                    Intrinsics.j(AdsButton, "$this$AdsButton");
+                    if ((i10 & 17) == 16 && composer.j()) {
+                        composer.K();
+                        return;
+                    }
+                    if (ComposerKt.M()) {
+                        ComposerKt.U(-960151803, i10, -1, "com.meijer.mobile.meijer.activity.orders.BottomBar.<anonymous>.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:184)");
+                    }
+                    si.j.h(this.f111332a, this.f111333b.getLabels().getEnabledLabel(), C16338g.c(C17284b.f163346s0, composer, 0), null, composer, LocalThemeScope.f17314g | (q1.Label.f142335j << 3), 4);
+                    if (ComposerKt.M()) {
+                        ComposerKt.T();
+                    }
+                }
+
+                @Override // kotlin.jvm.functions.Function3
+                public /* bridge */ /* synthetic */ Unit invoke(InterfaceC14888I interfaceC14888I, Composer composer, Integer num) {
+                    a(interfaceC14888I, composer, num.intValue());
+                    return Unit.f143329a;
+                }
+            }
+
+            b(LocalThemeScope localThemeScope, Function0<Unit> function0) {
+                this.f111330a = localThemeScope;
+                this.f111331b = function0;
+            }
+
+            public final void a(j1 Assemble, Composer composer, int i10) {
+                Intrinsics.j(Assemble, "$this$Assemble");
+                if (ComposerKt.M()) {
+                    ComposerKt.U(817480920, i10, -1, "com.meijer.mobile.meijer.activity.orders.BottomBar.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:179)");
+                }
+                oi.E0.b(this.f111330a, Assemble.getButtons().getEnabledButton(), this.f111331b, ComposableLambdaKt.c(-960151803, true, new C1712a(this.f111330a, Assemble), composer, 54), composer, LocalThemeScope.f17314g | 3072 | (q1.d.StandardButton.f142229k << 3));
+                if (ComposerKt.M()) {
+                    ComposerKt.T();
+                }
+            }
+
+            @Override // kotlin.jvm.functions.Function3
+            public /* bridge */ /* synthetic */ Unit invoke(j1 j1Var, Composer composer, Integer num) {
+                a(j1Var, composer, num.intValue());
+                return Unit.f143329a;
+            }
+        }
+
+        a(LocalThemeScope localThemeScope, Function0<Unit> function0, InterfaceC5872l0<Boolean> interfaceC5872l0, Function0<Unit> function02) {
+            this.f111320a = localThemeScope;
+            this.f111321b = function0;
+            this.f111322c = interfaceC5872l0;
+            this.f111323d = function02;
+        }
+
+        public final void a(InterfaceC14902f AdsColumn, Composer composer, int i10) {
+            Intrinsics.j(AdsColumn, "$this$AdsColumn");
+            if ((i10 & 17) == 16 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(1380408217, i10, -1, "com.meijer.mobile.meijer.activity.orders.BottomBar.<anonymous> (OrderSubstitutionScreen.kt:155)");
+            }
+            LocalThemeScope localThemeScope = this.f111320a;
+            C15133B c15133b = C15133B.f141857a;
+            ComposableLambda composableLambdaC = ComposableLambdaKt.c(-1317638147, true, new C1710a(localThemeScope, this.f111321b, this.f111322c), composer, 54);
+            int i11 = LocalThemeScope.f17314g;
+            Ki.Q.e(localThemeScope, c15133b, composableLambdaC, composer, i11 | 384 | (C15133B.f141858b << 3));
+            if (!U.i(this.f111322c)) {
+                LocalThemeScope localThemeScope2 = this.f111320a;
+                Ki.Q.e(localThemeScope2, InterfaceC15205y.a.b.f142543a, ComposableLambdaKt.c(817480920, true, new b(localThemeScope2, this.f111323d), composer, 54), composer, i11 | 384 | (InterfaceC15205y.a.b.f142544b << 3));
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC14902f interfaceC14902f, Composer composer, Integer num) {
+            a(interfaceC14902f, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    @SourceDebugExtension
+    static final class b implements Function3<InterfaceC15433c, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ vo.b f111334a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111335b;
+
+        b(vo.b bVar, LocalThemeScope localThemeScope) {
+            this.f111334a = bVar;
+            this.f111335b = localThemeScope;
+        }
+
+        public final void a(InterfaceC15433c item, Composer composer, int i10) {
+            Intrinsics.j(item, "$this$item");
+            if ((i10 & 17) == 16 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-2084844761, i10, -1, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionMainContent.<anonymous>.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:93)");
+            }
+            if (this.f111334a == vo.b.f166130i) {
+                si.j.h(this.f111335b, q1.Label.y(new q1.Label(null, null, null, null, 0, false, 0, this.f111335b.getAdsTypography().getBody().getOne(), null, 383, null), androidx.compose.foundation.layout.D.i(Modifier.INSTANCE, H1.h.p(16)), null, null, null, 0, false, 0, null, null, 510, null), C16338g.c(C17284b.f163318e0, composer, 0), null, composer, LocalThemeScope.f17314g | (q1.Label.f142335j << 3), 4);
+                C17983Z.a(null, this.f111335b.getAdsColors().getAdsColorUIDivider().getColor(), 0.0f, 0.0f, composer, 0, 13);
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC15433c interfaceC15433c, Composer composer, Integer num) {
+            a(interfaceC15433c, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    static final class c implements Function3<InterfaceC15433c, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111336a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ List<OrderOutOfStockListDecorator> f111337b;
+
+        c(LocalThemeScope localThemeScope, List<OrderOutOfStockListDecorator> list) {
+            this.f111336a = localThemeScope;
+            this.f111337b = list;
+        }
+
+        public final void a(InterfaceC15433c item, Composer composer, int i10) {
+            Intrinsics.j(item, "$this$item");
+            if ((i10 & 17) == 16 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-865633712, i10, -1, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionMainContent.<anonymous>.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:104)");
+            }
+            U.q(this.f111336a, this.f111337b.size(), composer, LocalThemeScope.f17314g);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC15433c interfaceC15433c, Composer composer, Integer num) {
+            a(interfaceC15433c, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    @SourceDebugExtension
+    static final class d implements Function3<InterfaceC15433c, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111338a;
+
+        d(LocalThemeScope localThemeScope) {
+            this.f111338a = localThemeScope;
+        }
+
+        public final void a(InterfaceC15433c item, Composer composer, int i10) {
+            Intrinsics.j(item, "$this$item");
+            if ((i10 & 17) == 16 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-467887869, i10, -1, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionMainContent.<anonymous>.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:112)");
+            }
+            si.j.h(this.f111338a, q1.Label.y(new q1.Label(null, null, null, null, 0, false, 0, this.f111338a.getAdsTypography().getBody().getOne(), null, 383, null), androidx.compose.foundation.layout.D.i(Modifier.INSTANCE, H1.h.p(16)), null, null, null, 0, false, 0, null, null, 510, null), C16338g.c(C17284b.f163320f0, composer, 0), null, composer, LocalThemeScope.f17314g | (q1.Label.f142335j << 3), 4);
+            C17983Z.a(null, this.f111338a.getAdsColors().getAdsColorUIDivider().getColor(), 0.0f, 0.0f, composer, 0, 13);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC15433c interfaceC15433c, Composer composer, Integer num) {
+            a(interfaceC15433c, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    static final class e implements Function3<InterfaceC15433c, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111339a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ List<OrderSubstitutionsListDecorator> f111340b;
+
+        e(LocalThemeScope localThemeScope, List<OrderSubstitutionsListDecorator> list) {
+            this.f111339a = localThemeScope;
+            this.f111340b = list;
+        }
+
+        public final void a(InterfaceC15433c item, Composer composer, int i10) {
+            Intrinsics.j(item, "$this$item");
+            if ((i10 & 17) == 16 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(1686986082, i10, -1, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionMainContent.<anonymous>.<anonymous>.<anonymous> (OrderSubstitutionScreen.kt:124)");
+            }
+            U.s(this.f111339a, this.f111340b.size(), composer, LocalThemeScope.f17314g);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC15433c interfaceC15433c, Composer composer, Integer num) {
+            a(interfaceC15433c, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(d1 = {"\u0000\f\n\u0002\b\u0002\n\u0002\u0010\u0001\n\u0002\b\u0002\u0010\u0003\u001a\u0004\u0018\u00010\u0002\"\u0004\b\u0000\u0010\u00002\u0006\u0010\u0001\u001a\u00028\u0000H\n¢\u0006\u0004\b\u0003\u0010\u0004"}, d2 = {"T", "it", "", "a", "(Ljava/lang/Object;)Ljava/lang/Void;"}, k = 3, mv = {2, 1, 0})
+    public static final class f extends Lambda implements Function1 {
+
+        /* renamed from: f, reason: collision with root package name */
+        public static final f f111341f = new f();
+
+        public f() {
+            super(1);
+        }
+
+        @Override // kotlin.jvm.functions.Function1
+        /* renamed from: a, reason: merged with bridge method [inline-methods] */
+        public final Void invoke(OrderOutOfStockListDecorator c14557p) {
+            return null;
+        }
+    }
+
+    @Metadata(d1 = {"\u0000\u0010\n\u0000\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u0000\n\u0002\b\u0002\u0010\u0004\u001a\u0004\u0018\u00010\u0003\"\u0004\b\u0000\u0010\u00002\u0006\u0010\u0002\u001a\u00020\u0001H\n¢\u0006\u0004\b\u0004\u0010\u0005"}, d2 = {"T", "", "index", "", "a", "(I)Ljava/lang/Object;"}, k = 3, mv = {2, 1, 0})
+    public static final class g extends Lambda implements Function1<Integer, Object> {
+
+        /* renamed from: f, reason: collision with root package name */
+        final /* synthetic */ Function1 f111342f;
+
+        /* renamed from: g, reason: collision with root package name */
+        final /* synthetic */ List f111343g;
+
+        /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+        public g(Function1 function1, List list) {
+            super(1);
+            this.f111342f = function1;
+            this.f111343g = list;
+        }
+
+        public final Object a(int i10) {
+            return this.f111342f.invoke(this.f111343g.get(i10));
+        }
+
+        @Override // kotlin.jvm.functions.Function1
+        public /* bridge */ /* synthetic */ Object invoke(Integer num) {
+            return a(num.intValue());
+        }
+    }
+
+    @Metadata(d1 = {"\u0000\u0014\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u0002\n\u0002\b\u0002\u0010\u0005\u001a\u00020\u0004\"\u0004\b\u0000\u0010\u0000*\u00020\u00012\u0006\u0010\u0003\u001a\u00020\u0002H\u000b¢\u0006\u0004\b\u0005\u0010\u0006"}, d2 = {"T", "Ll0/c;", "", "it", "", "a", "(Ll0/c;ILandroidx/compose/runtime/Composer;I)V"}, k = 3, mv = {2, 1, 0})
+    @SourceDebugExtension
+    public static final class h extends Lambda implements Function4<InterfaceC15433c, Integer, Composer, Integer, Unit> {
+
+        /* renamed from: f, reason: collision with root package name */
+        final /* synthetic */ List f111344f;
+
+        /* renamed from: g, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111345g;
+
+        /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+        public h(List list, LocalThemeScope localThemeScope) {
+            super(4);
+            this.f111344f = list;
+            this.f111345g = localThemeScope;
+        }
+
+        public final void a(InterfaceC15433c interfaceC15433c, int i10, Composer composer, int i11) {
+            int i12;
+            if ((i11 & 6) == 0) {
+                i12 = (composer.V(interfaceC15433c) ? 4 : 2) | i11;
+            } else {
+                i12 = i11;
+            }
+            if ((i11 & 48) == 0) {
+                i12 |= composer.d(i10) ? 32 : 16;
+            }
+            if (!composer.p((i12 & 147) != 146, i12 & 1)) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-632812321, i12, -1, "androidx.compose.foundation.lazy.items.<anonymous> (LazyDsl.kt:178)");
+            }
+            OrderOutOfStockListDecorator c14557p = (OrderOutOfStockListDecorator) this.f111344f.get(i10);
+            composer.startReplaceGroup(558072829);
+            C14818k.b(this.f111345g, null, c14557p, composer, LocalThemeScope.f17314g, 1);
+            composer.P();
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function4
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC15433c interfaceC15433c, Integer num, Composer composer, Integer num2) {
+            a(interfaceC15433c, num.intValue(), composer, num2.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(d1 = {"\u0000\f\n\u0002\b\u0002\n\u0002\u0010\u0001\n\u0002\b\u0002\u0010\u0003\u001a\u0004\u0018\u00010\u0002\"\u0004\b\u0000\u0010\u00002\u0006\u0010\u0001\u001a\u00028\u0000H\n¢\u0006\u0004\b\u0003\u0010\u0004"}, d2 = {"T", "it", "", "a", "(Ljava/lang/Object;)Ljava/lang/Void;"}, k = 3, mv = {2, 1, 0})
+    public static final class i extends Lambda implements Function1 {
+
+        /* renamed from: f, reason: collision with root package name */
+        public static final i f111346f = new i();
+
+        public i() {
+            super(1);
+        }
+
+        @Override // kotlin.jvm.functions.Function1
+        /* renamed from: a, reason: merged with bridge method [inline-methods] */
+        public final Void invoke(OrderSubstitutionsListDecorator c14558q) {
+            return null;
+        }
+    }
+
+    @Metadata(d1 = {"\u0000\u0010\n\u0000\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u0000\n\u0002\b\u0002\u0010\u0004\u001a\u00020\u0003\"\u0004\b\u0000\u0010\u00002\u0006\u0010\u0002\u001a\u00020\u0001H\n¢\u0006\u0004\b\u0004\u0010\u0005"}, d2 = {"T", "", "index", "", "a", "(I)Ljava/lang/Object;"}, k = 3, mv = {2, 1, 0})
+    public static final class j extends Lambda implements Function1<Integer, Object> {
+
+        /* renamed from: f, reason: collision with root package name */
+        final /* synthetic */ Function1 f111347f;
+
+        /* renamed from: g, reason: collision with root package name */
+        final /* synthetic */ List f111348g;
+
+        /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+        public j(Function1 function1, List list) {
+            super(1);
+            this.f111347f = function1;
+            this.f111348g = list;
+        }
+
+        public final Object a(int i10) {
+            return this.f111347f.invoke(this.f111348g.get(i10));
+        }
+
+        @Override // kotlin.jvm.functions.Function1
+        public /* bridge */ /* synthetic */ Object invoke(Integer num) {
+            return a(num.intValue());
+        }
+    }
+
+    @Metadata(d1 = {"\u0000\u0010\n\u0000\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u0000\n\u0002\b\u0002\u0010\u0004\u001a\u0004\u0018\u00010\u0003\"\u0004\b\u0000\u0010\u00002\u0006\u0010\u0002\u001a\u00020\u0001H\n¢\u0006\u0004\b\u0004\u0010\u0005"}, d2 = {"T", "", "index", "", "a", "(I)Ljava/lang/Object;"}, k = 3, mv = {2, 1, 0})
+    public static final class k extends Lambda implements Function1<Integer, Object> {
+
+        /* renamed from: f, reason: collision with root package name */
+        final /* synthetic */ Function1 f111349f;
+
+        /* renamed from: g, reason: collision with root package name */
+        final /* synthetic */ List f111350g;
+
+        /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+        public k(Function1 function1, List list) {
+            super(1);
+            this.f111349f = function1;
+            this.f111350g = list;
+        }
+
+        public final Object a(int i10) {
+            return this.f111349f.invoke(this.f111350g.get(i10));
+        }
+
+        @Override // kotlin.jvm.functions.Function1
+        public /* bridge */ /* synthetic */ Object invoke(Integer num) {
+            return a(num.intValue());
+        }
+    }
+
+    @Metadata(d1 = {"\u0000\u0014\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u0002\n\u0002\b\u0002\u0010\u0005\u001a\u00020\u0004\"\u0004\b\u0000\u0010\u0000*\u00020\u00012\u0006\u0010\u0003\u001a\u00020\u0002H\u000b¢\u0006\u0004\b\u0005\u0010\u0006"}, d2 = {"T", "Ll0/c;", "", "it", "", "a", "(Ll0/c;ILandroidx/compose/runtime/Composer;I)V"}, k = 3, mv = {2, 1, 0})
+    @SourceDebugExtension
+    public static final class l extends Lambda implements Function4<InterfaceC15433c, Integer, Composer, Integer, Unit> {
+
+        /* renamed from: f, reason: collision with root package name */
+        final /* synthetic */ List f111351f;
+
+        /* renamed from: g, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111352g;
+
+        /* renamed from: h, reason: collision with root package name */
+        final /* synthetic */ Function1 f111353h;
+
+        /* renamed from: i, reason: collision with root package name */
+        final /* synthetic */ Function1 f111354i;
+
+        /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+        public l(List list, LocalThemeScope localThemeScope, Function1 function1, Function1 function12) {
+            super(4);
+            this.f111351f = list;
+            this.f111352g = localThemeScope;
+            this.f111353h = function1;
+            this.f111354i = function12;
+        }
+
+        public final void a(InterfaceC15433c interfaceC15433c, int i10, Composer composer, int i11) {
+            int i12;
+            if ((i11 & 6) == 0) {
+                i12 = (composer.V(interfaceC15433c) ? 4 : 2) | i11;
+            } else {
+                i12 = i11;
+            }
+            if ((i11 & 48) == 0) {
+                i12 |= composer.d(i10) ? 32 : 16;
+            }
+            if (!composer.p((i12 & 147) != 146, i12 & 1)) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-632812321, i12, -1, "androidx.compose.foundation.lazy.items.<anonymous> (LazyDsl.kt:178)");
+            }
+            OrderSubstitutionsListDecorator c14558q = (OrderSubstitutionsListDecorator) this.f111351f.get(i10);
+            composer.startReplaceGroup(-667448944);
+            F0.j(this.f111352g, c14558q, this.f111353h, this.f111354i, composer, LocalThemeScope.f17314g);
+            composer.P();
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function4
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC15433c interfaceC15433c, Integer num, Composer composer, Integer num2) {
+            a(interfaceC15433c, num.intValue(), composer, num2.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    @SourceDebugExtension
+    static final class m implements Function2<Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111355a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ Modifier f111356b;
+
+        /* renamed from: c, reason: collision with root package name */
+        final /* synthetic */ String f111357c;
+
+        /* renamed from: d, reason: collision with root package name */
+        final /* synthetic */ Function0<Unit> f111358d;
+
+        m(LocalThemeScope localThemeScope, Modifier modifier, String str, Function0<Unit> function0) {
+            this.f111355a = localThemeScope;
+            this.f111356b = modifier;
+            this.f111357c = str;
+            this.f111358d = function0;
+        }
+
+        public final void b(Composer composer, int i10) throws Resources.NotFoundException {
+            if ((i10 & 3) == 2 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(1865157571, i10, -1, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionScreen.<anonymous> (OrderSubstitutionScreen.kt:56)");
+            }
+            LocalThemeScope localThemeScope = this.f111355a;
+            Modifier modifierH = androidx.compose.foundation.layout.J.h(this.f111356b, 0.0f, 1, null);
+            String strD = C16338g.d(C17284b.f163322g0, new Object[]{this.f111357c}, composer, 0);
+            composer.startReplaceGroup(5004770);
+            boolean zV = composer.V(this.f111358d);
+            final Function0<Unit> function0 = this.f111358d;
+            Object objB = composer.B();
+            if (zV || objB == Composer.INSTANCE.a()) {
+                objB = new Function0() { // from class: com.meijer.mobile.meijer.activity.orders.V
+                    @Override // kotlin.jvm.functions.Function0
+                    public final Object invoke() {
+                        return U.m.c(function0);
+                    }
+                };
+                composer.t(objB);
+            }
+            composer.P();
+            C3011v.c(localThemeScope, modifierH, strD, (Function0) objB, false, composer, LocalThemeScope.f17314g, 8);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function2
+        public /* bridge */ /* synthetic */ Unit invoke(Composer composer, Integer num) throws Resources.NotFoundException {
+            b(composer, num.intValue());
+            return Unit.f143329a;
+        }
+
+        /* JADX INFO: Access modifiers changed from: private */
+        public static final Unit c(Function0 function0) {
+            function0.invoke();
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    static final class n implements Function2<Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111359a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ Function0<Unit> f111360b;
+
+        /* renamed from: c, reason: collision with root package name */
+        final /* synthetic */ Function0<Unit> f111361c;
+
+        /* renamed from: d, reason: collision with root package name */
+        final /* synthetic */ vo.b f111362d;
+
+        n(LocalThemeScope localThemeScope, Function0<Unit> function0, Function0<Unit> function02, vo.b bVar) {
+            this.f111359a = localThemeScope;
+            this.f111360b = function0;
+            this.f111361c = function02;
+            this.f111362d = bVar;
+        }
+
+        public final void a(Composer composer, int i10) {
+            if ((i10 & 3) == 2 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-1258601054, i10, -1, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionScreen.<anonymous> (OrderSubstitutionScreen.kt:63)");
+            }
+            U.h(this.f111359a, this.f111360b, this.f111361c, this.f111362d, composer, LocalThemeScope.f17314g);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function2
+        public /* bridge */ /* synthetic */ Unit invoke(Composer composer, Integer num) {
+            a(composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    static final class o implements Function3<InterfaceC14882C, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111363a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ List<OrderSubstitutionsListDecorator> f111364b;
+
+        /* renamed from: c, reason: collision with root package name */
+        final /* synthetic */ List<OrderOutOfStockListDecorator> f111365c;
+
+        /* renamed from: d, reason: collision with root package name */
+        final /* synthetic */ vo.b f111366d;
+
+        /* renamed from: e, reason: collision with root package name */
+        final /* synthetic */ Function1<Integer, Unit> f111367e;
+
+        /* renamed from: f, reason: collision with root package name */
+        final /* synthetic */ Function1<Integer, Unit> f111368f;
+
+        /* JADX WARN: Multi-variable type inference failed */
+        o(LocalThemeScope localThemeScope, List<OrderSubstitutionsListDecorator> list, List<OrderOutOfStockListDecorator> list2, vo.b bVar, Function1<? super Integer, Unit> function1, Function1<? super Integer, Unit> function12) {
+            this.f111363a = localThemeScope;
+            this.f111364b = list;
+            this.f111365c = list2;
+            this.f111366d = bVar;
+            this.f111367e = function1;
+            this.f111368f = function12;
+        }
+
+        public final void a(InterfaceC14882C contentPaddingValues, Composer composer, int i10) {
+            Intrinsics.j(contentPaddingValues, "contentPaddingValues");
+            if ((i10 & 6) == 0) {
+                i10 |= composer.V(contentPaddingValues) ? 4 : 2;
+            }
+            if ((i10 & 19) == 18 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(830792362, i10, -1, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionScreen.<anonymous> (OrderSubstitutionScreen.kt:70)");
+            }
+            U.k(this.f111363a, androidx.compose.foundation.layout.D.h(Modifier.INSTANCE, contentPaddingValues), this.f111364b, this.f111365c, this.f111366d, this.f111367e, this.f111368f, composer, LocalThemeScope.f17314g, 0);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC14882C interfaceC14882C, Composer composer, Integer num) {
+            a(interfaceC14882C, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    @SourceDebugExtension
+    static final class p implements Function3<InterfaceC14902f, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111369a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ int f111370b;
+
+        p(LocalThemeScope localThemeScope, int i10) {
+            this.f111369a = localThemeScope;
+            this.f111370b = i10;
+        }
+
+        public final void a(InterfaceC14902f AdsColumn, Composer composer, int i10) throws Resources.NotFoundException {
+            Intrinsics.j(AdsColumn, "$this$AdsColumn");
+            if ((i10 & 17) == 16 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-741658987, i10, -1, "com.meijer.mobile.meijer.activity.orders.SubstitutionNotAvailableHeader.<anonymous> (OrderSubstitutionScreen.kt:202)");
+            }
+            LocalThemeScope localThemeScope = this.f111369a;
+            q1.Label label = new q1.Label(null, null, null, null, 0, false, 0, this.f111369a.getAdsTypography().getHeadings().getSeven(), null, 383, null);
+            Modifier.Companion companion = Modifier.INSTANCE;
+            float f10 = 16;
+            q1.Label labelY = q1.Label.y(label, androidx.compose.foundation.layout.D.m(companion, H1.h.p(f10), H1.h.p(24), 0.0f, 0.0f, 12, null), null, null, null, 0, false, 0, null, null, 510, null);
+            String strD = C16338g.d(C17284b.f163314c0, new Object[]{Integer.valueOf(this.f111370b)}, composer, 0);
+            int i11 = LocalThemeScope.f17314g;
+            int i12 = q1.Label.f142335j;
+            si.j.h(localThemeScope, labelY, strD, null, composer, (i12 << 3) | i11, 4);
+            si.j.h(this.f111369a, q1.Label.y(new q1.Label(null, null, null, null, 0, false, 0, this.f111369a.getAdsTypography().getHeadings().getSeven(), null, 383, null), androidx.compose.foundation.layout.D.m(companion, H1.h.p(f10), 0.0f, 0.0f, H1.h.p(8), 6, null), null, null, null, 0, false, 0, null, null, 510, null), C16338g.c(C17284b.f163316d0, composer, 0), null, composer, i11 | (i12 << 3), 4);
+            C17983Z.a(null, this.f111369a.getAdsColors().getAdsColorUIDivider().getColor(), 0.0f, 0.0f, composer, 0, 13);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC14902f interfaceC14902f, Composer composer, Integer num) throws Resources.NotFoundException {
+            a(interfaceC14902f, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    @Metadata(k = 3, mv = {2, 1, 0}, xi = 48)
+    @SourceDebugExtension
+    static final class q implements Function3<InterfaceC14902f, Composer, Integer, Unit> {
+
+        /* renamed from: a, reason: collision with root package name */
+        final /* synthetic */ LocalThemeScope f111371a;
+
+        /* renamed from: b, reason: collision with root package name */
+        final /* synthetic */ int f111372b;
+
+        q(LocalThemeScope localThemeScope, int i10) {
+            this.f111371a = localThemeScope;
+            this.f111372b = i10;
+        }
+
+        public final void a(InterfaceC14902f AdsColumn, Composer composer, int i10) {
+            Intrinsics.j(AdsColumn, "$this$AdsColumn");
+            if ((i10 & 17) == 16 && composer.j()) {
+                composer.K();
+                return;
+            }
+            if (ComposerKt.M()) {
+                ComposerKt.U(-644095408, i10, -1, "com.meijer.mobile.meijer.activity.orders.ViewOrderSubstitutionHeader.<anonymous> (OrderSubstitutionScreen.kt:232)");
+            }
+            C17983Z.a(null, this.f111371a.getAdsColors().getAdsColorUIDivider().getColor(), 0.0f, 0.0f, composer, 0, 13);
+            float f10 = 16;
+            si.j.h(this.f111371a, q1.Label.y(new q1.Label(null, null, null, null, 0, false, 0, this.f111371a.getAdsTypography().getHeadings().getSeven(), null, 383, null), androidx.compose.foundation.layout.D.l(Modifier.INSTANCE, H1.h.p(f10), H1.h.p(24), H1.h.p(f10), H1.h.p(8)), null, null, null, 0, false, 0, null, null, 510, null), C16338g.d(C17284b.f163312b0, new Object[]{Integer.valueOf(this.f111372b)}, composer, 0), null, composer, LocalThemeScope.f17314g | (q1.Label.f142335j << 3), 4);
+            C17983Z.a(null, this.f111371a.getAdsColors().getAdsColorUIDivider().getColor(), 0.0f, 0.0f, composer, 0, 13);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+
+        @Override // kotlin.jvm.functions.Function3
+        public /* bridge */ /* synthetic */ Unit invoke(InterfaceC14902f interfaceC14902f, Composer composer, Integer num) {
+            a(interfaceC14902f, composer, num.intValue());
+            return Unit.f143329a;
+        }
+    }
+
+    public static final void o(final LocalThemeScope localThemeScope, Modifier modifier, final String orderId, final Function0<Unit> onBackPressed, final Function0<Unit> onConfirmClicked, final Function0<Unit> onSkipClicked, final List<OrderSubstitutionsListDecorator> substitutionItems, final List<OrderOutOfStockListDecorator> outOfStockItems, final vo.b substitutionScreenType, final Function1<? super Integer, Unit> onSubstitutionAccepted, final Function1<? super Integer, Unit> onSubstitutionRejected, Composer composer, final int i10, final int i11, final int i12) {
+        int i13;
+        int i14;
+        Composer composer2;
+        final Modifier modifier2;
+        Intrinsics.j(localThemeScope, "<this>");
+        Intrinsics.j(orderId, "orderId");
+        Intrinsics.j(onBackPressed, "onBackPressed");
+        Intrinsics.j(onConfirmClicked, "onConfirmClicked");
+        Intrinsics.j(onSkipClicked, "onSkipClicked");
+        Intrinsics.j(substitutionItems, "substitutionItems");
+        Intrinsics.j(outOfStockItems, "outOfStockItems");
+        Intrinsics.j(substitutionScreenType, "substitutionScreenType");
+        Intrinsics.j(onSubstitutionAccepted, "onSubstitutionAccepted");
+        Intrinsics.j(onSubstitutionRejected, "onSubstitutionRejected");
+        Composer composerStartRestartGroup = composer.startRestartGroup(-992698584);
+        if ((Integer.MIN_VALUE & i12) != 0) {
+            i13 = i10 | 6;
+        } else if ((i10 & 6) == 0) {
+            i13 = ((i10 & 8) == 0 ? composerStartRestartGroup.V(localThemeScope) : composerStartRestartGroup.D(localThemeScope) ? 4 : 2) | i10;
+        } else {
+            i13 = i10;
+        }
+        int i15 = i12 & 1;
+        if (i15 != 0) {
+            i13 |= 48;
+        } else if ((i10 & 48) == 0) {
+            i13 |= composerStartRestartGroup.V(modifier) ? 32 : 16;
+        }
+        if ((i12 & 2) != 0) {
+            i13 |= 384;
+        } else if ((i10 & 384) == 0) {
+            i13 |= composerStartRestartGroup.V(orderId) ? 256 : 128;
+        }
+        if ((i12 & 4) != 0) {
+            i13 |= 3072;
+        } else if ((i10 & 3072) == 0) {
+            i13 |= composerStartRestartGroup.D(onBackPressed) ? RecyclerView.m.FLAG_MOVED : 1024;
+        }
+        if ((i12 & 8) != 0) {
+            i13 |= 24576;
+        } else if ((i10 & 24576) == 0) {
+            i13 |= composerStartRestartGroup.D(onConfirmClicked) ? 16384 : 8192;
+        }
+        if ((i12 & 16) != 0) {
+            i13 |= 196608;
+        } else if ((i10 & 196608) == 0) {
+            i13 |= composerStartRestartGroup.D(onSkipClicked) ? 131072 : 65536;
+        }
+        if ((i12 & 32) != 0) {
+            i13 |= 1572864;
+        } else if ((i10 & 1572864) == 0) {
+            i13 |= composerStartRestartGroup.D(substitutionItems) ? 1048576 : 524288;
+        }
+        if ((i12 & 64) != 0) {
+            i13 |= 12582912;
+        } else if ((i10 & 12582912) == 0) {
+            i13 |= composerStartRestartGroup.D(outOfStockItems) ? 8388608 : 4194304;
+        }
+        if ((i12 & 128) != 0) {
+            i13 |= 100663296;
+        } else if ((i10 & 100663296) == 0) {
+            i13 |= composerStartRestartGroup.d(substitutionScreenType.ordinal()) ? 67108864 : 33554432;
+        }
+        if ((i12 & 256) != 0) {
+            i13 |= 805306368;
+        } else if ((i10 & 805306368) == 0) {
+            i13 |= composerStartRestartGroup.D(onSubstitutionAccepted) ? 536870912 : 268435456;
+        }
+        if ((i12 & 512) != 0) {
+            i14 = i11 | 6;
+        } else if ((i11 & 6) == 0) {
+            i14 = i11 | (composerStartRestartGroup.D(onSubstitutionRejected) ? 4 : 2);
+        } else {
+            i14 = i11;
+        }
+        if ((i13 & 306783379) == 306783378 && (i14 & 3) == 2 && composerStartRestartGroup.j()) {
+            composerStartRestartGroup.K();
+            modifier2 = modifier;
+            composer2 = composerStartRestartGroup;
+        } else {
+            Modifier modifier3 = i15 != 0 ? Modifier.INSTANCE : modifier;
+            if (ComposerKt.M()) {
+                ComposerKt.U(-992698584, i13, i14, "com.meijer.mobile.meijer.activity.orders.OrderSubstitutionScreen (OrderSubstitutionScreen.kt:53)");
+            }
+            Modifier modifier4 = modifier3;
+            composer2 = composerStartRestartGroup;
+            C17987a1.a(null, null, ComposableLambdaKt.c(1865157571, true, new m(localThemeScope, modifier3, orderId, onBackPressed), composerStartRestartGroup, 54), ComposableLambdaKt.c(-1258601054, true, new n(localThemeScope, onConfirmClicked, onSkipClicked, substitutionScreenType), composerStartRestartGroup, 54), null, null, 0, false, null, false, null, 0.0f, 0L, 0L, 0L, 0L, 0L, ComposableLambdaKt.c(830792362, true, new o(localThemeScope, substitutionItems, outOfStockItems, substitutionScreenType, onSubstitutionAccepted, onSubstitutionRejected), composerStartRestartGroup, 54), composer2, 3456, 12582912, 131059);
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+            modifier2 = modifier4;
+        }
+        T0 t0L = composer2.l();
+        if (t0L != null) {
+            t0L.a(new Function2() { // from class: com.meijer.mobile.meijer.activity.orders.M
+                @Override // kotlin.jvm.functions.Function2
+                public final Object invoke(Object obj, Object obj2) {
+                    return U.p(localThemeScope, modifier2, orderId, onBackPressed, onConfirmClicked, onSkipClicked, substitutionItems, outOfStockItems, substitutionScreenType, onSubstitutionAccepted, onSubstitutionRejected, i10, i11, i12, (Composer) obj, ((Integer) obj2).intValue());
+                }
+            });
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final void h(final LocalThemeScope localThemeScope, final Function0<Unit> function0, final Function0<Unit> function02, final vo.b bVar, Composer composer, final int i10) {
+        int i11;
+        Composer composerStartRestartGroup = composer.startRestartGroup(1635692067);
+        if ((i10 & 6) == 0) {
+            i11 = ((i10 & 8) == 0 ? composerStartRestartGroup.V(localThemeScope) : composerStartRestartGroup.D(localThemeScope) ? 4 : 2) | i10;
+        } else {
+            i11 = i10;
+        }
+        if ((i10 & 48) == 0) {
+            i11 |= composerStartRestartGroup.D(function0) ? 32 : 16;
+        }
+        if ((i10 & 384) == 0) {
+            i11 |= composerStartRestartGroup.D(function02) ? 256 : 128;
+        }
+        if ((i10 & 3072) == 0) {
+            i11 |= composerStartRestartGroup.d(bVar.ordinal()) ? RecyclerView.m.FLAG_MOVED : 1024;
+        }
+        if ((i11 & 1171) == 1170 && composerStartRestartGroup.j()) {
+            composerStartRestartGroup.K();
+        } else {
+            if (ComposerKt.M()) {
+                ComposerKt.U(1635692067, i11, -1, "com.meijer.mobile.meijer.activity.orders.BottomBar (OrderSubstitutionScreen.kt:142)");
+            }
+            composerStartRestartGroup.startReplaceGroup(1849434622);
+            Object objB = composerStartRestartGroup.B();
+            if (objB == Composer.INSTANCE.a()) {
+                objB = t1.e(Boolean.valueOf(bVar == vo.b.f166128g || bVar == vo.b.f166130i), null, 2, null);
+                composerStartRestartGroup.t(objB);
+            }
+            composerStartRestartGroup.P();
+            C16453n.e(localThemeScope, new q1.Column(androidx.compose.foundation.layout.D.i(Modifier.INSTANCE, H1.h.p(16)), null, P0.e.INSTANCE.g(), 2, null), ComposableLambdaKt.c(1380408217, true, new a(localThemeScope, function0, (InterfaceC5872l0) objB, function02), composerStartRestartGroup, 54), composerStartRestartGroup, (i11 & 14) | LocalThemeScope.f17314g | 384 | (q1.Column.f142240d << 3));
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+        T0 t0L = composerStartRestartGroup.l();
+        if (t0L != null) {
+            t0L.a(new Function2() { // from class: com.meijer.mobile.meijer.activity.orders.N
+                @Override // kotlin.jvm.functions.Function2
+                public final Object invoke(Object obj, Object obj2) {
+                    return U.j(localThemeScope, function0, function02, bVar, i10, (Composer) obj, ((Integer) obj2).intValue());
+                }
+            });
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final Unit j(LocalThemeScope localThemeScope, Function0 function0, Function0 function02, vo.b bVar, int i10, Composer composer, int i11) {
+        h(localThemeScope, function0, function02, bVar, composer, J0.a(i10 | 1));
+        return Unit.f143329a;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    /* JADX WARN: Removed duplicated region for block: B:104:0x0124  */
+    /* JADX WARN: Removed duplicated region for block: B:107:0x0130  */
+    /* JADX WARN: Removed duplicated region for block: B:108:0x0132  */
+    /* JADX WARN: Removed duplicated region for block: B:111:0x013b  */
+    /* JADX WARN: Removed duplicated region for block: B:116:0x014b  */
+    /* JADX WARN: Removed duplicated region for block: B:119:0x017d  */
+    /* JADX WARN: Removed duplicated region for block: B:122:0x0188  */
+    /* JADX WARN: Removed duplicated region for block: B:124:? A[RETURN, SYNTHETIC] */
+    /* JADX WARN: Removed duplicated region for block: B:29:0x0053  */
+    /* JADX WARN: Removed duplicated region for block: B:30:0x0056  */
+    /* JADX WARN: Removed duplicated region for block: B:39:0x006a  */
+    /* JADX WARN: Removed duplicated region for block: B:40:0x006d  */
+    /* JADX WARN: Removed duplicated region for block: B:49:0x0083  */
+    /* JADX WARN: Removed duplicated region for block: B:50:0x0086  */
+    /* JADX WARN: Removed duplicated region for block: B:59:0x00a1  */
+    /* JADX WARN: Removed duplicated region for block: B:61:0x00a5  */
+    /* JADX WARN: Removed duplicated region for block: B:70:0x00bc  */
+    /* JADX WARN: Removed duplicated region for block: B:73:0x00c1  */
+    /* JADX WARN: Removed duplicated region for block: B:82:0x00dd  */
+    /* JADX WARN: Removed duplicated region for block: B:87:0x00ec  */
+    /* JADX WARN: Removed duplicated region for block: B:88:0x00ee  */
+    /* JADX WARN: Removed duplicated region for block: B:91:0x00f7  */
+    /* JADX WARN: Removed duplicated region for block: B:94:0x010f  */
+    /* JADX WARN: Removed duplicated region for block: B:95:0x0111  */
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+        To view partially-correct add '--show-bad-code' argument
+    */
+    public static final void k(final Ki.LocalThemeScope r22, androidx.compose.ui.Modifier r23, final java.util.List<hn.OrderSubstitutionsListDecorator> r24, final java.util.List<hn.OrderOutOfStockListDecorator> r25, final vo.b r26, final kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit> r27, final kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit> r28, androidx.compose.runtime.Composer r29, final int r30, final int r31) {
+        /*
+            Method dump skipped, instructions count: 415
+            To view this dump add '--comments-level debug' option
+        */
+        throw new UnsupportedOperationException("Method not decompiled: com.meijer.mobile.meijer.activity.orders.U.k(Ki.M, androidx.compose.ui.Modifier, java.util.List, java.util.List, vo.b, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, androidx.compose.runtime.Composer, int, int):void");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final Unit l(List list, vo.b bVar, List list2, LocalThemeScope localThemeScope, Function1 function1, Function1 function12, l0.w LazyColumn) {
+        Intrinsics.j(LazyColumn, "$this$LazyColumn");
+        if (!list.isEmpty()) {
+            l0.w.g(LazyColumn, null, null, ComposableLambdaKt.composableLambdaInstance(-2084844761, true, new b(bVar, localThemeScope)), 3, null);
+            l0.w.g(LazyColumn, null, null, ComposableLambdaKt.composableLambdaInstance(-865633712, true, new c(localThemeScope, list)), 3, null);
+            LazyColumn.i(list.size(), null, new g(f.f111341f, list), ComposableLambdaKt.composableLambdaInstance(-632812321, true, new h(list, localThemeScope)));
+        } else if (bVar == vo.b.f166129h) {
+            l0.w.g(LazyColumn, null, null, ComposableLambdaKt.composableLambdaInstance(-467887869, true, new d(localThemeScope)), 3, null);
+        }
+        l0.w.g(LazyColumn, null, null, ComposableLambdaKt.composableLambdaInstance(1686986082, true, new e(localThemeScope, list2)), 3, null);
+        LazyColumn.i(list2.size(), new j(new Function1() { // from class: com.meijer.mobile.meijer.activity.orders.Q
+            @Override // kotlin.jvm.functions.Function1
+            public final Object invoke(Object obj) {
+                return U.m((OrderSubstitutionsListDecorator) obj);
+            }
+        }, list2), new k(i.f111346f, list2), ComposableLambdaKt.composableLambdaInstance(-632812321, true, new l(list2, localThemeScope, function1, function12)));
+        return Unit.f143329a;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final Object m(OrderSubstitutionsListDecorator decorator) {
+        Intrinsics.j(decorator, "decorator");
+        return Integer.valueOf(decorator.getItemId());
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final Unit n(LocalThemeScope localThemeScope, Modifier modifier, List list, List list2, vo.b bVar, Function1 function1, Function1 function12, int i10, int i11, Composer composer, int i12) {
+        k(localThemeScope, modifier, list, list2, bVar, function1, function12, composer, J0.a(i10 | 1), i11);
+        return Unit.f143329a;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final Unit p(LocalThemeScope localThemeScope, Modifier modifier, String str, Function0 function0, Function0 function02, Function0 function03, List list, List list2, vo.b bVar, Function1 function1, Function1 function12, int i10, int i11, int i12, Composer composer, int i13) {
+        o(localThemeScope, modifier, str, function0, function02, function03, list, list2, bVar, function1, function12, composer, J0.a(i10 | 1), J0.a(i11), i12);
+        return Unit.f143329a;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final Unit r(LocalThemeScope localThemeScope, int i10, int i11, Composer composer, int i12) {
+        q(localThemeScope, i10, composer, J0.a(i11 | 1));
+        return Unit.f143329a;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final Unit t(LocalThemeScope localThemeScope, int i10, int i11, Composer composer, int i12) {
+        s(localThemeScope, i10, composer, J0.a(i11 | 1));
+        return Unit.f143329a;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final boolean i(InterfaceC5872l0<Boolean> interfaceC5872l0) {
+        return interfaceC5872l0.getValue().booleanValue();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final void q(final LocalThemeScope localThemeScope, final int i10, Composer composer, final int i11) {
+        int i12;
+        int i13;
+        boolean zD;
+        int i14;
+        Composer composerStartRestartGroup = composer.startRestartGroup(1407774623);
+        if ((i11 & 6) == 0) {
+            if ((i11 & 8) == 0) {
+                zD = composerStartRestartGroup.V(localThemeScope);
+            } else {
+                zD = composerStartRestartGroup.D(localThemeScope);
+            }
+            if (zD) {
+                i14 = 4;
+            } else {
+                i14 = 2;
+            }
+            i12 = i14 | i11;
+        } else {
+            i12 = i11;
+        }
+        if ((i11 & 48) == 0) {
+            if (composerStartRestartGroup.d(i10)) {
+                i13 = 32;
+            } else {
+                i13 = 16;
+            }
+            i12 |= i13;
+        }
+        if ((i12 & 19) == 18 && composerStartRestartGroup.j()) {
+            composerStartRestartGroup.K();
+        } else {
+            if (ComposerKt.M()) {
+                ComposerKt.U(1407774623, i12, -1, "com.meijer.mobile.meijer.activity.orders.SubstitutionNotAvailableHeader (OrderSubstitutionScreen.kt:194)");
+            }
+            C16453n.e(localThemeScope, new q1.Column(androidx.compose.foundation.layout.J.h(androidx.compose.foundation.b.d(Modifier.INSTANCE, localThemeScope.getAdsColors().getAdsColorUIBackground02().getColor(), null, 2, null), 0.0f, 1, null), null, null, 6, null), ComposableLambdaKt.c(-741658987, true, new p(localThemeScope, i10), composerStartRestartGroup, 54), composerStartRestartGroup, (i12 & 14) | LocalThemeScope.f17314g | 384 | (q1.Column.f142240d << 3));
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+        T0 t0L = composerStartRestartGroup.l();
+        if (t0L != null) {
+            t0L.a(new Function2() { // from class: com.meijer.mobile.meijer.activity.orders.T
+                @Override // kotlin.jvm.functions.Function2
+                public final Object invoke(Object obj, Object obj2) {
+                    return U.r(localThemeScope, i10, i11, (Composer) obj, ((Integer) obj2).intValue());
+                }
+            });
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public static final void s(final LocalThemeScope localThemeScope, final int i10, Composer composer, final int i11) {
+        int i12;
+        int i13;
+        boolean zD;
+        int i14;
+        Composer composerStartRestartGroup = composer.startRestartGroup(564841862);
+        if ((i11 & 6) == 0) {
+            if ((i11 & 8) == 0) {
+                zD = composerStartRestartGroup.V(localThemeScope);
+            } else {
+                zD = composerStartRestartGroup.D(localThemeScope);
+            }
+            if (zD) {
+                i14 = 4;
+            } else {
+                i14 = 2;
+            }
+            i12 = i14 | i11;
+        } else {
+            i12 = i11;
+        }
+        if ((i11 & 48) == 0) {
+            if (composerStartRestartGroup.d(i10)) {
+                i13 = 32;
+            } else {
+                i13 = 16;
+            }
+            i12 |= i13;
+        }
+        if ((i12 & 19) == 18 && composerStartRestartGroup.j()) {
+            composerStartRestartGroup.K();
+        } else {
+            if (ComposerKt.M()) {
+                ComposerKt.U(564841862, i12, -1, "com.meijer.mobile.meijer.activity.orders.ViewOrderSubstitutionHeader (OrderSubstitutionScreen.kt:224)");
+            }
+            C16453n.e(localThemeScope, new q1.Column(androidx.compose.foundation.layout.J.h(androidx.compose.foundation.b.d(Modifier.INSTANCE, localThemeScope.getAdsColors().getAdsColorUIBackground02().getColor(), null, 2, null), 0.0f, 1, null), null, null, 6, null), ComposableLambdaKt.c(-644095408, true, new q(localThemeScope, i10), composerStartRestartGroup, 54), composerStartRestartGroup, (i12 & 14) | LocalThemeScope.f17314g | 384 | (q1.Column.f142240d << 3));
+            if (ComposerKt.M()) {
+                ComposerKt.T();
+            }
+        }
+        T0 t0L = composerStartRestartGroup.l();
+        if (t0L != null) {
+            t0L.a(new Function2() { // from class: com.meijer.mobile.meijer.activity.orders.S
+                @Override // kotlin.jvm.functions.Function2
+                public final Object invoke(Object obj, Object obj2) {
+                    return U.t(localThemeScope, i10, i11, (Composer) obj, ((Integer) obj2).intValue());
+                }
+            });
+        }
+    }
+}

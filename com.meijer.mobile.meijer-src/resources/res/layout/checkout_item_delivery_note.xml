@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.meijer.mobile.core.design.widget.calloutview.ListCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/delivery_instructions_card"
+    android:tag="layout/checkout_item_delivery_note_0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:actionButtonText="@string/add_checkout_requirement"
+    app:icon="@drawable/ic_dds_list_edit"
+    app:title="@string/order_summary_label_delivery_note">
+    <TextView
+        android:id="@+id/delivery_note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="?attr/textViewStyleBody1"/>
+</com.meijer.mobile.core.design.widget.calloutview.ListCardView>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:tag="layout/product_search_suggestion_item_0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/search_screen_start_margin"
+    android:layout_marginEnd="@dimen/search_screen_start_margin">
+    <com.meijer.mobile.core.base.ui.textview.FullWordEllipsisTextView
+        android:ellipsize="end"
+        android:id="@+id/suggestion_text"
+        android:background="?attr/selectableItemBackground"
+        android:paddingTop="@dimen/search_suggestions_list_item_text_padding"
+        android:paddingBottom="@dimen/search_suggestions_list_item_text_padding"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:labelFor="@+id/suggestion_autofill"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/suggestion_autofill"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="?attr/textViewStyleSubtitle1"/>
+    <ImageButton
+        android:id="@+id/suggestion_autofill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/autofill_search"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_dds_auto_fill"
+        app:tint="?android:attr/textColorSecondary"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

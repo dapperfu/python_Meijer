@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="back_button_text">[Çļöšé one]</string>
+    <string name="error_message_description_text">[Ţĥéŕé ŵåš åñ îššûé ĝéţţîñĝ möŕé ðéţåîļš åбöûţ ţĥîš åð one two three four five six seven eight nine ten eleven]</string>
+    <string name="error_message_text">[Šöméţĥîñĝ ŵéñţ ŵŕöñĝ one two three]</string>
+    <string name="fallback_image_content_descriptor">[Ŵĥý ţĥîš Åð one two]</string>
+</resources>

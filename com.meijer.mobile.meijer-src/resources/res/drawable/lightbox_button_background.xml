@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+    <item
+        android:left="@dimen/gmp_ref_measurement_spacing_4"
+        android:top="@dimen/gmp_ref_measurement_spacing_4"
+        android:right="@dimen/gmp_ref_measurement_spacing_4"
+        android:bottom="@dimen/gmp_ref_measurement_spacing_4">
+        <shape android:shape="oval">
+            <solid android:color="@color/gmp_sys_color_dark_surface_immersive"/>
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.meijer.mobile.core.design.widget.cards.ExpandableCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:title="Normal Buttons">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/enabler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:text="Enabled"
+            app:layout_constraintBottom_toTopOf="@+id/buttonFlow"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/primary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Primary Btn"
+            app:icon="@drawable/ic_dds_expand_sm"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Primary Btn"
+            app:icon="@drawable/ic_dds_expand_sm"
+            style="?attr/materialButtonSecondaryStyle"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Outlined Btn"
+            app:icon="@drawable/ic_dds_expand_sm"
+            style="?attr/materialButtonOutlinedStyle"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/textButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Text Btn"
+            app:icon="@drawable/ic_dds_expand_sm"
+            style="?attr/borderlessButtonStyle"/>
+        <androidx.constraintlayout.helper.widget.Flow
+            android:id="@+id/buttonFlow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="enabler,primary,secondary,outlined,textButton"
+            app:flow_maxElementsWrap="2"
+            app:flow_wrapMode="chain"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/enabler"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.meijer.mobile.core.design.widget.cards.ExpandableCardView>

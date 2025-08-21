@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:paddingBottom="?attr/placesSpacingLarge"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <ImageView
+        android:layout_width="@dimen/gmp_sys_measurement_icon_size_small"
+        android:layout_height="@dimen/gmp_sys_measurement_icon_size_small"
+        android:src="@drawable/gs_check_vd_24"
+        android:tint="?attr/placesColorOnSurface"
+        android:importantForAccessibility="no"
+        android:layout_marginEnd="?attr/placesSpacingExtraSmall"/>
+    <TextView
+        android:textAppearance="?attr/placesTextAppearanceBodySmall"
+        android:textColor="?attr/placesColorOnSurface"
+        android:id="@+id/feature_name"
+        android:paddingBottom="?attr/placesSpacingLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="?attr/placesSpacingSmall"/>
+</LinearLayout>

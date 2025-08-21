@@ -1,0 +1,17 @@
+package C1;
+
+import kotlin.Metadata;
+import mv.AbstractC15779K;
+import mv.C15800f0;
+
+@Metadata(d1 = {"\u0000\b\n\u0002\u0018\u0002\n\u0002\b\u0005\"\u001a\u0010\u0004\u001a\u00020\u00008\u0000X\u0080\u0004¢\u0006\f\n\u0004\b\u0001\u0010\u0002\u001a\u0004\b\u0001\u0010\u0003¨\u0006\u0005"}, d2 = {"Lmv/K;", "a", "Lmv/K;", "()Lmv/K;", "FontCacheManagementDispatcher", "ui-text_release"}, k = 2, mv = {1, 9, 0}, xi = 48)
+/* loaded from: classes.dex */
+public final class o {
+
+    /* renamed from: a, reason: collision with root package name */
+    private static final AbstractC15779K f4044a = C15800f0.c();
+
+    public static final AbstractC15779K a() {
+        return f4044a;
+    }
+}

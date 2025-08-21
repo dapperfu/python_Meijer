@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:tag="layout/fragment_expiry_points_0"
+    android:background="@drawable/background_bottom_sheet_drawer_rounded"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/bottom_sheet_points_expiry"
+        android:background="@drawable/background_bottom_sheet_drawer_rounded"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</LinearLayout>

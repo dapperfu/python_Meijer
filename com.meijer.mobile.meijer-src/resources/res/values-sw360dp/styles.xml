@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DialogMessage" parent="@android:style/Widget.TextView">
+        <item name="android:textSize">@dimen/dialog_message</item>
+        <item name="android:textColor">@color/akamaiCCAcolorDialogMessage</item>
+        <item name="android:ellipsize">3</item>
+        <item name="android:gravity">0x800003</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:maxLines">4</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+    </style>
+</resources>

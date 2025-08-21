@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/places_autocomplete_overlay_padding">
+        <LinearLayout
+            android:orientation="vertical"
+            android:paddingLeft="@dimen/places_autocomplete_search_bar_padding"
+            android:paddingRight="@dimen/places_autocomplete_search_bar_padding"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textDirection="locale"
+            android:layoutDirection="locale"
+            android:paddingStart="@dimen/places_autocomplete_search_bar_padding"
+            android:paddingEnd="@dimen/places_autocomplete_search_bar_padding">
+            <LinearLayout
+                android:orientation="horizontal"
+                android:id="@+id/places_autocomplete_search_bar_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include layout="@layout/places_autocomplete_impl_search_bar"/>
+            </LinearLayout>
+            <View
+                android:id="@+id/places_autocomplete_search_bar_separator"
+                android:background="@color/places_autocomplete_separator"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="1dp"/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/places_autocomplete_list"
+                android:background="@android:color/white"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:cacheColorHint="@android:color/white"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/places_autocomplete_search_bar_margin"/>
+            <include layout="@layout/places_autocomplete_impl_error"/>
+            <include layout="@layout/places_autocomplete_impl_powered_by_google"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</FrameLayout>

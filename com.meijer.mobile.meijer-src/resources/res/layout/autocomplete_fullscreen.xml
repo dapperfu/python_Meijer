@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="?attr/placesColorSurface"
+    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:orientation="vertical"
+        android:background="?attr/placesColorSurface"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textDirection="locale"
+        android:layoutDirection="locale">
+        <LinearLayout
+            android:padding="@dimen/gmp_sys_measurement_spacing_medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:background="@drawable/search_bar_background"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target_size_for_a11y">
+                <include layout="@layout/autocomplete_search_bar"/>
+            </LinearLayout>
+        </LinearLayout>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/autocomplete_prediction_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="yes"/>
+        <include layout="@layout/autocomplete_no_matching_results"/>
+        <include layout="@layout/autocomplete_google_maps_attribution"/>
+    </LinearLayout>
+</FrameLayout>

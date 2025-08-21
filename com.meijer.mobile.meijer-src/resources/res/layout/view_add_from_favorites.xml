@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:tools="http://schemas.android.com/tools/" xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    tools:ignore="RtlHardcoded">
+    <RelativeLayout
+        android:id="@+id/add_from_favorites_container"
+        android:tag="layout/view_add_from_favorites_0"
+        android:focusable="true"
+        android:clickable="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:layout_marginStart="10dp">
+        <ImageButton
+            android:id="@+id/favorites_icon"
+            android:background="@drawable/round_button_white"
+            android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:src="0x7f08050f"
+            android:contentDescription="@string/add_from_favorites"
+            style="@style/Meijer.Widget.Button"/>
+        <TextView
+            android:textColor="@color/legacy_white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/add_from_favorites"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="8dp"
+            android:layout_toEndOf="@+id/favorites_icon"
+            style="@style/Meijer.Widget.TextView.Medium.BoldType"/>
+    </RelativeLayout>
+</merge>

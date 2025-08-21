@@ -1,0 +1,17 @@
+# Meijer Price Monitor - Python Dependencies
+# This project leverages the core Meijer Python API
+
+# Core dependencies
+click>=8.0.0
+rich>=13.0.0
+
+# Development dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=23.0.0
+ruff>=0.1.0
+mypy>=1.0.0
+
+# Note: The core Meijer API should be available in the parent directory
+# or installed as a separate package. This project assumes it's available
+# as a local module or installed package.

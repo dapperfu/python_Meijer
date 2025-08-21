@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:icon="@drawable/ic_dds_shopping_cart"
+        android:id="@+id/action_cart"
+        android:title="@string/tooltip_go_to_user_cart"
+        app:showAsAction="ifRoom"/>
+</menu>

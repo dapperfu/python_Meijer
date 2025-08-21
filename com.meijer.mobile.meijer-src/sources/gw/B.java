@@ -1,0 +1,289 @@
+package gw;
+
+import j$.nio.file.Path;
+import j$.nio.file.Paths;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import kotlin.Metadata;
+import kotlin.jvm.JvmField;
+import kotlin.jvm.JvmName;
+import kotlin.jvm.JvmOverloads;
+import kotlin.jvm.JvmStatic;
+import kotlin.jvm.internal.DefaultConstructorMarker;
+import kotlin.jvm.internal.Intrinsics;
+import kotlin.jvm.internal.SourceDebugExtension;
+
+@Metadata(d1 = {"\u0000L\n\u0002\u0018\u0002\n\u0002\u0010\u000f\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0010\u000e\n\u0002\b\u0003\n\u0002\u0010\u000b\n\u0002\b\u0006\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\b\u0003\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0000\n\u0002\b\f\n\u0002\u0010 \n\u0002\b\u0005\n\u0002\u0010\f\n\u0002\b\n\u0018\u0000 \"2\b\u0012\u0004\u0012\u00020\u00000\u0001:\u0001\u0018B\u0011\b\u0000\u0012\u0006\u0010\u0003\u001a\u00020\u0002¢\u0006\u0004\b\u0004\u0010\u0005J\u0018\u0010\b\u001a\u00020\u00002\u0006\u0010\u0007\u001a\u00020\u0006H\u0087\u0002¢\u0006\u0004\b\b\u0010\tJ\u001f\u0010\f\u001a\u00020\u00002\u0006\u0010\u0007\u001a\u00020\u00002\b\b\u0002\u0010\u000b\u001a\u00020\n¢\u0006\u0004\b\f\u0010\rJ\u0015\u0010\u000f\u001a\u00020\u00002\u0006\u0010\u000e\u001a\u00020\u0000¢\u0006\u0004\b\u000f\u0010\u0010J\r\u0010\u0012\u001a\u00020\u0011¢\u0006\u0004\b\u0012\u0010\u0013J\r\u0010\u0015\u001a\u00020\u0014¢\u0006\u0004\b\u0015\u0010\u0016J\u0018\u0010\u0018\u001a\u00020\u00172\u0006\u0010\u000e\u001a\u00020\u0000H\u0096\u0002¢\u0006\u0004\b\u0018\u0010\u0019J\u001a\u0010\u001b\u001a\u00020\n2\b\u0010\u000e\u001a\u0004\u0018\u00010\u001aH\u0096\u0002¢\u0006\u0004\b\u001b\u0010\u001cJ\u000f\u0010\u001d\u001a\u00020\u0017H\u0016¢\u0006\u0004\b\u001d\u0010\u001eJ\u000f\u0010\u001f\u001a\u00020\u0006H\u0016¢\u0006\u0004\b\u001f\u0010 R\u001a\u0010\u0003\u001a\u00020\u00028\u0000X\u0080\u0004¢\u0006\f\n\u0004\b\u0018\u0010!\u001a\u0004\b\"\u0010#R\u0013\u0010&\u001a\u0004\u0018\u00010\u00008F¢\u0006\u0006\u001a\u0004\b$\u0010%R\u0017\u0010*\u001a\b\u0012\u0004\u0012\u00020\u00020'8F¢\u0006\u0006\u001a\u0004\b(\u0010)R\u0011\u0010+\u001a\u00020\n8F¢\u0006\u0006\u001a\u0004\b+\u0010,R\u0013\u00100\u001a\u0004\u0018\u00010-8G¢\u0006\u0006\u001a\u0004\b.\u0010/R\u0011\u00102\u001a\u00020\u00028G¢\u0006\u0006\u001a\u0004\b1\u0010#R\u0011\u00104\u001a\u00020\u00068G¢\u0006\u0006\u001a\u0004\b3\u0010 R\u0013\u00106\u001a\u0004\u0018\u00010\u00008G¢\u0006\u0006\u001a\u0004\b5\u0010%¨\u00067"}, d2 = {"Lgw/B;", "", "Lgw/h;", "bytes", "<init>", "(Lgw/h;)V", "", "child", "w", "(Ljava/lang/String;)Lgw/B;", "", "normalize", "u", "(Lgw/B;Z)Lgw/B;", "other", "t", "(Lgw/B;)Lgw/B;", "Ljava/io/File;", "toFile", "()Ljava/io/File;", "j$/nio/file/Path", "B", "()Lj$/nio/file/Path;", "", "a", "(Lgw/B;)I", "", "equals", "(Ljava/lang/Object;)Z", "hashCode", "()I", "toString", "()Ljava/lang/String;", "Lgw/h;", "b", "()Lgw/h;", "e", "()Lgw/B;", "root", "", "l", "()Ljava/util/List;", "segmentsBytes", "isAbsolute", "()Z", "", "C", "()Ljava/lang/Character;", "volumeLetter", "o", "nameBytes", "m", "name", "p", "parent", "okio"}, k = 1, mv = {2, 2, 0}, xi = 48)
+@SourceDebugExtension
+/* loaded from: classes14.dex */
+public final class B implements Comparable<B> {
+
+    /* renamed from: b, reason: collision with root package name and from kotlin metadata */
+    public static final Companion INSTANCE = new Companion(null);
+
+    /* renamed from: c, reason: collision with root package name */
+    @JvmField
+    public static final String f134484c;
+
+    /* renamed from: a, reason: collision with root package name and from kotlin metadata */
+    private final C14419h bytes;
+
+    @Metadata(d1 = {"\u0000*\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0010\u000e\n\u0002\u0010\u000b\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\b\u0006\b\u0086\u0003\u0018\u00002\u00020\u0001B\t\b\u0002¢\u0006\u0004\b\u0002\u0010\u0003J\u001d\u0010\b\u001a\u00020\u0007*\u00020\u00042\b\b\u0002\u0010\u0006\u001a\u00020\u0005H\u0007¢\u0006\u0004\b\b\u0010\tJ\u001d\u0010\u000b\u001a\u00020\u0007*\u00020\n2\b\b\u0002\u0010\u0006\u001a\u00020\u0005H\u0007¢\u0006\u0004\b\u000b\u0010\fJ\u001d\u0010\u000e\u001a\u00020\u0007*\u00020\r2\b\b\u0002\u0010\u0006\u001a\u00020\u0005H\u0007¢\u0006\u0004\b\u000e\u0010\u000fR\u0014\u0010\u0010\u001a\u00020\u00048\u0006X\u0087D¢\u0006\u0006\n\u0004\b\u0010\u0010\u0011¨\u0006\u0012"}, d2 = {"Lgw/B$a;", "", "<init>", "()V", "", "", "normalize", "Lgw/B;", "b", "(Ljava/lang/String;Z)Lgw/B;", "Ljava/io/File;", "a", "(Ljava/io/File;Z)Lgw/B;", "j$/nio/file/Path", "c", "(Lj$/nio/file/Path;Z)Lgw/B;", "DIRECTORY_SEPARATOR", "Ljava/lang/String;", "okio"}, k = 1, mv = {2, 2, 0}, xi = 48)
+    /* renamed from: gw.B$a, reason: from kotlin metadata */
+    public static final class Companion {
+        public /* synthetic */ Companion(DefaultConstructorMarker defaultConstructorMarker) {
+            this();
+        }
+
+        private Companion() {
+        }
+
+        public static /* synthetic */ B d(Companion companion, File file, boolean z10, int i10, Object obj) {
+            if ((i10 & 1) != 0) {
+                z10 = false;
+            }
+            return companion.a(file, z10);
+        }
+
+        public static /* synthetic */ B e(Companion companion, String str, boolean z10, int i10, Object obj) {
+            if ((i10 & 1) != 0) {
+                z10 = false;
+            }
+            return companion.b(str, z10);
+        }
+
+        public static /* synthetic */ B f(Companion companion, Path path, boolean z10, int i10, Object obj) {
+            if ((i10 & 1) != 0) {
+                z10 = false;
+            }
+            return companion.c(path, z10);
+        }
+
+        @JvmStatic
+        @JvmOverloads
+        @JvmName
+        public final B a(File file, boolean z10) {
+            Intrinsics.j(file, "<this>");
+            String string = file.toString();
+            Intrinsics.i(string, "toString(...)");
+            return b(string, z10);
+        }
+
+        @JvmStatic
+        @JvmOverloads
+        @JvmName
+        public final B b(String str, boolean z10) {
+            Intrinsics.j(str, "<this>");
+            return hw.e.k(str, z10);
+        }
+
+        @JvmStatic
+        @JvmOverloads
+        @JvmName
+        public final B c(Path path, boolean z10) {
+            Intrinsics.j(path, "<this>");
+            return b(path.toString(), z10);
+        }
+    }
+
+    static {
+        String separator = File.separator;
+        Intrinsics.i(separator, "separator");
+        f134484c = separator;
+    }
+
+    public B(C14419h bytes) {
+        Intrinsics.j(bytes, "bytes");
+        this.bytes = bytes;
+    }
+
+    public static /* synthetic */ B z(B b10, B b11, boolean z10, int i10, Object obj) {
+        if ((i10 & 2) != 0) {
+            z10 = false;
+        }
+        return b10.u(b11, z10);
+    }
+
+    @Override // java.lang.Comparable
+    /* renamed from: a, reason: merged with bridge method [inline-methods] */
+    public int compareTo(B other) {
+        Intrinsics.j(other, "other");
+        return getBytes().compareTo(other.getBytes());
+    }
+
+    /* renamed from: b, reason: from getter */
+    public final C14419h getBytes() {
+        return this.bytes;
+    }
+
+    public boolean equals(Object other) {
+        return (other instanceof B) && Intrinsics.e(((B) other).getBytes(), getBytes());
+    }
+
+    public final List<C14419h> l() {
+        ArrayList arrayList = new ArrayList();
+        int iO = hw.e.o(this);
+        if (iO == -1) {
+            iO = 0;
+        } else if (iO < getBytes().V() && getBytes().u(iO) == 92) {
+            iO++;
+        }
+        int iV = getBytes().V();
+        int i10 = iO;
+        while (iO < iV) {
+            if (getBytes().u(iO) == 47 || getBytes().u(iO) == 92) {
+                arrayList.add(getBytes().Y(i10, iO));
+                i10 = iO + 1;
+            }
+            iO++;
+        }
+        if (i10 < getBytes().V()) {
+            arrayList.add(getBytes().Y(i10, getBytes().V()));
+        }
+        return arrayList;
+    }
+
+    public final B t(B other) {
+        Intrinsics.j(other, "other");
+        if (!Intrinsics.e(e(), other.e())) {
+            throw new IllegalArgumentException(("Paths of different roots cannot be relative to each other: " + this + " and " + other).toString());
+        }
+        List<C14419h> listL = l();
+        List<C14419h> listL2 = other.l();
+        int iMin = Math.min(listL.size(), listL2.size());
+        int i10 = 0;
+        while (i10 < iMin && Intrinsics.e(listL.get(i10), listL2.get(i10))) {
+            i10++;
+        }
+        if (i10 == iMin && getBytes().V() == other.getBytes().V()) {
+            return Companion.e(INSTANCE, ".", false, 1, null);
+        }
+        if (listL2.subList(i10, listL2.size()).indexOf(hw.e.f136203e) != -1) {
+            throw new IllegalArgumentException(("Impossible relative path to resolve: " + this + " and " + other).toString());
+        }
+        if (Intrinsics.e(other.getBytes(), hw.e.f136202d)) {
+            return this;
+        }
+        C14416e c14416e = new C14416e();
+        C14419h c14419hM = hw.e.m(other);
+        if (c14419hM == null && (c14419hM = hw.e.m(this)) == null) {
+            c14419hM = hw.e.s(f134484c);
+        }
+        int size = listL2.size();
+        for (int i11 = i10; i11 < size; i11++) {
+            c14416e.g1(hw.e.f136203e);
+            c14416e.g1(c14419hM);
+        }
+        int size2 = listL.size();
+        while (i10 < size2) {
+            c14416e.g1(listL.get(i10));
+            c14416e.g1(c14419hM);
+            i10++;
+        }
+        return hw.e.q(c14416e, false);
+    }
+
+    public final File toFile() {
+        return new File(toString());
+    }
+
+    public final B u(B child, boolean normalize) {
+        Intrinsics.j(child, "child");
+        return hw.e.j(this, child, normalize);
+    }
+
+    @JvmName
+    public final B w(String child) {
+        Intrinsics.j(child, "child");
+        return hw.e.j(this, hw.e.q(new C14416e().G0(child), false), false);
+    }
+
+    public final Path B() {
+        Path path = Paths.get(toString(), new String[0]);
+        Intrinsics.i(path, "get(...)");
+        return path;
+    }
+
+    @JvmName
+    public final Character C() {
+        if (C14419h.H(getBytes(), hw.e.f136199a, 0, 2, null) != -1 || getBytes().V() < 2 || getBytes().u(1) != 58) {
+            return null;
+        }
+        char cU = (char) getBytes().u(0);
+        if (('a' > cU || cU >= '{') && ('A' > cU || cU >= '[')) {
+            return null;
+        }
+        return Character.valueOf(cU);
+    }
+
+    public final B e() {
+        int iO = hw.e.o(this);
+        if (iO == -1) {
+            return null;
+        }
+        return new B(getBytes().Y(0, iO));
+    }
+
+    public int hashCode() {
+        return getBytes().hashCode();
+    }
+
+    public final boolean isAbsolute() {
+        if (hw.e.o(this) != -1) {
+            return true;
+        }
+        return false;
+    }
+
+    @JvmName
+    public final String m() {
+        return o().c0();
+    }
+
+    @JvmName
+    public final C14419h o() {
+        int iL = hw.e.l(this);
+        if (iL != -1) {
+            return C14419h.Z(getBytes(), iL + 1, 0, 2, null);
+        }
+        if (C() != null && getBytes().V() == 2) {
+            return C14419h.f134558e;
+        }
+        return getBytes();
+    }
+
+    @JvmName
+    public final B p() {
+        if (!Intrinsics.e(getBytes(), hw.e.f136202d) && !Intrinsics.e(getBytes(), hw.e.f136199a) && !Intrinsics.e(getBytes(), hw.e.f136200b) && !hw.e.n(this)) {
+            int iL = hw.e.l(this);
+            if (iL == 2 && C() != null) {
+                if (getBytes().V() == 3) {
+                    return null;
+                }
+                return new B(C14419h.Z(getBytes(), 0, 3, 1, null));
+            }
+            if (iL == 1 && getBytes().W(hw.e.f136200b)) {
+                return null;
+            }
+            if (iL == -1 && C() != null) {
+                if (getBytes().V() == 2) {
+                    return null;
+                }
+                return new B(C14419h.Z(getBytes(), 0, 2, 1, null));
+            }
+            if (iL == -1) {
+                return new B(hw.e.f136202d);
+            }
+            if (iL == 0) {
+                return new B(C14419h.Z(getBytes(), 0, 1, 1, null));
+            }
+            return new B(C14419h.Z(getBytes(), 0, iL, 1, null));
+        }
+        return null;
+    }
+
+    public String toString() {
+        return getBytes().c0();
+    }
+}

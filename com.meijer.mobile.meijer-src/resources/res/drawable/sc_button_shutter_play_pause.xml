@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="?android:attr/colorControlHighlight">
+    <item android:id="@android:id/background">
+        <level-list>
+            <item
+                android:drawable="@drawable/sc_button_shutter_play"
+                android:maxLevel="0"/>
+            <item
+                android:drawable="@drawable/sc_button_shutter_pause"
+                android:maxLevel="1"/>
+        </level-list>
+    </item>
+</ripple>

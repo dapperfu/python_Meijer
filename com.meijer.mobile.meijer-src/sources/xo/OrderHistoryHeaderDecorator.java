@@ -1,0 +1,72 @@
+package xo;
+
+import bk.AbstractC6392a;
+import kotlin.Metadata;
+import kotlin.jvm.internal.DefaultConstructorMarker;
+import kotlin.jvm.internal.Intrinsics;
+import kotlin.jvm.internal.SourceDebugExtension;
+import wo.C17905b;
+
+@Metadata(d1 = {"\u0000.\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000b\n\u0002\b\b\b\u0086\b\u0018\u0000 \u00142\u00020\u0001:\u0001\u0015B\u000f\u0012\u0006\u0010\u0003\u001a\u00020\u0002¢\u0006\u0004\b\u0004\u0010\u0005J\u0010\u0010\u0007\u001a\u00020\u0006HÖ\u0001¢\u0006\u0004\b\u0007\u0010\bJ\u0010\u0010\n\u001a\u00020\tHÖ\u0001¢\u0006\u0004\b\n\u0010\u000bJ\u001a\u0010\u000f\u001a\u00020\u000e2\b\u0010\r\u001a\u0004\u0018\u00010\fHÖ\u0003¢\u0006\u0004\b\u000f\u0010\u0010R\u0017\u0010\u0003\u001a\u00020\u00028\u0006¢\u0006\f\n\u0004\b\u0011\u0010\u0012\u001a\u0004\b\u0011\u0010\u0013¨\u0006\u0016"}, d2 = {"Lxo/c;", "Lxo/b;", "Lbk/a;", "header", "<init>", "(Lbk/a;)V", "", "toString", "()Ljava/lang/String;", "", "hashCode", "()I", "", "other", "", "equals", "(Ljava/lang/Object;)Z", "b", "Lbk/a;", "()Lbk/a;", "c", "a", "ux_release"}, k = 1, mv = {2, 1, 0}, xi = 48)
+/* renamed from: xo.c, reason: case insensitive filesystem and from toString */
+/* loaded from: classes10.dex */
+public final /* data */ class OrderHistoryHeaderDecorator extends AbstractC18202b {
+
+    /* renamed from: c, reason: collision with root package name and from kotlin metadata */
+    public static final Companion INSTANCE = new Companion(null);
+
+    /* renamed from: b, reason: collision with root package name and from kotlin metadata and from toString */
+    private final AbstractC6392a header;
+
+    @Metadata(d1 = {"\u0000\u001a\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0010\u000e\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0006\b\u0086\u0003\u0018\u00002\u00020\u0001B\t\b\u0002¢\u0006\u0004\b\u0002\u0010\u0003J\u0015\u0010\u0007\u001a\u00020\u00062\u0006\u0010\u0005\u001a\u00020\u0004¢\u0006\u0004\b\u0007\u0010\bR\u0014\u0010\t\u001a\u00020\u00048\u0006X\u0086T¢\u0006\u0006\n\u0004\b\t\u0010\nR\u0014\u0010\u000b\u001a\u00020\u00048\u0006X\u0086T¢\u0006\u0006\n\u0004\b\u000b\u0010\n¨\u0006\f"}, d2 = {"Lxo/c$a;", "", "<init>", "()V", "", "inProgress", "Lxo/c;", "a", "(Ljava/lang/String;)Lxo/c;", "IN_PROGRESS_ORDER", "Ljava/lang/String;", "PAST_ORDER", "ux_release"}, k = 1, mv = {2, 1, 0}, xi = 48)
+    @SourceDebugExtension
+    /* renamed from: xo.c$a, reason: from kotlin metadata */
+    public static final class Companion {
+        public /* synthetic */ Companion(DefaultConstructorMarker defaultConstructorMarker) {
+            this();
+        }
+
+        private Companion() {
+        }
+
+        public final OrderHistoryHeaderDecorator a(String inProgress) {
+            Intrinsics.j(inProgress, "inProgress");
+            AbstractC6392a.Companion companion = AbstractC6392a.INSTANCE;
+            AbstractC6392a abstractC6392aD = companion.d(C17905b.f167315f, new Object[0]);
+            if (!Intrinsics.e(inProgress, "in_progress_order")) {
+                abstractC6392aD = null;
+            }
+            if (abstractC6392aD == null) {
+                abstractC6392aD = companion.d(C17905b.f167330u, new Object[0]);
+            }
+            return new OrderHistoryHeaderDecorator(abstractC6392aD);
+        }
+    }
+
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        return (other instanceof OrderHistoryHeaderDecorator) && Intrinsics.e(this.header, ((OrderHistoryHeaderDecorator) other).header);
+    }
+
+    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+    public OrderHistoryHeaderDecorator(AbstractC6392a header) {
+        super(header.toString());
+        Intrinsics.j(header, "header");
+        this.header = header;
+    }
+
+    /* renamed from: b, reason: from getter */
+    public final AbstractC6392a getHeader() {
+        return this.header;
+    }
+
+    public int hashCode() {
+        return this.header.hashCode();
+    }
+
+    public String toString() {
+        return "OrderHistoryHeaderDecorator(header=" + this.header + ')';
+    }
+}

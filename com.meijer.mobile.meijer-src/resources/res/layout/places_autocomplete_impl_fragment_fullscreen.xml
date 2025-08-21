@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textDirection="locale"
+    android:layoutDirection="locale">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:id="@+id/places_autocomplete_search_bar_container"
+        android:background="?attr/colorPrimary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize">
+        <include layout="@layout/places_autocomplete_impl_search_bar"/>
+    </LinearLayout>
+    <View
+        android:background="@drawable/places_autocomplete_toolbar_shadow"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"/>
+    <View
+        android:id="@+id/places_autocomplete_search_bar_separator"
+        android:layout_width="0dp"
+        android:layout_height="0dp"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/places_autocomplete_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:cacheColorHint="@android:color/white"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/places_autocomplete_search_bar_margin"/>
+    <include layout="@layout/places_autocomplete_impl_error"/>
+    <include layout="@layout/places_autocomplete_impl_powered_by_google"/>
+</LinearLayout>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<transitionSet xmlns:android="http://schemas.android.com/apk/res/android" android:transitionOrdering="together">
+    <changeBounds/>
+    <changeTransform/>
+    <changeImageTransform/>
+    <explode>
+        <targets>
+            <target android:targetId="@+id/app_bar_layout"/>
+            <target android:targetId="@+id/product_details_main_card"/>
+        </targets>
+    </explode>
+</transitionSet>

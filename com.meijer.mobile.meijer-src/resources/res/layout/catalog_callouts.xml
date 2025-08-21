@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.meijer.mobile.core.design.widget.cards.ExpandableCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:title="Callouts">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.meijer.mobile.core.design.widget.calloutview.CalloutView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:body="A robot may not injure a human being or, through inaction, allow a human being to come to harm."
+            app:title="First Law of Robotics"
+            style="?attr/calloutInfoStyle"/>
+        <com.meijer.mobile.core.design.widget.calloutview.CalloutView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:body="A robot must obey the orders given it by human beings except where such orders would conflict with the First Law."
+            app:icon="@null"
+            app:title="Second Law of Robotics"
+            style="?attr/calloutInfoStyle"/>
+        <com.meijer.mobile.core.design.widget.calloutview.CalloutView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:body="A robot must protect its own existence as long as such protection does not conflict with the First or Second Laws."
+            style="?attr/calloutInfoStyle"/>
+        <com.meijer.mobile.core.design.widget.calloutview.CalloutView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:body="While these laws sound plausible, numerous arguments have demonstrated why they are inadequate."
+            app:title="Warning Callout"
+            style="?attr/calloutWarningStyle"/>
+        <com.meijer.mobile.core.design.widget.calloutview.CalloutView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:body="Sticking to the rules might end up leaving a robot helpless to act as its creators might hope."
+            app:title="Error Callout"
+            style="?attr/calloutErrorStyle"/>
+        <com.meijer.mobile.core.design.widget.calloutview.CalloutView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:body="Instead of laws to restrict robot behaviour, we think robots should be empowered to maximise the possible ways they can act so they can pick the best solution for any given scenario."
+            app:title="Successful Robotics"
+            style="?attr/calloutSuccessStyle"/>
+    </LinearLayout>
+</com.meijer.mobile.core.design.widget.cards.ExpandableCardView>

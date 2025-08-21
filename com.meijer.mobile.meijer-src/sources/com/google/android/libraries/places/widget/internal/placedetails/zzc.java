@@ -1,0 +1,38 @@
+package com.google.android.libraries.places.widget.internal.placedetails;
+
+import androidx.view.InterfaceC6131E;
+import kotlin.Function;
+import kotlin.jvm.functions.Function1;
+import kotlin.jvm.internal.FunctionAdapter;
+import kotlin.jvm.internal.Intrinsics;
+
+/* loaded from: classes6.dex */
+final /* synthetic */ class zzc implements InterfaceC6131E, FunctionAdapter {
+    private final /* synthetic */ Function1 zza;
+
+    zzc(Function1 function) {
+        Intrinsics.j(function, "function");
+        this.zza = function;
+    }
+
+    public final boolean equals(Object obj) {
+        if ((obj instanceof InterfaceC6131E) && (obj instanceof FunctionAdapter)) {
+            return Intrinsics.e(getFunctionDelegate(), ((FunctionAdapter) obj).getFunctionDelegate());
+        }
+        return false;
+    }
+
+    @Override // kotlin.jvm.internal.FunctionAdapter
+    public final Function getFunctionDelegate() {
+        return this.zza;
+    }
+
+    public final int hashCode() {
+        return getFunctionDelegate().hashCode();
+    }
+
+    @Override // androidx.view.InterfaceC6131E
+    public final /* synthetic */ void onChanged(Object obj) {
+        this.zza.invoke(obj);
+    }
+}

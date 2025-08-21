@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="?android:attr/colorControlHighlight">
+    <item android:id="@android:id/mask">
+        <shape android:shape="oval">
+            <solid android:color="@android:color/black"/>
+        </shape>
+    </item>
+    <item android:id="@android:id/background">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <stroke
+                        android:width="3.6dp"
+                        android:color="@android:color/white"/>
+                </shape>
+            </item>
+            <item
+                android:left="8dp"
+                android:top="8dp"
+                android:right="8dp"
+                android:bottom="8dp">
+                <shape android:shape="oval">
+                    <solid android:color="@android:color/white"/>
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</ripple>

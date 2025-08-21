@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.AppCompatImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/view_ad_image"
+    android:tag="layout/view_ad_0"
+    android:background="@color/transparent"
+    android:focusable="true"
+    android:clickable="true"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:adjustViewBounds="true"
+    android:contentDescription="@null"
+    android:transitionName="banner_transition"/>
