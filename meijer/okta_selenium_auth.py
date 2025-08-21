@@ -110,7 +110,10 @@ class OktaSeleniumAuth:
             self._take_screenshot("error_occurred")
             return None
         finally:
-            self._cleanup()
+            # Keep browser open for debugging - don't call _cleanup()
+            # self._cleanup()  # Commented out to keep browser window open
+            print("🔍 Browser window kept open for debugging")
+            print("💡 Close the browser manually when done debugging")
 
     def _initialize_browser(self) -> bool:
         """Initialize the browser with appropriate options."""
@@ -955,10 +958,29 @@ class OktaSeleniumAuth:
                 self.driver = None
         except Exception as e:
             print(f"⚠️ Error during cleanup: {e}")
+    
+    def close_browser(self):
+        """Manually close the browser when done debugging."""
+        try:
+            if self.driver:
+                print("🔒 Closing browser...")
+                self.driver.quit()
+                self.driver = None
+                print("✅ Browser closed")
+            else:
+                print("ℹ️ No browser to close")
+        except Exception as e:
+            print(f"❌ Error closing browser: {e}")
+    
+    def keep_browser_open(self):
+        """Keep the browser open for debugging purposes."""
+        print("🔍 Browser will remain open for debugging")
+        print("💡 Use close_browser() method when done")
+        return True
 
 
 def authenticate_with_selenium(
-    username: str, password: str, headless: bool = True
+    username: str, password: str, headless: bool = True, keep_open: bool = False
 ) -> Optional[Dict[str, Any]]:
     """
     Authenticate using Selenium WebDriver.
@@ -967,12 +989,41 @@ def authenticate_with_selenium(
         username: Username/email for authentication
         password: Password for authentication
         headless: Whether to run browser in headless mode
+        keep_open: Whether to keep browser open for debugging
 
     Returns:
         Authentication result dict if successful, None otherwise
     """
     auth = OktaSeleniumAuth(username, password, headless)
-    return auth.authenticate()
+    
+    if keep_open:
+        print("🔍 Browser will be kept open for debugging")
+        print("💡 Use auth.close_browser() when done")
+    
+    result = auth.authenticate()
+    
+    if keep_open:
+        print("🔍 Browser window remains open for debugging")
+        print("💡 Use auth.close_browser() to close it when done")
+    
+    return result
+
+
+def authenticate_with_selenium_and_keep_open(
+    username: str, password: str, headless: bool = False
+) -> Optional[Dict[str, Any]]:
+    """
+    Authenticate using Selenium WebDriver and keep browser open for debugging.
+
+    Args:
+        username: Username/email for authentication
+        password: Password for authentication
+        headless: Whether to run browser in headless mode (default: False for debugging)
+
+    Returns:
+        Authentication result dict if successful, None otherwise
+    """
+    return authenticate_with_selenium(username, password, headless, keep_open=True)
 
 
 if __name__ == "__main__":
@@ -980,18 +1031,31 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 3:
-        print("Usage: python okta_selenium_auth.py <username> <password> [headless]")
+        print("Usage: python okta_selenium_auth.py <username> <password> [headless] [keep_open]")
+        print("  headless: true/false (default: true)")
+        print("  keep_open: true/false (default: false)")
         sys.exit(1)
 
     username = sys.argv[1]
     password = sys.argv[2]
     headless = len(sys.argv) < 4 or sys.argv[3].lower() != "false"
+    keep_open = len(sys.argv) >= 5 and sys.argv[4].lower() == "true"
 
     print(f"🧪 Testing Selenium authentication for {username}")
-    result = authenticate_with_selenium(username, password, headless)
+    print(f"🔍 Headless: {headless}, Keep open: {keep_open}")
+    
+    if keep_open:
+        print("🔍 Using keep-open mode - browser will stay open for debugging")
+        result = authenticate_with_selenium_and_keep_open(username, password, headless)
+    else:
+        result = authenticate_with_selenium(username, password, headless)
 
     if result:
         print("🎉 Authentication successful!")
         print(f"Result: {result}")
+        
+        if keep_open:
+            print("\n🔍 Browser window is still open for debugging")
+            print("💡 Close it manually when done")
     else:
         print("❌ Authentication failed")

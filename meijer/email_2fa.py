@@ -200,6 +200,8 @@ class Email2FAHandler:
             # Parse UIDs
             if isinstance(data[0], bytes):
                 uids = data[0].decode().split()
+            elif isinstance(data[0], int):
+                uids = str(data[0]).split()
             else:
                 uids = str(data[0]).split()
             self.logger.info(f"📧 Found {len(uids)} matching emails")

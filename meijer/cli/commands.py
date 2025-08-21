@@ -1725,6 +1725,41 @@ def auth_command():
 @click.option(
     "--clear-credentials", is_flag=True, help="Clear saved credentials from login.txt"
 )
+@click.command("selenium")
+@click.option("--headless", is_flag=True, default=True, help="Run browser in headless mode")
+@click.option("--keep-open", is_flag=True, help="Keep browser open for debugging")
+def login_selenium(headless: bool, keep_open: bool):
+    """Login using Selenium WebDriver (OKTA authentication)."""
+    username = click.prompt("👤 Username/Email", type=str)
+    password = click.prompt("🔒 Password", type=str, hide_input=True)
+    
+    try:
+        if keep_open:
+            from meijer.okta_selenium_auth import authenticate_with_selenium_and_keep_open
+            click.echo("🔍 Starting Selenium authentication with browser kept open for debugging...")
+            result = authenticate_with_selenium_and_keep_open(username, password, headless)
+        else:
+            from meijer.okta_selenium_auth import authenticate_with_selenium
+            click.echo("🚀 Starting Selenium authentication...")
+            result = authenticate_with_selenium(username, password, headless)
+        
+        if result and result.get("success"):
+            click.echo("✅ Authentication successful!")
+            click.echo(f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}")
+            click.echo(f"🌐 Final URL: {result.get('url', 'N/A')}")
+            
+            if keep_open:
+                click.echo("\n🔍 Browser window is still open for debugging")
+                click.echo("💡 Close it manually when done")
+        else:
+            click.echo("❌ Authentication failed")
+            if result:
+                click.echo(f"📊 Result: {result}")
+            
+    except Exception as e:
+        raise click.ClickException(f"❌ Selenium authentication failed: {e}")
+
+
 def login_command(
     user: Optional[str],
     password: Optional[str],
