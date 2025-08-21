@@ -30,8 +30,11 @@ Examples:
   # Login using requests method (default)
   python meijer_login.py
 
-  # Login using Selenium method
-  python meijer_login.py --method selenium
+           # Login using Selenium method
+         python meijer_login.py --method selenium
+         
+         # Login using hybrid method (browser + requests)
+         python meijer_login.py --method hybrid
 
   # Save tokens to custom file
   python meijer_login.py --output my_tokens.json
@@ -44,7 +47,7 @@ Examples:
     parser.add_argument(
         "--method",
         "-m",
-        choices=["requests", "selenium"],
+        choices=["requests", "selenium", "hybrid"],
         default="requests",
         help="Authentication method (default: requests)",
     )

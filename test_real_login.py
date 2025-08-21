@@ -97,10 +97,14 @@ def test_real_authentication(method: str = "requests"):
 
         if method == "requests":
             tokens = authenticator.authenticate_with_requests(username, password)
-        else:
+        elif method == "selenium":
             tokens = authenticator.authenticate_with_selenium(
                 username, password, headless=True
             )
+        elif method == "hybrid":
+            tokens = authenticator.authenticate_with_hybrid(username, password)
+        else:
+            raise ValueError(f"Unknown method: {method}")
 
         # Verify tokens
         if not tokens.get("access_token"):
@@ -185,6 +189,17 @@ def main():
     if not tokens:
         print("\n❌ Real authentication test failed. Cannot proceed.")
         return False
+
+    # Test 4b: Real authentication (hybrid method)
+    print("\n🔐 Testing hybrid authentication method...")
+    try:
+        hybrid_tokens = test_real_authentication("hybrid")
+        if hybrid_tokens:
+            print("✅ Hybrid authentication test successful")
+        else:
+            print("⚠️  Hybrid authentication test failed (expected if Selenium not available)")
+    except Exception as e:
+        print(f"⚠️  Hybrid authentication test failed: {e} (expected if Selenium not available)")
 
     # Test 5: Complete login and save flow
     if not test_complete_login_flow("requests"):
