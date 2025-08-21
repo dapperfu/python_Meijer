@@ -61,6 +61,45 @@ run-monitors: venv
 	@echo "Running all configured price monitors..."
 	@venv/bin/python scripts/run_price_monitors.py
 
+analyze: venv
+	@echo "Analyzing price drops across all monitors..."
+	@venv/bin/python -m price_monitor.cli analyze
+
+analyze-drops: venv
+	@echo "Analyzing price drops with custom threshold..."
+	@venv/bin/python -m price_monitor.cli analyze --min-drop 10.0
+
+verify-price: venv
+	@echo "Verifying price with Shop'n'Scan (test UPC: 713733252843, store: 71)..."
+	@venv/bin/python -m price_monitor.cli verify 713733252843 71
+
+verify-price-custom: venv
+	@echo "Usage: make verify-price-custom UPC=<upc> STORE=<store_id> [EXPECTED=<price>]"
+	@if [ -n "$(UPC)" ] && [ -n "$(STORE)" ]; then \
+		if [ -n "$(EXPECTED)" ]; then \
+			venv/bin/python -m price_monitor.cli verify $(UPC) $(STORE) --expected-price $(EXPECTED); \
+		else \
+			venv/bin/python -m price_monitor.cli verify $(UPC) $(STORE); \
+		fi; \
+	else \
+		echo "Please provide UPC and STORE parameters"; \
+		echo "Example: make verify-price-custom UPC=713733252843 STORE=71 EXPECTED=24.99"; \
+	fi
+
+history: venv
+	@echo "Showing price history for monitors..."
+	@venv/bin/python -m price_monitor.cli list
+	@echo ""
+	@echo "Use 'make history-show MONITOR=<name>' to see detailed history for a specific monitor"
+
+history-show: venv
+	@if [ -n "$(MONITOR)" ]; then \
+		venv/bin/python -m price_monitor.cli history $(MONITOR); \
+	else \
+		echo "Please provide MONITOR parameter"; \
+		echo "Example: make history-show MONITOR=LEGO_Jurassic"; \
+	fi
+
 # Set up cron job for automated monitoring
 cron-setup: venv
 	@echo "Setting up cron job for automated price monitoring..."
@@ -152,30 +191,43 @@ status: venv
 	fi
 
 # Quick start guide
-quickstart: setup
+quickstart: venv
+	@echo "🚀 Quick Start Guide for Meijer Price Monitor"
 	@echo ""
-	@echo "🚀 Quick Start Guide"
-	@echo "==================="
+	@echo "1. 📋 List current monitors:"
+	@echo "   make list"
 	@echo ""
-	@echo "1. ✅ System setup complete!"
-	@echo ""
-	@echo "2. 📊 Create your first price monitor:"
+	@echo "2. 🔍 Create a new monitor:"
 	@echo "   make init-monitor"
-	@echo "   # or manually: venv/bin/python -m price_monitor.cli init"
 	@echo ""
-	@echo "3. 🤖 Set up automated monitoring (optional):"
-	@echo "   make cron-setup"
-	@echo ""
-	@echo "4. 📋 Available commands:"
-	@echo "   venv/bin/python -m price_monitor.cli --help"
-	@echo ""
-	@echo "5. 📈 Run monitors manually:"
+	@echo "3. 📊 Run all monitors:"
 	@echo "   make run-monitors"
 	@echo ""
-	@echo "6. 📊 Check system status:"
+	@echo "4. 📈 Analyze price drops:"
+	@echo "   make analyze"
+	@echo "   make analyze-drops  # Show drops ≥10%"
+	@echo ""
+	@echo "5. ✅ Verify prices with Shop'n'Scan:"
+	@echo "   make verify-price  # Test with UPC 713733252843 at store 71"
+	@echo "   make verify-price-custom UPC=123456789012 STORE=45"
+	@echo ""
+	@echo "6. 📚 View price history:"
+	@echo "   make history"
+	@echo "   make history-show MONITOR=LEGO_Jurassic"
+	@echo ""
+	@echo "7. ⚙️  Set up automated monitoring:"
+	@echo "   make cron-setup"
+	@echo ""
+	@echo "8. 📊 View system status:"
 	@echo "   make status"
 	@echo ""
-	@echo "Happy price hunting! 🛒💰"
+	@echo "🎯 Example workflow:"
+	@echo "   make init-monitor          # Create LEGO monitor"
+	@echo "   make run-monitors          # Run initial scan"
+	@echo "   # ... wait a few days ..."
+	@echo "   make run-monitors          # Run follow-up scan"
+	@echo "   make analyze               # See what dropped in price!"
+	@echo "   make verify-price          # Verify a specific item"
 
 # Install the package in development mode
 install-dev: venv

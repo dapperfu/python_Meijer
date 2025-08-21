@@ -137,6 +137,101 @@ class PriceHistory:
         }
 
 
+@dataclass
+class PriceDropAnalysis:
+    """Represents a price drop analysis between two price records."""
+    
+    product_id: str
+    """Unique product identifier"""
+    
+    product_name: str
+    """Product name"""
+    
+    store_id: str
+    """Store identifier"""
+    
+    store_name: str
+    """Store name"""
+    
+    previous_price: float
+    """Previous price"""
+    
+    current_price: float
+    """Current price"""
+    
+    price_drop: float
+    """Amount of price drop"""
+    
+    price_drop_percent: float
+    """Percentage of price drop"""
+    
+    previous_timestamp: datetime
+    """When previous price was recorded"""
+    
+    current_timestamp: datetime
+    """When current price was recorded"""
+    
+    days_since_last_check: int
+    """Days between price checks"""
+    
+    is_clearance: bool
+    """Whether current item is on clearance"""
+    
+    is_on_sale: bool
+    """Whether current item is on sale"""
+    
+    search_query: str
+    """The search query that found this product"""
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        data = asdict(self)
+        data['previous_timestamp'] = self.previous_timestamp.isoformat()
+        data['current_timestamp'] = self.current_timestamp.isoformat()
+        return data
+
+
+@dataclass
+class ShopnScanPrice:
+    """Represents a price from Shop'n'Scan verification."""
+    
+    upc: str
+    """Product UPC code"""
+    
+    product_name: str
+    """Product name from Shop'n'Scan"""
+    
+    store_id: str
+    """Store identifier"""
+    
+    current_price: float
+    """Current price from Shop'n'Scan"""
+    
+    sale_price: Optional[float] = None
+    """Sale price if available"""
+    
+    original_price: Optional[float] = None
+    """Original/regular price if available"""
+    
+    is_clearance: bool = False
+    """Whether the item is on clearance"""
+    
+    is_on_sale: bool = False
+    """Whether the item is on sale"""
+    
+    timestamp: datetime = field(default_factory=datetime.now)
+    """When this price was verified"""
+    
+    verification_status: str = "verified"
+    """Status of price verification"""
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        data = asdict(self)
+        data['timestamp'] = self.timestamp.isoformat()
+        return data
+
+
 class PriceMonitor:
     """Main price monitoring system for Meijer products."""
     
@@ -549,3 +644,173 @@ class PriceMonitor:
         # Sort by discount percentage (highest first)
         deals.sort(key=lambda x: x['discount_percent'], reverse=True)
         return deals
+    
+    def analyze_price_drops(self, min_drop_percent: float = 5.0) -> List[PriceDropAnalysis]:
+        """
+        Analyze price drops between monitoring runs.
+        
+        Parameters
+        ----------
+        min_drop_percent : float
+            Minimum price drop percentage to include in analysis
+        
+        Returns
+        -------
+        List[PriceDropAnalysis]
+            List of price drop analyses
+        """
+        price_drops = []
+        
+        # Scan all history files
+        for history_file in self.history_dir.glob("*.json"):
+            try:
+                history = self.get_price_history(
+                    history_file.stem.split('_')[0],  # product_id
+                    history_file.stem.split('_')[1]   # store_id
+                )
+                
+                if not history or len(history.price_records) < 2:
+                    continue
+                
+                # Get the two most recent price records
+                current_record = history.price_records[0]
+                previous_record = history.price_records[1]
+                
+                # Calculate price drop
+                price_drop = previous_record.price - current_record.price
+                price_drop_percent = (price_drop / previous_record.price) * 100
+                
+                if price_drop_percent >= min_drop_percent:
+                    days_since_last = (current_record.timestamp - previous_record.timestamp).days
+                    
+                    analysis = PriceDropAnalysis(
+                        product_id=current_record.product_id,
+                        product_name=current_record.product_name,
+                        store_id=current_record.store_id,
+                        store_name=current_record.store_name,
+                        previous_price=previous_record.price,
+                        current_price=current_record.price,
+                        price_drop=price_drop,
+                        price_drop_percent=price_drop_percent,
+                        previous_timestamp=previous_record.timestamp,
+                        current_timestamp=current_record.timestamp,
+                        days_since_last_check=days_since_last,
+                        is_clearance=current_record.is_clearance,
+                        is_on_sale=current_record.is_on_sale,
+                        search_query=current_record.search_query
+                    )
+                    price_drops.append(analysis)
+            
+            except Exception as e:
+                self.logger.error(f"Failed to analyze price drops for {history_file}: {e}")
+        
+        # Sort by price drop percentage (highest first)
+        price_drops.sort(key=lambda x: x.price_drop_percent, reverse=True)
+        return price_drops
+    
+    def verify_price_with_shopnscan(
+        self, 
+        upc: str, 
+        store_id: str,
+        expected_price: Optional[float] = None
+    ) -> Optional[ShopnScanPrice]:
+        """
+        Verify a product's price using Shop'n'Scan.
+        
+        Parameters
+        ----------
+        upc : str
+            Product UPC code
+        store_id : str
+            Store identifier
+        expected_price : float, optional
+            Expected price to compare against
+        
+        Returns
+        -------
+        Optional[ShopnScanPrice]
+            Shop'n'Scan price verification result
+        """
+        try:
+            if not MEIJER_AVAILABLE:
+                # Mock Shop'n'Scan verification for testing
+                self.logger.warning("Using mock Shop'n'Scan verification for testing")
+                
+                # Generate mock data based on the test UPC you mentioned
+                if upc == "713733252843" and store_id == "71":
+                    return ShopnScanPrice(
+                        upc=upc,
+                        product_name="Mock LEGO Product (Clearance)",
+                        store_id=store_id,
+                        current_price=12.99,
+                        sale_price=12.99,
+                        original_price=24.99,
+                        is_clearance=True,
+                        is_on_sale=True,
+                        verification_status="verified"
+                    )
+                else:
+                    return ShopnScanPrice(
+                        upc=upc,
+                        product_name=f"Mock Product {upc}",
+                        store_id=store_id,
+                        current_price=15.99,
+                        sale_price=None,
+                        original_price=19.99,
+                        is_clearance=False,
+                        is_on_sale=False,
+                        verification_status="verified"
+                    )
+            
+            # TODO: Implement actual Shop'n'Scan integration
+            # This would involve calling the Meijer API to get Shop'n'Scan data
+            # For now, we'll use mock data
+            self.logger.info(f"Shop'n'Scan verification not yet implemented for UPC {upc}")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Failed to verify price with Shop'n'Scan: {e}")
+            return None
+    
+    def get_latest_price_records(self, monitor_id: str) -> List[PriceRecord]:
+        """
+        Get the latest price records for a specific monitor.
+        
+        Parameters
+        ----------
+        monitor_id : str
+            Monitor identifier
+        
+        Returns
+        -------
+        List[PriceRecord]
+            Latest price records for the monitor
+        """
+        if monitor_id not in self.configs:
+            return []
+        
+        # Find the most recent results file for this monitor
+        monitor_prefix = monitor_id
+        results_files = list(self.results_dir.glob(f"{monitor_prefix}_*.json"))
+        
+        if not results_files:
+            return []
+        
+        # Sort by timestamp and get the most recent
+        latest_file = max(results_files, key=lambda x: x.stat().st_mtime)
+        
+        try:
+            with open(latest_file, 'r') as f:
+                results_data = json.load(f)
+            
+            # Convert back to PriceRecord objects
+            price_records = []
+            for record_data in results_data['price_records']:
+                record_data['timestamp'] = datetime.fromisoformat(record_data['timestamp'])
+                price_records.append(PriceRecord(**record_data))
+            
+            return price_records
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load latest price records: {e}")
+            return []

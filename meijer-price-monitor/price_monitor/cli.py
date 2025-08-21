@@ -466,6 +466,204 @@ def deals(min_discount: float, max_price: Optional[float], data_dir: Optional[st
         logger.error(f"Find deals error: {e}", exc_info=True)
 
 
+@cli.command()
+@click.option('--min-drop', default=5.0, help='Minimum price drop percentage to show')
+@click.option('--sort-by', default='percent', type=click.Choice(['percent', 'amount', 'store', 'product']), help='Sort order for results')
+def analyze(min_drop: float, sort_by: str):
+    """Analyze price drops between monitoring runs."""
+    try:
+        from price_monitor.core import PriceMonitor
+        
+        pm = PriceMonitor()
+        price_drops = pm.analyze_price_drops(min_drop_percent=min_drop)
+        
+        if not price_drops:
+            console.print(f"\n[bold yellow]No price drops found with minimum {min_drop}% drop.[/bold yellow]")
+            return
+        
+        # Sort results based on user preference
+        if sort_by == 'amount':
+            price_drops.sort(key=lambda x: x.price_drop, reverse=True)
+        elif sort_by == 'store':
+            price_drops.sort(key=lambda x: x.store_name)
+        elif sort_by == 'product':
+            price_drops.sort(key=lambda x: x.product_name)
+        # 'percent' is already sorted by default
+        
+        console.print(f"\n[bold green]Found {len(price_drops)} products with price drops ≥{min_drop}%[/bold green]")
+        
+        table = Table(title="Price Drop Analysis")
+        table.add_column("Product", style="cyan", no_wrap=True)
+        table.add_column("Store", style="yellow")
+        table.add_column("Previous", style="red", justify="right")
+        table.add_column("Current", style="green", justify="right")
+        table.add_column("Drop", style="bold red", justify="right")
+        table.add_column("Drop %", style="bold red", justify="right")
+        table.add_column("Days Ago", style="dim", justify="right")
+        table.add_column("Status", style="bold")
+        
+        for drop in price_drops:
+            status = ""
+            if drop.is_clearance:
+                status = "🟡 Clearance"
+            elif drop.is_on_sale:
+                status = "🟢 On Sale"
+            else:
+                status = "⚪ Regular"
+            
+            table.add_row(
+                drop.product_name[:40] + ("..." if len(drop.product_name) > 40 else ""),
+                drop.store_name,
+                f"${drop.previous_price:.2f}",
+                f"${drop.current_price:.2f}",
+                f"-${drop.price_drop:.2f}",
+                f"-{drop.price_drop_percent:.1f}%",
+                str(drop.days_since_last_check),
+                status
+            )
+        
+        console.print(table)
+        
+        # Summary statistics
+        total_savings = sum(drop.price_drop for drop in price_drops)
+        avg_drop_percent = sum(drop.price_drop_percent for drop in price_drops) / len(price_drops)
+        
+        console.print(f"\n[bold]Summary:[/bold]")
+        console.print(f"  • Total potential savings: [bold green]${total_savings:.2f}[/bold green]")
+        console.print(f"  • Average price drop: [bold red]{avg_drop_percent:.1f}%[/bold red]")
+        console.print(f"  • Products on clearance: [bold yellow]{sum(1 for d in price_drops if d.is_clearance)}[/bold yellow]")
+        
+    except Exception as e:
+        console.print(f"\n[bold red]Error during analysis: {e}[/bold red]")
+        logging.error(f"Analysis error: {e}")
+
+
+@cli.command()
+@click.argument('upc')
+@click.argument('store_id')
+@click.option('--expected-price', type=float, help='Expected price to compare against')
+def verify(upc: str, store_id: str, expected_price: Optional[float]):
+    """Verify a product's price using Shop'n'Scan."""
+    try:
+        from price_monitor.core import PriceMonitor
+        
+        pm = PriceMonitor()
+        verification = pm.verify_price_with_shopnscan(upc, store_id, expected_price)
+        
+        if not verification:
+            console.print(f"\n[bold red]Failed to verify price for UPC {upc} at store {store_id}[/bold red]")
+            return
+        
+        console.print(f"\n[bold green]✅ Price Verification Complete[/bold green]")
+        console.print(f"UPC: [bold]{upc}[/bold]")
+        console.print(f"Store: [bold]{store_id}[/bold]")
+        
+        table = Table(title="Shop'n'Scan Price Verification")
+        table.add_column("Field", style="cyan")
+        table.add_column("Value", style="yellow")
+        
+        table.add_row("Product Name", verification.product_name)
+        table.add_row("Current Price", f"${verification.current_price:.2f}")
+        
+        if verification.sale_price:
+            table.add_row("Sale Price", f"${verification.sale_price:.2f}")
+        
+        if verification.original_price:
+            table.add_row("Original Price", f"${verification.original_price:.2f}")
+        
+        table.add_row("Clearance", "Yes" if verification.is_clearance else "No")
+        table.add_row("On Sale", "Yes" if verification.is_on_sale else "No")
+        table.add_row("Status", verification.verification_status)
+        table.add_row("Verified At", verification.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+        
+        console.print(table)
+        
+        # Price comparison if expected price provided
+        if expected_price is not None:
+            price_diff = verification.current_price - expected_price
+            price_diff_percent = (price_diff / expected_price) * 100
+            
+            console.print(f"\n[bold]Price Comparison:[/bold]")
+            console.print(f"Expected: [bold]${expected_price:.2f}[/bold]")
+            console.print(f"Actual: [bold]${verification.current_price:.2f}[/bold]")
+            
+            if price_diff == 0:
+                console.print(f"Difference: [bold green]No change[/bold green]")
+            elif price_diff < 0:
+                console.print(f"Difference: [bold green]${abs(price_diff):.2f} lower ({abs(price_diff_percent):.1f}% savings)[/bold green]")
+            else:
+                console.print(f"Difference: [bold red]${price_diff:.2f} higher ({price_diff_percent:.1f}% increase)[/bold red]")
+        
+    except Exception as e:
+        console.print(f"\n[bold red]Error during verification: {e}[/bold red]")
+        logging.error(f"Verification error: {e}")
+
+
+@cli.command()
+@click.argument('monitor_name')
+def history(monitor_name: str):
+    """Show price history for a specific monitor."""
+    try:
+        from price_monitor.core import PriceMonitor
+        
+        pm = PriceMonitor()
+        
+        # Find the monitor
+        monitor_id = None
+        for mid, config in pm.configs.items():
+            if config['name'] == monitor_name:
+                monitor_id = mid
+                break
+        
+        if not monitor_id:
+            console.print(f"\n[bold red]Monitor '{monitor_name}' not found.[/bold red]")
+            return
+        
+        # Get latest price records
+        price_records = pm.get_latest_price_records(monitor_id)
+        
+        if not price_records:
+            console.print(f"\n[bold yellow]No price records found for monitor '{monitor_name}'.[/bold yellow]")
+            return
+        
+        console.print(f"\n[bold green]Price History for '{monitor_name}'[/bold green]")
+        console.print(f"Products found: [bold]{len(price_records)}[/bold]")
+        
+        table = Table(title="Latest Price Records")
+        table.add_column("Product", style="cyan", no_wrap=True)
+        table.add_column("Store", style="yellow")
+        table.add_column("Price", style="green", justify="right")
+        table.add_column("Original", style="dim", justify="right")
+        table.add_column("Status", style="bold")
+        table.add_column("Last Updated", style="dim")
+        
+        for record in price_records:
+            status = ""
+            if record.is_clearance:
+                status = "🟡 Clearance"
+            elif record.is_on_sale:
+                status = "🟢 On Sale"
+            else:
+                status = "⚪ Regular"
+            
+            original_price_str = f"${record.original_price:.2f}" if record.original_price else "N/A"
+            
+            table.add_row(
+                record.product_name[:40] + ("..." if len(record.product_name) > 40 else ""),
+                record.store_name,
+                f"${record.price:.2f}",
+                original_price_str,
+                status,
+                record.timestamp.strftime("%m/%d %H:%M")
+            )
+        
+        console.print(table)
+        
+    except Exception as e:
+        console.print(f"\n[bold red]Error showing history: {e}[/bold red]")
+        logging.error(f"History error: {e}")
+
+
 def run_initial_scan(price_monitor: PriceMonitor, monitor_id: str) -> None:
     """Run the initial price scan for a newly created monitor."""
     console.print("\n[bold]Running initial price scan...[/bold]")

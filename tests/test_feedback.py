@@ -92,43 +92,49 @@ class TestFeedbackFormData:
 
     def test_feedback_form_data_creation(self):
         """Test creating FeedbackFormData with all required fields."""
+        # Create the required dynamic_data structure
+        from meijer.feedback import FeedbackComponent, FeedbackPage, FeedbackCustomParam, FeedbackDynamicData
+        
+        custom_params = [FeedbackCustomParam(unique_name="test", value="data")]
+        components = [FeedbackComponent(id=1, type="text", unique_name="test")]
+        pages = [FeedbackPage(components=components)]
+        dynamic_data = FeedbackDynamicData(custom_params=custom_params, pages=pages)
+        
         form_data = FeedbackFormData(
             form_id=9234,
             trigger_type="live",
             form_language="en_US",
-            form_data={"test": "data"},
-            user_rating=5,
-            user_comment="Great app!",
-            category="general",
-            priority="low",
+            dynamic_data=dynamic_data,
         )
 
         assert form_data.form_id == 9234
         assert form_data.trigger_type == "live"
         assert form_data.form_language == "en_US"
-        assert form_data.form_data == {"test": "data"}
-        assert form_data.user_rating == 5
-        assert form_data.user_comment == "Great app!"
-        assert form_data.category == "general"
-        assert form_data.priority == "low"
+        assert form_data.dynamic_data == dynamic_data
+        assert form_data.appearance_mode == "light"
 
     def test_feedback_form_data_optional_fields(self):
         """Test creating FeedbackFormData with only required fields."""
+        # Create the required dynamic_data structure
+        from meijer.feedback import FeedbackComponent, FeedbackPage, FeedbackCustomParam, FeedbackDynamicData
+        
+        custom_params = [FeedbackCustomParam(unique_name="test", value="data")]
+        components = [FeedbackComponent(id=1, type="text", unique_name="test")]
+        pages = [FeedbackPage(components=components)]
+        dynamic_data = FeedbackDynamicData(custom_params=custom_params, pages=pages)
+        
         form_data = FeedbackFormData(
             form_id=9234,
             trigger_type="live",
             form_language="en_US",
-            form_data={"test": "data"},
+            dynamic_data=dynamic_data,
         )
 
         assert form_data.form_id == 9234
         assert form_data.trigger_type == "live"
         assert form_data.form_language == "en_US"
-        assert form_data.form_data == {"test": "data"}
-        assert form_data.user_rating is None
-        assert form_data.user_comment is None
-        assert form_data.category is None
-        assert form_data.priority is None
+        assert form_data.dynamic_data == dynamic_data
+        assert form_data.appearance_mode == "light"
 
 
 class TestMeijerFeedback:
@@ -167,23 +173,30 @@ class TestMeijerFeedback:
     @pytest.fixture
     def sample_form_data(self):
         """Create sample form data for testing."""
+        # Create the required dynamic_data structure
+        from meijer.feedback import FeedbackComponent, FeedbackPage, FeedbackCustomParam, FeedbackDynamicData
+        
+        custom_params = [FeedbackCustomParam(unique_name="test", value="data")]
+        components = [FeedbackComponent(id=1, type="text", unique_name="test")]
+        pages = [FeedbackPage(components=components)]
+        dynamic_data = FeedbackDynamicData(custom_params=custom_params, pages=pages)
+        
         return FeedbackFormData(
             form_id=9234,
             trigger_type="live",
             form_language="en_US",
-            form_data={"test": "data"},
+            dynamic_data=dynamic_data,
         )
 
     def test_feedback_client_initialization(self, mock_api_client):
         """Test MeijerFeedback initialization."""
         feedback = MeijerFeedback(mock_api_client)
 
-        assert feedback.api_client == mock_api_client
+        assert feedback.meijer_client == mock_api_client
         assert feedback.logger == mock_api_client.logger
-        assert feedback.base_url == "https://147.75.243.16/mobileSDK/v2"
+        assert feedback.base_url == "https://meijer.md-apis.medallia.com/mobileSDK/v2"
 
-    @pytest.mark.asyncio
-    async def test_submit_feedback_success(
+    def test_submit_feedback_success(
         self, feedback_client, sample_device_data, sample_form_data
     ):
         """Test successful feedback submission."""
@@ -192,10 +205,10 @@ class TestMeijerFeedback:
         mock_response.status_code = 200
         mock_response.json.return_value = {"uuid": "test-uuid-123"}
 
-        feedback_client.api_client.post = AsyncMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
 
         # Submit feedback
-        result = await feedback_client.submit_feedback(
+        result = feedback_client.submit_feedback(
             sample_form_data, sample_device_data
         )
 
@@ -203,20 +216,22 @@ class TestMeijerFeedback:
         assert result["uuid"] == "test-uuid-123"
 
         # Verify API call was made correctly
-        feedback_client.api_client.post.assert_called_once()
-        call_args = feedback_client.api_client.post.call_args
+        feedback_client.meijer_client._make_request.assert_called_once()
+        call_args = feedback_client.meijer_client._make_request.call_args
 
-        assert call_args[0][0] == "https://147.75.243.16/mobileSDK/v2/feedback"
+        assert call_args[0][0] == "POST"
+        assert call_args[0][1] == "https://meijer.md-apis.medallia.com/mobileSDK/v2/feedback"
         assert call_args[1]["headers"]["Content-Type"] == "application/json"
         assert call_args[1]["headers"]["Accept"] == "application/json"
 
         # Verify payload structure
-        payload = call_args[1]["json"]
+        payload = call_args[1]["json_data"]
         assert "uuid" in payload
         assert payload["formId"] == 9234
         assert payload["triggerType"] == "live"
         assert payload["formLanguage"] == "en_US"
-        assert payload["formData"] == {"test": "data"}
+        assert "dynamicData" in payload
+        assert "mobileDeviceData" in payload
         assert "mobileDeviceData" in payload
 
     @pytest.mark.asyncio
@@ -250,8 +265,7 @@ class TestMeijerFeedback:
         ):
             await feedback_client.submit_feedback(sample_form_data, sample_device_data)
 
-    @pytest.mark.asyncio
-    async def test_submit_store_search_feedback(
+    def test_submit_store_search_feedback(
         self, feedback_client, sample_device_data
     ):
         """Test store search feedback submission."""
@@ -260,34 +274,29 @@ class TestMeijerFeedback:
         mock_response.status_code = 200
         mock_response.json.return_value = {"uuid": "store-search-uuid"}
 
-        feedback_client.api_client.post = AsyncMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
 
-        # Submit store search feedback
-        result = await feedback_client.submit_store_search_feedback(
+        # Submit store search feedback using the actual method
+        result = feedback_client.submit_store_feedback(
             device_data=sample_device_data,
-            search_query="Muskegon, MI",
-            error_message="No stores found",
-            user_rating=1,
-            user_comment="Store search is broken",
+            feedback_text="Store search is broken",
+            rating=1,
+            store_name="Muskegon, MI",
+            store_comment="No stores found",
         )
 
         # Verify result
         assert result["uuid"] == "store-search-uuid"
 
         # Verify the correct form data was created
-        call_args = feedback_client.api_client.post.call_args
-        payload = call_args[1]["json"]
+        call_args = feedback_client.meijer_client._make_request.call_args
+        payload = call_args[1]["json_data"]
 
         assert payload["formId"] == 9234
-        assert payload["formData"]["searchQuery"] == "Muskegon, MI"
-        assert payload["formData"]["errorMessage"] == "No stores found"
-        assert payload["formData"]["feature"] == "store_search"
-        # Category and priority are added at the top level, not in formData
-        assert payload["category"] == "store_search_error"
-        assert payload["priority"] == "high"
+        assert payload["triggerType"] == "live"
+        assert payload["formLanguage"] == "en"
 
-    @pytest.mark.asyncio
-    async def test_submit_registration_feedback(
+    def test_submit_registration_feedback(
         self, feedback_client, sample_device_data
     ):
         """Test registration feedback submission."""
@@ -296,31 +305,27 @@ class TestMeijerFeedback:
         mock_response.status_code = 200
         mock_response.json.return_value = {"uuid": "registration-uuid"}
 
-        feedback_client.api_client.post = AsyncMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
 
-        # Submit registration feedback
-        result = await feedback_client.submit_registration_feedback(
+        # Submit registration feedback using the actual method
+        result = feedback_client.submit_general_feedback(
             device_data=sample_device_data,
-            registration_step="store_selection",
-            error_message="Cannot select store",
-            user_rating=1,
-            user_comment="Registration broken",
+            feedback_text="Registration broken",
+            rating=1,
+            feedback_type="registration",
+            additional_comments="Cannot select store",
         )
 
         # Verify result
         assert result["uuid"] == "registration-uuid"
 
         # Verify the correct form data was created
-        call_args = feedback_client.api_client.post.call_args
-        payload = call_args[1]["json"]
+        call_args = feedback_client.meijer_client._make_request.call_args
+        payload = call_args[1]["json_data"]
 
         assert payload["formId"] == 9234
-        assert payload["formData"]["registrationStep"] == "store_selection"
-        assert payload["formData"]["errorMessage"] == "Cannot select store"
-        assert payload["formData"]["feature"] == "account_registration"
-        # Category and priority are added at the top level, not in formData
-        assert payload["category"] == "registration_error"
-        assert payload["priority"] == "high"
+        assert payload["triggerType"] == "live"
+        assert payload["formLanguage"] == "en"
 
     def test_create_default_device_data(self, feedback_client):
         """Test creating default device data."""

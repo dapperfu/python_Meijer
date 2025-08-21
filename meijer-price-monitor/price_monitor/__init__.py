@@ -14,19 +14,18 @@
  * - Code style: Python with full mypy typing and numpy-style docstrings
  * - Dependencies: meijer package
  */
+"""
 
-Price monitoring package for Meijer stores.
+"""
+Meijer Price Monitor Package
 
-This package provides functionality to:
-1. Monitor product prices across multiple stores
-2. Track price changes over time
-3. Detect clearance deals and price drops
-4. Support automated monitoring via cron
+A standalone price monitoring system for Meijer products that can leverage
+the core Meijer Python API when available.
 """
 
 __version__ = "1.0.0"
 __author__ = "Meijer Price Monitor Team"
 
-from .core import PriceMonitor, PriceRecord, PriceHistory
+from .core import PriceMonitor, PriceRecord, PriceHistory, PriceDropAnalysis, ShopnScanPrice
 
-__all__ = ["PriceMonitor", "PriceRecord", "PriceHistory"]
+__all__ = ["PriceMonitor", "PriceRecord", "PriceHistory", "PriceDropAnalysis", "ShopnScanPrice"]

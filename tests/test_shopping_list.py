@@ -100,7 +100,7 @@ class TestMeijerList:
 
         self.mock_client._make_request.return_value = mock_response
 
-        result = self.shopping_list.add_item("123456789", 2)
+        result = self.shopping_list.add("Milk", 2)
 
         assert result is True
         self.mock_client._make_request.assert_called_once()
@@ -108,7 +108,7 @@ class TestMeijerList:
         assert call_args[0][0] == "POST"  # method
         assert "AddListItem" in call_args[0][1]  # URL
         assert (
-            call_args[1]["json_data"]["listItems"][0]["itemPartNumber"] == "123456789"
+            call_args[1]["json_data"]["listItems"][0]["itemDescription"] == "Milk"
         )
 
     def test_add_item_with_details_success(self):
@@ -143,7 +143,7 @@ class TestMeijerList:
 
         self.mock_client._make_request.return_value = mock_response
 
-        result = self.shopping_list.add_item("123456789")
+        result = self.shopping_list.add("Milk")
 
         assert result is False
         self.mock_client.logger.error.assert_called()
@@ -152,7 +152,7 @@ class TestMeijerList:
         """Test adding item with exception."""
         self.mock_client._make_request.side_effect = Exception("Network error")
 
-        result = self.shopping_list.add_item("123456789")
+        result = self.shopping_list.add("Milk")
 
         assert result is False
         self.mock_client.logger.error.assert_called()
@@ -398,10 +398,15 @@ class TestMeijerList:
 
     def test_defrag_search_import_error(self):
         """Test defrag when search module is not available."""
-        with patch.object(self.shopping_list, "get", return_value=[Mock()]), patch(
-            "builtins.__import__",
-            side_effect=ImportError("No module named 'meijer.search'"),
-        ):
+        # Create a mock item with the required attributes
+        mock_item = Mock()
+        mock_item.name = "Test Item"
+        mock_item.item_part_number = "123456789"
+        
+        # Mock the clear_list method to avoid actual API calls
+        with patch.object(self.shopping_list, "get", return_value=[mock_item]), \
+             patch.object(self.shopping_list, "clear_list", return_value=True), \
+             patch("builtins.__import__", side_effect=ImportError("No module named 'meijer.search'")):
             result = self.shopping_list.defrag()
 
             assert result is False
