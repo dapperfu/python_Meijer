@@ -395,8 +395,15 @@ class PriceMonitor:
         filepath = self.results_dir / filename
         
         try:
+            # Convert PriceRecord objects to dictionaries for JSON serialization
+            serializable_results = results.copy()
+            serializable_results['price_records'] = [
+                record.to_dict() if hasattr(record, 'to_dict') else record
+                for record in results['price_records']
+            ]
+            
             with open(filepath, 'w') as f:
-                json.dump(results, f, indent=2)
+                json.dump(serializable_results, f, indent=2)
             self.logger.debug(f"Saved results to {filepath}")
         except Exception as e:
             self.logger.error(f"Failed to save results: {e}")
@@ -413,8 +420,8 @@ class PriceMonitor:
                     with open(history_file, 'r') as f:
                         history_data = json.load(f)
                     history = PriceHistory(
-                        product_id=record.product_id,
-                        store_id=record.store_id,
+                        product_id=history_data['product_id'],
+                        store_id=history_data['store_id'],
                         price_records=[]
                     )
                     # Reconstruct PriceRecord objects
@@ -432,8 +439,10 @@ class PriceMonitor:
             
             # Save updated history
             try:
+                # Use the to_dict method for proper serialization
+                history_dict = history.to_dict()
                 with open(history_file, 'w') as f:
-                    json.dump(history.to_dict(), f, indent=2)
+                    json.dump(history_dict, f, indent=2)
             except Exception as e:
                 self.logger.error(f"Failed to save history for {history_key}: {e}")
     

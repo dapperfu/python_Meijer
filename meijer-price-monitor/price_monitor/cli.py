@@ -512,18 +512,34 @@ def display_scan_results(results: dict) -> None:
         
         # Show first 10 products
         for record in results['price_records'][:10]:
+            # Handle both PriceRecord objects and dictionaries
+            if hasattr(record, 'is_clearance'):
+                # It's a PriceRecord object
+                is_clearance = record.is_clearance
+                is_on_sale = record.is_on_sale
+                product_name = record.product_name
+                store_name = record.store_name
+                price = record.price
+            else:
+                # It's a dictionary
+                is_clearance = record.get('is_clearance', False)
+                is_on_sale = record.get('is_on_sale', False)
+                product_name = record.get('product_name', 'Unknown')
+                store_name = record.get('store_name', 'Unknown')
+                price = record.get('price', 0.0)
+            
             status = ""
-            if record['is_clearance']:
+            if is_clearance:
                 status = "🟡 Clearance"
-            elif record['is_on_sale']:
+            elif is_on_sale:
                 status = "🟢 On Sale"
             else:
                 status = "⚪ Regular"
             
             table.add_row(
-                record['product_name'][:50] + ("..." if len(record['product_name']) > 50 else ""),
-                record['store_name'],
-                f"${record['price']:.2f}",
+                product_name[:50] + ("..." if len(product_name) > 50 else ""),
+                store_name,
+                f"${price:.2f}",
                 status
             )
         
