@@ -1767,7 +1767,10 @@ def login_selenium(headless: bool, keep_open: bool):
     help="Authentication method to use (default: enhanced)"
 )
 @click.option(
-    "--headless", is_flag=True, default=True, help="Run browser in headless mode (selenium only)"
+    "--headless", 
+    type=click.Choice(["true", "false"]), 
+    default="false",
+    help="Run browser in headless mode: true/false (selenium only, default: false for visibility)"
 )
 @click.option(
     "--keep-open", is_flag=True, help="Keep browser open for debugging (selenium only)"
@@ -1847,32 +1850,42 @@ def login_command(
         if method == "selenium":
             click.echo("🌐 Using Selenium WebDriver authentication method")
             
-            try:
-                if keep_open:
-                    from meijer.okta_selenium_auth import authenticate_with_selenium_and_keep_open
-                    click.echo("🔍 Starting Selenium authentication with browser kept open for debugging...")
-                    result = authenticate_with_selenium_and_keep_open(user, password, headless)
-                else:
-                    from meijer.okta_selenium_auth import authenticate_with_selenium
-                    click.echo("🚀 Starting Selenium authentication...")
-                    result = authenticate_with_selenium(user, password, headless)
+            # Convert headless string to boolean
+            headless_bool = headless.lower() == "true"
+            
+            # Show browser mode and keep-open status
+            if keep_open:
+                click.echo("🔍 Starting Selenium authentication with browser kept open for debugging...")
+                click.echo(f"🌐 Browser mode: {'headless' if headless_bool else 'visible'}")
                 
-                if result and result.get("success"):
-                    click.echo("🎉 Selenium authentication successful!")
-                    click.echo(f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}")
-                    click.echo(f"🌐 Final URL: {result.get('url', 'N/A')}")
-                    
-                    if keep_open:
-                        click.echo("\n🔍 Browser window is still open for debugging")
-                        click.echo("💡 Close it manually when done")
-                else:
-                    click.echo("❌ Selenium authentication failed")
-                    if result:
-                        click.echo(f"📊 Result: {result}")
-                    return
-                    
-            except Exception as e:
-                raise click.ClickException(f"❌ Selenium authentication failed: {e}")
+                try:
+                    from meijer.okta_selenium_auth import authenticate_with_selenium_and_keep_open
+                    result = authenticate_with_selenium_and_keep_open(user, password, headless_bool)
+                except Exception as e:
+                    raise click.ClickException(f"❌ Selenium authentication failed: {e}")
+            else:
+                click.echo("🚀 Starting Selenium authentication...")
+                click.echo(f"🌐 Browser mode: {'headless' if headless_bool else 'visible'}")
+                
+                try:
+                    from meijer.okta_selenium_auth import authenticate_with_selenium
+                    result = authenticate_with_selenium(user, password, headless_bool)
+                except Exception as e:
+                    raise click.ClickException(f"❌ Selenium authentication failed: {e}")
+            
+            if result and result.get("success"):
+                click.echo("🎉 Selenium authentication successful!")
+                click.echo(f"🔑 Authorization code: {result.get('authorization_code', 'N/A')}")
+                click.echo(f"🌐 Final URL: {result.get('url', 'N/A')}")
+                
+                if keep_open:
+                    click.echo("\n🔍 Browser window is still open for debugging")
+                    click.echo("💡 Close it manually when done")
+            else:
+                click.echo("❌ Selenium authentication failed")
+                if result:
+                    click.echo(f"📊 Result: {result}")
+                return
                 
         else:  # enhanced method (default)
             click.echo("🔐 Using enhanced authentication method")
