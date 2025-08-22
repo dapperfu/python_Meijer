@@ -122,7 +122,8 @@ class DualPathStorageManager:
                 self.database.add_search_result(search_id, result.to_dict())
         
         # Store in JSON file
-        json_filename = f"search_{timestamp_str}_{query.query_text.replace(' ', '_')[:20]}.json"
+        query_text = query.query_text if hasattr(query, 'query_text') else str(query)
+        json_filename = f"search_{timestamp_str}_{query_text.replace(' ', '_')[:20]}.json"
         json_filepath = self.data_dir / "json" / "search_results" / json_filename
         
         json_data = {

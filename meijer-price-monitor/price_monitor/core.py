@@ -31,16 +31,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Set
 import time
 
-# Try to import from the core Meijer API
-try:
-    from meijer.client import Meijer
-    from meijer.search import Search
-    from meijer.stores import MeijerStore
-    MEIJER_AVAILABLE = True
-except ImportError:
-    # Fallback: create mock classes for development/testing
-    MEIJER_AVAILABLE = False
-    logging.warning("Core Meijer API not available. Using mock classes for development.")
+# Import from the core Meijer API
+from meijer.client import Meijer
+from meijer.search import Search
+from meijer.stores import MeijerStore
+MEIJER_AVAILABLE = True
 
 # Import local modules
 from .models import PriceRecord, PriceHistory, PriceDropAnalysis, ShopnScanPrice
@@ -97,14 +92,12 @@ class PriceMonitor:
         # Load existing configurations
         self.configs = self._load_configs()
         
-        # Initialize legacy search and stores if Meijer API is available
-        if MEIJER_AVAILABLE and meijer_client:
-            self.search = Search(meijer_client)
-            self.stores = meijer_client.stores
-        else:
-            self.search = None
-            self.stores = None
-            self.logger.warning("Meijer API not available. Some functionality will be limited.")
+        # Initialize legacy search and stores
+        if not meijer_client:
+            raise RuntimeError("Meijer client is required. Please provide an authenticated Meijer client.")
+        
+        self.search = Search(meijer_client)
+        self.stores = meijer_client  # Use the client itself for store operations
     
     def _load_configs(self) -> Dict[str, Dict[str, Any]]:
         """Load existing monitoring configurations."""
@@ -165,9 +158,7 @@ class PriceMonitor:
         if stores is None and self.stores:
             stores = self._find_stores_near_location(location, radius)
         elif stores is None:
-            # Mock stores for testing
-            stores = [f"store_{i}" for i in range(3)]
-            self.logger.warning("Using mock stores for testing")
+            raise RuntimeError("No stores specified and store search not available. Please provide store IDs or ensure Meijer API is properly initialized.")
         
         config = {
             'name': name,
@@ -189,18 +180,17 @@ class PriceMonitor:
     def _find_stores_near_location(self, location: str, radius: int) -> List[str]:
         """Find stores near the specified location."""
         if not self.stores:
-            self.logger.warning("Store search not available")
-            return []
+            raise RuntimeError("Store search not available. Please ensure Meijer API is properly initialized.")
         
         try:
             # Search for stores near the location
-            nearby_stores = self.stores.search_stores(location, radius=radius)
+            nearby_stores = self.stores.find_stores_nearby(location, radius=radius)
             store_ids = [store.store_id for store in nearby_stores]
             self.logger.info(f"Found {len(store_ids)} stores near {location}")
             return store_ids
         except Exception as e:
             self.logger.error(f"Failed to find stores near {location}: {e}")
-            return []
+            raise RuntimeError(f"Failed to find stores near {location}: {e}")
     
     def run_monitor(self, monitor_id: str) -> Dict[str, Any]:
         """
@@ -269,23 +259,7 @@ class PriceMonitor:
     ) -> List[PriceRecord]:
         """Search for products at a specific store."""
         if not self.search:
-            # Mock search results for testing
-            self.logger.warning("Using mock search results for testing")
-            return [
-                PriceRecord(
-                    product_id=f"mock_product_{i}",
-                    product_name=f"Mock {query} Product {i}",
-                    store_id=store_id,
-                    store_name=f"Mock Store {store_id}",
-                    price=10.0 + i * 5.0,
-                    original_price=15.0 + i * 5.0,
-                    is_clearance=i % 2 == 0,
-                    is_on_sale=i % 3 == 0,
-                    availability="in_stock",
-                    search_query=query
-                )
-                for i in range(3)
-            ]
+            raise RuntimeError("Meijer search not available. Please ensure Meijer API is properly initialized.")
         
         try:
             # Search for products
@@ -312,7 +286,7 @@ class PriceMonitor:
             
         except Exception as e:
             self.logger.error(f"Failed to search store {store_id}: {e}")
-            return []
+            raise RuntimeError(f"Failed to search store {store_id}: {e}")
     
     def _save_results(self, monitor_id: str, results: Dict[str, Any]) -> None:
         """Save monitoring results to file."""

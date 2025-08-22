@@ -32,16 +32,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Iterator, Tuple
 
-# Try to import from the core Meijer API
-try:
-    from meijer.client import Meijer
-    from meijer.search import Search
-    from meijer.stores import MeijerStore
-    MEIJER_AVAILABLE = True
-except ImportError:
-    # Fallback: create mock classes for development/testing
-    MEIJER_AVAILABLE = False
-    logging.warning("Core Meijer API not available. Using mock classes for development.")
+# Import from the core Meijer API
+from meijer.client import Meijer
+from meijer.search import Search
+from meijer.stores import MeijerStore
+MEIJER_AVAILABLE = True
 
 
 @dataclass
@@ -183,7 +178,7 @@ class EnhancedSearchEngine:
         # Initialize search and stores if Meijer API is available
         if MEIJER_AVAILABLE and meijer_client:
             self.search = Search(meijer_client)
-            self.stores = meijer_client.stores
+            self.stores = meijer_client  # Use the client itself for store operations
         else:
             self.search = None
             self.stores = None
@@ -339,8 +334,7 @@ class EnhancedSearchEngine:
             List of search results from this page
         """
         if not self.search:
-            # Mock search results for testing
-            return self._generate_mock_page_results(query_text, store_id, page, results_per_page)
+            raise RuntimeError("Meijer search not available. Please ensure Meijer API is properly initialized.")
         
         try:
             # Use the Meijer search API
@@ -543,52 +537,15 @@ class EnhancedSearchEngine:
     def _get_available_stores(self) -> List[str]:
         """Get list of available store IDs."""
         if not self.stores:
-            # Mock stores for testing
-            return [f"store_{i}" for i in range(1, 6)]
+            raise RuntimeError("Meijer stores not available. Please ensure Meijer API is properly initialized.")
         
         try:
             # Get all available stores
-            all_stores = self.stores.get_all_stores()
+            all_stores = self.stores.get_stores()
             return [store.store_id for store in all_stores]
         except Exception as e:
             self.logger.error(f"Failed to get available stores: {e}")
-            return []
-    
-    def _generate_mock_page_results(
-        self, 
-        query_text: str, 
-        store_id: str, 
-        page: int, 
-        results_per_page: int
-    ) -> List[Any]:
-        """Generate mock search results for testing."""
-        # Create mock result objects
-        class MockSearchResult:
-            def __init__(self, **kwargs):
-                for key, value in kwargs.items():
-                    setattr(self, key, value)
-        
-        results = []
-        start_index = (page - 1) * results_per_page
-        
-        for i in range(min(results_per_page, 10)):  # Limit to 10 mock results per page
-            result = MockSearchResult(
-                name=f"Mock {query_text} Product {start_index + i + 1}",
-                price=10.0 + (start_index + i) * 2.0,
-                original_price=15.0 + (start_index + i) * 2.0,
-                is_clearance=(start_index + i) % 3 == 0,
-                is_on_sale=(start_index + i) % 2 == 0,
-                availability="in_stock",
-                brand=f"Mock Brand {(start_index + i) % 5 + 1}",
-                category="Toys",
-                subcategory="Building Sets",
-                description=f"Mock description for {query_text} product {start_index + i + 1}",
-                image_url=f"https://example.com/image_{start_index + i + 1}.jpg",
-                upc=f"123456789012{start_index + i:02d}"  # Generate unique UPCs
-            )
-            results.append(result)
-        
-        return results
+            raise RuntimeError(f"Failed to get available stores: {e}")
     
     def verify_prices_with_shopnscan(
         self, 
@@ -677,10 +634,6 @@ class EnhancedSearchEngine:
         Optional[Dict[str, Any]]
             Shop'n'Scan verification result, or None if failed
         """
-        if not MEIJER_AVAILABLE:
-            # Mock Shop'n'Scan verification for testing
-            return self._generate_mock_shopnscan_result(upc, store_id)
-        
         try:
             # TODO: Implement actual Shop'n'Scan integration
             # This would involve calling the Meijer API's Shop'n'Scan functionality
@@ -707,10 +660,6 @@ class EnhancedSearchEngine:
         Optional[Dict[str, Any]]
             Cart verification result, or None if failed
         """
-        if not MEIJER_AVAILABLE:
-            # Mock cart verification for testing
-            return self._generate_mock_cart_result(upc, store_id)
-        
         try:
             # TODO: Implement actual cart verification
             # This would involve adding the product to cart and checking the price
@@ -720,28 +669,3 @@ class EnhancedSearchEngine:
         except Exception as e:
             self.logger.error(f"Cart verification failed for UPC {upc}: {e}")
             return None
-    
-    def _generate_mock_shopnscan_result(self, upc: str, store_id: str) -> Dict[str, Any]:
-        """Generate mock Shop'n'Scan result for testing."""
-        return {
-            'upc': upc,
-            'store_id': store_id,
-            'verified_price': 12.99,
-            'sale_price': 12.99,
-            'original_price': 24.99,
-            'is_clearance': True,
-            'is_on_sale': True,
-            'verification_status': 'verified',
-            'verification_timestamp': datetime.now().isoformat()
-        }
-    
-    def _generate_mock_cart_result(self, upc: str, store_id: str) -> Dict[str, Any]:
-        """Generate mock cart verification result for testing."""
-        return {
-            'upc': upc,
-            'store_id': store_id,
-            'cart_price': 15.99,
-            'availability': 'in_stock',
-            'verification_status': 'verified',
-            'verification_timestamp': datetime.now().isoformat()
-        }

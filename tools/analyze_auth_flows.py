@@ -2,13 +2,14 @@
 """
 Focused Authentication Flow Analysis
 
-This script analyzes the 6 login events (3 from Firefox desktop, 3 from mobile app)
-to understand the OKTA OAuth2 authentication flow patterns.
+This script analyzes the latest Okta login workflow to understand the complete
+authentication flow from device fingerprinting to token acquisition.
 """
 
 import json
 import re
 from typing import Any, Dict, List
+from datetime import datetime
 
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow
@@ -38,7 +39,7 @@ def find_auth_flows(flows: List[HTTPFlow]) -> List[Dict[str, Any]]:
         host = flow.request.pretty_host.lower()
 
         # Check if this is a relevant domain
-        if not any(domain in host for domain in ["id.meijer.com", "www.meijer.com"]):
+        if not any(domain in host for domain in ["id.meijer.com", "www.meijer.com", "okta.com", "meijer.okta.com"]):
             continue
 
         # Look for auth-related paths
@@ -52,6 +53,16 @@ def find_auth_flows(flows: List[HTTPFlow]) -> List[Dict[str, Any]]:
                 "challenge",
                 "idx",
                 "logout",
+                "fingerprint",
+                "device",
+                "token",
+                "refresh",
+                "authorize",
+                "callback",
+                "session",
+                "profile",
+                "userinfo",
+                "introspect"
             ]
         ):
             flow_data = {
@@ -140,6 +151,10 @@ def analyze_auth_patterns(auth_flows: List[Dict[str, Any]]) -> Dict[str, Any]:
         "cookie_progression": {},
         "flow_sequences": [],
         "key_findings": [],
+        "device_fingerprinting": [],
+        "token_acquisition": [],
+        "oauth2_flow": [],
+        "authentication_steps": []
     }
 
     # Group flows by endpoint
@@ -179,12 +194,20 @@ def analyze_auth_patterns(auth_flows: List[Dict[str, Any]]) -> Dict[str, Any]:
     oauth2_flows = [f for f in auth_flows if "oauth2" in f["path"]]
     login_flows = [f for f in auth_flows if "login" in f["path"]]
     logout_flows = [f for f in auth_flows if "logout" in f["path"]]
+    fingerprint_flows = [f for f in auth_flows if "fingerprint" in f["path"] or "device" in f["path"]]
+    token_flows = [f for f in auth_flows if "token" in f["path"]]
+    authorize_flows = [f for f in auth_flows if "authorize" in f["path"]]
+    callback_flows = [f for f in auth_flows if "callback" in f["path"]]
 
     analysis["key_findings"].extend(
         [
             f"Found {len(oauth2_flows)} OAuth2 flows",
             f"Found {len(login_flows)} login flows",
             f"Found {len(logout_flows)} logout flows",
+            f"Found {len(fingerprint_flows)} device fingerprinting flows",
+            f"Found {len(token_flows)} token flows",
+            f"Found {len(authorize_flows)} authorize flows",
+            f"Found {len(callback_flows)} callback flows",
         ]
     )
 
@@ -212,14 +235,72 @@ def analyze_auth_patterns(auth_flows: List[Dict[str, Any]]) -> Dict[str, Any]:
     if state_tokens:
         analysis["key_findings"].append(f"Found {len(state_tokens)} state tokens")
 
+    # Look for access tokens and refresh tokens
+    access_tokens = []
+    refresh_tokens = []
+    for flow in auth_flows:
+        if flow["response_body"] and isinstance(flow["response_body"], dict):
+            response = flow["response_body"]
+            if "access_token" in response:
+                access_tokens.append(response["access_token"])
+            if "refresh_token" in response:
+                refresh_tokens.append(response["refresh_token"])
+        elif flow["response_body"] and isinstance(flow["response_body"], str):
+            # Look for tokens in string responses
+            access_matches = re.findall(r'"access_token"\s*:\s*"([^"]+)"', flow["response_body"])
+            refresh_matches = re.findall(r'"refresh_token"\s*:\s*"([^"]+)"', flow["response_body"])
+            access_tokens.extend(access_matches)
+            refresh_tokens.extend(refresh_matches)
+
+    if access_tokens:
+        analysis["key_findings"].append(f"Found {len(access_tokens)} access tokens")
+    if refresh_tokens:
+        analysis["key_findings"].append(f"Found {len(refresh_tokens)} refresh tokens")
+
+    # Analyze the complete workflow sequence
+    sorted_flows = sorted(auth_flows, key=lambda x: x["timestamp"])
+    
+    # Look for device fingerprinting
+    for flow in sorted_flows:
+        if any(keyword in flow["path"].lower() for keyword in ["fingerprint", "device", "browser", "platform"]):
+            analysis["device_fingerprinting"].append({
+                "timestamp": flow["timestamp"],
+                "url": flow["url"],
+                "method": flow["method"],
+                "request_body": flow["request_body"],
+                "response_body": flow["response_body"]
+            })
+    
+    # Look for token acquisition
+    for flow in sorted_flows:
+        if any(keyword in flow["path"].lower() for keyword in ["token", "authorize", "callback"]):
+            analysis["token_acquisition"].append({
+                "timestamp": flow["timestamp"],
+                "url": flow["url"],
+                "method": flow["method"],
+                "request_body": flow["request_body"],
+                "response_body": flow["response_body"]
+            })
+    
+    # Look for OAuth2 flow
+    for flow in sorted_flows:
+        if "oauth2" in flow["path"].lower():
+            analysis["oauth2_flow"].append({
+                "timestamp": flow["timestamp"],
+                "url": flow["url"],
+                "method": flow["method"],
+                "request_body": flow["request_body"],
+                "response_body": flow["response_body"]
+            })
+
     return analysis
 
 
 def main():
     """Main analysis function."""
-    log_file = "meijer_mitm_20250820_110853.log"
+    log_file = "meijer_mitm_20250821_233419.log"
 
-    print(f"🔍 Analyzing authentication flows from: {log_file}")
+    print(f"🔍 Analyzing Okta authentication flows from: {log_file}")
     print("=" * 60)
 
     try:
@@ -238,19 +319,20 @@ def main():
         analysis = analyze_auth_patterns(auth_flows)
 
         # Save detailed analysis
-        output_file = "auth_flow_analysis_detailed.json"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file = f"okta_auth_flow_analysis_{timestamp}.json"
         with open(output_file, "w") as f:
             json.dump(analysis, f, indent=2)
         print(f"💾 Saved detailed analysis to: {output_file}")
 
         # Save raw auth flows
-        raw_file = "auth_flows_raw.json"
+        raw_file = f"okta_auth_flows_raw_{timestamp}.json"
         with open(raw_file, "w") as f:
             json.dump(auth_flows, f, indent=2)
         print(f"💾 Saved raw auth flows to: {raw_file}")
 
         # Print summary
-        print("\n📊 AUTHENTICATION FLOW ANALYSIS SUMMARY")
+        print("\n📊 OKTA AUTHENTICATION FLOW ANALYSIS SUMMARY")
         print("=" * 50)
         print(f"Total authentication flows: {analysis['total_auth_flows']}")
         print(f"Unique endpoints: {len(analysis['endpoints'])}")
@@ -269,6 +351,28 @@ def main():
         print("\n💡 KEY FINDINGS:")
         for finding in analysis["key_findings"]:
             print(f"  {finding}")
+
+        # Show device fingerprinting details
+        if analysis["device_fingerprinting"]:
+            print(f"\n🔍 DEVICE FINGERPRINTING FLOWS ({len(analysis['device_fingerprinting'])}):")
+            for i, flow in enumerate(analysis["device_fingerprinting"][:5]):
+                print(f"  {i+1}. {flow['url']} ({flow['method']})")
+                if flow["request_body"]:
+                    print(f"     Request: {str(flow['request_body'])[:100]}...")
+
+        # Show token acquisition details
+        if analysis["token_acquisition"]:
+            print(f"\n🔑 TOKEN ACQUISITION FLOWS ({len(analysis['token_acquisition'])}):")
+            for i, flow in enumerate(analysis["token_acquisition"][:5]):
+                print(f"  {i+1}. {flow['url']} ({flow['method']})")
+                if flow["response_body"]:
+                    print(f"     Response: {str(flow['response_body'])[:100]}...")
+
+        # Show OAuth2 flow details
+        if analysis["oauth2_flow"]:
+            print(f"\n🔄 OAUTH2 FLOW ({len(analysis['oauth2_flow'])}):")
+            for i, flow in enumerate(analysis["oauth2_flow"][:5]):
+                print(f"  {i+1}. {flow['url']} ({flow['method']})")
 
         # Look for specific patterns in the flows
         print("\n🔍 DETAILED FLOW ANALYSIS:")
@@ -289,6 +393,10 @@ def main():
                     print("    🔑 Contains authorization code")
                 if "login" in content.lower():
                     print("    🔑 Contains login form")
+                if "access_token" in content:
+                    print("    🔑 Contains access token")
+                if "refresh_token" in content:
+                    print("    🔑 Contains refresh token")
 
         if len(auth_flows) > 10:
             print(f"\n... and {len(auth_flows) - 10} more flows")
