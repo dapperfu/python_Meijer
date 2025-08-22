@@ -290,8 +290,9 @@ class CartItem:
     substitutable: bool = True
     """Whether the item can be substituted if unavailable"""
 
-    backup: bool = False
-    """Whether this item is marked as a backup item (typically quantity 30)"""
+    # Backup/fallback items for substitution
+    backup_items: List[str] = field(default_factory=list)
+    """List of UPCs for backup/fallback items when this item is unavailable"""
 
     # Internal API reference for operations
     _cart_api: Optional[Any] = field(default=None, repr=False, compare=False)
@@ -405,12 +406,22 @@ class CartItem:
     @property
     def is_backup(self) -> bool:
         """Check if this item is marked as a backup item."""
-        return self.backup and self.current_quantity >= 30
+        return self.backup_items and self.current_quantity >= 30
 
     @property
     def backup_quantity(self) -> bool:
         """Check if this item has backup quantity (30 or more)."""
         return self.current_quantity >= 30
+
+    @property
+    def is_substitutable(self) -> bool:
+        """Check if this item can be substituted with backup items."""
+        return self.substitutable and self.has_backup_items()
+
+    @property
+    def backup_item_count(self) -> int:
+        """Get the number of backup/fallback items configured."""
+        return len(self.backup_items)
 
     @property
     def requires_special_handling(self) -> bool:
@@ -541,10 +552,84 @@ class CartItem:
             # Set quantity to 30 (typical backup quantity)
             self.current_quantity = 30
             # Mark as backup item
-            self.backup = True
+            self.backup_items = True
             return True
         except (ValueError, RuntimeError):
             return False
+
+    def add_backup_item(self, upc: str, product_name: str = "", brand: str = "") -> bool:
+        """
+        Add a backup/fallback item for substitution when this item is unavailable.
+        
+        Backup items are alternative products that can replace this item
+        if it becomes unavailable (e.g., different brand, variant, or vendor).
+        
+        Parameters
+        ----------
+        upc : str
+            UPC code of the backup/fallback item
+        product_name : str, optional
+            Name/description of the backup item
+        brand : str, optional
+            Brand of the backup item
+            
+        Returns
+        -------
+        bool
+            True if backup item was successfully added, False otherwise
+        """
+        if not upc or upc in self.backup_items:
+            return False
+        
+        # Add the UPC to backup items list
+        self.backup_items.append(upc)
+        
+        # Log the backup item addition
+        if self._cart_api and hasattr(self._cart_api, 'logger'):
+            self._cart_api.logger.info(f"Added backup item UPC {upc} for {self.product_name or self.product_code}")
+        
+        return True
+
+    def remove_backup_item(self, upc: str) -> bool:
+        """
+        Remove a backup/fallback item from the substitution list.
+        
+        Parameters
+        ----------
+        upc : str
+            UPC code of the backup item to remove
+            
+        Returns
+        -------
+        bool
+            True if backup item was successfully removed, False otherwise
+        """
+        if upc in self.backup_items:
+            self.backup_items.remove(upc)
+            return True
+        return False
+
+    def get_backup_items(self) -> List[str]:
+        """
+        Get the list of backup/fallback item UPCs.
+        
+        Returns
+        -------
+        List[str]
+            List of UPCs for backup/fallback items
+        """
+        return self.backup_items.copy()
+
+    def has_backup_items(self) -> bool:
+        """
+        Check if this item has backup/fallback items configured.
+        
+        Returns
+        -------
+        bool
+            True if backup items are configured, False otherwise
+        """
+        return len(self.backup_items) > 0
 
     def remove_from_cart(self) -> bool:
         """Remove this item from the cart."""
@@ -1040,6 +1125,21 @@ class MeijerCart:
     def total_backup_quantity(self) -> int:
         """Get the total quantity of all backup items."""
         return sum(item.current_quantity for item in self.backup_items)
+
+    @property
+    def items_with_backups(self) -> List[CartItem]:
+        """Get cart items that have backup/fallback items configured."""
+        return [item for item in self._cart_items if item.has_backup_items()]
+
+    @property
+    def has_items_with_backups(self) -> bool:
+        """Check if any cart items have backup/fallback items configured."""
+        return len(self.items_with_backups) > 0
+
+    @property
+    def total_backup_substitutions(self) -> int:
+        """Get the total number of backup/fallback items configured across all cart items."""
+        return sum(item.backup_item_count for item in self._cart_items)
 
     # ============================================================================
     # Financial Properties
@@ -2189,4 +2289,114 @@ Your cart is currently empty.
                 p.text(
                     f"  Last Updated: {self.last_updated.strftime('%Y-%m-%d %H:%M') if self.last_updated else 'Never'}"
                 )
+
+    def add_backup_item_to_cart_item(self, entry_number: str, backup_upc: str, product_name: str = "", brand: str = "") -> bool:
+        """
+        Add a backup/fallback item to an existing cart item for substitution.
+        
+        This allows you to specify alternative products that can replace
+        the original item if it becomes unavailable.
+        
+        Parameters
+        ----------
+        entry_number : str
+            Entry number of the cart item to add backup to
+        backup_upc : str
+            UPC code of the backup/fallback item
+        product_name : str, optional
+            Name/description of the backup item
+        brand : str, optional
+            Brand of the backup item
+            
+        Returns
+        -------
+        bool
+            True if backup item was successfully added, False otherwise
+        """
+        try:
+            # Find the cart item by entry number
+            cart_item = None
+            for item in self._cart_items:
+                if item.entry_number == entry_number:
+                    cart_item = item
+                    break
+            
+            if not cart_item:
+                self.logger.warning(f"Cart item with entry number {entry_number} not found")
+                return False
+            
+            # Add the backup item to the cart item
+            success = cart_item.add_backup_item(backup_upc, product_name, brand)
+            
+            if success:
+                self.logger.info(f"Added backup item UPC {backup_upc} to cart item {entry_number}")
+                return True
+            else:
+                self.logger.warning(f"Failed to add backup item UPC {backup_upc} to cart item {entry_number}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error adding backup item to cart item: {e}")
+            return False
+
+    def get_cart_item_backups(self, entry_number: str) -> List[str]:
+        """
+        Get the list of backup/fallback items for a specific cart item.
+        
+        Parameters
+        ----------
+        entry_number : str
+            Entry number of the cart item
+            
+        Returns
+        -------
+        List[str]
+            List of UPCs for backup/fallback items, empty list if not found
+        """
+        for item in self._cart_items:
+            if item.entry_number == entry_number:
+                return item.get_backup_items()
+        return []
+
+    def remove_backup_item_from_cart_item(self, entry_number: str, backup_upc: str) -> bool:
+        """
+        Remove a backup/fallback item from a specific cart item.
+        
+        Parameters
+        ----------
+        entry_number : str
+            Entry number of the cart item
+        backup_upc : str
+            UPC code of the backup item to remove
+            
+        Returns
+        -------
+        bool
+            True if backup item was successfully removed, False otherwise
+        """
+        try:
+            # Find the cart item by entry number
+            cart_item = None
+            for item in self._cart_items:
+                if item.entry_number == entry_number:
+                    cart_item = item
+                    break
+            
+            if not cart_item:
+                self.logger.warning(f"Cart item with entry number {entry_number} not found")
+                return False
+            
+            # Remove the backup item from the cart item
+            success = cart_item.remove_backup_item(backup_upc)
+            
+            if success:
+                self.logger.info(f"Removed backup item UPC {backup_upc} from cart item {entry_number}")
+                return True
+            else:
+                self.logger.warning(f"Failed to remove backup item UPC {backup_upc} from cart item {entry_number}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error removing backup item from cart item: {e}")
+            return False
 
