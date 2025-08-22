@@ -6,7 +6,9 @@ This module uses Selenium WebDriver to perform authentication through an actual 
 bypassing Akamai protection and handling the complete authentication flow.
 """
 
+import imaplib
 import logging
+import re
 import time
 from typing import Any, Dict, Optional
 from urllib.parse import urlencode
@@ -523,14 +525,155 @@ class OktaSeleniumAuth:
             self._take_screenshot("verification_code_page")
             
             print("📧 Email verification page loaded successfully")
-            print("💡 Now waiting for email verification code...")
-            print("🔍 Browser will remain open for manual verification code entry")
+            print("💡 Now polling email for verification code...")
             
-            return True
+            # Poll email for verification code
+            verification_code = self._poll_email_for_code()
+            if verification_code:
+                print(f"✅ Verification code found: {verification_code}")
+                
+                # Enter the verification code
+                print("🔑 Entering verification code...")
+                code_field.clear()
+                code_field.send_keys(verification_code)
+                print("✅ Verification code entered")
+                
+                # Look for and click the submit/verify button
+                print("📡 Looking for submit/verify button...")
+                submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"], button:contains("Verify"), button:contains("Submit"), button:contains("Continue")')
+                print("✅ Submit button found - clicking to complete verification...")
+                submit_button.click()
+                
+                # Wait for verification to complete
+                print("⏳ Waiting for verification to complete...")
+                time.sleep(3)
+                
+                print(f"📄 After verification - URL: {self.driver.current_url}")
+                print(f"📄 Page title: {self.driver.title}")
+                
+                # Take screenshot of completion
+                self._take_screenshot("verification_completed")
+                
+                return True
+            else:
+                print("❌ No verification code found in email after timeout")
+                return False
             
         except Exception as e:
             print(f"❌ Error handling email verification: {e}")
             return False
+
+    def _poll_email_for_code(self) -> Optional[str]:
+        """Poll email for verification code with 5 minute timeout."""
+        try:
+            print("📧 Polling email for verification code...")
+            
+            # Read email configuration
+            email_config = self._read_email_config()
+            if not email_config:
+                print("❌ Failed to read email configuration")
+                return None
+            
+            print(f"📧 Connecting to IMAP server: {email_config['server']}:{email_config['port']}")
+            
+            # Connect to IMAP server
+            if email_config['use_ssl']:
+                mail = imaplib.IMAP4_SSL(email_config['server'], email_config['port'])
+            else:
+                mail = imaplib.IMAP4(email_config['server'], email_config['port'])
+            
+            # Login
+            mail.login(email_config['username'], email_config['password'])
+            print("✅ Connected to email server")
+            
+            # Select inbox
+            mail.select('INBOX')
+            
+            # Poll for verification code with 5 minute timeout
+            max_wait_time = 300  # 5 minutes
+            check_interval = 10   # Check every 10 seconds
+            elapsed_time = 0
+            
+            print(f"⏳ Polling email for verification code (timeout: {max_wait_time}s)...")
+            
+            while elapsed_time < max_wait_time:
+                print(f"   Checking email... (elapsed: {elapsed_time}s)")
+                
+                # Search for recent emails from Meijer
+                _, message_numbers = mail.search(None, '(FROM "meijer" SUBJECT "verification" SINCE "1 hour ago")')
+                
+                if message_numbers[0]:
+                    # Get the most recent email
+                    latest_email_num = message_numbers[0].split()[-1]
+                    _, msg_data = mail.fetch(latest_email_num, '(RFC822)')
+                    email_body = msg_data[0][1].decode('utf-8', errors='ignore')
+                    
+                    # Extract verification code using regex
+                    code_match = re.search(r'Code:\s*(\d{6})', email_body)
+                    if code_match:
+                        verification_code = code_match.group(1)
+                        print(f"✅ Found verification code: {verification_code}")
+                        mail.close()
+                        mail.logout()
+                        return verification_code
+                
+                # Wait before next check
+                time.sleep(check_interval)
+                elapsed_time += check_interval
+            
+            print("❌ Timeout waiting for verification code")
+            mail.close()
+            mail.logout()
+            return None
+            
+        except Exception as e:
+            print(f"❌ Error polling email: {e}")
+            return None
+
+    def _read_email_config(self) -> Optional[Dict[str, str]]:
+        """Read email configuration from ~/.config/meijer/email.txt."""
+        try:
+            import os
+            email_config_path = os.path.expanduser("~/.config/meijer/email.txt")
+            
+            if not os.path.exists(email_config_path):
+                print(f"❌ Email config file not found: {email_config_path}")
+                return None
+            
+            config = {}
+            with open(email_config_path, 'r') as f:
+                lines = f.readlines()
+                
+            # Parse configuration (simple key=value format)
+            for line in lines:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    config[key.strip()] = value.strip()
+            
+            # Validate required fields
+            required_fields = ['server', 'port', 'username', 'password']
+            for field in required_fields:
+                if field not in config:
+                    print(f"❌ Missing required email config field: {field}")
+                    return None
+            
+            # Convert port to int
+            try:
+                config['port'] = int(config['port'])
+            except ValueError:
+                print(f"❌ Invalid port number: {config['port']}")
+                return None
+            
+            # Set SSL flag
+            config['use_ssl'] = config.get('use_ssl', 'true').lower() == 'true'
+            
+            print(f"✅ Email configuration loaded: {config['username']}@{config['server']}:{config['port']}")
+            return config
+            
+        except Exception as e:
+            print(f"❌ Error reading email config: {e}")
+            return None
 
     def _handle_mfa_if_required(self) -> Optional[bool]:
         """Handle MFA if required during authentication."""

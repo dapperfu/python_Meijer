@@ -1595,7 +1595,16 @@ def cart_show():
             return
 
         logger.debug("Fetching cart contents")
-        cart_items = client.cart.get_items()
+        
+        # Refresh cart data to ensure we have the latest
+        try:
+            client.cart.refresh()
+            logger.debug("Cart refreshed successfully")
+        except Exception as e:
+            logger.warning(f"Could not refresh cart: {e}")
+            click.echo("⚠️ Could not refresh cart data, showing cached data if available")
+        
+        cart_items = client.cart.items
         logger.debug(f"Retrieved {len(cart_items)} cart items")
 
         if not cart_items:
@@ -1617,18 +1626,371 @@ def cart_show():
         table.add_column("Item", style="cyan", no_wrap=True)
         table.add_column("Qty", style="cyan", no_wrap=True)
         table.add_column("Price", style="cyan", no_wrap=True)
+        table.add_column("Total", style="cyan", no_wrap=True)
+        table.add_column("Status", style="cyan", no_wrap=True)
 
+        total_cost = 0.0
         for i, item in enumerate(cart_items, 1):
-            price = f"${item.price}" if hasattr(item, "price") and item.price else "N/A"
-            table.add_row(str(i), item.name, str(item.quantity), price)
+            # Get item details with proper fallbacks
+            item_name = getattr(item, 'name', 'Unknown Item')
+            item_qty = getattr(item, 'current_quantity', getattr(item, 'quantity', 1))
+            item_price = getattr(item, 'price', 0.0)
+            item_total = item_price * item_qty if item_price else 0.0
+            item_status = "✅" if getattr(item, 'available', True) else "❌"
+            
+            total_cost += item_total
+            
+            price_str = f"${item_price:.2f}" if item_price else "N/A"
+            total_str = f"${item_total:.2f}" if item_total else "N/A"
+            
+            table.add_row(str(i), item_name, str(item_qty), price_str, total_str, item_status)
 
         console.print(table)
+        
+        # Show cart summary
+        click.echo(f"\n💰 Cart Summary:")
+        click.echo(f"   Total Items: {client.cart.total_quantity}")
+        click.echo(f"   Unique Items: {client.cart.unique_item_count}")
+        click.echo(f"   Total Cost: ${total_cost:.2f}")
+        
+        if hasattr(client.cart, 'cart_id') and client.cart.cart_id:
+            click.echo(f"   Cart ID: {client.cart.cart_id}")
 
         logger.debug(f"Displayed {len(cart_items)} cart items")
 
     except Exception as e:
         logger.error(f"Failed to show cart: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to show cart: {e}")
+
+
+@cart_group.command("add")
+@click.argument("upc", required=True)
+@click.option("--quantity", "-q", default=1, help="Quantity to add (default: 1)")
+@click.option("--store", "-s", default="217", help="Store ID (default: 217)")
+def cart_add(upc: str, quantity: int, store: str):
+    """Add an item to the cart by UPC code."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Cart add command called: UPC={upc}, qty={quantity}, store={store}")
+
+    try:
+        client = get_meijer_client()
+
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+
+        # Set store ID if different from default
+        if store != client.cart.store_id:
+            client.cart.store_id = store
+            logger.debug(f"Store ID set to {store}")
+
+        logger.debug(f"Adding item with UPC {upc}, quantity {quantity}")
+        
+        # Try to add the item
+        success = client.cart.add_item_by_upc(upc, quantity)
+        
+        if success:
+            click.echo(f"✅ Successfully added {quantity}x item with UPC {upc} to cart")
+            
+            # Refresh and show updated cart
+            try:
+                client.cart.refresh()
+                click.echo(f"🛒 Cart now contains {client.cart.total_quantity} items")
+            except Exception as e:
+                logger.warning(f"Could not refresh cart after adding item: {e}")
+        else:
+            click.echo(f"❌ Failed to add item with UPC {upc} to cart")
+            click.echo("💡 Check if the UPC is valid and the item is available")
+
+    except Exception as e:
+        logger.error(f"Failed to add item to cart: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to add item to cart: {e}")
+
+
+@cart_group.command("remove")
+@click.argument("item_index", type=int, required=True)
+@click.option("--quantity", "-q", help="Quantity to remove (default: remove all)")
+def cart_remove(item_index: int, quantity: Optional[int]):
+    """Remove an item from the cart by index number."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Cart remove command called: index={item_index}, qty={quantity}")
+
+    try:
+        client = get_meijer_client()
+
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+
+        cart_items = client.cart.items
+        
+        if not cart_items:
+            click.echo("🛒 Your shopping cart is empty!")
+            return
+
+        if item_index < 1 or item_index > len(cart_items):
+            click.echo(f"❌ Invalid item index {item_index}. Cart has {len(cart_items)} items.")
+            return
+
+        item = cart_items[item_index - 1]
+        item_name = getattr(item, 'name', f'Item #{item_index}')
+        current_qty = getattr(item, 'current_quantity', getattr(item, 'quantity', 1))
+        
+        # Get the entry number for the item
+        entry_number = getattr(item, 'entry_number', None)
+        if not entry_number:
+            click.echo(f"❌ Cannot remove {item_name} - no entry number available")
+            return
+
+        if quantity is None:
+            # Remove all of this item
+            click.echo(f"🗑️ Removing all {current_qty}x {item_name} from cart")
+            success = client.cart.remove_item(entry_number)
+            if success:
+                click.echo(f"✅ Successfully removed {item_name} from cart")
+                # Refresh cart to show updated state
+                try:
+                    client.cart.refresh()
+                except Exception as e:
+                    logger.warning(f"Could not refresh cart after removing item: {e}")
+            else:
+                click.echo(f"❌ Failed to remove {item_name} from cart")
+        else:
+            if quantity > current_qty:
+                click.echo(f"❌ Cannot remove {quantity}x {item_name} - only {current_qty} in cart")
+                return
+            if quantity == current_qty:
+                # Remove all of this item
+                click.echo(f"🗑️ Removing all {current_qty}x {item_name} from cart")
+                success = client.cart.remove_item(entry_number)
+            else:
+                # Update quantity to remaining amount
+                new_qty = current_qty - quantity
+                click.echo(f"🗑️ Removing {quantity}x {item_name} from cart (keeping {new_qty})")
+                success = client.cart.update_item_quantity(entry_number, new_qty)
+            
+            if success:
+                click.echo(f"✅ Successfully updated cart")
+                # Refresh cart to show updated state
+                try:
+                    client.cart.refresh()
+                except Exception as e:
+                    logger.warning(f"Could not refresh cart after updating item: {e}")
+            else:
+                click.echo(f"❌ Failed to update cart")
+
+    except Exception as e:
+        logger.error(f"Failed to remove item from cart: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to remove item from cart: {e}")
+
+
+@cart_group.command("clear")
+@click.option("--confirm", "-y", is_flag=True, help="Skip confirmation prompt")
+def cart_clear(confirm: bool):
+    """Clear all items from the shopping cart."""
+    logger = logging.getLogger(__name__)
+    logger.debug("Cart clear command called")
+
+    try:
+        client = get_meijer_client()
+
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+
+        cart_items = client.cart.items
+        
+        if not cart_items:
+            click.echo("🛒 Your shopping cart is already empty!")
+            return
+
+        if not confirm:
+            click.echo(f"⚠️ This will remove {len(cart_items)} items from your cart.")
+            if not click.confirm("Are you sure you want to continue?"):
+                click.echo("❌ Operation cancelled")
+                return
+
+        click.echo(f"🗑️ Clearing {len(cart_items)} items from cart...")
+        
+        # Clear cart by removing items one by one
+        removed_count = 0
+        failed_count = 0
+        
+        for item in cart_items:
+            entry_number = getattr(item, 'entry_number', None)
+            if entry_number:
+                if client.cart.remove_item(entry_number):
+                    removed_count += 1
+                else:
+                    failed_count += 1
+            else:
+                failed_count += 1
+        
+        if failed_count == 0:
+            click.echo(f"✅ Successfully cleared all {removed_count} items from cart")
+        else:
+            click.echo(f"⚠️ Cleared {removed_count} items, {failed_count} failed to remove")
+        
+        # Refresh cart to show updated state
+        try:
+            client.cart.refresh()
+        except Exception as e:
+            logger.warning(f"Could not refresh cart after clearing: {e}")
+
+    except Exception as e:
+        logger.error(f"Failed to clear cart: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to clear cart: {e}")
+
+
+@cart_group.command("info")
+def cart_info():
+    """Show detailed cart information and statistics."""
+    logger = logging.getLogger(__name__)
+    logger.debug("Cart info command called")
+
+    try:
+        client = get_meijer_client()
+
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+
+        # Refresh cart data
+        try:
+            client.cart.refresh()
+            logger.debug("Cart refreshed successfully")
+        except Exception as e:
+            logger.warning(f"Could not refresh cart: {e}")
+            click.echo("⚠️ Could not refresh cart data, showing cached data if available")
+
+        cart_items = client.cart.items
+        
+        click.echo("🛒 Cart Information")
+        click.echo("=" * 50)
+        
+        if not cart_items:
+            click.echo("Your shopping cart is empty!")
+            return
+
+        # Basic stats
+        click.echo(f"📊 Cart Statistics:")
+        click.echo(f"   Total Items: {client.cart.total_quantity}")
+        click.echo(f"   Unique Items: {client.cart.unique_item_count}")
+        click.echo(f"   Cart ID: {client.cart.cart_id or 'Not available'}")
+        click.echo(f"   Store ID: {client.cart.store_id}")
+        
+        # Item categories
+        if hasattr(client.cart, 'alcohol_items') and client.cart.alcohol_items:
+            click.echo(f"   🍷 Alcohol Items: {len(client.cart.alcohol_items)}")
+        if hasattr(client.cart, 'tobacco_items') and client.cart.tobacco_items:
+            click.echo(f"   🚬 Tobacco Items: {len(client.cart.tobacco_items)}")
+        if hasattr(client.cart, 'fragile_items') and client.cart.fragile_items:
+            click.echo(f"   🥚 Fragile Items: {len(client.cart.fragile_items)}")
+        if hasattr(client.cart, 'heavy_items') and client.cart.heavy_items:
+            click.echo(f"   🏋️ Heavy Items: {len(client.cart.heavy_items)}")
+        
+        # Availability status
+        available_count = len([item for item in cart_items if getattr(item, 'available', True)])
+        unavailable_count = len(cart_items) - available_count
+        
+        click.echo(f"\n📋 Item Status:")
+        click.echo(f"   ✅ Available: {available_count}")
+        click.echo(f"   ❌ Unavailable: {unavailable_count}")
+        
+        # Price breakdown
+        total_cost = 0.0
+        for item in cart_items:
+            item_price = getattr(item, 'price', 0.0)
+            item_qty = getattr(item, 'current_quantity', getattr(item, 'quantity', 1))
+            total_cost += item_price * item_qty
+        
+        click.echo(f"\n💰 Price Summary:")
+        click.echo(f"   Total Cost: ${total_cost:.2f}")
+        if cart_items:
+            avg_price = total_cost / client.cart.total_quantity
+            click.echo(f"   Average Price per Item: ${avg_price:.2f}")
+
+    except Exception as e:
+        logger.error(f"Failed to show cart info: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to show cart info: {e}")
+
+
+@cart_group.command("slots")
+@click.option("--date", "-d", help="Preferred date (YYYY-MM-DD format)")
+@click.option("--delivery", is_flag=True, help="Show delivery slots instead of pickup")
+def cart_slots(date: Optional[str], delivery: bool):
+    """Show available pickup or delivery time slots."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Cart slots command called: date={date}, delivery={delivery}")
+
+    try:
+        client = get_meijer_client()
+
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+
+        # Parse date if provided
+        target_date = None
+        if date:
+            try:
+                from datetime import datetime
+                target_date = datetime.strptime(date, "%Y-%m-%d")
+                logger.debug(f"Parsed target date: {target_date}")
+            except ValueError:
+                click.echo("❌ Invalid date format. Use YYYY-MM-DD (e.g., 2025-08-22)")
+                return
+
+        click.echo(f"🕐 Available {'Delivery' if delivery else 'Pickup'} Slots")
+        click.echo("=" * 50)
+
+        try:
+            if delivery:
+                slots = client.cart.get_delivery_slots(target_date)
+            else:
+                slots = client.cart.get_pickup_slots(target_date)
+            
+            if not slots:
+                click.echo("❌ No available slots found")
+                return
+
+            from rich.console import Console
+            from rich.table import Table
+
+            console = Console()
+            table = Table(
+                title=f"Available {'Delivery' if delivery else 'Pickup'} Slots",
+                show_header=True,
+                header_style="bold cyan",
+            )
+
+            table.add_column("Time", style="cyan", no_wrap=True)
+            table.add_column("Duration", style="cyan", no_wrap=True)
+            table.add_column("Availability", style="cyan", no_wrap=True)
+            table.add_column("Peak Time", style="cyan", no_wrap=True)
+
+            for slot in slots:
+                time_str = f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
+                duration = f"{slot.duration_minutes} min"
+                availability = f"{slot.availability_percentage:.0f}%" if hasattr(slot, 'availability_percentage') else "N/A"
+                peak_indicator = "🕐" if slot.peak_time else ""
+
+                table.add_row(time_str, duration, availability, peak_indicator)
+
+            console.print(table)
+
+        except Exception as e:
+            logger.warning(f"Could not retrieve slots: {e}")
+            click.echo(f"⚠️ Could not retrieve available slots: {e}")
+
+    except Exception as e:
+        logger.error(f"Failed to show cart slots: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to show cart slots: {e}")
 
 
 # Settings Commands
