@@ -1132,9 +1132,11 @@ class OktaSeleniumAuth:
         try:
             if self.driver:
                 print("🧹 Cleaning up browser...")
-                # Don't close browser when debugging - let human close it
+                # NEVER close browser when debugging - let human close it
                 if hasattr(self, '_keep_open') and self._keep_open:
                     print("🔍 Keeping browser open for debugging - not calling driver.quit()")
+                    print("🔒 Browser will remain open until you manually close it")
+                    return  # Exit without doing anything
                 else:
                     self.driver.quit()
                     self.driver = None
