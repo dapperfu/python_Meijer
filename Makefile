@@ -8,8 +8,9 @@ help:
 	@echo "=========================================="
 	@echo ""
 	@echo "📱 Traffic Capture:"
-	@echo "  make log          - Start mitmweb to capture Meijer app traffic"
+	@echo "  make log          - Start mitmweb with automatic log rotation (every 30 min)"
 	@echo "  make logs         - Show available log files"
+	@echo "  make rotate-logs  - Manually rotate current log file"
 	@echo ""
 	@echo "🔑 Authentication:"
 	@echo "  make auth         - Extract tokens from most recent log file"
@@ -39,10 +40,11 @@ help:
 	@echo "  make completion-test    - Test completion functionality"
 	@echo ""
 	@echo "💡 Workflow:"
-	@echo "  1. make log       - Start capturing traffic"
+	@echo "  1. make log       - Start capturing traffic (auto-rotates every 30 min)"
 	@echo "  2. Use Meijer app - Generate traffic to capture"
-	@echo "  3. Ctrl+C         - Stop mitmweb"
+	@echo "  3. Ctrl+C         - Stop mitmweb and rotation daemon"
 	@echo "  4. make auth      - Extract authentication tokens"
+	@echo "  💡 Logs automatically rotate to prevent large file sizes"
 	@echo ""
 	@echo "📚 For more info, see README.md"
 
@@ -68,16 +70,22 @@ demos: ${VENV}
 
 .PHONY: log
 log:
-	@echo "🚀 Starting mitmweb with multiple listeners..."
+	@echo "🚀 Starting mitmweb with multiple listeners and automatic log rotation..."
 	@echo "📱 Use the Meijer app while this is running"
 	@echo "🌐 Web interface available at http://localhost:8081"
 	@echo "🔌 SOCKS5 proxy available on 0.0.0.0:1080"
 	@echo "🌍 HTTP proxy available on 0.0.0.0:8080"
 	@echo "⏹️  Press Ctrl+C when done"
 	@echo "🔑 After stopping, run 'make auth' to extract authentication tokens"
+	@echo "🔄 Logs will automatically rotate every 30 minutes"
 	@echo ""
 	@LOG_FILE="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
 	echo "📝 Log file: $$LOG_FILE" && \
+	echo "🔄 Starting log rotation daemon (every 30 minutes)..." && \
+	(while true; do sleep 1800; if [ -f "$$LOG_FILE" ]; then ROTATED_LOG="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log"; echo "🔄 Rotating log from $$LOG_FILE to $$ROTATED_LOG"; mv "$$LOG_FILE" "$$ROTATED_LOG"; echo "📝 New log file: $$LOG_FILE"; fi; done) & \
+	ROTATION_PID=$$! && \
+	echo "🔄 Log rotation daemon started (PID: $$ROTATION_PID)" && \
+	echo "💡 To stop rotation: kill $$ROTATION_PID" && \
 	mitmweb \
 		--mode wireguard \
 		--mode regular@0.0.0.0:8080 \
@@ -86,7 +94,10 @@ log:
 		--web-host 0.0.0.0 \
 		-w "$$LOG_FILE" \
 		-s scripts/shop_n_scan_faker.py \
-		--set block_global=false
+		--set block_global=false; \
+	echo "🔄 Stopping log rotation daemon..." && \
+	kill $$ROTATION_PID 2>/dev/null || true && \
+	echo "✅ Log rotation daemon stopped"
 
 .PHONY: logs
 logs:
@@ -95,6 +106,20 @@ logs:
 	@echo ""
 	@echo "💡 Use 'make auth' to extract tokens from the most recent log file"
 	@echo "💡 Or specify a specific file: 'make auth FILE=meijer_mitm_20250117_191500.log'"
+
+.PHONY: rotate-logs
+rotate-logs:
+	@echo "🔄 Manually rotating current log file..."
+	@CURRENT_LOG=$$(ls -t meijer_mitm_*.log 2>/dev/null | head -1) && \
+	if [ -n "$$CURRENT_LOG" ]; then \
+		ROTATED_LOG="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
+		echo "📝 Rotating $$CURRENT_LOG to $$ROTATED_LOG" && \
+		mv "$$CURRENT_LOG" "$$ROTATED_LOG" && \
+		echo "✅ Log rotated successfully" && \
+		echo "📁 New current log: $$ROTATED_LOG"; \
+	else \
+		echo "❌ No log files found to rotate"; \
+	fi
 
 .PHONY: auth
 auth:
