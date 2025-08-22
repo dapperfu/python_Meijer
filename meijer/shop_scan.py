@@ -22,6 +22,12 @@ class ShopNScan:
     def __init__(self, meijer_client: "Meijer"):
         self.meijer = meijer_client
         self.logger = self.meijer.logger
+        
+        # Session management state
+        self._session_active = False
+        self._current_transaction_id = None
+        self._current_store_id = None
+        self._session_start_time = None
 
         # Enhanced endpoints from APK analysis and mitmproxy logs
         self.endpoints = {
@@ -52,6 +58,135 @@ class ShopNScan:
             "scan_sequence": ["single", "double", "multiple"]  # Scan patterns
         }
 
+    @staticmethod
+    def _require_session(func):
+        """
+        Decorator to ensure a Shop & Scan session is active before calling a method.
+        
+        Automatically starts a session if one isn't already active.
+        """
+        def wrapper(self, *args, **kwargs):
+            # Extract store_id from args or kwargs
+            store_id = None
+            
+            # For methods that take store_id as a keyword argument
+            if 'store_id' in kwargs:
+                store_id = str(kwargs['store_id']) if kwargs['store_id'] else None
+            # Try to extract from method signature based on function name
+            elif hasattr(func, '__name__'):
+                func_name = func.__name__
+                
+                if func_name == 'add_to_cart' and len(args) >= 3:
+                    # add_to_cart(barcode, quantity, store_id)
+                    store_id = str(args[2]) if args[2] else None
+                elif func_name == 'remove_from_cart' and len(args) >= 2:
+                    # remove_from_cart(barcode, store_id)
+                    store_id = str(args[1]) if args[1] else None
+                elif func_name in ['get_cart', 'clear_cart', 'get_cart_detailed', 'lookup_barcode_price'] and len(args) >= 1:
+                    # These methods take store_id as first positional argument
+                    if func_name == 'lookup_barcode_price' and len(args) >= 2:
+                        # lookup_barcode_price(barcode, store_id)
+                        store_id = str(args[1]) if args[1] else None
+                    elif func_name in ['get_cart', 'clear_cart', 'get_cart_detailed'] and len(args) >= 1:
+                        # get_cart(store_id), clear_cart(store_id), get_cart_detailed(store_id)
+                        store_id = str(args[0]) if args[0] else None
+            
+            # If no store_id found, try to get it from the last successful session
+            if not store_id and self._current_store_id:
+                store_id = self._current_store_id
+                self.logger.debug(f"Using cached store_id: {store_id}")
+            
+            # Ensure we have a store_id
+            if not store_id:
+                self.logger.error(f"No store_id provided for {func.__name__ if hasattr(func, '__name__') else 'method'} and no cached store_id available")
+                return None
+            
+            # Check if session is active and for the same store
+            if not self._session_active or self._current_store_id != store_id:
+                self.logger.debug(f"Starting new Shop & Scan session for store {store_id}")
+                if not self._ensure_session(store_id):
+                    self.logger.error(f"Failed to start Shop & Scan session for store {store_id}")
+                    return None
+            
+            # Call the original method
+            return func(self, *args, **kwargs)
+        
+        return wrapper
+
+    def _ensure_session(self, store_id: str) -> bool:
+        """
+        Ensure a Shop & Scan session is active for the given store.
+        
+        Args:
+            store_id: Store ID for the session
+            
+        Returns:
+            True if session is active, False otherwise
+        """
+        try:
+            # If we already have an active session for this store, return True
+            if self._session_active and self._current_store_id == store_id:
+                return True
+            
+            # Start a new session
+            session_result = self.start_shop_n_scan_session(store_id)
+            
+            if session_result.get("success"):
+                self._session_active = True
+                self._current_transaction_id = session_result.get("transaction_id")
+                self._current_store_id = store_id
+                self._session_start_time = self._get_current_datetime()
+                self.logger.debug(f"Shop & Scan session started for store {store_id}")
+                return True
+            else:
+                self.logger.error(f"Failed to start Shop & Scan session: {session_result.get('error', 'Unknown error')}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error ensuring Shop & Scan session: {e}")
+            return False
+
+    def is_session_active(self) -> bool:
+        """Check if a Shop & Scan session is currently active."""
+        return self._session_active
+
+    def get_current_session_info(self) -> Dict[str, Any]:
+        """Get information about the current session."""
+        return {
+            "active": self._session_active,
+            "transaction_id": self._current_transaction_id,
+            "store_id": self._current_store_id,
+            "start_time": self._session_start_time
+        }
+
+    def end_session(self) -> bool:
+        """
+        End the current Shop & Scan session.
+        
+        Returns:
+            True if session was ended successfully, False otherwise
+        """
+        try:
+            if not self._session_active:
+                return True  # No active session to end
+            
+            # Clear the cart
+            if self._current_store_id:
+                self.clear_cart(self._current_store_id)
+            
+            # Reset session state
+            self._session_active = False
+            self._current_transaction_id = None
+            self._current_store_id = None
+            self._session_start_time = None
+            
+            self.logger.debug("Shop & Scan session ended")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error ending Shop & Scan session: {e}")
+            return False
+
     def set_local_base_url(self, base_url: str):
         """
         Set the base URL for local development/testing.
@@ -77,6 +212,7 @@ class ShopNScan:
         # For now, just log that this method was called
         self.logger.info("Reset Shop & Scan endpoints to default (requires re-initialization)")
 
+    @_require_session
     def lookup_barcode_price(
         self, barcode: str, store_id: Optional[str] = None
     ) -> Optional[MeijerItem]:
@@ -366,6 +502,7 @@ class ShopNScan:
             results[barcode] = self.lookup_barcode_price(barcode, store_id)
         return results
 
+    @_require_session
     def add_to_cart(
         self, barcode: str, quantity: int = 1, store_id: Optional[str] = None
     ) -> bool:
@@ -396,6 +533,7 @@ class ShopNScan:
             self.logger.error(f"Error adding to cart: {e}")
             return False
 
+    @_require_session
     def remove_from_cart(self, barcode: str, store_id: Optional[str] = None) -> bool:
         """
         Remove a product from the Shop & Scan cart.
@@ -423,6 +561,7 @@ class ShopNScan:
             self.logger.error(f"Error removing from cart: {e}")
             return False
 
+    @_require_session
     def get_cart(self, store_id: Optional[str] = None) -> List[MeijerItem]:
         """
         Get the current Shop & Scan cart contents.
@@ -467,6 +606,7 @@ class ShopNScan:
             self.logger.error(f"Error getting cart: {e}")
             return []
 
+    @_require_session
     def clear_cart(self, store_id: Optional[str] = None) -> bool:
         """
         Clear the Shop & Scan cart.
@@ -802,6 +942,7 @@ class ShopNScan:
             results["error"] = str(e)
             return results
 
+    @_require_session
     def get_cart_detailed(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Get detailed cart information including totals and pricing.
