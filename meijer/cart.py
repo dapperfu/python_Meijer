@@ -294,6 +294,10 @@ class CartItem:
     backup_items: List[str] = field(default_factory=list)
     """List of UPCs for backup/fallback items when this item is unavailable"""
 
+    # Internal backup items storage
+    _backup_items: List[str] = field(default_factory=list, repr=False, compare=False)
+    """Internal storage for backup/fallback item UPCs"""
+
     # Internal API reference for operations
     _cart_api: Optional[Any] = field(default=None, repr=False, compare=False)
 
@@ -406,7 +410,7 @@ class CartItem:
     @property
     def is_backup(self) -> bool:
         """Check if this item is marked as a backup item."""
-        return self.backup_items and self.current_quantity >= 30
+        return len(self.backup_items) > 0
 
     @property
     def backup_quantity(self) -> bool:
@@ -416,12 +420,30 @@ class CartItem:
     @property
     def is_substitutable(self) -> bool:
         """Check if this item can be substituted with backup items."""
-        return self.substitutable and self.has_backup_items()
+        return self.substitutable and self.has_backup
 
     @property
     def backup_item_count(self) -> int:
         """Get the number of backup/fallback items configured."""
         return len(self.backup_items)
+
+    @property
+    def has_backup(self) -> bool:
+        """Check if this item has backup/fallback items configured."""
+        return len(self.backup_items) > 0
+
+    @property
+    def backup_items(self) -> List[str]:
+        """Get the list of backup/fallback item UPCs."""
+        return self._backup_items.copy()
+
+    @backup_items.setter
+    def backup_items(self, value: List[str]) -> None:
+        """Set the list of backup/fallback item UPCs."""
+        if isinstance(value, list):
+            self._backup_items = value.copy()
+        else:
+            raise ValueError("backup_items must be a list")
 
     @property
     def requires_special_handling(self) -> bool:
@@ -578,11 +600,11 @@ class CartItem:
         bool
             True if backup item was successfully added, False otherwise
         """
-        if not upc or upc in self.backup_items:
+        if not upc or upc in self._backup_items:
             return False
         
         # Add the UPC to backup items list
-        self.backup_items.append(upc)
+        self._backup_items.append(upc)
         
         # Log the backup item addition
         if self._cart_api and hasattr(self._cart_api, 'logger'):
@@ -604,32 +626,14 @@ class CartItem:
         bool
             True if backup item was successfully removed, False otherwise
         """
-        if upc in self.backup_items:
-            self.backup_items.remove(upc)
+        if upc in self._backup_items:
+            self._backup_items.remove(upc)
             return True
         return False
 
-    def get_backup_items(self) -> List[str]:
-        """
-        Get the list of backup/fallback item UPCs.
-        
-        Returns
-        -------
-        List[str]
-            List of UPCs for backup/fallback items
-        """
-        return self.backup_items.copy()
 
-    def has_backup_items(self) -> bool:
-        """
-        Check if this item has backup/fallback items configured.
-        
-        Returns
-        -------
-        bool
-            True if backup items are configured, False otherwise
-        """
-        return len(self.backup_items) > 0
+
+
 
     def remove_from_cart(self) -> bool:
         """Remove this item from the cart."""
@@ -1129,7 +1133,7 @@ class MeijerCart:
     @property
     def items_with_backups(self) -> List[CartItem]:
         """Get cart items that have backup/fallback items configured."""
-        return [item for item in self._cart_items if item.has_backup_items()]
+        return [item for item in self._cart_items if item.has_backup]
 
     @property
     def has_items_with_backups(self) -> bool:

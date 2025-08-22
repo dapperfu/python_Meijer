@@ -53,7 +53,7 @@ def demo_backup_fallback_cart():
             print(f"  Product Code: {original_item.product_code}")
             print(f"  Product Name: {original_item.product_name or 'Unknown'}")
             print(f"  Quantity: {original_item.current_quantity}")
-            print(f"  Has backup items: {original_item.has_backup_items()}")
+            print(f"  Has backup items: {original_item.has_backup}")
             print(f"  Backup item count: {original_item.backup_item_count}")
         
         # Add backup/fallback item
@@ -91,14 +91,14 @@ def demo_backup_fallback_cart():
                 print(f"    Entry Number: {item.entry_number}")
                 print(f"    Quantity: {item.current_quantity}")
                 print(f"    Backup items: {item.backup_item_count}")
-                print(f"    Backup UPCs: {', '.join(item.get_backup_items())}")
+                print(f"    Backup UPCs: {', '.join(item.backup_items)}")
         
         # Show all items
         if cart.has_items:
             print(f"\n🛍️ All Items in Cart:")
             print("-" * 30)
             for item in cart.items:
-                backup_indicator = f" [Has {item.backup_item_count} backups]" if item.has_backup_items() else ""
+                backup_indicator = f" [Has {item.backup_item_count} backups]" if item.has_backup else ""
                 print(f"  • {item.product_name or f'UPC {item.product_code}'}{backup_indicator}")
                 print(f"    Entry Number: {item.entry_number}")
                 print(f"    Quantity: {item.current_quantity}")
@@ -175,7 +175,7 @@ def demo_backup_workflow():
             for item in cart.items_with_backups:
                 print(f"  • {item.product_name or f'UPC {item.product_code}'}")
                 print(f"    Entry Number: {item.entry_number}")
-                print(f"    Backup UPCs: {', '.join(item.get_backup_items())}")
+                print(f"    Backup UPCs: {', '.join(item.backup_items)}")
         
     except Exception as e:
         print(f"❌ Error during workflow demo: {e}")
