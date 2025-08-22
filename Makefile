@@ -1,13 +1,7 @@
-# Meijer API Client - Main Makefile
-# This Makefile includes modular sub-makefiles for different functionality areas
 
-# Configuration
+# Python Bits
 VENV?=venv
 
-# Include all sub-makefiles
-include .makefile/*.mk
-
-# Default target
 .PHONY: help
 help:
 	@echo "🚀 Meijer API Client - Available Commands"
@@ -19,13 +13,11 @@ help:
 	@echo ""
 	@echo "🔑 Authentication:"
 	@echo "  make auth         - Extract tokens from most recent log file"
+	@echo "  make auth FILE=logfile.log - Extract from specific log file"
 	@echo ""
 	@echo "🛠️  Development:"
 	@echo "  make venv         - Create/update virtual environment"
 	@echo "  make notebook     - Start Jupyter notebook"
-	@echo "  make notebooks-gen - Generate all notebooks from Python generators"
-	@echo "  make notebooks-execute - Execute all notebooks in-place"
-	@echo "  make notebooks-gen-execute - Generate and execute all notebooks"
 	@echo "  make demos        - Run all demo scripts in demos/ directory"
 	@echo "  make clean        - Clean build artifacts"
 	@echo ""
@@ -53,3 +45,211 @@ help:
 	@echo "  4. make auth      - Extract authentication tokens"
 	@echo ""
 	@echo "📚 For more info, see README.md"
+
+.PHONY: venv
+venv: ${VENV}
+
+${VENV}:
+	@python3 -mvenv ${@}
+	@${VENV}/bin/pip install --upgrade pip setuptools wheel
+	@${VENV}/bin/pip install --upgrade --requirement requirements.txt
+
+.PHONY: notebook
+notebook:
+	@${VENV}/bin/jupyter-notebook
+
+.PHONY: demos
+demos: ${VENV}
+	@echo "🚀 Running all demos in demos/ directory..."
+	@echo "=============================================="
+	@echo "💡 This will execute all Python demo scripts and report any errors or warnings"
+	@echo ""
+	@./demos/run_all_demos.sh
+
+.PHONY: log
+log:
+	@echo "🚀 Starting mitmweb with multiple listeners..."
+	@echo "📱 Use the Meijer app while this is running"
+	@echo "🌐 Web interface available at http://localhost:8081"
+	@echo "🔌 SOCKS5 proxy available on 0.0.0.0:1080"
+	@echo "🌍 HTTP proxy available on 0.0.0.0:8080"
+	@echo "⏹️  Press Ctrl+C when done"
+	@echo "🔑 After stopping, run 'make auth' to extract authentication tokens"
+	@echo ""
+	@LOG_FILE="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
+	echo "📝 Log file: $$LOG_FILE" && \
+	mitmweb \
+		--mode wireguard \
+		--mode regular@0.0.0.0:8080 \
+		--mode socks5@0.0.0.0:1080 \
+		--web-port 8081 \
+		--web-host 0.0.0.0 \
+		-w "$$LOG_FILE" \
+		-s shop_n_scan_faker.py \
+		--set block_global=false
+
+.PHONY: logs
+logs:
+	@echo "📁 Available log files:"
+	@ls -la meijer_mitm_*.log 2>/dev/null | head -10 || echo "❌ No log files found"
+	@echo ""
+	@echo "💡 Use 'make auth' to extract tokens from the most recent log file"
+	@echo "💡 Or specify a specific file: 'make auth FILE=meijer_mitm_20250117_191500.log'"
+
+.PHONY: auth
+auth:
+	@if [ -n "$(FILE)" ]; then \
+		LOG_FILE="$(FILE)"; \
+		echo "📋 Using specified log file: $$LOG_FILE"; \
+	else \
+		echo "🔍 Finding most recent log file..."; \
+		LATEST_LOG=$$(ls -t meijer_mitm_*.log 2>/dev/null | head -1); \
+		if [ -n "$$LATEST_LOG" ]; then \
+			LOG_FILE="$$LATEST_LOG"; \
+			echo "📋 Using most recent log: $$LOG_FILE"; \
+		else \
+			echo "❌ No log files found. Run 'make log' first to capture traffic."; \
+			exit 1; \
+		fi; \
+	fi; \
+	echo "🔄 Extracting authentication tokens from $$LOG_FILE..."; \
+	venv/bin/python -m meijer.cli auth --log-file "$$LOG_FILE" && \
+	echo "✅ Authentication updated successfully from $$LOG_FILE"
+
+.PHONY: clean
+clean:
+	@echo "🧹 Cleaning up build artifacts..."
+	@rm -rf build/
+	@rm -rf dist/
+	@rm -rf *.egg-info/
+	@rm -rf __pycache__/
+	@rm -rf .pytest_cache/
+	@rm -rf htmlcov/
+	@rm -rf .coverage
+	@echo "✅ Build artifacts cleaned up"
+
+.PHONY: ruff-format
+ruff-format:
+	@echo "🎨 Formatting Python code with ruff..."
+	@${VENV}/bin/ruff format meijer/ tools/ *.py
+	@echo "✅ Code formatting completed"
+
+.PHONY: ruff-check
+ruff-check:
+	@echo "🔍 Checking Python code with ruff..."
+	@${VENV}/bin/ruff check meijer/ tools/ *.py
+	@echo "✅ Code checking completed"
+
+.PHONY: ruff-lint
+ruff-lint:
+	@echo "🧹 Linting Python code with ruff..."
+	@${VENV}/bin/ruff check --fix meijer/ tools/ *.py
+	@echo "✅ Code linting completed"
+
+.PHONY: ruff-all
+ruff-all: ruff-format ruff-check ruff-lint
+	@echo "🚀 All ruff operations completed!"
+
+# Documentation targets
+.PHONY: docs
+docs:
+	@echo "📚 Generating documentation with pdoc..."
+	@${VENV}/bin/pdoc -o docs meijer/
+	@echo "✅ Documentation generated in docs/ directory"
+
+.PHONY: docs-serve
+docs-serve:
+	@echo "🌐 Serving documentation locally..."
+	@echo "📖 Open http://localhost:9999 in your browser"
+	@echo "⏹️  Press Ctrl+C to stop"
+	@${VENV}/bin/pdoc -p 9999 meijer/
+
+.PHONY: docs-deploy
+docs-deploy:
+	@echo "🚀 Deploying documentation to GitHub Pages..."
+	@./scripts/deploy_docs.sh
+
+.PHONY: docs-validate
+docs-validate:
+	@echo "🔍 Validating documentation standards..."
+	@${VENV}/bin/python tools/doc_validator.py --verbose
+
+# Bash Completion Support
+.PHONY: completion
+completion:
+	@echo "🔧 Installing bash completion for make targets..."
+	@echo ""
+	@echo "📝 Add this to your ~/.bashrc or ~/.bash_profile:"
+	@echo "  source <(make completion-bash)"
+	@echo ""
+	@echo "💡 Or run this command to install it:"
+	@echo "  make completion-install"
+
+.PHONY: completion-bash
+completion-bash:
+	@echo "# Meijer API Client Makefile Bash Completion"
+	@echo "# Generated by 'make completion-bash'"
+	@echo ""
+	@echo "_meijer_make_completion() {"
+	@echo "    local cur prev opts"
+	@echo "    COMPREPLY=()"
+	@echo "    cur=\"\$${COMP_WORDS[COMP_CWORD]}\""
+	@echo "    prev=\"\$${COMP_WORDS[COMP_CWORD-1]}\""
+	@echo ""
+	@echo "    # Main make targets"
+	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
+	@echo "        opts=\"help venv notebook demos log logs auth clean completion completion-bash completion-install\""
+	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
+	@echo "        return 0"
+	@echo "    fi"
+	@echo ""
+	@echo "    # Handle FILE= parameter for auth target"
+	@echo "    if [ \"\$$prev\" = \"auth\" ] || [ \"\$$prev\" = \"FILE=\" ]; then"
+	@echo "        # Complete log files"
+	@echo "        local log_files=\$$(ls meijer_mitm_*.log 2>/dev/null | sed 's/^/FILE=/' 2>/dev/null || echo \"\")"
+	@echo "        if [ -n \"\$$log_files\" ]; then"
+	@echo "            COMPREPLY=( \$$(compgen -W \"\$$log_files\" -- \$$cur) )"
+	@echo "        fi"
+	@echo "        return 0"
+	@echo "    fi"
+	@echo ""
+	@echo "    # Handle VENV= parameter for venv target"
+	@echo "    if [ \"\$$prev\" = \"venv\" ] || [ \"\$$prev\" = \"VENV=\" ]; then"
+	@echo "        COMPREPLY=( \$$(compgen -W \"venv venv2 venv3\" -- \$$cur) )"
+	@echo "        return 0"
+	@echo "    fi"
+	@echo "}"
+	@echo ""
+	@echo "complete -F _meijer_make_completion make"
+
+.PHONY: completion-install
+completion-install:
+	@echo "🔧 Installing bash completion for Meijer API Client..."
+	@if [ -f ~/.bashrc ]; then \
+		echo "" >> ~/.bashrc; \
+		echo "# Meijer API Client bash completion" >> ~/.bashrc; \
+		echo "source <(cd /projects/python_Meijer && make completion-bash)" >> ~/.bashrc; \
+		echo "✅ Added to ~/.bashrc"; \
+		echo "🔄 Run 'source ~/.bashrc' or start a new terminal to activate"; \
+	elif [ -f ~/.bash_profile ]; then \
+		echo "" >> ~/.bash_profile; \
+		echo "# Meijer API Client bash completion" >> ~/.bash_profile; \
+		echo "source <(cd /projects/python_Meijer && make completion-bash)" >> ~/.bash_profile; \
+		echo "✅ Added to ~/.bash_profile"; \
+		echo "🔄 Run 'source ~/.bash_profile' or start a new terminal to activate"; \
+	else \
+		echo "❌ No ~/.bashrc or ~/.bash_profile found"; \
+		echo "💡 Create one of these files or manually add the completion source"; \
+	fi
+
+.PHONY: completion-test
+completion-test:
+	@echo "🧪 Testing bash completion..."
+	@echo "💡 In a new terminal, try:"
+	@echo "   make <TAB>                    # Should show all targets"
+	@echo "   make auth FILE=<TAB>          # Should complete log files"
+	@echo "   make venv VENV=<TAB>          # Should complete venv names"
+	@echo ""
+	@echo "🔧 If completion doesn't work, run:"
+	@echo "   make completion-install"
+	@echo "   source ~/.bashrc"
