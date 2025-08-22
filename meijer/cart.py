@@ -688,9 +688,28 @@ class CartItem:
             return True
         return False
 
+    def get_backup_items(self) -> List[str]:
+        """
+        Get the list of backup/fallback item UPCs.
+        
+        Returns
+        -------
+        List[str]
+            List of UPCs for backup/fallback items
+        """
+        return self._backup_items.copy()
 
-
-
+    @property
+    def backups(self) -> List[str]:
+        """
+        Alias for backup_items property for better compatibility.
+        
+        Returns
+        -------
+        List[str]
+            List of UPCs for backup/fallback items
+        """
+        return self.backup_items
 
     def remove_from_cart(self) -> bool:
         """Remove this item from the cart."""
@@ -1451,30 +1470,43 @@ class MeijerCart:
             headers = self.api_client._get_api_headers()
             headers.update({"Content-Type": "application/json"})
 
-            # Note: The actual endpoint for adding items needs to be determined
-            url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries"
-
-            self.logger.info(f"Adding item to cart: {url}")
-            self.logger.info(f"Request data: {request_data}")
-
-            response = self.api_client._make_request(
-                "POST", url, json_data=request_data, headers=headers
-            )
-
-            if response.status_code == 200:
-                self.logger.info(f"Successfully added item with UPC {upc} to cart")
-                # Clear cached cart data to force refresh
-                self._clear_cache()
-                return True
-            elif response.status_code == 404:
-                # Cart API endpoint not available - this is expected in some cases
-                self.logger.debug(f"Cart API endpoint not available (404) for UPC {upc}")
-                return False
-            else:
-                self.logger.warning(
-                    f"Failed to add item: {response.status_code} - {response.text}"
-                )
-                return False
+            # Try multiple possible cart endpoints based on common patterns
+            possible_endpoints = [
+                "/digital/occ/v3/carts/current/entries",
+                "/digital/hybris/v3/cart/entries", 
+                "/digital/cart/entries",
+                "/cart/entries",
+                "/digital/occ/v3/carts/entries"
+            ]
+            
+            for endpoint in possible_endpoints:
+                try:
+                    url = f"{self.api_client.api_base_url}{endpoint}"
+                    self.logger.info(f"Trying cart endpoint: {url}")
+                    
+                    response = self.api_client._make_request(
+                        "POST", url, json_data=request_data, headers=headers
+                    )
+                    
+                    if response.status_code in [200, 201]:
+                        self.logger.info(f"Successfully added item with UPC {upc} to cart via {endpoint}")
+                        # Clear cached cart data to force refresh
+                        self._clear_cache()
+                        return True
+                    elif response.status_code == 404:
+                        self.logger.debug(f"Endpoint {endpoint} not available (404)")
+                        continue
+                    else:
+                        self.logger.warning(f"Endpoint {endpoint} failed: {response.status_code} - {response.text}")
+                        continue
+                        
+                except Exception as e:
+                    self.logger.debug(f"Endpoint {endpoint} failed with error: {e}")
+                    continue
+            
+            # If we get here, none of the endpoints worked
+            self.logger.warning(f"All cart endpoints failed for UPC {upc}")
+            return False
 
         except Exception as e:
             self.logger.error(f"Error adding item to cart: {e}")
@@ -1576,28 +1608,46 @@ class MeijerCart:
             # Get default headers
             headers = self.api_client._get_api_headers()
 
-            # Note: The actual endpoint for removing items needs to be determined
-            url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries/{entry_number}"
-
-            self.logger.info(f"Removing cart item {entry_number}: {url}")
-
-            response = self.api_client._make_request("DELETE", url, headers=headers)
-
-            if response.status_code == 200:
-                self.logger.info(f"Successfully removed cart item {entry_number}")
-                # Remove from local list and clear cache
-                self._cart_items = [
-                    item
-                    for item in self._cart_items
-                    if item.entry_number != entry_number
-                ]
-                self._clear_cache()
-                return True
-            else:
-                self.logger.warning(
-                    f"Failed to remove item {entry_number}: {response.status_code} - {response.text}"
-                )
-                return False
+            # Try multiple possible cart endpoints based on common patterns
+            possible_endpoints = [
+                f"/digital/occ/v3/carts/current/entries/{entry_number}",
+                f"/digital/hybris/v3/cart/entries/{entry_number}", 
+                f"/digital/cart/entries/{entry_number}",
+                f"/cart/entries/{entry_number}",
+                f"/digital/occ/v3/carts/entries/{entry_number}"
+            ]
+            
+            for endpoint in possible_endpoints:
+                try:
+                    url = f"{self.api_client.api_base_url}{endpoint}"
+                    self.logger.info(f"Trying remove endpoint: {url}")
+                    
+                    response = self.api_client._make_request("DELETE", url, headers=headers)
+                    
+                    if response.status_code in [200, 204]:
+                        self.logger.info(f"Successfully removed cart item {entry_number} via {endpoint}")
+                        # Remove from local list and clear cache
+                        self._cart_items = [
+                            item
+                            for item in self._cart_items
+                            if item.entry_number != entry_number
+                        ]
+                        self._clear_cache()
+                        return True
+                    elif response.status_code == 404:
+                        self.logger.debug(f"Remove endpoint {endpoint} not available (404)")
+                        continue
+                    else:
+                        self.logger.warning(f"Remove endpoint {endpoint} failed: {response.status_code} - {response.text}")
+                        continue
+                        
+                except Exception as e:
+                    self.logger.debug(f"Remove endpoint {endpoint} failed with error: {e}")
+                    continue
+            
+            # If we get here, none of the endpoints worked
+            self.logger.warning(f"All remove endpoints failed for entry {entry_number}")
+            return False
 
         except Exception as e:
             self.logger.error(f"Error removing cart item {entry_number}: {e}")
@@ -1627,36 +1677,49 @@ class MeijerCart:
             headers = self.api_client._get_api_headers()
             headers.update({"Content-Type": "application/json"})
 
-            # Note: The actual endpoint for updating items needs to be determined
-            url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries/{entry_number}"
-
-            request_data = {"quantity": quantity}
-
-            self.logger.info(
-                f"Updating quantity for cart item {entry_number} to {quantity}"
-            )
-
-            response = self.api_client._make_request(
-                "PUT", url, json_data=request_data, headers=headers
-            )
-
-            if response.status_code == 200:
-                self.logger.info(
-                    f"Successfully updated quantity for cart item {entry_number}"
-                )
-                # Update local item and clear cache
-                for item in self._cart_items:
-                    if item.entry_number == entry_number:
-                        item.current_quantity = quantity  # Use the new setter
-                        item.total_price = item.base_price * quantity
-                        break
-                self._clear_cache()
-                return True
-            else:
-                self.logger.warning(
-                    f"Failed to update quantity for item {entry_number}: {response.status_code} - {response.text}"
-                )
-                return False
+            # Try multiple possible cart endpoints based on common patterns
+            possible_endpoints = [
+                f"/digital/occ/v3/carts/current/entries/{entry_number}",
+                f"/digital/hybris/v3/cart/entries/{entry_number}", 
+                f"/digital/cart/entries/{entry_number}",
+                f"/cart/entries/{entry_number}",
+                f"/digital/occ/v3/carts/entries/{entry_number}"
+            ]
+            
+            for endpoint in possible_endpoints:
+                try:
+                    url = f"{self.api_client.api_base_url}{endpoint}"
+                    self.logger.info(f"Trying update endpoint: {url}")
+                    
+                    request_data = {"quantity": quantity}
+                    
+                    response = self.api_client._make_request(
+                        "PUT", url, json_data=request_data, headers=headers
+                    )
+                    
+                    if response.status_code in [200, 201]:
+                        self.logger.info(f"Successfully updated quantity for cart item {entry_number} via {endpoint}")
+                        # Update local item and clear cache
+                        for item in self._cart_items:
+                            if item.entry_number == entry_number:
+                                item.current_quantity = quantity
+                                break
+                        self._clear_cache()
+                        return True
+                    elif response.status_code == 404:
+                        self.logger.debug(f"Update endpoint {endpoint} not available (404)")
+                        continue
+                    else:
+                        self.logger.debug(f"Update endpoint {endpoint} failed: {response.status_code} - {response.text}")
+                        continue
+                        
+                except Exception as e:
+                    self.logger.debug(f"Update endpoint {endpoint} failed with error: {e}")
+                    continue
+            
+            # If we get here, none of the endpoints worked
+            self.logger.warning(f"All update endpoints failed for entry {entry_number}")
+            return False
 
         except Exception as e:
             self.logger.error(
@@ -2459,5 +2522,52 @@ Your cart is currently empty.
                 
         except Exception as e:
             self.logger.error(f"Error removing backup item from cart item: {e}")
+            return False
+
+    def add_backup_item_with_substitution(self, entry_number: str, backup_upc: str, quantity: int = 4, product_name: str = "", brand: str = "") -> bool:
+        """
+        Add a backup item with substitution workflow (as seen in the logs).
+        
+        This method implements the backup item addition workflow that was observed
+        in the mitmproxy logs, including setting appropriate quantities and marking
+        items as backup selections.
+        
+        Parameters
+        ----------
+        entry_number : str
+            Entry number of the cart item to add backup to
+        backup_upc : str
+            UPC code of the backup/fallback item
+        quantity : int, optional
+            Quantity for the backup item (default: 4, typical for cheese items)
+        product_name : str, optional
+            Name/description of the backup item
+        brand : str, optional
+            Brand of the backup item
+            
+        Returns
+        -------
+        bool
+            True if backup item was successfully added with substitution, False otherwise
+        """
+        try:
+            # First add the backup item to the cart item's substitution list
+            if not self.add_backup_item_to_cart_item(entry_number, backup_upc, product_name, brand):
+                return False
+            
+            # Then add the actual backup item to the cart with the specified quantity
+            # This matches the workflow seen in the logs where backup items are added
+            # as separate cart items with specific quantities
+            success = self.add_item_by_upc_with_backup(backup_upc, quantity, backup=True)
+            
+            if success:
+                self.logger.info(f"Successfully added backup item {backup_upc} with quantity {quantity} and substitution to cart item {entry_number}")
+                return True
+            else:
+                self.logger.warning(f"Failed to add backup item {backup_upc} to cart for substitution")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error in backup item substitution workflow: {e}")
             return False
 

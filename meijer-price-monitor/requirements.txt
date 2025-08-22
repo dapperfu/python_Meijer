@@ -7,7 +7,6 @@ rich>=13.0.0
 
 # Database dependencies
 pony>=0.7.17
-sqlite3  # Built-in with Python 3.x
 
 # Development dependencies
 pytest>=7.0.0
