@@ -31,15 +31,16 @@ class ShopNScan:
 
         # Enhanced endpoints from APK analysis and mitmproxy logs
         self.endpoints = {
-            "lookup_item": "/loyalty/shopandscan/lookupitem",
-            "add_to_cart": "/loyalty/shopandscan/addtocart",
-            "remove_from_cart": "/loyalty/shopandscan/removefromcart",
-            "get_cart": "/loyalty/shopandscan/getcart",
-            "clear_cart": "/loyalty/shopandscan/clearcart",
+            "lookup_item": "/retail/shopandscan/api/v1/NextGenPOSBasket",
+            "add_to_cart": "/retail/shopandscan/api/v1/NextGenPOSBasket", 
+            "remove_from_cart": "/retail/shopandscan/api/v1/NextGenPOSBasket",
+            "get_cart": "/retail/shopandscan/api/v1/NextGenPOSBasket",
+            "clear_cart": "/retail/shopandscan/api/v1/NextGenPOSBasket",
             "start_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket",
             "get_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket",
             "update_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket",
             "complete_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket/complete",
+            "status": "/retail/shopandscan/api/v1/NextGenPOSBasket/Status",
         }
 
         # Alternative endpoints from older implementations
@@ -270,7 +271,7 @@ class ShopNScan:
                         data["storeId"] = store_id
 
                     response = self.meijer._make_request(
-                        "POST", f"{self.meijer.api_base_url}{endpoint}", json_data=data
+                        "POST", f"{self.meijer.api_base_url}{endpoint}", headers=self._get_shop_scan_headers(), json_data=data
                     )
                 else:
                     # GET request
@@ -279,7 +280,7 @@ class ShopNScan:
                         params["storeId"] = store_id
 
                     response = self.meijer._make_request(
-                        "GET", f"{self.meijer.api_base_url}{endpoint}", params=params
+                        "GET", f"{self.meijer.api_base_url}{endpoint}", headers=self._get_shop_scan_headers(), params=params
                     )
 
                 if response.status_code == 200:
@@ -518,13 +519,35 @@ class ShopNScan:
             True if successful, False otherwise
         """
         try:
-            data = {"barcode": barcode, "quantity": quantity}
-            if store_id:
-                data["storeId"] = store_id
+            # Based on the logs, Shop & Scan uses a different request format
+            from datetime import datetime
+            data = {
+                "type": "BARCODE_SCANNED",
+                "header": {
+                    "transactionDateTime": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                    "transactionDateTimeUTC": datetime.now().strftime("%Y-%m-%dT%H:%M:%S-04:00"),
+                    "storeId": int(store_id or self._current_store_id),
+                    "terminal": 4001,
+                    "eventTimeStamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                    "eventTimeStampUTC": datetime.now().strftime("%Y-%m-%dT%H:%M:%S-04:00"),
+                    "deviceId": "50dbc7dc-e839-46d9-9bfd-292c0d4f831e",
+                    "deviceOS": "Android",
+                    "deviceAppVersion": "10.28.0",
+                    "deviceOSVersion": "10",
+                    "transactionStatus": "New",
+                    "transactionId": self._current_transaction_id
+                },
+                "eventData": {
+                    "barcodeType": "UPC",
+                    "scannedUpc": barcode,
+                    "quantity": quantity
+                }
+            }
 
             response = self.meijer._make_request(
                 "POST",
                 f"{self.meijer.api_base_url}{self.endpoints['add_to_cart']}",
+                headers=self._get_shop_scan_headers(),
                 json_data=data,
             )
             return response.status_code in [200, 201]
@@ -553,6 +576,7 @@ class ShopNScan:
             response = self.meijer._make_request(
                 "POST",
                 f"{self.meijer.api_base_url}{self.endpoints['remove_from_cart']}",
+                headers=self._get_shop_scan_headers(),
                 json_data=data,
             )
             return response.status_code in [200, 204]
@@ -580,6 +604,7 @@ class ShopNScan:
             response = self.meijer._make_request(
                 "GET",
                 f"{self.meijer.api_base_url}{self.endpoints['get_cart']}",
+                headers=self._get_shop_scan_headers(),
                 params=params,
             )
 
@@ -625,6 +650,7 @@ class ShopNScan:
             response = self.meijer._make_request(
                 "POST",
                 f"{self.meijer.api_base_url}{self.endpoints['clear_cart']}",
+                headers=self._get_shop_scan_headers(),
                 params=params,
             )
             return response.status_code in [200, 204]
@@ -812,16 +838,17 @@ class ShopNScan:
             # Use the actual endpoint from mitmproxy analysis
             endpoint = f"{self.meijer.api_base_url}{self.endpoints['start_transaction']}"
             
-            # Build transaction data based on actual API structure
+            # Build transaction data based on actual API structure from logs
+            from datetime import datetime
             transaction_data = {
                 "type": "START_TRANSACTION",
                 "header": {
-                    "transactionDateTime": self._get_current_datetime(),
-                    "transactionDateTimeUTC": self._get_current_datetime_utc(),
-                    "storeId": store_id,
-                    "eventTimeStamp": self._get_current_datetime(),
-                    "eventTimeStampUTC": self._get_current_datetime_utc(),
-                    "deviceId": device_id or self._generate_device_id(),
+                    "transactionDateTime": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                    "transactionDateTimeUTC": datetime.now().strftime("%Y-%m-%dT%H:%M:%S-04:00"),
+                    "storeId": int(store_id),
+                    "eventTimeStamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                    "eventTimeStampUTC": datetime.now().strftime("%Y-%m-%dT%H:%M:%S-04:00"),
+                    "deviceId": device_id or "50dbc7dc-e839-46d9-9bfd-292c0d4f831e",
                     "deviceOS": "Android",
                     "deviceAppVersion": "10.28.0",
                     "deviceOSVersion": "10"
@@ -837,6 +864,7 @@ class ShopNScan:
             response = self.meijer._make_request(
                 "POST", 
                 endpoint, 
+                headers=self._get_shop_scan_headers(),
                 json_data=transaction_data
             )
             
@@ -963,7 +991,7 @@ class ShopNScan:
             if store_id:
                 params["storeId"] = store_id
             
-            response = self.meijer._make_request("GET", endpoint, params=params)
+            response = self.meijer._make_request("GET", endpoint, headers=self._get_shop_scan_headers(), params=params)
             
             if response.status_code == 200:
                 return response.json()
@@ -985,6 +1013,7 @@ class ShopNScan:
             response = self.meijer._make_request(
                 "GET",
                 f"{self.meijer.api_base_url}{self.alternative_endpoints['get_cart']}",
+                headers=self._get_shop_scan_headers(),
                 params=params
             )
             
@@ -1018,3 +1047,22 @@ class ShopNScan:
         """Generate a unique device ID for the session."""
         import uuid
         return str(uuid.uuid4())
+
+    def _get_shop_scan_headers(self) -> Dict[str, str]:
+        """Get headers specific to Shop & Scan operations."""
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "X-Requested-With": "com.meijer.mobile.meijer",
+            "X-Device-Platform": "Android",
+            "X-Device-Version": "10.28.0",
+            "X-Device-OS": "Android 10",
+            "X-Device-Model": "One",
+            "X-Device-Manufacturer": "HTC",
+        }
+        return headers
