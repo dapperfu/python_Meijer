@@ -2,31 +2,38 @@
 Shop & Scan functionality for Meijer API.
 
 This module provides methods for looking up product information by barcode
-and managing Shop & Scan functionality.
+and managing Shop & Scan functionality with BOGO detection and enhanced workflow management.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import json
+import logging
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from .client import Meijer
 
 from .models import MeijerItem
+from .exceptions import ShopScanError
 
 
 class ShopNScan:
-    """Handles Shop & Scan functionality for Meijer API."""
+    """Handles Shop & Scan functionality for Meijer API with BOGO detection."""
 
     def __init__(self, meijer_client: "Meijer"):
         self.meijer = meijer_client
         self.logger = self.meijer.logger
 
-        # Actual endpoints from APK analysis
+        # Enhanced endpoints from APK analysis and mitmproxy logs
         self.endpoints = {
             "lookup_item": "/loyalty/shopandscan/lookupitem",
             "add_to_cart": "/loyalty/shopandscan/addtocart",
             "remove_from_cart": "/loyalty/shopandscan/removefromcart",
             "get_cart": "/loyalty/shopandscan/getcart",
             "clear_cart": "/loyalty/shopandscan/clearcart",
+            "start_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket",
+            "get_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket",
+            "update_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket",
+            "complete_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket/complete",
         }
 
         # Alternative endpoints from older implementations
@@ -36,6 +43,13 @@ class ShopNScan:
             "remove_from_cart": "/dgtlmma/shopandscan/cart/remove",
             "get_cart": "/dgtlmma/shopandscan/cart",
             "clear_cart": "/dgtlmma/shopandscan/cart/clear",
+        }
+
+        # BOGO detection patterns from mitmproxy analysis
+        self.bogo_patterns = {
+            "quantity_thresholds": [2, 4, 6, 8, 10],  # Common BOGO thresholds
+            "price_drop_patterns": [0.25, 0.40, 0.50, 0.75],  # Common BOGO percentages
+            "scan_sequence": ["single", "double", "multiple"]  # Scan patterns
         }
 
     def lookup_barcode_price(
@@ -486,3 +500,355 @@ class ShopNScan:
                 f"Error adding to cart using {endpoints['add_to_cart']}: {e}"
             )
             return False
+
+    def detect_bogo_opportunity(
+        self, 
+        barcode: str, 
+        store_id: Optional[str] = None,
+        test_quantities: Optional[List[int]] = None
+    ) -> Dict[str, Any]:
+        """
+        Detect BOGO (Buy One Get One) opportunities for a product.
+        
+        This method scans the product multiple times to detect pricing drops
+        that indicate BOGO deals.
+        
+        Args:
+            barcode: The barcode/UPC to test for BOGO
+            store_id: Optional store ID for store-specific pricing
+            test_quantities: List of quantities to test (default: [1, 2, 10])
+            
+        Returns:
+            Dictionary with BOGO analysis results
+        """
+        if test_quantities is None:
+            test_quantities = [1, 2, 10]
+        
+        results = {
+            "barcode": barcode,
+            "bogo_detected": False,
+            "bogo_type": None,
+            "price_progression": [],
+            "optimal_quantity": None,
+            "savings_percentage": 0.0,
+            "recommendation": None,
+            "test_results": []
+        }
+        
+        try:
+            # Clear cart first to ensure clean testing
+            self.clear_cart(store_id)
+            
+            # Test each quantity and track price changes
+            previous_price = None
+            price_drops = []
+            
+            for quantity in test_quantities:
+                # Add items to cart
+                success = self.add_to_cart(barcode, quantity, store_id)
+                if not success:
+                    self.logger.warning(f"Failed to add {quantity} of {barcode} to cart")
+                    continue
+                
+                # Get cart total
+                cart_data = self.get_cart_detailed(store_id)
+                if not cart_data:
+                    continue
+                
+                # Find our item in cart
+                item = self._find_item_in_cart(cart_data, barcode)
+                if not item:
+                    continue
+                
+                current_price = item.get("totalPrice", {}).get("value", 0)
+                unit_price = current_price / quantity if quantity > 0 else 0
+                
+                price_info = {
+                    "quantity": quantity,
+                    "total_price": current_price,
+                    "unit_price": unit_price,
+                    "price_per_item": current_price / quantity if quantity > 0 else 0
+                }
+                
+                results["price_progression"].append(price_info)
+                results["test_results"].append(price_info)
+                
+                # Check for price drops (BOGO indicators)
+                if previous_price is not None and quantity > 1:
+                    price_drop = previous_price - unit_price
+                    price_drop_percentage = (price_drop / previous_price) * 100 if previous_price > 0 else 0
+                    
+                    if price_drop_percentage > 5:  # Significant price drop
+                        price_drops.append({
+                            "from_quantity": 1,
+                            "to_quantity": quantity,
+                            "price_drop": price_drop,
+                            "price_drop_percentage": price_drop_percentage
+                        })
+                        
+                        # Determine BOGO type
+                        if price_drop_percentage >= 40:
+                            bogo_type = "BOGO40"
+                        elif price_drop_percentage >= 50:
+                            bogo_type = "BOGO50"
+                        elif price_drop_percentage >= 75:
+                            bogo_type = "BOGO75"
+                        else:
+                            bogo_type = f"BOGO{int(price_drop_percentage)}"
+                        
+                        results["bogo_detected"] = True
+                        results["bogo_type"] = bogo_type
+                        results["savings_percentage"] = price_drop_percentage
+                        results["optimal_quantity"] = quantity
+                
+                previous_price = unit_price
+                
+                # Clear cart for next test
+                self.clear_cart(store_id)
+            
+            # Generate recommendation
+            if results["bogo_detected"]:
+                results["recommendation"] = (
+                    f"BOGO detected! {results['bogo_type']} - "
+                    f"Best value at {results['optimal_quantity']} items "
+                    f"({results['savings_percentage']:.1f}% savings)"
+                )
+            else:
+                results["recommendation"] = "No BOGO detected - standard pricing applies"
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error detecting BOGO for {barcode}: {e}")
+            results["error"] = str(e)
+            return results
+
+    def start_shop_n_scan_session(
+        self, 
+        store_id: str,
+        device_id: Optional[str] = None,
+        mperks_barcode: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Start a new Shop & Scan session.
+        
+        Based on the mitmproxy analysis, this creates a new transaction
+        for Shop & Scan functionality.
+        
+        Args:
+            store_id: Store ID for the session
+            device_id: Optional device identifier
+            mperks_barcode: Optional mPerks barcode
+            
+        Returns:
+            Transaction object with session details
+        """
+        try:
+            # Use the actual endpoint from mitmproxy analysis
+            endpoint = f"{self.meijer.api_base_url}{self.endpoints['start_transaction']}"
+            
+            # Build transaction data based on actual API structure
+            transaction_data = {
+                "type": "START_TRANSACTION",
+                "header": {
+                    "transactionDateTime": self._get_current_datetime(),
+                    "transactionDateTimeUTC": self._get_current_datetime_utc(),
+                    "storeId": store_id,
+                    "eventTimeStamp": self._get_current_datetime(),
+                    "eventTimeStampUTC": self._get_current_datetime_utc(),
+                    "deviceId": device_id or self._generate_device_id(),
+                    "deviceOS": "Android",
+                    "deviceAppVersion": "10.28.0",
+                    "deviceOSVersion": "10"
+                },
+                "eventData": {
+                    "barcodeType": "PDF_417",
+                    "mPerksBarcode": mperks_barcode or "99999604317088389844",
+                    "selectedHighValueOnly": True,
+                    "rollDepositsInPrimary": True
+                }
+            }
+            
+            response = self.meijer._make_request(
+                "POST", 
+                endpoint, 
+                json_data=transaction_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "success": True,
+                    "transaction_id": data.get("transactionObject", {}).get("transactionHeader", {}).get("transactionId"),
+                    "transaction_number": data.get("transactionObject", {}).get("transactionHeader", {}).get("transactionNumber"),
+                    "cart_totals": data.get("transactionObject", {}).get("cartTotals", {}),
+                    "raw_response": data
+                }
+            else:
+                return {
+                    "success": False,
+                    "status_code": response.status_code,
+                    "error": f"Failed to start session: {response.status_code}"
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error starting Shop & Scan session: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    def scan_item_and_analyze(
+        self, 
+        barcode: str, 
+        store_id: str,
+        analyze_pricing: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Scan an item and perform comprehensive analysis.
+        
+        This method combines item lookup, cart addition, and pricing analysis
+        to provide a complete picture of the product and any available deals.
+        
+        Args:
+            barcode: The barcode to scan
+            store_id: Store ID for the session
+            analyze_pricing: Whether to perform BOGO analysis
+            
+        Returns:
+            Comprehensive scan analysis results
+        """
+        results = {
+            "barcode": barcode,
+            "scan_success": False,
+            "product_info": None,
+            "pricing_analysis": None,
+            "bogo_opportunity": None,
+            "cart_status": None,
+            "recommendations": []
+        }
+        
+        try:
+            # 1. Look up product information
+            product = self.lookup_barcode_price(barcode, store_id)
+            if product:
+                results["product_info"] = {
+                    "name": product.title,
+                    "brand": product.brand,
+                    "category": product.category,
+                    "price": product.price,
+                    "upc": product.upc,
+                    "available": product.is_available
+                }
+                results["scan_success"] = True
+            else:
+                results["recommendations"].append("Product not found - check barcode")
+                return results
+            
+            # 2. Add to cart for pricing analysis
+            if analyze_pricing:
+                cart_added = self.add_to_cart(barcode, 1, store_id)
+                if cart_added:
+                    # Get detailed cart information
+                    cart_data = self.get_cart_detailed(store_id)
+                    if cart_data:
+                        results["cart_status"] = {
+                            "items_count": len(cart_data.get("cartItems", [])),
+                            "cart_total": cart_data.get("cartTotals", {}).get("cartNowTotal", 0),
+                            "savings": cart_data.get("cartTotals", {}).get("cartSavingsTotal", 0)
+                        }
+                        
+                        # Perform BOGO analysis
+                        bogo_results = self.detect_bogo_opportunity(barcode, store_id)
+                        results["bogo_opportunity"] = bogo_results
+                        
+                        if bogo_results.get("bogo_detected"):
+                            results["recommendations"].append(bogo_results["recommendation"])
+                        else:
+                            results["recommendations"].append("No special pricing detected")
+                    
+                    # Clean up - remove item from cart
+                    self.remove_from_cart(barcode, store_id)
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error in comprehensive scan analysis: {e}")
+            results["error"] = str(e)
+            return results
+
+    def get_cart_detailed(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Get detailed cart information including totals and pricing.
+        
+        This method provides comprehensive cart data for analysis.
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            Detailed cart data dictionary
+        """
+        try:
+            # Try the enhanced cart endpoint first
+            endpoint = f"{self.meijer.api_base_url}{self.endpoints['get_cart']}"
+            
+            params = {}
+            if store_id:
+                params["storeId"] = store_id
+            
+            response = self.meijer._make_request("GET", endpoint, params=params)
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                # Fallback to alternative endpoint
+                return self._get_cart_fallback(store_id)
+                
+        except Exception as e:
+            self.logger.error(f"Error getting detailed cart: {e}")
+            return None
+
+    def _get_cart_fallback(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Fallback method for getting cart data."""
+        try:
+            params = {}
+            if store_id:
+                params["storeId"] = store_id
+            
+            response = self.meijer._make_request(
+                "GET",
+                f"{self.meijer.api_base_url}{self.alternative_endpoints['get_cart']}",
+                params=params
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Fallback cart retrieval failed: {e}")
+            return None
+
+    def _find_item_in_cart(self, cart_data: Dict[str, Any], barcode: str) -> Optional[Dict[str, Any]]:
+        """Find a specific item in cart data by barcode."""
+        cart_items = cart_data.get("cartItems", [])
+        for item in cart_items:
+            if item.get("upc") == barcode or item.get("scannedUpc") == barcode:
+                return item
+        return None
+
+    def _get_current_datetime(self) -> str:
+        """Get current datetime in the format expected by the API."""
+        from datetime import datetime
+        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    def _get_current_datetime_utc(self) -> str:
+        """Get current UTC datetime in the format expected by the API."""
+        from datetime import datetime, timezone
+        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S-04:00")
+
+    def _generate_device_id(self) -> str:
+        """Generate a unique device ID for the session."""
+        import uuid
+        return str(uuid.uuid4())

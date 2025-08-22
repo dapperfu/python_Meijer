@@ -58,3 +58,12 @@ class FeedbackError(MeijerError):
     """Raised when feedback operations fail."""
 
     pass
+
+
+class ShopScanError(MeijerError):
+    """Raised when shop & scan operations fail."""
+
+    pass
+
+
+

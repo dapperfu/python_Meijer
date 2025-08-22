@@ -27,8 +27,7 @@ import click
 
 from .commands import (
     ad_command,
-    auth_command,
-    auth_imap_command,
+    auth_group,
     cart_group,
     coupons_group,
     email_2fa_group,
@@ -95,8 +94,7 @@ def cli(verbose: int):
     • settings - Manage account settings and preferences
     • email-2fa - Manage email 2FA configuration and testing
     • login - Login with username/password (enhanced or Selenium methods, Selenium defaults to visible browser)
-    • auth - Extract authentication tokens from mitmproxy logs
-    • auth-imap - Set up email configuration for 2FA verification codes
+    • auth - Manage authentication (login, logout, status, log extraction, email setup)
     • status - Show authentication status
     • ads - Browse weekly ad items
     • gas - Show gas station information
@@ -119,8 +117,7 @@ cli.add_command(settings_group, name="settings")
 cli.add_command(email_2fa_group, name="email-2fa")
 
 # Add individual commands with cleaner names
-cli.add_command(auth_command, name="auth")
-cli.add_command(auth_imap_command, name="auth-imap")
+cli.add_command(auth_group, name="auth")
 cli.add_command(status_command, name="status")
 cli.add_command(ad_command, name="ads")
 cli.add_command(gas_command, name="gas")

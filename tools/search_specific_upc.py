@@ -4,9 +4,10 @@ Search for Specific UPC 719812800516 and Analyze Flows
 
 This script searches for the exact UPC 719812800516 in the log file and analyzes:
 1. Where it appears
-2. Cart progression when this UPC is added
-3. Quantity changes and price analysis
+2. Multiple scans of the same UPC (quantity changes)
+3. Cart progression when this UPC is added multiple times
 4. Shop'n'Scan context
+5. Price analysis for different quantities
 """
 
 import sys
@@ -33,7 +34,9 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
         'cart_progression': [],
         'shop_n_scan_context': [],
         'price_changes': [],
-        'quantity_changes': []
+        'quantity_changes': [],
+        'multiple_scans': [],
+        'quantity_progression': []
     }
     
     try:
@@ -63,9 +66,9 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
             start_pos = match.start()
             end_pos = match.end()
             
-            # Get context around the UPC (500 characters before and after)
-            context_start = max(0, start_pos - 500)
-            context_end = min(len(content_str), end_pos + 500)
+            # Get context around the UPC (1000 characters before and after for more context)
+            context_start = max(0, start_pos - 1000)
+            context_end = min(len(content_str), end_pos + 1000)
             context = content_str[context_start:context_end]
             
             upc_location = {
@@ -76,7 +79,7 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
             upc_locations.append(upc_location)
             
             print(f"  Found UPC at position {start_pos} (line ~{upc_location['line_number']})")
-            print(f"  Context: {context[:100]}...")
+            print(f"  Context: {context[:150]}...")
         
         results['upc_locations'] = upc_locations
         results['upc_found'] = len(upc_locations) > 0
@@ -87,8 +90,8 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
         
         print(f"  ✅ Found {len(upc_locations)} occurrences of UPC {target_upc}")
         
-        # 2. Look for cart progression around these UPCs
-        print(f"\n🛒 ANALYZING CART PROGRESSION")
+        # 2. Look for cart progression and quantity changes around these UPCs
+        print(f"\n🛒 ANALYZING CART PROGRESSION AND QUANTITY CHANGES")
         print("-" * 50)
         
         for i, location in enumerate(upc_locations):
@@ -117,17 +120,80 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
             else:
                 print(f"    No cart totals found in context")
             
-            # Look for quantity information
-            quantity_matches = re.findall(r'"quantity":(\d+)', location['context'])
-            if quantity_matches:
-                print(f"    Quantities found: {quantity_matches}")
-                for qty in quantity_matches:
-                    results['quantity_changes'].append({
-                        'upc_location': i + 1,
-                        'quantity': int(qty)
-                    })
+            # Look for quantity information - multiple patterns
+            quantity_patterns = [
+                r'"quantity":(\d+)',
+                r'"quantityWeight":([\d.]+)',
+                r'"qtyIncrement":([\d.]+)',
+                r'quantity.*?(\d+)',
+                r'qty.*?(\d+)'
+            ]
+            
+            quantities_found = []
+            for pattern in quantity_patterns:
+                matches = re.findall(pattern, location['context'])
+                if matches:
+                    quantities_found.extend(matches)
+            
+            if quantities_found:
+                print(f"    Quantities found: {quantities_found}")
+                for qty in quantities_found:
+                    try:
+                        qty_val = float(qty)
+                        results['quantity_changes'].append({
+                            'upc_location': i + 1,
+                            'quantity': qty_val,
+                            'context': location['context'][:200]
+                        })
+                    except ValueError:
+                        continue
+            else:
+                print(f"    No quantities found")
         
-        # 3. Look for shop'n'scan context
+        # 3. Look for multiple scans of the same UPC
+        print(f"\n📱 SEARCHING FOR MULTIPLE SCANS OF SAME UPC")
+        print("-" * 50)
+        
+        # Look for transaction data with this UPC
+        transaction_pattern = rf'{{"transactionObject".*?"cartItems":\[.*?"upc":"{target_upc[:-1]}".*?}}'
+        transaction_matches = re.findall(transaction_pattern, content_str, re.DOTALL)
+        
+        if transaction_matches:
+            print(f"  Found {len(transaction_matches)} transaction matches")
+            for i, match in enumerate(transaction_matches):
+                print(f"    Transaction {i+1}: {match[:200]}...")
+                results['multiple_scans'].append(match)
+        else:
+            print(f"  No transaction matches found")
+        
+        # 4. Look for quantity progression patterns
+        print(f"\n📊 ANALYZING QUANTITY PROGRESSION")
+        print("-" * 50)
+        
+        # Look for patterns showing quantity changes
+        quantity_progression_patterns = [
+            rf'"quantityWeight":([\d.]+).*?"upc":"{target_upc[:-1]}"',
+            rf'"quantity":(\d+).*?"upc":"{target_upc[:-1]}"',
+            rf'"scannedUpc":"{target_upc}".*?"quantityWeight":([\d.]+)',
+            rf'"scannedUpc":"{target_upc}".*?"quantity":(\d+)'
+        ]
+        
+        for pattern in quantity_progression_patterns:
+            matches = re.findall(pattern, content_str)
+            if matches:
+                print(f"  Pattern '{pattern[:50]}...' found {len(matches)} matches")
+                for match in matches:
+                    try:
+                        qty = float(match)
+                        results['quantity_progression'].append({
+                            'quantity': qty,
+                            'pattern': pattern[:50]
+                        })
+                        print(f"    Quantity: {qty}")
+                    except ValueError:
+                        continue
+        
+        # 5. Look for shop'n'scan context
         print(f"\n🛍️ SHOP'N'SCAN CONTEXT ANALYSIS")
         print("-" * 50)
         
@@ -142,7 +208,7 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
             else:
                 print(f"  UPC Location {i+1}: No shop'n'scan context found")
         
-        # 4. Look for price changes and BOGO patterns
+        # 6. Look for price changes and BOGO patterns
         print(f"\n💰 PRICE ANALYSIS")
         print("-" * 50)
         
@@ -192,6 +258,7 @@ def main():
     print(f"Specific UPC Search and Analysis")
     print(f"Log file: {log_file}")
     print(f"Target UPC: {target_upc}")
+    print(f"Looking for quantity progression: 1 → 2 → 10")
     
     # Perform search
     results = search_specific_upc(log_file, target_upc)
@@ -212,6 +279,14 @@ def main():
         print(f"  Shop'n'Scan contexts: {len(results['shop_n_scan_context'])}")
         print(f"  Price changes: {len(results['price_changes'])}")
         print(f"  Quantity changes: {len(results['quantity_changes'])}")
+        print(f"  Multiple scans: {len(results['multiple_scans'])}")
+        print(f"  Quantity progression entries: {len(results['quantity_progression'])}")
+        
+        # Show quantity progression if found
+        if results['quantity_progression']:
+            print(f"\n📈 QUANTITY PROGRESSION FOUND:")
+            quantities = sorted([q['quantity'] for q in results['quantity_progression']])
+            print(f"  Quantities: {quantities}")
 
 
 if __name__ == "__main__":

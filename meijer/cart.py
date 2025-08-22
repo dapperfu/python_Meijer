@@ -498,6 +498,53 @@ class CartItem:
         """Get a status icon for the item."""
         if not self.available:
             return "❌"
+        elif self.bogo_detected:
+            return "🎯"
+        elif self.on_sale:
+            return "🏷️"
+        else:
+            return "✅"
+
+    @property
+    def bogo_detected(self) -> bool:
+        """Check if this item has BOGO (Buy One Get One) pricing detected."""
+        # This property will be set by the shop_scan module when BOGO is detected
+        return getattr(self, '_bogo_detected', False)
+
+    @bogo_detected.setter
+    def bogo_detected(self, value: bool) -> None:
+        """Set whether BOGO pricing is detected for this item."""
+        self._bogo_detected = bool(value)
+
+    @property
+    def bogo_type(self) -> Optional[str]:
+        """Get the type of BOGO deal detected (e.g., 'BOGO40', 'BOGO50')."""
+        return getattr(self, '_bogo_type', None)
+
+    @bogo_type.setter
+    def bogo_type(self, value: Optional[str]) -> None:
+        """Set the type of BOGO deal detected."""
+        self._bogo_type = value
+
+    @property
+    def bogo_savings_percentage(self) -> float:
+        """Get the percentage savings from BOGO pricing."""
+        return getattr(self, '_bogo_savings_percentage', 0.0)
+
+    @bogo_savings_percentage.setter
+    def bogo_savings_percentage(self, value: float) -> None:
+        """Set the percentage savings from BOGO pricing."""
+        self._bogo_savings_percentage = float(value)
+
+    @property
+    def optimal_bogo_quantity(self) -> Optional[int]:
+        """Get the optimal quantity for maximum BOGO savings."""
+        return getattr(self, '_optimal_bogo_quantity', None)
+
+    @optimal_bogo_quantity.setter
+    def optimal_bogo_quantity(self, value: Optional[int]) -> None:
+        """Set the optimal quantity for maximum BOGO savings."""
+        self._optimal_bogo_quantity = value if value is None else int(value)
         elif self.alcohol:
             return "🍷"
         elif self.tobacco:
