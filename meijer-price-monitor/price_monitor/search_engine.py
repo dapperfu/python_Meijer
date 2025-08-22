@@ -31,7 +31,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Iterator, Tuple
-import sys
 
 # Try to import from the core Meijer API
 try:
