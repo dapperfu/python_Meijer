@@ -534,8 +534,8 @@ class EnhancedSearchEngine:
             
             filtered_results.append(result)
         
-        # Sort by price (lowest first)
-        filtered_results.sort(key=lambda x: x.price)
+        # Sort by price (lowest first), handling None prices
+        filtered_results.sort(key=lambda x: x.price if x.price is not None else float('inf'))
         
         return filtered_results
     

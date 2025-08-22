@@ -6,6 +6,7 @@ click>=8.0.0
 rich>=13.0.0
 
 # Database dependencies
+pony>=0.7.17
 sqlite3  # Built-in with Python 3.x
 
 # Development dependencies
@@ -17,4 +18,4 @@ mypy>=1.0.0
 
 # Note: The core Meijer API should be available in the parent directory
 # or installed as a separate package. This project assumes it's available
-# as a local module or installed package.
+# as a local module or installed installed package.

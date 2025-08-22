@@ -39,6 +39,20 @@ from rich.text import Text
 
 from .core import PriceMonitor
 
+def get_authenticated_meijer_client():
+    """Get an authenticated Meijer client."""
+    try:
+        from meijer.auth import load_auth_from_config_file
+        from meijer.client import Meijer
+        
+        auth = load_auth_from_config_file()
+        client = Meijer(auth)
+        return client
+    except Exception as e:
+        console.print(f"❌ Failed to create authenticated Meijer client: {e}")
+        console.print("Please ensure you have run 'meijer status' and are authenticated.")
+        sys.exit(1)
+
 console = Console()
 logger = logging.getLogger(__name__)
 
@@ -240,9 +254,10 @@ def search(
     if stores:
         store_list = [s.strip() for s in stores.split(",")]
     
-    # Initialize price monitor
+    # Initialize price monitor with authenticated Meijer client
     data_dir = click.get_current_context().obj.get('data_dir')
-    monitor = PriceMonitor(data_dir=data_dir)
+    meijer_client = get_authenticated_meijer_client()
+    monitor = PriceMonitor(meijer_client=meijer_client, data_dir=data_dir)
     
     if enhanced:
         # Use enhanced search
