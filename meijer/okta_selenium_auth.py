@@ -85,11 +85,18 @@ class OktaSeleniumAuth:
             # Take screenshot after credential submission
             self._take_screenshot("credentials_submitted")
 
-            # Step 4: Handle MFA if required
-            print("📡 Step 4: Checking for MFA requirements...")
-            mfa_result = self._handle_mfa_if_required()
-            if mfa_result is False:  # MFA failed
-                return None
+            # Step 4: Handle email verification if required
+            print("📡 Step 4: Checking for email verification...")
+            if "verification" in self.driver.title.lower() or "verify" in self.driver.title.lower():
+                print("📧 Email verification detected - handling verification flow...")
+                if not self._handle_email_verification():
+                    return None
+            else:
+                # Step 4b: Handle MFA if required
+                print("📡 Step 4b: Checking for MFA requirements...")
+                mfa_result = self._handle_mfa_if_required()
+                if mfa_result is False:  # MFA failed
+                    return None
 
             # Take screenshot after MFA handling
             self._take_screenshot("mfa_handled")
@@ -443,10 +450,86 @@ class OktaSeleniumAuth:
             print(f"📄 After final submission - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
 
-            return True
+            # STEP 5: Handle email confirmation page
+            print("📡 Step 5: Looking for email confirmation page...")
+            
+            # Wait for the email confirmation page to load
+            wait.until(lambda driver: driver.execute_script("""
+                return (
+                    document.querySelector('button[data-se="save"]') !== null &&
+                    document.readyState === 'complete'
+                );
+            """))
+            print("✅ Email confirmation page loaded")
+
+            # Find and click the "Send Me an Email" button
+            email_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-se="save"]')
+            print("✅ Found 'Send Me an Email' button")
+            
+            # Verify it's the right button by checking the text
+            if "Send Me an Email" in email_button.text:
+                print("✅ Confirmed correct button - clicking 'Send Me an Email'...")
+                email_button.click()
+                
+                # Wait for the email verification page to load
+                print("📡 Step 6: Waiting for email verification page...")
+                time.sleep(3)  # Give the page time to transition
+                
+                print(f"📄 After email button click - URL: {self.driver.current_url}")
+                print(f"📄 Page title: {self.driver.title}")
+                
+                # Take screenshot of email verification page
+                self._take_screenshot("email_verification_page")
+                
+                print("📧 Email verification initiated - waiting for email...")
+                return True
+            else:
+                print(f"❌ Unexpected button text: {email_button.text}")
+                return False
 
         except Exception as e:
             print(f"❌ Error submitting credentials: {e}")
+            return False
+
+    def _handle_email_verification(self) -> bool:
+        """Handle the email verification flow after clicking 'Send Me an Email'."""
+        try:
+            print("📧 Handling email verification flow...")
+            
+            # Wait for the verification page to stabilize
+            wait = WebDriverWait(self.driver, 15)
+            wait.until(lambda driver: driver.execute_script("return document.readyState === 'complete'"))
+            
+            print(f"📄 Email verification page - URL: {self.driver.current_url}")
+            print(f"📄 Page title: {self.driver.title}")
+            
+            # Look for verification code input field
+            print("🔍 Looking for verification code input field...")
+            
+            # Wait for verification code field to appear
+            wait.until(lambda driver: driver.execute_script("""
+                return (
+                    document.querySelector('input[type="text"], input[placeholder*="code"], input[placeholder*="Code"], input[name*="code"], input[id*="code"]') !== null &&
+                    document.readyState === 'complete'
+                );
+            """))
+            print("✅ Verification code field ready")
+            
+            # Find the verification code input field
+            code_field = self.driver.find_element(By.CSS_SELECTOR, 'input[type="text"], input[placeholder*="code"], input[placeholder*="Code"], input[name*="code"], input[id*="code"]')
+            print("✅ Verification code field found")
+            
+            # Take screenshot of verification page
+            self._take_screenshot("verification_code_page")
+            
+            print("📧 Email verification page loaded successfully")
+            print("💡 Now waiting for email verification code...")
+            print("🔍 Browser will remain open for manual verification code entry")
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error handling email verification: {e}")
             return False
 
     def _handle_mfa_if_required(self) -> Optional[bool]:
