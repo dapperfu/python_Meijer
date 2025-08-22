@@ -46,6 +46,11 @@ except ImportError:
     MEIJER_AVAILABLE = False
     logging.warning("Core Meijer API not available. Using mock classes for development.")
 
+# Import local modules
+from .database import PriceDatabase
+from .search_engine import EnhancedSearchEngine, SearchQuery, SearchResult
+from .storage_manager import DualPathStorageManager
+
 
 @dataclass
 class PriceRecord:
@@ -253,9 +258,17 @@ class PriceMonitor:
         if data_dir is None:
             data_dir = Path("./price_data")
         self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(exist_ok=True)
         
-        # Create subdirectories
+        # Initialize dual-path storage manager
+        self.storage_manager = DualPathStorageManager(data_dir)
+        
+        # Initialize enhanced search engine
+        self.search_engine = EnhancedSearchEngine(meijer_client)
+        
+        # Initialize database directly for backward compatibility
+        self.database = self.storage_manager.database
+        
+        # Create legacy subdirectories for backward compatibility
         self.results_dir = self.data_dir / "results"
         self.history_dir = self.data_dir / "history"
         self.config_dir = self.data_dir / "config"
@@ -266,7 +279,7 @@ class PriceMonitor:
         # Load existing configurations
         self.configs = self._load_configs()
         
-        # Initialize search and stores if Meijer API is available
+        # Initialize legacy search and stores if Meijer API is available
         if MEIJER_AVAILABLE and meijer_client:
             self.search = Search(meijer_client)
             self.stores = meijer_client.stores
@@ -814,3 +827,167 @@ class PriceMonitor:
         except Exception as e:
             self.logger.error(f"Failed to load latest price records: {e}")
             return []
+    
+    def search_products_enhanced(
+        self, 
+        query_text: str, 
+        max_results: int = 100,
+        min_results: int = 5,
+        stores: Optional[List[str]] = None,
+        include_clearance: bool = True,
+        include_out_of_stock: bool = False,
+        price_min: Optional[float] = None,
+        price_max: Optional[float] = None,
+        progress_callback: Optional[callable] = None
+    ) -> List[SearchResult]:
+        """
+        Enhanced product search with pagination and UPC tracking.
+        
+        Parameters
+        ----------
+        query_text : str
+            Search query text
+        max_results : int
+            Maximum number of results to retrieve
+        min_results : int
+            Minimum number of results to retrieve before stopping
+        stores : List[str], optional
+            Specific stores to search
+        include_clearance : bool
+            Whether to include clearance items
+        include_out_of_stock : bool
+            Whether to include out-of-stock items
+        price_min : float, optional
+            Minimum price filter
+        price_max : float, optional
+            Maximum price filter
+        progress_callback : callable, optional
+            Callback function for progress updates
+        
+        Returns
+        -------
+        List[SearchResult]
+            List of search results with UPC information
+        """
+        # Create search query
+        search_query = SearchQuery(
+            query_text=query_text,
+            max_results=max_results,
+            min_results=min_results,
+            stores=stores,
+            include_clearance=include_clearance,
+            include_out_of_stock=include_out_of_stock,
+            price_min=price_min,
+            price_max=price_max
+        )
+        
+        # Perform search
+        results = self.search_engine.search_products(search_query, progress_callback)
+        
+        # Store results using dual-path storage
+        storage_summary = self.storage_manager.store_search_results(
+            search_query, results
+        )
+        
+        self.logger.info(f"Enhanced search completed: {len(results)} results found and stored")
+        return results
+    
+    def verify_prices_with_shopnscan_enhanced(
+        self, 
+        upcs: List[str], 
+        store_id: str,
+        progress_callback: Optional[callable] = None
+    ) -> Dict[str, Any]:
+        """
+        Enhanced price verification using Shop'n'Scan with cart fallback.
+        
+        Parameters
+        ----------
+        upcs : List[str]
+            List of UPC codes to verify
+        store_id : str
+            Store identifier
+        progress_callback : callable, optional
+            Callback function for progress updates
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary mapping UPCs to verification results
+        """
+        # Use enhanced search engine for verification
+        verification_results = self.search_engine.verify_prices_with_shopnscan(
+            upcs, store_id, progress_callback
+        )
+        
+        # Convert verification results to ShopnScanPrice objects
+        verifications = []
+        for upc, result in verification_results.items():
+            if result['method'] in ['shopnscan', 'cart'] and result['result']:
+                # Create ShopnScanPrice object from verification result
+                verification = ShopnScanPrice(
+                    upc=upc,
+                    product_name=result['result'].get('product_name', f'Product {upc}'),
+                    store_id=store_id,
+                    current_price=result['result'].get('verified_price', result['result'].get('cart_price', 0.0)),
+                    sale_price=result['result'].get('sale_price'),
+                    original_price=result['result'].get('original_price'),
+                    is_clearance=result['result'].get('is_clearance', False),
+                    is_on_sale=result['result'].get('is_on_sale', False),
+                    verification_status=result['result'].get('verification_status', 'verified')
+                )
+                verifications.append(verification)
+        
+        # Store verifications using dual-path storage
+        if verifications:
+            storage_summary = self.storage_manager.store_shopnscan_verifications(verifications)
+            self.logger.info(f"Price verifications stored: {len(verifications)} verifications")
+        
+        return verification_results
+    
+    def get_storage_statistics(self) -> Dict[str, Any]:
+        """
+        Get comprehensive storage statistics.
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Storage statistics for both JSON files and database
+        """
+        return self.storage_manager.get_storage_stats()
+    
+    def create_backup(self) -> Dict[str, Any]:
+        """
+        Create a backup of all data.
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Backup summary information
+        """
+        return self.storage_manager.create_backup()
+    
+    def export_data(
+        self, 
+        export_type: str, 
+        filters: Optional[Dict[str, Any]] = None,
+        format: str = "json"
+    ) -> Dict[str, Any]:
+        """
+        Export data in various formats.
+        
+        Parameters
+        ----------
+        export_type : str
+            Type of data to export
+        filters : Dict[str, Any], optional
+            Filters to apply
+        format : str
+            Export format
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Export summary information
+        """
+        return self.storage_manager.export_data(export_type, filters, format)

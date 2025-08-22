@@ -205,6 +205,343 @@ def init(data_dir: Optional[str]):
 
 
 @cli.command()
+@click.option("--query", "-q", required=True, help="Search query for products")
+@click.option("--location", "-l", required=True, help="City or ZIP code for store search")
+@click.option("--radius", "-r", default=50, help="Search radius in miles (default: 50)")
+@click.option("--stores", "-s", help="Comma-separated list of specific store IDs")
+@click.option("--max-results", "-m", default=100, help="Maximum number of results (default: 100)")
+@click.option("--min-results", default=5, help="Minimum number of results before stopping (default: 5)")
+@click.option("--include-clearance/--no-clearance", default=True, help="Include clearance items (default: True)")
+@click.option("--include-out-of-stock/--no-out-of-stock", default=False, help="Include out-of-stock items (default: False)")
+@click.option("--price-min", type=float, help="Minimum price filter")
+@click.option("--price-max", type=float, help="Maximum price filter")
+@click.option("--enhanced/--legacy", default=True, help="Use enhanced search with UPC tracking (default: True)")
+@click.option("--verbose", "-v", count=True, help="Increase verbosity")
+def search(
+    query: str, 
+    location: str, 
+    radius: int, 
+    stores: str, 
+    max_results: int,
+    min_results: int,
+    include_clearance: bool,
+    include_out_of_stock: bool,
+    price_min: Optional[float],
+    price_max: Optional[float],
+    enhanced: bool,
+    verbose: int
+):
+    """Search for products across Meijer stores with enhanced UPC tracking."""
+    # Set up logging
+    setup_logging(verbose)
+    
+    # Parse stores if provided
+    store_list = None
+    if stores:
+        store_list = [s.strip() for s in stores.split(",")]
+    
+    # Initialize price monitor
+    data_dir = click.get_current_context().obj.get('data_dir')
+    monitor = PriceMonitor(data_dir=data_dir)
+    
+    if enhanced:
+        # Use enhanced search
+        console.print(f"🔍 [bold cyan]Enhanced Search[/bold cyan] for '{query}' with UPC tracking")
+        console.print(f"📊 Max results: {max_results}, Min results: {min_results}")
+        console.print(f"🏪 Location: {location} (radius: {radius} miles)")
+        
+        # Create progress callback
+        def progress_callback(message: str):
+            console.print(f"  {message}")
+        
+        # Perform enhanced search
+        with console.status(f"Searching for '{query}' with pagination..."):
+            results = monitor.search_products_enhanced(
+                query_text=query,
+                max_results=max_results,
+                min_results=min_results,
+                stores=store_list,
+                include_clearance=include_clearance,
+                include_out_of_stock=include_out_of_stock,
+                price_min=price_min,
+                price_max=price_max,
+                progress_callback=progress_callback
+            )
+        
+        # Display enhanced results
+        if results:
+            table = Table(title=f"Enhanced Search Results for '{query}' (UPC Tracking)")
+            table.add_column("UPC", style="cyan")
+            table.add_column("Product", style="cyan")
+            table.add_column("Store", style="green")
+            table.add_column("Price", style="yellow")
+            table.add_column("Original Price", style="dim")
+            table.add_column("Brand", style="blue")
+            table.add_column("Category", style="magenta")
+            table.add_column("Status", style="red")
+            
+            for result in results:
+                status = []
+                if result.is_clearance:
+                    status.append("Clearance")
+                if result.is_on_sale:
+                    status.append("On Sale")
+                if not status:
+                    status.append("Regular")
+                
+                table.add_row(
+                    result.upc,
+                    result.product_name,
+                    result.store_name,
+                    f"${result.price:.2f}",
+                    f"${result.original_price:.2f}" if result.original_price else "N/A",
+                    result.brand or "N/A",
+                    result.category or "N/A",
+                    ", ".join(status)
+                )
+            
+            console.print(table)
+            console.print(f"\n✅ Found {len(results)} products with UPC tracking")
+            
+            # Show UPC summary
+            upcs = [result.upc for result in results]
+            console.print(f"📋 UPCs found: {', '.join(upcs[:10])}{'...' if len(upcs) > 10 else ''}")
+            
+        else:
+            console.print(f"❌ No products found for '{query}' in {location}")
+    
+    else:
+        # Use legacy search
+        console.print(f"🔍 [bold yellow]Legacy Search[/bold yellow] for '{query}'")
+        
+        # Create a temporary monitor for this search
+        monitor_id = monitor.create_monitor(
+            name=f"search_{int(time.time())}",
+            search_query=query,
+            location=location,
+            radius=radius,
+            stores=store_list
+        )
+        
+        # Run the search
+        with console.status(f"Searching for '{query}' in {location}..."):
+            results = monitor.run_monitor(monitor_id)
+        
+        # Display legacy results
+        if results['price_records']:
+            table = Table(title=f"Legacy Search Results for '{query}'")
+            table.add_column("Product", style="cyan")
+            table.add_column("Store", style="green")
+            table.add_column("Price", style="yellow")
+            table.add_column("Original Price", style="dim")
+            table.add_column("Status", style="magenta")
+            
+            for record in results['price_records']:
+                status = []
+                if record.is_clearance:
+                    status.append("Clearance")
+                if record.is_on_sale:
+                    status.append("On Sale")
+                if not status:
+                    status.append("Regular")
+                
+                table.add_row(
+                    record.product_name,
+                    record.store_name,
+                    f"${record.price:.2f}",
+                    f"${record.original_price:.2f}" if record.original_price else "N/A",
+                    ", ".join(status)
+                )
+            
+            console.print(table)
+            console.print(f"\nFound {len(results['price_records'])} products across {results['stores_scanned']} stores")
+        else:
+            console.print(f"No products found for '{query}' in {location}")
+        
+        # Clean up temporary monitor
+        monitor.delete_monitor(monitor_id)
+
+
+@cli.command()
+@click.option("--upcs", "-u", required=True, help="Comma-separated list of UPC codes to verify")
+@click.option("--store-id", "-s", required=True, help="Store ID to verify prices at")
+@click.option("--data-dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory containing price monitoring data")
+@click.option("--verbose", "-v", count=True, help="Increase verbosity")
+def verify_prices(upcs: str, store_id: str, data_dir: Optional[str], verbose: int):
+    """Verify prices for specific UPCs using Shop'n'Scan with cart fallback."""
+    # Set up logging
+    setup_logging(verbose)
+    
+    # Parse UPCs
+    upc_list = [upc.strip() for upc in upcs.split(",")]
+    
+    # Initialize price monitor
+    data_dir = data_dir or click.get_current_context().obj.get('data_dir')
+    monitor = PriceMonitor(data_dir=data_dir)
+    
+    console.print(f"🔍 [bold cyan]Price Verification[/bold cyan] for {len(upc_list)} UPCs at store {store_id}")
+    
+    # Create progress callback
+    def progress_callback(message: str):
+        console.print(f"  {message}")
+    
+    # Verify prices
+    with console.status(f"Verifying prices for {len(upc_list)} products..."):
+        verification_results = monitor.verify_prices_with_shopnscan_enhanced(
+            upc_list, store_id, progress_callback
+        )
+    
+    # Display results
+    if verification_results:
+        table = Table(title=f"Price Verification Results for Store {store_id}")
+        table.add_column("UPC", style="cyan")
+        table.add_column("Method", style="blue")
+        table.add_column("Price", style="yellow")
+        table.add_column("Status", style="green")
+        table.add_column("Details", style="dim")
+        
+        for upc, result in verification_results.items():
+            method = result['method']
+            status = "✅ Verified" if result['result'] else "❌ Failed"
+            
+            if result['result']:
+                price = result['result'].get('verified_price', result['result'].get('cart_price', 'N/A'))
+                details = f"Method: {method}"
+            else:
+                price = "N/A"
+                details = result.get('error', 'Unknown error')
+            
+            table.add_row(upc, method, str(price), status, details)
+        
+        console.print(table)
+        console.print(f"\n✅ Price verification completed for {len(upc_list)} products")
+    else:
+        console.print(f"❌ No verification results returned")
+
+
+@cli.command()
+@click.option("--data-dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory containing price monitoring data")
+@click.option("--verbose", "-v", count=True, help="Increase verbosity")
+def storage_stats(data_dir: Optional[str], verbose: int):
+    """Get storage statistics for the price monitoring system."""
+    # Set up logging
+    setup_logging(verbose)
+    
+    # Initialize price monitor
+    data_dir = data_dir or click.get_current_context().obj.get('data_dir')
+    monitor = PriceMonitor(data_dir=data_dir)
+    
+    console.print("📊 [bold cyan]Storage Statistics[/bold cyan]")
+    
+    # Get storage stats
+    with console.status("Gathering storage statistics..."):
+        stats = monitor.get_storage_statistics()
+    
+    if 'error' in stats:
+        console.print(f"[red]❌ Error getting storage stats: {stats['error']}[/red]")
+        return
+    
+    # Display database stats
+    if 'database' in stats:
+        db_stats = stats['database']
+        console.print("\n[bold]Database Statistics:[/bold]")
+        for key, value in db_stats.items():
+            if key.endswith('_count'):
+                console.print(f"  {key.replace('_count', '').title()}: {value}")
+    
+    # Display JSON file stats
+    if 'json_files' in stats:
+        json_stats = stats['json_files']
+        console.print("\n[bold]JSON File Statistics:[/bold]")
+        for file_type, file_stats in json_stats.items():
+            console.print(f"  {file_type.title()}: {file_stats['file_count']} files, {file_stats['total_size_mb']:.2f} MB")
+    
+    # Display overall stats
+    console.print(f"\n[bold]Overall Storage:[/bold] {stats['total_storage_mb']:.2f} MB")
+
+
+@cli.command()
+@click.option("--data-dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory containing price monitoring data")
+@click.option("--verbose", "-v", count=True, help="Increase verbosity")
+def backup(data_dir: Optional[str], verbose: int):
+    """Create a backup of all price monitoring data."""
+    # Set up logging
+    setup_logging(verbose)
+    
+    # Initialize price monitor
+    data_dir = data_dir or click.get_current_context().obj.get('data_dir')
+    monitor = PriceMonitor(data_dir=data_dir)
+    
+    console.print("💾 [bold cyan]Creating Backup[/bold cyan]")
+    
+    # Create backup
+    with console.status("Creating backup..."):
+        backup_result = monitor.create_backup()
+    
+    if backup_result['status'] == 'success':
+        console.print(f"✅ Backup created successfully!")
+        console.print(f"📁 Backup directory: {backup_result['backup_directory']}")
+        console.print(f"📊 Backup size: {backup_result['backup_size_mb']:.2f} MB")
+        console.print(f"⏰ Timestamp: {backup_result['backup_timestamp']}")
+    else:
+        console.print(f"❌ Backup failed: {backup_result.get('error', 'Unknown error')}")
+
+
+@cli.command()
+@click.option("--data-dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory containing price monitoring data")
+@click.option("--verbose", "-v", count=True, help="Increase verbosity")
+def export(data_dir: Optional[str], verbose: int):
+    """Export price monitoring data in various formats."""
+    # Set up logging
+    setup_logging(verbose)
+    
+    # Initialize price monitor
+    data_dir = data_dir or click.get_current_context().obj.get('data_dir')
+    monitor = PriceMonitor(data_dir=data_dir)
+    
+    console.print("📤 [bold cyan]Data Export[/bold cyan]")
+    
+    # Get export options
+    export_type = Prompt.ask(
+        "\n[bold]What type of data would you like to export?[/bold]",
+        choices=["price_drops", "clearance_deals", "products", "prices", "stores"],
+        default="price_drops"
+    )
+    
+    # Get filters based on export type
+    filters = {}
+    if export_type == "price_drops":
+        min_drop = Prompt.ask("Minimum price drop percentage", default="5.0")
+        days = Prompt.ask("Number of days to look back", default="7")
+        try:
+            filters['min_drop_percent'] = float(min_drop)
+            filters['days'] = int(days)
+        except ValueError:
+            console.print("[red]Invalid values. Using defaults.[/red]")
+            filters['min_drop_percent'] = 5.0
+            filters['days'] = 7
+    elif export_type == "clearance_deals":
+        max_price = Prompt.ask("Maximum price for clearance items (optional)", default="")
+        if max_price:
+            try:
+                filters['max_price'] = float(max_price)
+            except ValueError:
+                console.print("[red]Invalid price. Skipping filter.[/red]")
+    
+    # Export data
+    with console.status(f"Exporting {export_type} data..."):
+        export_result = monitor.export_data(export_type, filters, "json")
+    
+    if export_result['export_file']:
+        console.print(f"✅ Data exported successfully!")
+        console.print(f"📁 Export file: {export_result['export_file']}")
+        console.print(f"📊 Records exported: {export_result['records_exported']}")
+        console.print(f"⏰ Timestamp: {export_result['timestamp']}")
+    else:
+        console.print(f"❌ Export failed: {export_result.get('error', 'Unknown error')}")
+
+
+@cli.command()
 @click.argument("monitor_name")
 @click.option(
     "--data-dir",
