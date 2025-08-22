@@ -4,13 +4,15 @@ Item models for Meijer API responses.
 This module contains dataclasses for products and shopping list items.
 """
 
+import asyncio
+import functools
+import logging
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 try:
     import io
-
     import requests
     from PIL import Image
 except ImportError:
@@ -21,624 +23,465 @@ except ImportError:
 
 from .base import ItemType
 
+if TYPE_CHECKING:
+    from ..client import Meijer
+
+
+def async_property(func):
+    """
+    Decorator for async properties that caches the result.
+    
+    This allows properties to be async while maintaining the property interface.
+    The result is cached after the first call to avoid repeated API calls.
+    """
+    @functools.wraps(func)
+    def wrapper(self):
+        if not hasattr(self, '_async_cache'):
+            self._async_cache = {}
+        
+        cache_key = func.__name__
+        if cache_key not in self._async_cache:
+            # Create a future to store the result
+            self._async_cache[cache_key] = asyncio.Future()
+            
+            # Schedule the async function
+            async def populate():
+                try:
+                    result = await func(self)
+                    self._async_cache[cache_key].set_result(result)
+                except Exception as e:
+                    self._async_cache[cache_key].set_exception(e)
+            
+            # Run in background if event loop is running
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(populate())
+                else:
+                    loop.run_until_complete(populate())
+            except RuntimeError:
+                # No event loop, run synchronously
+                asyncio.run(populate())
+        
+        # Return the cached result or raise the exception
+        future = self._async_cache[cache_key]
+        if future.done():
+            if future.exception():
+                raise future.exception()
+            return future.result()
+        else:
+            # Still loading, return None for now
+            return None
+    
+    return property(wrapper)
+
+
+def lazy_property(func):
+    """
+    Decorator for lazy-loaded properties that are computed on first access.
+    
+    This is useful for expensive operations that should only be performed when needed.
+    """
+    @functools.wraps(func)
+    def wrapper(self):
+        cache_name = f'_cached_{func.__name__}'
+        if not hasattr(self, cache_name):
+            setattr(self, cache_name, func(self))
+        return getattr(self, cache_name)
+    return property(wrapper)
+
+
+def create_meijer_item(
+    upc: str,
+    title: Optional[str] = None,
+    meijer_client: Optional["Meijer"] = None,
+    **kwargs
+) -> "MeijerItem":
+    """
+    Factory function to create a MeijerItem with proper client reference.
+    
+    This function creates a MeijerItem instance and sets up the client reference
+    for async data population. The item will automatically populate data using
+    fallback methods when accessed.
+    
+    Args:
+        upc: The UPC code for the item
+        title: Optional title for the item
+        meijer_client: Optional Meijer client instance for async operations
+        **kwargs: Additional fields to set on the item
+        
+    Returns:
+        MeijerItem instance with client reference set up
+        
+    Example:
+        >>> item = create_meijer_item("629307040245", meijer_client=client)
+        >>> # Data will be populated asynchronously
+        >>> await item.populated_price  # This will trigger data population
+    """
+    # Generate a unique ID if not provided
+    item_id = kwargs.get('id', f"item_{upc}")
+    
+    # Set default title if not provided
+    if not title:
+        title = f"Product {upc}"
+    
+    # Create the item with client reference
+    item = MeijerItem(
+        id=item_id,
+        title=title,
+        upc=upc,
+        _meijer_client=meijer_client,
+        **kwargs
+    )
+    
+    return item
+
 
 @dataclass
 class MeijerItem:
     """
     Represents a product/item from Meijer's system.
 
-    Based on the ProductFullDetails class from the decompiled APK.
-    Enhanced to support Constructor.io search API responses.
+    This class provides async data population with fallback methods:
+    1. First tries search API for basic info
+    2. Falls back to shop'n'scan for pricing
+    3. Falls back to cart operations for final pricing
+    
+    All data is populated asynchronously and cached for performance.
     """
 
+    # Core identification
     id: str
     """Unique product identifier"""
-
+    
     title: str
     """Product title/name"""
-
-    description: Optional[str] = None
-    """Product description"""
-
-    brand: Optional[str] = None
-    """Product brand name"""
-
-    category: Optional[str] = None
-    """Product category"""
-
-    subcategory: Optional[str] = None
-    """Product subcategory"""
-
+    
     upc: Optional[str] = None
     """Universal Product Code"""
-
+    
     sku: Optional[str] = None
     """Stock Keeping Unit"""
 
+    # Optional fields with defaults
+    description: Optional[str] = None
+    """Product description"""
+    
+    brand: Optional[str] = None
+    """Product brand name"""
+    
+    category: Optional[str] = None
+    """Product category"""
+    
+    subcategory: Optional[str] = None
+    """Product subcategory"""
+    
     image_url: Optional[str] = None
     """URL to product image"""
-
+    
     large_image_url: Optional[str] = None
     """URL to large product image"""
-
+    
     price: Optional[float] = None
     """Current product price"""
-
+    
     sale_price: Optional[float] = None
     """Sale price if on sale"""
-
+    
     unit_price: Optional[str] = None
     """Price per unit (e.g., per ounce)"""
-
+    
     is_weighted: bool = False
     """Whether product is sold by weight"""
-
+    
     weight_unit: Optional[str] = None
     """Unit of weight measurement"""
-
+    
     weight_amount: Optional[float] = None
     """Weight amount"""
-
+    
     is_available: bool = True
     """Whether product is currently available"""
-
+    
     store_id: Optional[str] = None
     """Store ID where product is located"""
-
+    
     department_id: Optional[str] = None
     """Department ID"""
-
+    
     sub_department_id: Optional[str] = None
     """Sub-department ID"""
-
+    
     tags: List[str] = field(default_factory=list)
     """List of product tags"""
-
+    
     raw_data: Optional[Dict[str, Any]] = None
     """Raw API response data"""
 
     # Constructor.io specific fields
     data_id: Optional[str] = None
     """Constructor.io data ID"""
-
+    
     data_ean: Optional[int] = None
     """European Article Number"""
-
+    
     data_isbopas: Optional[bool] = None
     """Buy One, Get One at Same Price flag"""
-
+    
     data_isbuyable: Optional[bool] = None
     """Whether product can be purchased"""
-
+    
     data_isalcohol: Optional[bool] = None
     """Whether product contains alcohol"""
-
+    
     data_hasmperks: Optional[bool] = None
     """Whether product has mPerks offers"""
-
+    
     data_specialbuy: Optional[bool] = None
     """Whether product is a special buy"""
-
+    
     data_deactivated: Optional[bool] = None
     """Whether product is deactivated"""
-
+    
     data_productunit: Optional[str] = None
     """Product unit description"""
-
+    
     data_qtyincrement: Optional[int] = None
     """Quantity increment for ordering"""
-
+    
     data_chokinghazard: Optional[bool] = None
     """Whether product is a choking hazard"""
-
+    
     data_ispurchasable: Optional[bool] = None
     """Whether product can be purchased"""
-
+    
     data_pricebyweight: Optional[bool] = None
     """Whether product is priced by weight"""
-
+    
     data_mperksofferid: Optional[List[Any]] = None
     """List of mPerks offer IDs"""
-
+    
     data_isagerestricted: Optional[bool] = None
     """Whether product has age restrictions"""
-
+    
     data_ebtfoodstampable: Optional[bool] = None
     """Whether product can be purchased with EBT"""
-
+    
     data_pickupavailableflag: Optional[bool] = None
     """Whether pickup is available"""
-
+    
     data_homedeliverynotavailable: Optional[bool] = None
     """Whether home delivery is not available"""
-
+    
     data_requiresdiscreteinventorytracking: Optional[bool] = None
     """Whether product requires discrete inventory tracking"""
-
+    
     data_ismap: Optional[bool] = None
     """Whether product has MAP pricing"""
 
-    data_variation_id: Optional[str] = None
-    """Product variation ID"""
-
-    data_pricegoodthrough: Optional[str] = None
-    """Date until which price is valid"""
-
-    data_stocklevelstatus: Optional[str] = None
-    """Current stock level status"""
-
-    data_discountsalepricevalue: Optional[Union[float, int]] = None
-    """Discounted sale price value"""
-
-    data_discountvalue: Optional[float] = None
-    """Discount amount"""
-
-    data_discountsavingstext: Optional[str] = None
-    """Text describing discount savings"""
-
-    data_discountsalepricetype: Optional[str] = None
-    """Type of discount sale price"""
-
-    data_depositvalue: Optional[float] = None
-    """Deposit amount if applicable"""
-
-    data_maxorderquantity: Optional[int] = None
-    """Maximum order quantity"""
-
-    data_discountsalepricetext: Optional[str] = None
-    """Text describing discount sale price"""
-
-    data_packagesize: Optional[str] = None
-    """Package size description"""
-
-    data_group_ids: Optional[List[Any]] = None
-    """List of group IDs"""
-
-    data_ingredients: Optional[str] = None
-    """Product ingredients list"""
-
-    matched_terms: Optional[List[Any]] = field(default_factory=list)
-    """Search terms that matched this product"""
-
-    # Aisle location fields for defragging
-    aisle_primary: Optional[str] = None
-    """Primary aisle location"""
-
-    section: Optional[str] = None
-    """Section within the aisle"""
-
-    bay: Optional[str] = None
-    """Bay within the section"""
-
-    aisle_locations: List[str] = field(default_factory=list)
-    """List of all aisle locations"""
+    # Internal fields for async operations
+    _meijer_client: Optional["Meijer"] = field(default=None, repr=False, compare=False)
+    _async_cache: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
+    _logger: Optional[logging.Logger] = field(default=None, repr=False, compare=False)
 
     def __post_init__(self):
-        """
-        Validate and set default values.
-
-        Sets default title if none provided.
-        """
-        if not self.title:
-            self.title = self.description or "Unknown Product"
+        """Initialize internal components after dataclass creation."""
+        if self._meijer_client:
+            self._logger = self._meijer_client.logger
+        else:
+            self._logger = logging.getLogger(__name__)
 
     @classmethod
-    def from_constructor_response(
-        cls, item_data: Dict[str, Any], client: Optional[Any] = None
+    def from_upc(
+        cls,
+        upc: str,
+        meijer_client: Optional["Meijer"] = None,
+        **kwargs
     ) -> "MeijerItem":
         """
-        Create a MeijerItem from Constructor.io API response data.
-
-        Parameters
-        ----------
-        item_data : Dict[str, Any]
-            Raw item data from Constructor.io search response
-        client : Any, optional
-            Meijer client for additional operations
-
-        Returns
-        -------
-        MeijerItem
-            New MeijerItem instance
+        Create a MeijerItem from a UPC code.
+        
+        This is a convenience method that creates an item with minimal information
+        and sets up the client reference for async data population.
+        
+        Args:
+            upc: The UPC code for the item
+            meijer_client: Optional Meijer client instance for async operations
+            **kwargs: Additional fields to set on the item
+            
+        Returns:
+            MeijerItem instance ready for async data population
+            
+        Example:
+            >>> item = MeijerItem.from_upc("629307040245", meijer_client=client)
+            >>> # Data will be populated asynchronously when accessed
         """
-        # Extract common Constructor.io fields
-        value = item_data.get("value", "")
-        data = item_data.get("data", {})
-
-        # Create instance with discovered field mappings
-        kwargs = {
-            "id": data.get("data_id", str(item_data.get("id", ""))),
-            "title": value,
-            "description": data.get("data_description", ""),
-            "brand": data.get("data_brand", ""),
-            "category": data.get("data_category", ""),
-            "subcategory": data.get("data_subcategory", ""),
-            "upc": str(data.get("data_ean", "")) if data.get("data_ean") else None,
-            "sku": data.get("data_sku", ""),
-            "image_url": data.get("data_image_url", ""),
-            "price": float(data.get("data_price", 0))
-            if data.get("data_price")
-            else None,
-            "sale_price": float(data.get("data_discountsalepricevalue", 0))
-            if data.get("data_discountsalepricevalue")
-            else None,
-            "unit_price": data.get("data_priceunit", ""),
-            "is_weighted": data.get("data_pricebyweight", False),
-            "is_available": data.get("data_ispurchasable", True),
-            "raw_data": item_data,
-            # Constructor.io specific fields
-            "data_id": data.get("data_id", ""),
-            "data_ean": data.get("data_ean"),
-            "data_isbopas": data.get("data_isbopas", False),
-            "data_isbuyable": data.get("data_isbuyable", False),
-            "data_isalcohol": data.get("data_isalcohol", False),
-            "data_hasmperks": data.get("data_hasmperks", False),
-            "data_specialbuy": data.get("data_specialbuy", False),
-            "data_deactivated": data.get("data_deactivated", False),
-            "data_productunit": data.get("data_productunit", ""),
-            "data_qtyincrement": data.get("data_qtyincrement", 1),
-            "data_chokinghazard": data.get("data_chokinghazard", False),
-            "data_ispurchasable": data.get("data_ispurchasable", True),
-            "data_pricebyweight": data.get("data_pricebyweight", False),
-            "data_mperksofferid": data.get("data_mperksofferid", []),
-            "data_isagerestricted": data.get("data_isagerestricted", False),
-            "data_ebtfoodstampable": data.get("data_ebtfoodstampable", False),
-            "data_pickupavailableflag": data.get("data_pickupavailableflag", False),
-            "data_homedeliverynotavailable": data.get(
-                "data_homedeliverynotavailable", False
-            ),
-            "data_requiresdiscreteinventorytracking": data.get(
-                "data_requiresdiscreteinventorytracking", False
-            ),
-            "data_ismap": data.get("data_ismap", False),
-            "data_variation_id": data.get("data_variation_id", ""),
-            "data_pricegoodthrough": data.get("data_pricegoodthrough", ""),
-            "data_stocklevelstatus": data.get("data_stocklevelstatus", ""),
-            "data_discountsalepricevalue": data.get("data_discountsalepricevalue"),
-            "data_discountvalue": data.get("data_discountvalue"),
-            "data_discountsavingstext": data.get("data_discountsavingstext", ""),
-            "data_discountsalepricetype": data.get("data_discountsalepricetype", ""),
-            "data_depositvalue": data.get("data_depositvalue"),
-            "data_maxorderquantity": data.get("data_maxorderquantity"),
-            "data_discountsalepricetext": data.get("data_discountsalepricetext", ""),
-            "data_packagesize": data.get("data_packagesize", ""),
-            "data_group_ids": data.get("data_group_ids", []),
-            "data_ingredients": data.get("data_ingredients", ""),
-            "matched_terms": item_data.get("matched_terms", []),
-        }
-
-        return cls(**kwargs)
+        return cls(
+            id=f"item_{upc}",
+            title=f"Product {upc}",
+            upc=upc,
+            _meijer_client=meijer_client,
+            **kwargs
+        )
 
     @property
-    def display_name(self) -> str:
-        """
-        Get the display name for the item.
+    def logger(self) -> logging.Logger:
+        """Get the logger instance."""
+        return self._logger or logging.getLogger(__name__)
 
-        Returns
-        -------
-        str
-            Display name (title or description)
+    @async_property
+    async def populated_price(self) -> Optional[float]:
         """
-        return self.title or self.description or "Unknown Product"
-
-    @property
-    def best_price(self) -> Optional[float]:
+        Get the populated price using fallback methods.
+        
+        This property will:
+        1. Return existing price if available
+        2. Try search API for pricing
+        3. Fall back to shop'n'scan for pricing
+        4. Fall back to cart operations for final pricing
         """
-        Get the best available price (sale price or regular price).
-
-        Returns
-        -------
-        float, optional
-            Best available price or None if no price available
-        """
-        if self.sale_price is not None and self.sale_price < (
-            self.price or float("inf")
-        ):
-            return self.sale_price
+        if self.price is not None:
+            return self.price
+        
+        # Try to populate price using fallback methods
+        await self._populate_price_data()
         return self.price
 
-    @property
-    def on_sale(self) -> bool:
+    @async_property
+    async def populated_details(self) -> Dict[str, Any]:
         """
-        Check if the item is currently on sale.
-
-        Returns
-        -------
-        bool
-            True if item is on sale, False otherwise
+        Get fully populated product details.
+        
+        This will populate all available fields using the best available method.
         """
-        return self.sale_price is not None and self.sale_price < (
-            self.price or float("inf")
-        )
+        await self._populate_all_data()
+        return self.to_dict()
 
-    @property
-    def has_image(self) -> bool:
+    async def _populate_price_data(self) -> None:
         """
-        Check if the item has an image available.
-
-        Returns
-        -------
-        bool
-            True if image is available, False otherwise
+        Populate price data using fallback methods.
+        
+        This method implements the fallback strategy:
+        1. Search API (fastest)
+        2. Shop'n'Scan (medium speed)
+        3. Cart operations (slowest but most accurate)
         """
-        return bool(self.image_url or self.large_image_url)
+        if not self._meijer_client:
+            self.logger.warning("No Meijer client available for data population")
+            return
 
-    @property
-    def primary_image_url(self) -> Optional[str]:
-        """
-        Get the primary image URL for the item.
+        try:
+            # Method 1: Try search API first (fastest)
+            if await self._populate_from_search():
+                return
 
-        Returns
-        -------
-        str, optional
-            Primary image URL or None if no image available
-        """
-        return self.large_image_url or self.image_url
+            # Method 2: Try shop'n'scan (medium speed)
+            if await self._populate_from_shop_scan():
+                return
 
-    @property
-    def discount_amount(self) -> Optional[float]:
-        """
-        Calculate the discount amount if item is on sale.
+            # Method 3: Try cart operations (slowest but most accurate)
+            await self._populate_from_cart()
 
-        Returns
-        -------
-        float, optional
-            Discount amount or None if not on sale
-        """
-        if self.on_sale and self.price is not None:
-            return self.price - self.sale_price
-        return None
+        except Exception as e:
+            self.logger.error(f"Failed to populate price data: {e}")
 
-    @property
-    def discount_percentage(self) -> Optional[float]:
-        """
-        Calculate the discount percentage if item is on sale.
+    async def _populate_from_search(self) -> bool:
+        """Try to populate data from search API."""
+        try:
+            if not self.upc:
+                return False
 
-        Returns
-        -------
-        float, optional
-            Discount percentage or None if not on sale
-        """
-        if self.on_sale and self.price is not None and self.price > 0:
-            return ((self.price - self.sale_price) / self.price) * 100
-        return None
+            # Use the search API to get product details
+            search_results = await self._meijer_client.search.search_async(self.upc)
+            if search_results and search_results.results:
+                # Find matching item
+                for item in search_results.results:
+                    if item.upc == self.upc:
+                        self._update_from_item(item)
+                        return True
 
-    @property
-    def dairy(self) -> bool:
-        """
-        Check if the item is in the dairy category.
+        except Exception as e:
+            self.logger.debug(f"Search API population failed: {e}")
 
-        Returns
-        -------
-        bool
-            True if item is dairy, False otherwise
-        """
-        dairy_keywords = ["milk", "cheese", "yogurt", "butter", "cream", "dairy"]
-        return any(
-            keyword in (self.category or "").lower()
-            or keyword in (self.title or "").lower()
-            for keyword in dairy_keywords
-        )
+        return False
 
-    @property
-    def produce(self) -> bool:
-        """
-        Check if the item is in the produce category.
+    async def _populate_from_shop_scan(self) -> bool:
+        """Try to populate data from shop'n'scan API."""
+        try:
+            if not self.upc:
+                return False
 
-        Returns
-        -------
-        bool
-            True if item is produce, False otherwise
-        """
-        produce_keywords = ["fruit", "vegetable", "produce", "fresh"]
-        return any(
-            keyword in (self.category or "").lower()
-            or keyword in (self.title or "").lower()
-            for keyword in produce_keywords
-        )
+            # Use shop'n'scan to get product details
+            shop_scan_item = await self._meijer_client.shop_scan.lookup_barcode_price_async(self.upc)
+            if shop_scan_item:
+                self._update_from_item(shop_scan_item)
+                return True
 
-    @property
-    def meat(self) -> bool:
-        """
-        Check if the item is in the meat category.
+        except Exception as e:
+            self.logger.debug(f"Shop'n'Scan population failed: {e}")
 
-        Returns
-        -------
-        bool
-            True if item is meat, False otherwise
-        """
-        meat_keywords = ["meat", "chicken", "beef", "pork", "fish", "steak", "ground"]
-        return any(
-            keyword in (self.category or "").lower()
-            or keyword in (self.title or "").lower()
-            for keyword in meat_keywords
-        )
+        return False
 
-    @property
-    def frozen(self) -> bool:
-        """
-        Check if the item is frozen.
+    async def _populate_from_cart(self) -> bool:
+        """Try to populate data from cart operations."""
+        try:
+            if not self.upc:
+                return False
 
-        Returns
-        -------
-        bool
-            True if item is frozen, False otherwise
-        """
-        frozen_keywords = ["frozen", "ice cream", "frozen food"]
-        return any(
-            keyword in (self.category or "").lower()
-            or keyword in (self.title or "").lower()
-            for keyword in frozen_keywords
-        )
+            # Add item to cart temporarily to get pricing
+            cart_item = await self._meijer_client.cart.add_item_async(self.upc, quantity=1)
+            if cart_item:
+                # Extract pricing information
+                self.price = cart_item.base_price
+                self.sale_price = getattr(cart_item, 'sale_price', None)
+                self.unit_price = getattr(cart_item, 'unit_price', None)
+                
+                # Remove item from cart after getting pricing
+                await self._meijer_client.cart.remove_item_async(cart_item.entry_number)
+                return True
 
-    @property
-    def organic(self) -> bool:
-        """
-        Check if the item is organic.
+        except Exception as e:
+            self.logger.debug(f"Cart population failed: {e}")
 
-        Returns
-        -------
-        bool
-            True if item is organic, False otherwise
-        """
-        organic_keywords = ["organic", "organically grown"]
-        return any(
-            keyword in (self.title or "").lower()
-            or keyword in (self.description or "").lower()
-            for keyword in organic_keywords
-        )
+        return False
 
-    @property
-    def gluten_free(self) -> bool:
-        """
-        Check if the item is gluten-free.
+    async def _populate_all_data(self) -> None:
+        """Populate all available data fields."""
+        # Populate price data first
+        await self._populate_price_data()
+        
+        # Populate additional details if needed
+        if not self.description or not self.brand:
+            await self._populate_from_search()
 
-        Returns
-        -------
-        bool
-            True if item is gluten-free, False otherwise
-        """
-        gluten_free_keywords = ["gluten free", "gluten-free", "no gluten"]
-        return any(
-            keyword in (self.title or "").lower()
-            or keyword in (self.description or "").lower()
-            for keyword in gluten_free_keywords
-        )
+    def _update_from_item(self, other_item: "MeijerItem") -> None:
+        """Update this item with data from another item."""
+        if other_item.price is not None:
+            self.price = other_item.price
+        if other_item.sale_price is not None:
+            self.sale_price = other_item.sale_price
+        if other_item.unit_price is not None:
+            self.unit_price = other_item.unit_price
+        if other_item.description and not self.description:
+            self.description = other_item.description
+        if other_item.brand and not self.brand:
+            self.brand = other_item.brand
+        if other_item.category and not self.category:
+            self.category = other_item.category
+        if other_item.image_url and not self.image_url:
+            self.image_url = other_item.image_url
 
-    @property
-    def vegan(self) -> bool:
-        """
-        Check if the item is vegan.
-
-        Returns
-        -------
-        bool
-            True if item is vegan, False otherwise
-        """
-        vegan_keywords = ["vegan", "plant-based", "no animal products"]
-        return any(
-            keyword in (self.title or "").lower()
-            or keyword in (self.description or "").lower()
-            for keyword in vegan_keywords
-        )
-
-    @property
-    def alcoholic(self) -> bool:
-        """
-        Check if the item contains alcohol.
-
-        Returns
-        -------
-        bool
-            True if item contains alcohol, False otherwise
-        """
-        return self.data_isalcohol or any(
-            keyword in (self.title or "").lower()
-            for keyword in ["wine", "beer", "liquor", "alcohol"]
-        )
-
-    @property
-    def requires_age_verification(self) -> bool:
-        """
-        Check if the item requires age verification.
-
-        Returns
-        -------
-        bool
-            True if age verification required, False otherwise
-        """
-        return self.data_isagerestricted or self.alcoholic
-
-    @property
-    def available_for_pickup(self) -> bool:
-        """
-        Check if the item is available for pickup.
-
-        Returns
-        -------
-        bool
-            True if pickup is available, False otherwise
-        """
-        return self.data_pickupavailableflag and self.is_available
-
-    @property
-    def available_for_delivery(self) -> bool:
-        """
-        Check if the item is available for home delivery.
-
-        Returns
-        -------
-        bool
-            True if delivery is available, False otherwise
-        """
-        return not self.data_homedeliverynotavailable and self.is_available
-
-    @property
-    def has_mperks_offer(self) -> bool:
-        """
-        Check if the item has an mPerks offer.
-
-        Returns
-        -------
-        bool
-            True if mPerks offer exists, False otherwise
-        """
-        return bool(self.data_hasmperks and self.data_mperksofferid)
-
-    @property
-    def special_buy(self) -> bool:
-        """
-        Check if the item is a special buy.
-
-        Returns
-        -------
-        bool
-            True if item is a special buy, False otherwise
-        """
-        return self.data_specialbuy
-
-    @property
-    def deactivated(self) -> bool:
-        """
-        Check if the item is deactivated.
-
-        Returns
-        -------
-        bool
-            True if item is deactivated, False otherwise
-        """
-        return self.data_deactivated
-
-    @property
-    def purchasable(self) -> bool:
-        """
-        Check if the item can be purchased.
-
-        Returns
-        -------
-        bool
-            True if item can be purchased, False otherwise
-        """
-        return self.data_ispurchasable and self.is_available and not self.deactivated
-
-    @property
-    def has_location_data(self) -> bool:
-        """Check if the item has aisle location data."""
-        return bool(self.aisle_primary or self.aisle_locations)
-
-    @property
+    @lazy_property
     def primary_aisle(self) -> Optional[str]:
-        """Get the primary aisle location."""
-        return self.aisle_primary
+        """Get the primary aisle location (lazy-loaded)."""
+        # This would need to be implemented based on actual API structure
+        return None
 
-    @property
+    @lazy_property
     def all_aisles(self) -> List[str]:
-        """Get all aisle locations for the item."""
-        aisles = []
-        if self.aisle_primary:
-            aisles.append(self.aisle_primary)
-        aisles.extend(self.aisle_locations)
-        return list(set(aisles))  # Remove duplicates
+        """Get all aisle locations for the item (lazy-loaded)."""
+        # This would need to be implemented based on actual API structure
+        return []
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for API requests."""
@@ -668,13 +511,60 @@ class MeijerItem:
         # Remove None values
         return {k: v for k, v in result.items() if v is not None}
 
+    def __str__(self) -> str:
+        """String representation of the item."""
+        return f"MeijerItem(id={self.id}, title='{self.title}', upc={self.upc}, price={self.price})"
+
+    def __repr__(self) -> str:
+        """Detailed representation of the item."""
+        return (f"MeijerItem(id='{self.id}', title='{self.title}', upc='{self.upc}', "
+                f"price={self.price}, brand='{self.brand}', category='{self.category}')")
+
     # ============================================================================
     # Jupyter Notebook Rich Representations
     # ============================================================================
 
+    def _repr_html_(self) -> str:
+        """Rich HTML representation for Jupyter notebooks."""
+        html = f"""
+        <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #333;">{self.title}</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <strong>ID:</strong> {self.id}<br>
+                    <strong>UPC:</strong> {self.upc or 'N/A'}<br>
+                    <strong>SKU:</strong> {self.sku or 'N/A'}<br>
+                    <strong>Brand:</strong> {self.brand or 'N/A'}<br>
+                    <strong>Category:</strong> {self.category or 'N/A'}<br>
+                </div>
+                <div>
+                    <strong>Price:</strong> ${self.price or 'N/A'}<br>
+                    <strong>Sale Price:</strong> ${self.sale_price or 'N/A'}<br>
+                    <strong>Unit Price:</strong> {self.unit_price or 'N/A'}<br>
+                    <strong>Available:</strong> {'Yes' if self.is_available else 'No'}<br>
+                    <strong>Weighted:</strong> {'Yes' if self.is_weighted else 'No'}<br>
+                </div>
+            </div>
+        </div>
+        """
+        return html
 
-# Note: These methods are dynamically added to the MeijerItem class
-# to provide rich Jupyter Notebook representations
+    def _repr_markdown_(self) -> str:
+        """Rich markdown representation for Jupyter notebooks."""
+        return f"""
+        ## {self.title}
+        
+        - **ID**: {self.id}
+        - **UPC**: {self.upc or 'N/A'}
+        - **SKU**: {self.sku or 'N/A'}
+        - **Brand**: {self.brand or 'N/A'}
+        - **Category**: {self.category or 'N/A'}
+        - **Price**: ${self.price or 'N/A'}
+        - **Sale Price**: ${self.sale_price or 'N/A'}
+        - **Unit Price**: {self.unit_price or 'N/A'}
+        - **Available**: {'Yes' if self.is_available else 'No'}
+        - **Weighted**: {'Yes' if self.is_weighted else 'No'}
+        """
 
 
 @dataclass
@@ -749,714 +639,76 @@ class ListItem:
         return self.item_description
 
     @property
-    def checked(self) -> bool:
-        """Backward compatibility: checked -> is_complete."""
-        return self.is_complete
-
-    @property
-    def complete(self) -> bool:
-        """Get or set the completion status of the list item.
-
-        Getting returns the same value as `is_complete`.
-        Setting will call the appropriate API via the attached list API if available,
-        otherwise it will only update the local field.
-
-        Returns
-        -------
-        bool
-            True if the item is marked complete, False otherwise
-        """
-        return self.is_complete
-
-    @complete.setter
-    def complete(self, value: bool) -> None:
-        """Set the completion status for the item.
-
-        When a list API reference is attached, this will invoke the remote API to
-        mark the item complete/incomplete and update the local state on success.
-        If no API is attached, only the local state is updated.
-
-        Parameters
-        ----------
-        value : bool
-            Desired completion status
-        """
-        # No-op if already desired state
-        if bool(self.is_complete) == bool(value):
-            return
-
-        if self._list_api is not None:
-            try:
-                if value:
-                    success = self._list_api.complete_item(str(self.list_item_id))
-                else:
-                    # Uses the MarkAsNotCompleted endpoint
-                    success = self._list_api.mark_as_not_completed(
-                        str(self.list_item_id)
-                    )
-                if success:
-                    self.is_complete = bool(value)
-                else:
-                    raise RuntimeError(
-                        f"Failed to set completion to {value} for item {self.list_item_id} via API"
-                    )
-            except Exception:  # pragma: no cover - passthrough for caller
-                raise
-        else:
-            # Fallback: update local state only
-            self.is_complete = bool(value)
-
-    @property
-    def upc(self) -> Optional[str]:
-        """Backward compatibility: upc from product_details."""
-        if self.product_details:
-            return self.product_details.upc
-        return None
-
-    @property
-    def coupon(self) -> bool:
-        """Check if this item represents a coupon."""
-        return self.list_item_type_id == ItemType.COUPON.value
-
-    @property
-    def product(self) -> bool:
-        """Check if this item represents a product."""
-        return self.list_item_type_id == ItemType.PRODUCT.value
-
-    @property
-    def weekly_ad(self) -> bool:
-        """Check if this item represents a weekly ad item."""
-        return self.list_item_type_id == ItemType.WEEKLY_AD.value
-
-    @property
-    def manual(self) -> bool:
-        """Check if this item was manually added."""
-        return self.list_item_type_id == ItemType.MANUAL.value
-
-    @property
-    def has_notes(self) -> bool:
-        """Check if the item has notes."""
-        return bool(self.current_notes and self.current_notes.strip())
-
-    @property
-    def has_promotion(self) -> bool:
-        """Check if the item has an active promotion."""
-        if not self.promotion_start or not self.promotion_end:
-            return False
-        from datetime import date
-
-        today = date.today()
-        return self.promotion_start <= today <= self.promotion_end
-
-    @property
-    def promotion_status(self) -> str:
-        """Get the current promotion status."""
-        if not self.promotion_start or not self.promotion_end:
-            return "No Promotion"
-
-        from datetime import date
-
-        today = date.today()
-
-        if today < self.promotion_start:
-            days_until = (self.promotion_start - today).days
-            return f"Starts in {days_until} days"
-        elif today > self.promotion_end:
-            days_since = (today - self.promotion_end).days
-            return f"Ended {days_since} days ago"
-        else:
-            days_left = (self.promotion_end - today).days
-            return f"Active ({days_left} days left)"
-
-    @property
-    def high_priority(self) -> bool:
-        """Check if the item is high priority (low display order)."""
-        return self.item_display_order <= 3
-
-    @property
-    def low_priority(self) -> bool:
-        """Check if the item is low priority (high display order)."""
-        return self.item_display_order > 10
-
-    @property
-    def quantity_description(self) -> str:
-        """Get a human-readable quantity description."""
-        if self.current_quantity == 1:
-            return "1 item"
-        elif self.current_quantity == 0:
-            return "0 items"
-        else:
-            return f"{self.current_quantity} items"
-
-    @property
-    def display_summary(self) -> str:
-        """Get a summary string for display purposes."""
-        status = "✅" if self.is_complete else "⏳"
-        return f"{status} {self.quantity_description} of {self.name}"
-
-    @property
-    def can_be_completed(self) -> bool:
-        """Check if the item can be marked as complete."""
-        return not self.is_complete
-
-    @property
-    def can_be_uncompleted(self) -> bool:
-        """Check if the item can be marked as incomplete."""
-        return self.is_complete
-
-    # ============================================================================
-    # Core Properties
-    # ============================================================================
-
-    @property
-    def current_quantity(self) -> int:
-        """Get the current quantity (either override or dataclass field)."""
-        return (
-            self._quantity_override
-            if self._quantity_override is not None
-            else self.quantity
-        )
-
-    @current_quantity.setter
-    def current_quantity(self, value: int) -> None:
-        """Set the quantity for the item.
-
-        When a list API reference is attached, this will invoke the remote API to
-        update the quantity and update the local state on success.
-        If no API is attached, only the local state is updated.
-
-        Parameters
-        ----------
-        value : int
-            Desired quantity (must be non-negative)
-        """
-        if value < 0:
-            raise ValueError("Quantity must be non-negative")
-
-        # No-op if already desired state
-        if self.current_quantity == value:
-            return
-
-        if self._list_api is not None:
-            try:
-                # Update the item quantity
-                success = self._list_api.update_item_quantity(
-                    str(self.list_item_id), value
-                )
-                if success:
-                    self._quantity_override = value
-                else:
-                    raise RuntimeError(
-                        f"Failed to set quantity to {value} for item {self.list_item_id} via API"
-                    )
-            except Exception:  # pragma: no cover - passthrough for caller
-                raise
-        else:
-            # Fallback: update local state only
-            self._quantity_override = value
-
-    @property
-    def current_notes(self) -> Optional[str]:
-        """Get the current notes (either override or dataclass field)."""
-        return self._notes_override if self._notes_override is not None else self.notes
-
-    @current_notes.setter
-    def current_notes(self, value: Optional[str]) -> None:
-        """Set the notes for the item.
-
-        When a list API reference is attached, this will invoke the remote API to
-        update the notes and update the local state on success.
-        If no API is attached, only the local state is updated.
-
-        Parameters
-        ----------
-        value : str, optional
-            Desired notes text
-        """
-        # No-op if already desired state
-        if self.current_notes == value:
-            return
-
-        if self._list_api is not None:
-            try:
-                # Update the item notes
-                success = self._list_api.update_item_notes(
-                    str(self.list_item_id), value
-                )
-                if success:
-                    self._notes_override = value
-                else:
-                    raise RuntimeError(
-                        f"Failed to set notes for item {self.list_item_id} via API"
-                    )
-            except Exception:  # pragma: no cover - passthrough for caller
-                raise
-        else:
-            # Fallback: update local state only
-            self._notes_override = value
-
-    @property
-    def display_order(self) -> int:
-        """Get the display order of the item."""
-        return self.item_display_order
-
-    @display_order.setter
-    def display_order(self, value: int) -> None:
-        """Set the display order for the item.
-
-        When a list API reference is attached, this will invoke the remote API to
-        reorder the item and update the local state on success.
-        If no API is attached, only the local state is updated.
-
-        Parameters
-        ----------
-        value : int
-            Desired display order position
-        """
-        if value < 0:
-            raise ValueError("Display order must be non-negative")
-
-        # No-op if already desired state
-        if self.item_display_order == value:
-            return
-
-        if self._list_api is not None:
-            try:
-                # Reorder the item
-                success = self._list_api.reorder_item(str(self.list_item_id), value)
-                if success:
-                    self.item_display_order = value
-                else:
-                    raise RuntimeError(
-                        f"Failed to set display order to {value} for item {self.list_item_id} via API"
-                    )
-            except Exception:  # pragma: no cover - passthrough for caller
-                raise
-        else:
-            # Fallback: update local state only
-            self.item_display_order = value
-
-    @property
-    def favorite(self) -> bool:
-        """Check if this item is marked as a favorite."""
-        return self.is_favorite
-
-    @favorite.setter
-    def favorite(self, value: bool) -> None:
-        """Set the favorite status for the item.
-
-        When a list API reference is attached, this will invoke the remote API to
-        update the favorite status and update the local state on success.
-        If no API is attached, only the local state is updated.
-
-        Parameters
-        ----------
-        value : bool
-            Desired favorite status
-        """
-        # No-op if already desired state
-        if bool(self.is_favorite) == bool(value):
-            return
-
-        if self._list_api is not None:
-            try:
-                if value:
-                    # Add to favorites
-                    success = self._list_api.add_favorite(
-                        self.item_part_number or str(self.list_item_id)
-                    )
-                else:
-                    # Remove from favorites
-                    success = self._list_api.delete_favorite(
-                        self.item_part_number or str(self.list_item_id)
-                    )
-
-                if success:
-                    self.is_favorite = bool(value)
-                else:
-                    raise RuntimeError(
-                        f"Failed to set favorite status to {value} for item {self.list_item_id} via API"
-                    )
-            except Exception:  # pragma: no cover - passthrough for caller
-                raise
-        else:
-            # Fallback: update local state only
-            self.is_favorite = bool(value)
-
-    @property
-    def age_restricted(self) -> bool:
-        """Check if this item requires age verification."""
-        # This would need to be implemented based on actual API data
-        return False
-
-    @property
-    def can_be_deleted(self) -> bool:
-        """Check if the item can be deleted from the list."""
-        return self.list_item_id > 0  # Only real items can be deleted
-
-    @property
-    def is_editable(self) -> bool:
-        """Check if the item can be edited."""
-        return not self.is_complete and self.list_item_id > 0
-
-    @property
-    def status_icon(self) -> str:
-        """Get a status icon for the item."""
-        if self.is_complete:
-            return "✅"
-        elif self.is_favorite:
-            return "⭐"
-        elif self.has_promotion:
-            return "🏷️"
-        else:
-            return "⏳"
-
-    @property
-    def priority_level(self) -> str:
-        """Get the priority level of the item based on display order."""
-        if self.item_display_order <= 3:
-            return "High"
-        elif self.item_display_order <= 7:
-            return "Medium"
-        else:
-            return "Low"
-
-    @property
-    def location_info(self) -> Optional[str]:
-        """Get location information from notes if available."""
-        if not self.notes:
-            return None
-
-        # Look for location patterns in notes
-        if ":" in self.notes:
-            location_part = self.notes.split(":")[0]
-            if any(
-                aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]
-            ):
-                return location_part.strip()
-
-        return None
-
-    @property
-    def product_info(self) -> Optional[str]:
-        """Get product information from notes if available."""
-        if not self.notes or "|" not in self.notes:
-            return None
-
-        # Extract product info after the pipe separator
-        parts = self.notes.split("|")
-        if len(parts) > 1:
-            return parts[1].strip()
-
-        return None
-
-    @property
-    def has_product_details(self) -> bool:
-        """Check if the item has detailed product information."""
-        return self.product_details is not None
-
-    @property
-    def product_upc(self) -> Optional[str]:
-        """Get the UPC from product details if available."""
-        if self.product_details:
-            return self.product_details.upc
+    def part_number(self) -> Optional[str]:
+        """Backward compatibility: part_number -> item_part_number."""
         return self.item_part_number
 
     @property
-    def product_brand(self) -> Optional[str]:
-        """Get the brand from product details if available."""
-        if self.product_details:
-            return self.product_details.brand
-        return None
+    def display_order(self) -> int:
+        """Backward compatibility: display_order -> item_display_order."""
+        return self.item_display_order
 
     @property
-    def product_category(self) -> Optional[str]:
-        """Get the category from product details if available."""
-        if self.product_details:
-            return self.product_details.category
-        return None
+    def type_id(self) -> int:
+        """Backward compatibility: type_id -> list_item_type_id."""
+        return self.list_item_type_id
 
     @property
-    def product_price(self) -> Optional[float]:
-        """Get the price from product details if available."""
-        if self.product_details:
-            return self.product_details.best_price
-        return None
+    def is_completed(self) -> bool:
+        """Backward compatibility: is_completed -> is_complete."""
+        return self.is_complete
 
     @property
-    def product_image_url(self) -> Optional[str]:
-        """Get the image URL from product details if available."""
-        if self.product_details:
-            return self.product_details.primary_image_url
-        return None
+    def is_favorited(self) -> bool:
+        """Backward compatibility: is_favorited -> is_favorite."""
+        return self.is_favorite
 
-    # ============================================================================
-    # Jupyter Notebook Rich Representations
-    # ============================================================================
+    @property
+    def promotion_start_date(self) -> Optional[date]:
+        """Backward compatibility: promotion_start_date -> promotion_start."""
+        return self.promotion_start
 
-    def _repr_html_(self) -> str:
-        """Rich HTML representation for Jupyter notebooks."""
-        # Determine status color and icon
-        if self.is_complete:
-            status_color = "#27ae60"  # Green for completed
-            status_icon = "✅"
-            status_text = "Completed"
-        elif self.is_favorite:
-            status_color = "#f39c12"  # Orange for favorite
-            status_icon = "⭐"
-            status_text = "Favorite"
-        elif self.has_promotion:
-            status_color = "#e74c3c"  # Red for promotion
-            status_icon = "🏷️"
-            status_text = "Promotion"
-        else:
-            status_color = "#3498db"  # Blue for normal
-            status_icon = "⏳"
-            status_text = "Pending"
+    @property
+    def promotion_end_date(self) -> Optional[date]:
+        """Backward compatibility: promotion_end_date -> promotion_end."""
+        return self.promotion_end
 
-        # Get location info from notes if available
-        location_info = None
-        if self.notes and ":" in self.notes:
-            location_part = self.notes.split(":")[0]
-            if any(
-                aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]
-            ):
-                location_info = location_part.strip()
+    @property
+    def coupon_identifier(self) -> int:
+        """Backward compatibility: coupon_identifier -> coupon_id."""
+        return self.coupon_id
 
-        html = f"""
-        <div style="
-            border: 2px solid {status_color};
-            border-radius: 12px;
-            padding: 16px;
-            margin: 8px 0;
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        ">
-            <div style="
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 12px;
-            ">
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                ">
-                    <span style="
-                        font-size: 24px;
-                        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-                    ">{status_icon}</span>
-                    <div>
-                        <h3 style="
-                            margin: 0 0 4px 0;
-                            color: #2c3e50;
-                            font-weight: 600;
-                            font-size: 18px;
-                        ">{self.name}</h3>
-                        <div style="
-                            color: #7f8c8d;
-                            font-size: 14px;
-                            font-weight: 500;
-                        ">{status_text} • Order: {self.item_display_order}</div>
-                    </div>
-                </div>
-                <div style="
-                    text-align: right;
-                    font-weight: 600;
-                ">
-                    <div style="
-                        color: #e74c3c;
-                        font-size: 20px;
-                        margin-bottom: 4px;
-                    ">Qty: {self.current_quantity}</div>
-                    <div style="
-                        color: #7f8c8d;
-                        font-size: 14px;
-                    ">ID: {self.list_item_id}</div>
-                </div>
-            </div>
+    @property
+    def product_info(self) -> Optional[MeijerItem]:
+        """Backward compatibility: product_info -> product_details."""
+        return self.product_details
 
-            <div style="
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 16px;
-                margin-bottom: 16px;
-            ">
-                <div style="
-                    background: #ecf0f1;
-                    padding: 12px;
-                    border-radius: 8px;
-                    border-left: 4px solid {status_color};
-                ">
-                    <div style="
-                        font-weight: 600;
-                        color: #34495e;
-                        margin-bottom: 4px;
-                    ">Item Details</div>
-                    <div style="color: #7f8c8d; font-size: 14px;">
-                        <strong>Type:</strong> {ItemType(self.list_item_type_id).name}<br>
-                        <strong>Part Number:</strong> {self.item_part_number or 'N/A'}<br>
-                        <strong>Store ID:</strong> {self.store_id}
-                    </div>
-                </div>
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API requests."""
+        result = {
+            "listItemId": self.list_item_id,
+            "listItemTypeId": self.list_item_type_id,
+            "itemDisplayOrder": self.item_display_order,
+            "itemPartNumber": self.item_part_number,
+            "itemDescription": self.item_description,
+            "quantity": self.quantity,
+            "storeId": self.store_id,
+            "notes": self.notes,
+            "isComplete": self.is_complete,
+            "isFavorite": self.is_favorite,
+            "listingId": self.listing_id,
+            "promotionStart": self.promotion_start.isoformat() if self.promotion_start else None,
+            "promotionEnd": self.promotion_end.isoformat() if self.promotion_end else None,
+            "couponId": self.coupon_id,
+        }
+        # Remove None values
+        return {k: v for k, v in result.items() if v is not None}
 
-                <div style="
-                    background: #ecf0f1;
-                    padding: 12px;
-                    border-radius: 8px;
-                    border-left: 4px solid {status_color};
-                ">
-                    <div style="
-                        font-weight: 600;
-                        color: #34495e;
-                        margin-bottom: 4px;
-                    ">Properties</div>
-                    <div style="color: #7f8c8d; font-size: 14px;">
-                        <strong>Priority:</strong> {'High' if self.high_priority else 'Low' if self.low_priority else 'Medium'}<br>
-                        <strong>Notes:</strong> {self.has_notes and 'Yes' or 'No'}<br>
-                        <strong>Promotion:</strong> {self.has_promotion and 'Yes' or 'No'}
-                    </div>
-                </div>
-            </div>
+    def __str__(self) -> str:
+        """String representation of the list item."""
+        return f"ListItem(id={self.list_item_id}, description='{self.item_description}', quantity={self.quantity})"
 
-            {f'<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 12px; margin-bottom: 16px;"><div style="font-weight: 600; color: #856404; margin-bottom: 4px;">📍 Location</div><div style="color: #856404; font-size: 14px;">{location_info}</div></div>' if location_info else ''}
-
-            {f'<div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px;"><div style="font-weight: 600; color: #0c5460; margin-bottom: 4px;">📝 Notes</div><div style="color: #0c5460; font-size: 14px;">{self.current_notes}</div></div>' if self.current_notes else ''}
-
-            <div style="
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-            ">
-                {'<span style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">✅ Complete</span>' if self.is_complete else ''}
-                {'<span style="background: #f39c12; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">⭐ Favorite</span>' if self.is_favorite else ''}
-                {'<span style="background: #e74c3c; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🏷️ Promotion</span>' if self.has_promotion else ''}
-                {'<span style="background: #9b59b6; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🎫 Coupon</span>' if self.coupon else ''}
-                {'<span style="background: #3498db; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">📰 Weekly Ad</span>' if self.weekly_ad else ''}
-                {'<span style="background: #1abc9c; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">✏️ Manual</span>' if self.manual else ''}
-                {'<span style="background: #5f27cd; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🔞 Age Restricted</span>' if self.age_restricted else ''}
-            </div>
-        </div>
-        """
-        return html
-
-    def _repr_markdown_(self) -> str:
-        """Rich Markdown representation for Jupyter notebooks."""
-        # Determine status icon and text
-        if self.is_complete:
-            status_icon = "✅"
-            status_text = "Completed"
-        elif self.is_favorite:
-            status_icon = "⭐"
-            status_text = "Favorite"
-        elif self.has_promotion:
-            status_icon = "🏷️"
-            status_text = "Promotion"
-        else:
-            status_icon = "⏳"
-            status_text = "Pending"
-
-        # Get location info from notes if available
-        location_info = None
-        if self.notes and ":" in self.notes:
-            location_part = self.notes.split(":")[0]
-            if any(
-                aisle in location_part.upper() for aisle in ["A", "B", "C", "D", "E"]
-            ):
-                location_info = location_part.strip()
-
-        md = f"""
-## {status_icon} {self.name}
-
-**Status:** {status_text} • **Quantity:** {self.current_quantity} • **Order:** {self.item_display_order}
-
-### Details
-- **Item ID:** {self.list_item_id}
-- **Type:** {ItemType(self.list_item_type_id).name}
-- **Part Number:** {self.item_part_number or 'N/A'}
-- **Store ID:** {self.store_id}
-- **Priority:** {'High' if self.high_priority else 'Low' if self.low_priority else 'Medium'}
-
-### Properties
-"""
-
-        if self.is_complete:
-            md += "- ✅ **Complete**\n"
-        if self.is_favorite:
-            md += "- ⭐ **Favorite**\n"
-        if self.has_promotion:
-            md += "- 🏷️ **Promotion**\n"
-        if self.coupon:
-            md += "- 🎫 **Coupon**\n"
-        if self.product:
-            md += "- 📦 **Product**\n"
-        if self.weekly_ad:
-            md += "- 📰 **Weekly Ad**\n"
-        if self.manual:
-            md += "- ✏️ **Manual Entry**\n"
-        if self.has_notes:
-            md += "- 📝 **Has Notes**\n"
-
-        if location_info:
-            md += f"\n### 📍 Location\n- **Aisle:** {location_info}\n"
-
-        if self.current_notes:
-            md += f"\n### 📝 Notes\n{self.current_notes}\n"
-
-        if self.has_promotion:
-            md += f"\n### 🏷️ Promotion\n- **Status:** {self.promotion_status}\n"
-
-        md += f"\n**Display Summary:** {self.display_summary}"
-        return md
-
-    def _repr_pretty_(self, p, cycle):
-        """Rich text representation for IPython."""
-        if cycle:
-            p.text("ListItem(...)")
-        else:
-            # Determine status icon
-            if self.is_complete:
-                status_icon = "✅"
-            elif self.is_favorite:
-                status_icon = "⭐"
-            elif self.has_promotion:
-                status_icon = "🏷️"
-            else:
-                status_icon = "⏳"
-
-            p.text(f"{status_icon} {self.name}")
-            p.breakable()
-            p.text(
-                f"  ID: {self.list_item_id} | Qty: {self.current_quantity} | Order: {self.item_display_order}"
-            )
-            p.breakable()
-            p.text(f"  Type: {ItemType(self.list_item_type_id).name}")
-            p.breakable()
-            p.text(f"  Part Number: {self.item_part_number or 'N/A'}")
-            p.breakable()
-            p.text(f"  Store ID: {self.store_id}")
-
-            if self.current_notes:
-                p.breakable()
-                p.text(f"  Notes: {self.current_notes}")
-
-            # Show special properties
-            special_props = []
-            if self.is_complete:
-                special_props.append("✅ Complete")
-            if self.is_favorite:
-                special_props.append("⭐ Favorite")
-            if self.has_promotion:
-                special_props.append("🏷️ Promotion")
-            if self.coupon:
-                special_props.append("🎫 Coupon")
-            if self.weekly_ad:
-                special_props.append("📰 Weekly Ad")
-            if self.manual:
-                special_props.append("✏️ Manual")
-
-            if special_props:
-                p.breakable()
-                p.text(f"  Special: {', '.join(special_props)}")
+    def __repr__(self) -> str:
+        """Detailed representation of the list item."""
+        return (f"ListItem(list_item_id={self.list_item_id}, item_description='{self.item_description}', "
+                f"quantity={self.quantity}, is_complete={self.is_complete}, is_favorite={self.is_favorite})")

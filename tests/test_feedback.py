@@ -234,8 +234,7 @@ class TestMeijerFeedback:
         assert "mobileDeviceData" in payload
         assert "mobileDeviceData" in payload
 
-    @pytest.mark.asyncio
-    async def test_submit_feedback_api_error(
+    def test_submit_feedback_api_error(
         self, feedback_client, sample_device_data, sample_form_data
     ):
         """Test feedback submission with API error."""
@@ -243,19 +242,18 @@ class TestMeijerFeedback:
         mock_response = MagicMock()
         mock_response.status_code = 500
 
-        feedback_client.api_client.post = AsyncMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
 
         # Submit feedback should raise FeedbackError
         with pytest.raises(FeedbackError, match="Feedback submission failed: 500"):
-            await feedback_client.submit_feedback(sample_form_data, sample_device_data)
+            feedback_client.submit_feedback(sample_form_data, sample_device_data)
 
-    @pytest.mark.asyncio
-    async def test_submit_feedback_exception(
+    def test_submit_feedback_exception(
         self, feedback_client, sample_device_data, sample_form_data
     ):
         """Test feedback submission with general exception."""
         # Mock API call that raises exception
-        feedback_client.api_client.post = AsyncMock(
+        feedback_client.meijer_client._make_request = MagicMock(
             side_effect=Exception("Network error")
         )
 
@@ -263,7 +261,7 @@ class TestMeijerFeedback:
         with pytest.raises(
             FeedbackError, match="Error submitting feedback: Network error"
         ):
-            await feedback_client.submit_feedback(sample_form_data, sample_device_data)
+            feedback_client.submit_feedback(sample_form_data, sample_device_data)
 
     def test_submit_store_search_feedback(
         self, feedback_client, sample_device_data
@@ -279,10 +277,10 @@ class TestMeijerFeedback:
         # Submit store search feedback using the actual method
         result = feedback_client.submit_store_feedback(
             device_data=sample_device_data,
-            feedback_text="Store search is broken",
-            rating=1,
             store_name="Muskegon, MI",
-            store_comment="No stores found",
+            store_comment="Store search is broken",
+            rating=1,
+            additional_comments="No stores found",
         )
 
         # Verify result
@@ -312,7 +310,7 @@ class TestMeijerFeedback:
             device_data=sample_device_data,
             feedback_text="Registration broken",
             rating=1,
-            feedback_type="registration",
+            category="registration",
             additional_comments="Cannot select store",
         )
 

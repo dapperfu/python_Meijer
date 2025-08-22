@@ -34,7 +34,7 @@ import shutil
 
 from .database import PriceDatabase
 from .search_engine import SearchResult, SearchQuery
-from .core import PriceRecord, ShopnScanPrice
+from .models import PriceRecord, ShopnScanPrice
 
 
 class DualPathStorageManager:

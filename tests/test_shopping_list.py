@@ -5,8 +5,11 @@ Tests for the Meijer shopping list functionality.
 from datetime import date
 from unittest.mock import Mock, patch
 
+import pytest
+
 from meijer.models import ListItem
 from meijer.shopping_list import MeijerList
+from meijer.exceptions import MeijerAuthenticationError
 
 
 class TestMeijerList:
@@ -71,27 +74,25 @@ class TestMeijerList:
 
         self.mock_client._make_request.return_value = mock_response
 
-        result = self.shopping_list.get()
-
-        assert result == []
-        self.mock_client.logger.error.assert_called()
+        # Should raise an exception for 500 errors
+        with pytest.raises(Exception, match="API error 500: Internal Server Error"):
+            self.shopping_list.get()
 
     def test_get_list_exception(self):
         """Test getting shopping list with exception."""
         self.mock_client._make_request.side_effect = Exception("Network error")
 
-        result = self.shopping_list.get()
-
-        assert result == []
-        self.mock_client.logger.error.assert_called()
+        # Should raise an exception for network errors
+        with pytest.raises(Exception, match="Network error"):
+            self.shopping_list.get()
 
     def test_get_list_authentication_failure(self):
         """Test getting shopping list without authentication."""
         self.mock_client._ensure_authenticated.return_value = False
 
-        # The method should return an empty list when authentication fails
-        result = self.shopping_list.get()
-        assert result == []
+        # Should raise an authentication error when not authenticated
+        with pytest.raises(MeijerAuthenticationError, match="Authentication required"):
+            self.shopping_list.get()
 
     def test_add_item_success(self):
         """Test adding item to shopping list successfully."""
@@ -403,9 +404,11 @@ class TestMeijerList:
         mock_item.name = "Test Item"
         mock_item.item_part_number = "123456789"
         
-        # Mock the clear_list method to avoid actual API calls
-        with patch.object(self.shopping_list, "get", return_value=[mock_item]), \
+        # Mock the get_stores method to avoid API calls
+        with patch.object(self.shopping_list.meijer, "get_stores", return_value=[]), \
+             patch.object(self.shopping_list, "get", return_value=[mock_item]), \
              patch.object(self.shopping_list, "clear_list", return_value=True), \
+             patch.object(self.shopping_list.meijer, "get_product_detail", return_value=None), \
              patch("builtins.__import__", side_effect=ImportError("No module named 'meijer.search'")):
             result = self.shopping_list.defrag()
 

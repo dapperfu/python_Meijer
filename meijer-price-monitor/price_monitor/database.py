@@ -33,7 +33,7 @@ from typing import Dict, List, Optional, Any, Tuple, Union
 from contextlib import contextmanager
 import json
 
-from .core import PriceRecord, PriceHistory, ShopnScanPrice
+from .models import PriceRecord, PriceHistory, ShopnScanPrice
 
 
 class PriceDatabase:
