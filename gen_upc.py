@@ -21,7 +21,7 @@ from pathlib import Path
 try:
     import barcode
     from barcode.writer import ImageWriter
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image
 except ImportError as e:
     print(f"Error: Missing required dependency: {e}")
     print("Please install required packages: pip install python-barcode Pillow")
@@ -121,48 +121,23 @@ def create_combined_image(upcs: List[str], output_filename: str = "upc_barcodes.
     # Get dimensions from first barcode
     barcode_width, barcode_height = barcode_images[0].size
     
-    # Add space for text below barcode
-    text_height = 30
-    item_height = barcode_height + text_height
-    
     # Calculate total image dimensions
     total_width = cols * barcode_width
-    total_height = rows * item_height
+    total_height = rows * barcode_height
     
     # Create combined image
     combined_img = Image.new('RGB', (total_width, total_height), 'white')
-    draw = ImageDraw.Draw(combined_img)
-    
-    # Try to use a default font, fallback to basic if not available
-    try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
-    except:
-        try:
-            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 16)
-        except:
-            font = ImageFont.load_default()
     
     # Place barcodes in grid
-    for i, (img, upc) in enumerate(zip(barcode_images, valid_upcs)):
+    for i, img in enumerate(barcode_images):
         row = i // cols
         col = i % cols
         
         x = col * barcode_width
-        y = row * item_height
+        y = row * barcode_height
         
         # Paste barcode
         combined_img.paste(img, (x, y))
-        
-        # Add UPC text below barcode
-        text_x = x + (barcode_width // 2)
-        text_y = y + barcode_height + 5
-        
-        # Center the text
-        bbox = draw.textbbox((0, 0), upc, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_x -= text_width // 2
-        
-        draw.text((text_x, text_y), upc, fill='black', font=font)
     
     # Save combined image
     combined_img.save(output_filename)
