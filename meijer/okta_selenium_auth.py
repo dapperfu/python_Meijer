@@ -339,63 +339,9 @@ class OktaSeleniumAuth:
             """))
             print("✅ Password field ready")
 
-            # Direct access to password field using the correct selector
-            try:
-                password_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='credentials.passcode']")
-                print("✅ Password field found and ready")
-            except Exception as e:
-                print(f"❌ Password field not found: {e}")
-                # Fallback to comprehensive search if needed
-                password_selectors = [
-                    "input[name='credentials.passcode']",  # Primary selector based on actual form
-                    "input[name='passcode']",
-                    "input[name='password']",
-                    "input[type='password']",
-                    "input[id*='password' i]",
-                    "input[id*='passcode' i]",
-                    "input[placeholder*='password' i]",
-                    "input[placeholder*='passcode' i]",
-                    "input[placeholder*='pass' i]",
-                ]
-
-                password_field = None
-                for selector in password_selectors:
-                    try:
-                        password_field = WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                        )
-                        print(f"✅ Found password field with fallback: {selector}")
-                        break
-                    except TimeoutException:
-                        continue
-                
-                if not password_field:
-                    print("❌ Password field not found on second page")
-                    print("🔍 Available form elements on second page:")
-                    try:
-                        inputs = self.driver.find_elements(By.TAG_NAME, "input")
-                        for i, inp in enumerate(inputs):
-                            print(
-                                f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
-                            )
-
-                        # Also look for any password-like elements
-                        print("🔍 Looking for password-like elements...")
-                        all_elements = self.driver.find_elements(
-                            By.XPATH,
-                            "//*[contains(text(), 'password') or contains(text(), 'Password') or contains(text(), 'passcode') or contains(text(), 'Passcode')]",
-                        )
-                        for elem in all_elements:
-                            print(
-                                f"   Password-related element: {elem.tag_name} - {elem.text[:50]}..."
-                            )
-
-                    except Exception as e:
-                        print(f"   Error listing elements: {e}")
-
-                    # Take screenshot for debugging
-                    self._take_screenshot("password_field_not_found")
-                    return False
+            # Direct access to password field - we know exactly what it is
+            password_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='credentials.passcode']")
+            print("✅ Password field found and ready")
 
             if not password_field:
                 print("❌ Password field not found on second page")
@@ -960,8 +906,12 @@ class OktaSeleniumAuth:
         try:
             if self.driver:
                 print("🧹 Cleaning up browser...")
-                self.driver.quit()
-                self.driver = None
+                # Don't close browser when debugging - let human close it
+                if hasattr(self, '_keep_open') and self._keep_open:
+                    print("🔍 Keeping browser open for debugging - not calling driver.quit()")
+                else:
+                    self.driver.quit()
+                    self.driver = None
         except Exception as e:
             print(f"⚠️ Error during cleanup: {e}")
     
@@ -1005,6 +955,7 @@ def authenticate_with_selenium(
     if keep_open:
         print("🔍 Browser will be kept open for debugging")
         print("💡 Use auth.close_browser() when done")
+        auth._keep_open = True  # Set flag to prevent cleanup from closing browser
     
     result = auth.authenticate()
     
