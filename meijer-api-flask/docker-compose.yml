@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  meijer-api:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - CACHE_TTL=300
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    networks:
+      - meijer-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - meijer-network
+
+volumes:
+  redis-data:
+
+networks:
+  meijer-network:
+    driver: bridge
