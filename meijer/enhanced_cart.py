@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
 
 from .exceptions import CartError
-from .models.base import BaseModel
+# BaseModel import removed - not used in this module
 
 
 @dataclass
@@ -119,17 +119,17 @@ class CartSummary:
     subtotal: float
     """Subtotal before taxes and fees"""
     
-    tax_amount: Optional[float] = None
-    """Tax amount"""
-    
     total_amount: float
     """Total amount including taxes and fees"""
     
-    savings_amount: Optional[float] = None
-    """Total savings from sales and discounts"""
-    
     item_count: int
     """Number of unique items"""
+    
+    tax_amount: Optional[float] = None
+    """Tax amount"""
+    
+    savings_amount: Optional[float] = None
+    """Total savings from sales and discounts"""
     
     store_id: Optional[str] = None
     """Store ID for the cart"""

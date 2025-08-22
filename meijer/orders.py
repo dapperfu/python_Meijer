@@ -117,11 +117,11 @@ class OrderSummary:
     tax_amount: float
     """Tax amount"""
     
-    delivery_fee: Optional[float] = None
-    """Delivery fee if applicable"""
-    
     total_amount: float
     """Total amount including all fees"""
+    
+    delivery_fee: Optional[float] = None
+    """Delivery fee if applicable"""
     
     estimated_pickup_time: Optional[datetime] = None
     """Estimated pickup time for pickup orders"""

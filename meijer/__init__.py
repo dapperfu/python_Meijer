@@ -75,27 +75,27 @@ from .orders import OrderManager, OrderDetails, OrderSummary, OrderItem, OrderSt
 #     MarketingCarouselCard, SeasonalCard, FavoritesOnSaleCard, CardType, ListType
 # )
 
-# Import Phase 3 advanced features
-from .recommendations import (
-    RecommendationsManager, RecommendationSet, RecommendationItem, 
-    RecommendationType, RecommendationSource, CustomerPreferences
-)
-from .product_operations import ProductOperations, EnhancedProductInfo
+# Import Phase 3 advanced features - Temporarily commented out due to syntax errors
+# from .recommendations import (
+#     RecommendationsManager, RecommendationSet, RecommendationItem, 
+#     RecommendationType, RecommendationSource, CustomerPreferences
+# )
+# from .product_operations import ProductOperations, EnhancedProductInfo
 
-# Import Phase 4 specialized features
-from .notifications import (
-    NotificationManager, Notification, NotificationTemplate, 
-    NotificationPreference, NotificationType, NotificationCategory,
-    NotificationPriority, NotificationStatus, NotificationDelivery
-)
-from .promotions import (
-    PromotionsManager, Promotion, PromotionRule, DealOptimization,
-    FlashSale, PromotionType, PromotionStatus, DiscountType, EligibilityType
-)
-from .complex_cart import (
-    ComplexCartManager, CartValidationIssue, CartOptimizationResult,
-    CartSplitResult, CartOperationType, CartValidationStatus, CartItemStatus
-)
+# Import Phase 4 specialized features - Temporarily commented out due to syntax errors
+# from .notifications import (
+#     NotificationManager, Notification, NotificationTemplate, 
+#     NotificationPreference, NotificationType, NotificationCategory,
+#     NotificationPriority, NotificationStatus, NotificationDelivery
+# )
+# from .promotions import (
+#     PromotionsManager, Promotion, PromotionRule, DealOptimization,
+#     FlashSale, PromotionType, PromotionStatus, DiscountType, EligibilityType
+# )
+# from .complex_cart import (
+#     ComplexCartManager, CartValidationIssue, CartOptimizationResult,
+#     CartSplitResult, CartOperationType, CartValidationStatus, CartItemStatus
+# )
 
 __all__ = [
     # Main client
@@ -166,39 +166,39 @@ __all__ = [
     # "FavoritesOnSaleCard",
     # "CardType",
     # "ListType",
-    # Advanced features (Phase 3)
-    "RecommendationsManager",
-    "RecommendationSet",
-    "RecommendationItem",
-    "RecommendationType",
-    "RecommendationSource",
-    "CustomerPreferences",
-    "ProductOperations",
-    "EnhancedProductInfo",
-    # Specialized features (Phase 4)
-    "NotificationManager",
-    "Notification",
-    "NotificationTemplate",
-    "NotificationPreference",
-    "NotificationType",
-    "NotificationCategory",
-    "NotificationPriority",
-    "NotificationStatus",
-    "NotificationDelivery",
-    "PromotionsManager",
-    "Promotion",
-    "PromotionRule",
-    "DealOptimization",
-    "FlashSale",
-    "PromotionType",
-    "PromotionStatus",
-    "DiscountType",
-    "EligibilityType",
-    "ComplexCartManager",
-    "CartValidationIssue",
-    "CartOptimizationResult",
-    "CartSplitResult",
-    "CartOperationType",
-    "CartValidationStatus",
-    "CartItemStatus",
+    # Advanced features (Phase 3) - Temporarily commented out due to syntax errors
+    # "RecommendationsManager",
+    # "RecommendationSet",
+    # "RecommendationItem",
+    # "RecommendationType",
+    # "RecommendationSource",
+    # "CustomerPreferences",
+    # "ProductOperations",
+    # "EnhancedProductInfo",
+    # Specialized features (Phase 4) - Temporarily commented out due to syntax errors
+    # "NotificationManager",
+    # "Notification",
+    # "NotificationTemplate",
+    # "NotificationPreference",
+    # "NotificationType",
+    # "NotificationCategory",
+    # "NotificationPriority",
+    # "NotificationStatus",
+    # "NotificationDelivery",
+    # "PromotionsManager",
+    # "Promotion",
+    # "PromotionRule",
+    # "DealOptimization",
+    # "FlashSale",
+    # "PromotionType",
+    # "PromotionStatus",
+    # "DiscountType",
+    # "EligibilityType",
+    # "ComplexCartManager",
+    # "CartValidationIssue",
+    # "CartOptimizationResult",
+    # "CartSplitResult",
+    # "CartOperationType",
+    # "CartValidationStatus",
+    # "CartItemStatus",
 ]

@@ -16,3 +16,103 @@ ATTENTION: default value of option mesa_glthread overridden by environment.
 ATTENTION: default value of option mesa_glthread overridden by environment.
 ATTENTION: default value of option mesa_glthread overridden by environment.
 ATTENTION: default value of option mesa_glthread overridden by environment.
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+[Parent 796427, Main Thread] WARNING: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.: 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GVFS-WARNING **: 02:41:47.599: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.
+[Parent 796427, Main Thread] WARNING: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.: 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GVFS-WARNING **: 02:41:47.600: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.
+[Parent 796427, Main Thread] WARNING: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.: 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GVFS-WARNING **: 02:41:47.725: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.
+[Parent 796427, Main Thread] WARNING: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.: 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GVFS-WARNING **: 02:41:47.729: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.
+[Parent 796427, Main Thread] WARNING: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.: 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GVFS-WARNING **: 02:41:47.730: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.
+[Parent 796427, Main Thread] WARNING: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.: 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GVFS-WARNING **: 02:41:47.731: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.
+[Parent 796427, Main Thread] WARNING: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.: 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GVFS-WARNING **: 02:41:47.744: The peer-to-peer connection failed: Error when getting information for file “/run/media/private/jed/private.zuluCrypt/.runtime/gvfsd”: No such file or directory. Falling back to the session bus. Your application is probably missing --filesystem=xdg-run/gvfsd privileges.
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd878c1290' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:24.082: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd878c1290' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd878c1290' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:26.026: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd878c1290' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd879683b0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:27.511: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd879683b0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd879683b0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:30.627: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd879683b0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd7ff78e90' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:32.416: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd7ff78e90' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8e93b0b0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:33.116: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8e93b0b0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8e93b0b0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:33.226: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8e93b0b0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd878c1290' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:34.263: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd878c1290' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8e93b0b0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:35.876: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8e93b0b0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8aa3c2f0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:51:54.442: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8aa3c2f0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711f35f0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:52:00.643: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711f35f0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711bc110' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:52:03.697: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711bc110' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711bc110' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:52:06.791: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711bc110' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8139ab30' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:06.799: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd8139ab30' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd85b447d0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:08.443: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd85b447d0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711bc110' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:29.254: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd711bc110' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd85b447d0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:30.491: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd85b447d0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd85b447d0' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:31.987: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd85b447d0' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd7ecf3e30' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:33.432: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd7ecf3e30' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd7ecf3e30' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:33.434: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd7ecf3e30' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:35.188: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:35.501: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:35.502: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3'
+[Parent 796427, Main Thread] WARNING: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:796427): GLib-GObject-CRITICAL **: 02:53:36.009: ../../../gobject/gsignal.c:3633: signal name 'selection_changed' is invalid for instance '0x75dd83cab230' of type 'MaiAtkType3'
+libva info: VA-API version 1.20.0
+libva info: Trying to open /usr/lib/x86_64-linux-gnu/dri/radeonsi_drv_video.so
+libva info: Found init function __vaDriverInit_1_20
+libva info: va_openDriver() returns 0
+ATTENTION: default value of option mesa_glthread overridden by environment.

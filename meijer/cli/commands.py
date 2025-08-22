@@ -280,7 +280,7 @@ def list_estimate(
         if preferred_methods:
             click.echo(f"🎯 Using methods in order: {', '.join(preferred_methods)}")
         else:
-            click.echo("🎯 Using default methods: cart → shop_scan → search → keywords")
+            click.echo("🎯 Using default workflow: search → shop_scan → cart → fallback")
 
         # Estimate costs for all items
         from .utils import estimate_list_cost
@@ -403,10 +403,10 @@ def list_estimate(
 
         # Show methodology details
         click.echo("\n📋 Methodology Details:")
-        click.echo("   🛒 Cart: Add items to cart and check subtotal (most accurate)")
-        click.echo("   📱 Shop & Scan: Use Shop & Scan API for pricing")
-        click.echo("   🔍 Search: Text search with product matching")
-        click.echo("   🏷️ Keywords: Fallback category-based estimation")
+        click.echo("   🔍 Search: Find UPC and initial price via product search")
+        click.echo("   📱 Shop & Scan: Store-specific pricing via UPC lookup")
+        click.echo("   🛒 Cart: Most accurate pricing by adding to cart")
+        click.echo("   ⬇️ Fallback: Use search price if cart methods fail")
 
         # Add note about cart method
         if any(item.get("methodology") == "cart" for item in cost_data):

@@ -134,7 +134,7 @@ class BuyAgainCard(HomeCard):
     """ML confidence score for recommendations"""
     
     last_purchase_date: Optional[datetime] = None
-    """When items were last purchased")
+    """When items were last purchased"""
 
 
 @dataclass
@@ -154,7 +154,7 @@ class MarketingCarouselCard(HomeCard):
     """Whether carousel auto-plays"""
     
     slide_duration: int = 5000
-    """Slide duration in milliseconds")
+    """Slide duration in milliseconds"""
 
 
 @dataclass
@@ -171,7 +171,7 @@ class SeasonalCard(HomeCard):
     """Seasonal theme"""
     
     seasonal_products: List[Dict[str, Any]] = field(default_factory=list)
-    """Seasonal product offerings")
+    """Seasonal product offerings"""
 
 
 @dataclass
@@ -188,10 +188,10 @@ class FavoritesOnSaleCard(HomeCard):
     """Number of favorite items on sale"""
     
     sale_items: List[Dict[str, Any]] = field(default_factory=list)
-    """Favorite items currently on sale")
+    """Favorite items currently on sale"""
     
     total_savings: Optional[float] = None
-    """Total potential savings")
+    """Total potential savings"""
 
 
 class HomeCardsManager:

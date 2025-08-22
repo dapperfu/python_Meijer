@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+w#!/usr/bin/env python3
 """
 Test IMAP Connection for Meijer 2FA
 

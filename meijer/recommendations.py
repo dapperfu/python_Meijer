@@ -173,7 +173,7 @@ class CustomerPreferences:
     """Preferred store locations"""
     
     last_updated: datetime = field(default_factory=datetime.now)
-    """When preferences were last updated")
+    """When preferences were last updated"""
 
 
 class RecommendationsManager:
