@@ -533,8 +533,9 @@ class OktaSeleniumAuth:
             print("📧 Email verification page loaded successfully")
             print("💡 Now polling email for verification code...")
             
-            # Poll email for verification code
-            verification_code = self._poll_email_for_code()
+            # Poll email for verification code using simple interface
+            from .email_verification import get_code
+            verification_code = get_code(timeout=300)
             if verification_code:
                 print(f"✅ Verification code found: {verification_code}")
                 
