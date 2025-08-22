@@ -667,10 +667,21 @@ class OktaSeleniumAuth:
                     _, msg_data = mail.fetch(latest_email_num, '(RFC822)')
                     email_body = msg_data[0][1].decode('utf-8', errors='ignore')
                     
-                    # Extract verification code using regex
-                    code_match = re.search(r'Code:\s*(\d{6})', email_body)
-                    if code_match:
-                        verification_code = code_match.group(1)
+                    # Extract verification code using regex - look for "Code: *XXXXXX*" pattern
+                    code_patterns = [
+                        r'Code:\s*\*?(\d{6})\*?',  # "Code: *123456*" or "Code: 123456"
+                        r'code[:\s]*(\d{6})',       # "code 123456"
+                        r'verification code[:\s]*(\d{6})',  # "verification code 123456"
+                    ]
+                    
+                    verification_code = None
+                    for pattern in code_patterns:
+                        code_match = re.search(pattern, email_body, re.IGNORECASE)
+                        if code_match:
+                            verification_code = code_match.group(1)
+                            break
+                    
+                    if verification_code:
                         print(f"✅ Found verification code: {verification_code}")
                         mail.close()
                         mail.logout()
