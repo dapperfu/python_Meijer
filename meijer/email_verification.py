@@ -114,11 +114,14 @@ class EmailVerification:
         try:
             print(f"📧 Connecting to {self.config['server']}:{self.config['port']}")
             
-            # Connect to IMAP server
+            # Connect to IMAP server with timeout
             if self.config['use_ssl']:
                 mail = imaplib.IMAP4_SSL(self.config['server'], self.config['port'])
             else:
                 mail = imaplib.IMAP4(self.config['server'], self.config['port'])
+            
+            # Set socket timeout
+            mail.sock.settimeout(30)  # 30 second timeout
             
             # Login
             mail.login(self.config['username'], self.config['password'])
@@ -141,20 +144,29 @@ class EmailVerification:
             try:
                 print(f"   Checking email... (elapsed: {elapsed_time}s)")
                 
-                # Search for recent emails from Meijer
-                _, message_numbers = mail.search(None, 'FROM "meijer"')
+                # Search for recent verification emails from Meijer (more specific search)
+                search_criteria = '(FROM "meijer" SUBJECT "verification" SINCE "1 day ago")'
+                _, message_numbers = mail.search(None, search_criteria)
                 
                 if message_numbers[0]:
-                    # Get the most recent email
-                    latest_email_num = message_numbers[0].split()[-1]
-                    _, msg_data = mail.fetch(latest_email_num, '(RFC822)')
-                    email_body = msg_data[0][1].decode('utf-8', errors='ignore')
-                    
-                    # Extract verification code using multiple patterns
-                    code = self._extract_code(email_body)
-                    if code:
-                        print(f"✅ Found verification code: {code}")
-                        return code
+                    # Get the most recent verification email
+                    email_nums = message_numbers[0].split()
+                    if email_nums:
+                        latest_email_num = email_nums[-1]  # Last (most recent) email
+                        print(f"📧 Found {len(email_nums)} verification emails, using latest")
+                        
+                        _, msg_data = mail.fetch(latest_email_num, '(RFC822)')
+                        email_body = msg_data[0][1].decode('utf-8', errors='ignore')
+                        
+                        # Extract verification code using multiple patterns
+                        code = self._extract_code(email_body)
+                        if code:
+                            print(f"✅ Found verification code: {code}")
+                            return code
+                        else:
+                            print("⚠️ Email found but no verification code extracted")
+                else:
+                    print("   No verification emails found yet...")
                 
                 # Wait before next check
                 time.sleep(check_interval)
@@ -210,6 +222,19 @@ class EmailVerification:
             if message_numbers[0]:
                 meijer_count = len(message_numbers[0].split())
                 print(f"✅ Found {meijer_count} emails from Meijer")
+                
+                # Test code extraction on the latest Meijer email
+                if meijer_count > 0:
+                    latest_email_num = message_numbers[0].split()[-1]
+                    _, msg_data = mail.fetch(latest_email_num, '(RFC822)')
+                    email_body = msg_data[0][1].decode('utf-8', errors='ignore')
+                    
+                    # Test code extraction
+                    code = self._extract_code(email_body)
+                    if code:
+                        print(f"✅ Test code extraction successful: {code}")
+                    else:
+                        print("⚠️ Test code extraction failed - no code found in latest email")
             else:
                 print("ℹ️ No emails from Meijer found")
             
@@ -223,6 +248,58 @@ class EmailVerification:
         except Exception as e:
             print(f"❌ Email connection test failed: {e}")
             return False
+
+    def test_code_extraction(self) -> Optional[str]:
+        """Test code extraction on the latest Meijer email."""
+        try:
+            print("🧪 Testing code extraction...")
+            
+            # Load configuration
+            self.config = self._load_config()
+            if not self.config:
+                return None
+            
+            # Connect to IMAP
+            mail = self._connect_imap()
+            
+            # Look for Meijer emails
+            _, message_numbers = mail.search(None, 'FROM "meijer"')
+            if message_numbers[0]:
+                email_nums = message_numbers[0].split()
+                if email_nums:
+                    latest_email_num = email_nums[-1]
+                    print(f"📧 Testing extraction on latest of {len(email_nums)} Meijer emails")
+                    
+                    _, msg_data = mail.fetch(latest_email_num, '(RFC822)')
+                    email_body = msg_data[0][1].decode('utf-8', errors='ignore')
+                    
+                    # Extract verification code
+                    code = self._extract_code(email_body)
+                    
+                    # Cleanup
+                    mail.close()
+                    mail.logout()
+                    
+                    if code:
+                        print(f"✅ Code extraction successful: {code}")
+                        return code
+                    else:
+                        print("❌ Code extraction failed - no code found")
+                        return None
+                else:
+                    print("❌ No Meijer emails found")
+                    mail.close()
+                    mail.logout()
+                    return None
+            else:
+                print("❌ No Meijer emails found")
+                mail.close()
+                mail.logout()
+                return None
+                
+        except Exception as e:
+            print(f"❌ Error testing code extraction: {e}")
+            return None
 
 
 # Simple convenience function

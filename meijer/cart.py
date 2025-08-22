@@ -291,7 +291,7 @@ class CartItem:
     """Whether the item can be substituted if unavailable"""
 
     # Backup/fallback items for substitution
-    backup_items: List[str] = field(default_factory=list)
+    _backup_items_data: List[str] = field(default_factory=list)
     """List of UPCs for backup/fallback items when this item is unavailable"""
 
     # Internal backup items storage
@@ -435,13 +435,13 @@ class CartItem:
     @property
     def backup_items(self) -> List[str]:
         """Get the list of backup/fallback item UPCs."""
-        return self._backup_items.copy()
+        return self._backup_items_data.copy()
 
     @backup_items.setter
     def backup_items(self, value: List[str]) -> None:
         """Set the list of backup/fallback item UPCs."""
         if isinstance(value, list):
-            self._backup_items = value.copy()
+            self._backup_items_data = value.copy()
         else:
             raise ValueError("backup_items must be a list")
 
@@ -545,6 +545,16 @@ class CartItem:
     def optimal_bogo_quantity(self, value: Optional[int]) -> None:
         """Set the optimal quantity for maximum BOGO savings."""
         self._optimal_bogo_quantity = value if value is None else int(value)
+
+    @property
+    def status_icon(self) -> str:
+        """Get a status icon for the item."""
+        if not self.available:
+            return "❌"
+        elif self.bogo_detected:
+            return "🎯"
+        elif self.on_sale:
+            return "🏷️"
         elif self.alcohol:
             return "🍷"
         elif self.tobacco:
