@@ -290,6 +290,9 @@ class CartItem:
     substitutable: bool = True
     """Whether the item can be substituted if unavailable"""
 
+    backup: bool = False
+    """Whether this item is marked as a backup item (typically quantity 30)"""
+
     # Internal API reference for operations
     _cart_api: Optional[Any] = field(default=None, repr=False, compare=False)
 
@@ -400,6 +403,16 @@ class CartItem:
         return any(fragile in self.category.lower() for fragile in fragile_categories)
 
     @property
+    def is_backup(self) -> bool:
+        """Check if this item is marked as a backup item."""
+        return self.backup and self.current_quantity >= 30
+
+    @property
+    def backup_quantity(self) -> bool:
+        """Check if this item has backup quantity (30 or more)."""
+        return self.current_quantity >= 30
+
+    @property
     def requires_special_handling(self) -> bool:
         """Check if this item requires special handling."""
         return (
@@ -508,6 +521,27 @@ class CartItem:
         new_quantity = max(self.current_quantity - amount, 1)
         try:
             self.current_quantity = new_quantity
+            return True
+        except (ValueError, RuntimeError):
+            return False
+
+    def set_as_backup(self) -> bool:
+        """
+        Set this item as a backup item with quantity 30.
+        
+        Backup items are typically high-quantity items that serve as
+        emergency supplies or bulk purchases.
+        
+        Returns
+        -------
+        bool
+            True if successfully set as backup, False otherwise
+        """
+        try:
+            # Set quantity to 30 (typical backup quantity)
+            self.current_quantity = 30
+            # Mark as backup item
+            self.backup = True
             return True
         except (ValueError, RuntimeError):
             return False
@@ -987,6 +1021,26 @@ class MeijerCart:
         """Get weighted items in the cart."""
         return [item for item in self._cart_items if item.weighted]
 
+    @property
+    def backup_items(self) -> List[CartItem]:
+        """Get items that were added as backup selections (quantity 30+)."""
+        return [item for item in self._cart_items if item.backup_quantity]
+
+    @property
+    def has_backup_items(self) -> bool:
+        """Check if the cart contains backup items."""
+        return len(self.backup_items) > 0
+
+    @property
+    def backup_item_count(self) -> int:
+        """Get the number of backup items in the cart."""
+        return len(self.backup_items)
+
+    @property
+    def total_backup_quantity(self) -> int:
+        """Get the total quantity of all backup items."""
+        return sum(item.current_quantity for item in self.backup_items)
+
     # ============================================================================
     # Financial Properties
     # ============================================================================
@@ -1264,6 +1318,84 @@ class MeijerCart:
         except Exception as e:
             self.logger.error(f"Error adding item to cart: {e}")
             raise CartError(f"Failed to add item with UPC {upc}: {str(e)}")
+
+    def add_item_by_upc_with_backup(self, upc: str, quantity: int = 1, backup: bool = False) -> bool:
+        """
+        Add an item to the cart by UPC code with backup selection option.
+        
+        When backup=True is selected, the item is added with quantity 30
+        to serve as emergency supplies or bulk backup.
+
+        Parameters
+        ----------
+        upc : str
+            UPC code of the product to add
+        quantity : int, optional
+            Quantity to add (default: 1, ignored if backup=True)
+        backup : bool, optional
+            Whether to add as backup item with quantity 30 (default: False)
+
+        Returns
+        -------
+        bool
+            True if item was successfully added, False otherwise
+        """
+        try:
+            # If backup is selected, override quantity to 30
+            if backup:
+                quantity = 30
+                self.logger.info(f"Adding item with UPC {upc} as BACKUP with quantity {quantity}")
+            else:
+                self.logger.info(f"Adding item with UPC {upc}, quantity {quantity} to cart")
+
+            # Build request body for adding item
+            request_data = {
+                "storeId": self.store_id,
+                "productCode": upc,
+                "quantity": quantity,
+                "productCodeType": "UPCA",
+            }
+            
+            # Add backup flag if this is a backup selection
+            if backup:
+                request_data["backup"] = True
+                request_data["backupQuantity"] = quantity
+
+            # Get default headers and add content-type
+            headers = self.api_client._get_api_headers()
+            headers.update({"Content-Type": "application/json"})
+
+            # Note: The actual endpoint for adding items needs to be determined
+            url = f"{self.api_client.api_base_url}/digital/hybris/v3/cart/entries"
+
+            self.logger.info(f"Adding item to cart: {url}")
+            self.logger.info(f"Request data: {request_data}")
+
+            response = self.api_client._make_request(
+                "POST", url, json_data=request_data, headers=headers
+            )
+
+            if response.status_code == 200:
+                if backup:
+                    self.logger.info(f"Successfully added item with UPC {upc} as BACKUP to cart")
+                else:
+                    self.logger.info(f"Successfully added item with UPC {upc} to cart")
+                # Clear cached cart data to force refresh
+                self._clear_cache()
+                return True
+            elif response.status_code == 404:
+                # Cart API endpoint not available - this is expected in some cases
+                self.logger.debug(f"Cart API endpoint not available (404) for UPC {upc}")
+                return False
+            else:
+                self.logger.warning(
+                    f"Failed to add item: {response.status_code} - {response.text}"
+                )
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error adding item to cart: {e}")
+            return False
 
     def remove_item(self, entry_number: str) -> bool:
         """
