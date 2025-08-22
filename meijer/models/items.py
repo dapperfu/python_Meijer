@@ -696,61 +696,16 @@ class ListItem:
     _quantity_override: Optional[int] = field(default=None, repr=False, compare=False)
     _notes_override: Optional[str] = field(default=None, repr=False, compare=False)
 
-    # Backward compatibility properties
-    @property
-    def item_id(self) -> int:
-        """Backward compatibility: item_id -> list_item_id."""
-        return self.list_item_id
-
+    # Essential properties for CLI compatibility
     @property
     def name(self) -> str:
-        """Backward compatibility: name -> item_description."""
+        """Item name for display purposes."""
         return self.item_description
 
     @property
-    def part_number(self) -> Optional[str]:
-        """Backward compatibility: part_number -> item_part_number."""
-        return self.item_part_number
-
-    @property
-    def display_order(self) -> int:
-        """Backward compatibility: display_order -> item_display_order."""
-        return self.item_display_order
-
-    @property
-    def type_id(self) -> int:
-        """Backward compatibility: type_id -> list_item_type_id."""
-        return self.list_item_type_id
-
-    @property
-    def is_completed(self) -> bool:
-        """Backward compatibility: is_completed -> is_complete."""
+    def checked(self) -> bool:
+        """Whether the item is checked/completed."""
         return self.is_complete
-
-    @property
-    def is_favorited(self) -> bool:
-        """Backward compatibility: is_favorited -> is_favorite."""
-        return self.is_favorite
-
-    @property
-    def promotion_start_date(self) -> Optional[date]:
-        """Backward compatibility: promotion_start_date -> promotion_start."""
-        return self.promotion_start
-
-    @property
-    def promotion_end_date(self) -> Optional[date]:
-        """Backward compatibility: promotion_end_date -> promotion_end."""
-        return self.promotion_end
-
-    @property
-    def coupon_identifier(self) -> int:
-        """Backward compatibility: coupon_identifier -> coupon_id."""
-        return self.coupon_id
-
-    @property
-    def product_info(self) -> Optional[MeijerItem]:
-        """Backward compatibility: product_info -> product_details."""
-        return self.product_details
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for API requests."""
