@@ -1993,6 +1993,66 @@ def cart_slots(date: Optional[str], delivery: bool):
         raise click.ClickException(f"❌ Failed to show cart slots: {e}")
 
 
+@cart_group.command("set-store")
+@click.argument("store_id", required=True)
+def cart_set_store(store_id: str):
+    """Set the store for cart operations."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Cart set-store command called with store_id: {store_id}")
+    
+    try:
+        client = get_meijer_client()
+        
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+        
+        # Set the store ID
+        client.cart.store_id = store_id
+        logger.debug(f"Set store ID to: {store_id}")
+        
+        click.echo(f"🏪 Store set to {store_id}")
+        click.echo("💡 This store will be used for all future cart operations")
+        
+    except Exception as e:
+        logger.error(f"Failed to set store: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to set store: {e}")
+
+
+@cart_group.command("checkout")
+@click.option("--method", "-m", type=click.Choice(["pickup", "delivery"]), default="pickup", help="Fulfillment method")
+def cart_checkout(method: str):
+    """Proceed to checkout with current cart."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Cart checkout command called with method: {method}")
+    
+    try:
+        client = get_meijer_client()
+        
+        if not client.cart:
+            logger.warning("Cart module not available")
+            click.echo("❌ Cart functionality not available")
+            return
+        
+        # Check if cart has items
+        cart_items = client.cart.items
+        if not cart_items:
+            click.echo("🛒 Your cart is empty! Add some items before checkout.")
+            return
+        
+        click.echo(f"🛒 Proceeding to checkout with {len(cart_items)} items")
+        click.echo(f"📦 Method: {method}")
+        
+        # Note: This would need checkout implementation in the cart class
+        click.echo("⚠️ Checkout functionality not yet implemented in cart class")
+        click.echo("💡 Use the web interface to complete your purchase")
+        
+    except Exception as e:
+        logger.error(f"Failed to proceed to checkout: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to proceed to checkout: {e}")
+
+
 # Settings Commands
 @click.group()
 def settings_group():
@@ -2218,6 +2278,13 @@ def auth_login_command(method: str, keep_open: bool):
         if result:
             click.echo("✅ Login successful!")
             click.echo("💡 You can now use other Meijer commands")
+            
+            # Keep the process running if not headless
+            if not method == "headless":
+                click.echo("🔒 Browser will remain open until you close it manually")
+                click.echo("💡 The authentication process is complete - you can inspect the browser")
+                while True:
+                    time.sleep(1)  # Keep alive until user closes browser
         else:
             click.echo("❌ Login failed")
             click.echo("💡 Check the browser for any error messages")
