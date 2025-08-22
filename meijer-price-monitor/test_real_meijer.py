@@ -38,7 +38,9 @@ try:
     print("🔍 Testing search functionality...")
     from price_monitor.search_engine import SearchQuery
     query = SearchQuery(query_text="LEGO", max_results=10)
+    print(f"DEBUG: Before search - query.query_text: {query.query_text}, type: {type(query.query_text)}")
     search_results = monitor.search_products_enhanced(query)
+    print(f"DEBUG: After search - query.query_text: {query.query_text}, type: {type(query.query_text)}")
     print(f"✅ Search successful, found {len(search_results)} products")
     
     print("🎉 All tests passed! Real Meijer API integration is working.")

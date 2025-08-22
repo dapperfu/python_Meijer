@@ -110,8 +110,14 @@ class DualPathStorageManager:
         timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
         
         # Store in database
+        # Extract query text safely
+        if hasattr(query, 'query_text') and isinstance(query.query_text, str):
+            query_text_for_db = query.query_text
+        else:
+            query_text_for_db = str(query)
+        
         search_id = self.database.add_search_query(
-            query.query_text, 
+            query_text_for_db, 
             len(results), 
             len(query.stores) if query.stores else 0
         )
@@ -122,7 +128,10 @@ class DualPathStorageManager:
                 self.database.add_search_result(search_id, result.to_dict())
         
         # Store in JSON file
-        query_text = query.query_text if hasattr(query, 'query_text') else str(query)
+        if hasattr(query, 'query_text') and isinstance(query.query_text, str):
+            query_text = query.query_text
+        else:
+            query_text = str(query)
         json_filename = f"search_{timestamp_str}_{query_text.replace(' ', '_')[:20]}.json"
         json_filepath = self.data_dir / "json" / "search_results" / json_filename
         

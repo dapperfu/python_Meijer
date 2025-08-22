@@ -147,8 +147,13 @@ class SearchQuery:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for storage."""
+        # Ensure query_text is always a string
+        query_text = self.query_text
+        if not isinstance(query_text, str):
+            query_text = str(query_text)
+            
         return {
-            'query_text': self.query_text,
+            'query_text': query_text,
             'max_results': self.max_results,
             'min_results': self.min_results,
             'stores': self.stores,

@@ -218,53 +218,35 @@ class OktaSeleniumAuth:
     def _submit_credentials(self) -> bool:
         """Submit username and password through the two-step login form."""
         try:
-            print("👤 Looking for login form...")
+            print("👤 Waiting for page to fully load...")
 
-            # Wait for the login form to appear
+            # Wait for the page to be completely ready
             wait = WebDriverWait(self.driver, 15)
+            
+            # Wait for page to finish loading
+            wait.until(lambda driver: driver.execute_script("return document.readyState") == "complete")
+            print("✅ Page fully loaded")
+            
+            # Additional wait for OKTA JavaScript to initialize
+            wait.until(lambda driver: driver.execute_script("""
+                return (
+                    document.querySelector('input[name="identifier"]') !== null &&
+                    document.readyState === 'complete'
+                );
+            """))
+            print("✅ OKTA form elements ready")
 
             # For debugging: add a pause to see the page
             if not self.headless:
                 print("⏸️ Pausing for 1 second so you can see the page...")
                 time.sleep(1)
 
-            # STEP 1: Find and fill username field
-            print("📡 Step 1: Looking for username field...")
-            username_selectors = [
-                "input[name='username']",
-                "input[name='identifier']",
-                "input[name='email']",
-                "input[type='email']",
-                "input[placeholder*='email' i]",
-                "input[placeholder*='username' i]",
-                "input[id*='username' i]",
-                "input[id*='email' i]",
-                "input[id*='identifier' i]",
-            ]
-
-            username_field = None
-            for selector in username_selectors:
-                try:
-                    username_field = wait.until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-                    print(f"✅ Found username field: {selector}")
-                    break
-                except TimeoutException:
-                    continue
-
-            if not username_field:
-                print("❌ Username field not found")
-                print("🔍 Available form elements:")
-                try:
-                    inputs = self.driver.find_elements(By.TAG_NAME, "input")
-                    for i, inp in enumerate(inputs):
-                        print(
-                            f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
-                        )
-                except Exception as e:
-                    print(f"   Error listing inputs: {e}")
-                return False
+            # STEP 1: Fill username field directly - no need to search
+            print("📡 Step 1: Filling username field...")
+            
+            # Direct access to username field
+            username_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='identifier']")
+            print("✅ Username field found and ready")
 
             # Fill username
             print("🔑 Entering username...")
@@ -276,35 +258,31 @@ class OktaSeleniumAuth:
             if not self.headless:
                 time.sleep(0.5)
 
-            # STEP 2: Find and click Next/Submit button to go to password page
-            print("📡 Step 2: Looking for Next/Submit button...")
-            next_button_selectors = [
-                "input[type='submit']",
-                "button[type='submit']",
-                "button:contains('Next')",
-                "button:contains('Continue')",
-                "button:contains('Submit')",
-                "input[value*='Next' i]",
-                "input[value*='Continue' i]",
-                "input[value*='Submit' i]",
-                "button[class*='next' i]",
-                "button[class*='continue' i]",
-                "button[class*='submit' i]",
-                "input[class*='next' i]",
-                "input[class*='continue' i]",
-                "input[class*='submit' i]",
-            ]
-
-            next_button = None
-            for selector in next_button_selectors:
+            # STEP 2: Click Next button to go to password page
+            print("📡 Step 2: Clicking Next button...")
+            
+            # Direct access to Next button - usually the first submit button or button with "Next" text
+            try:
+                # Try common Next button selectors
+                next_button = self.driver.find_element(By.CSS_SELECTOR, "button:contains('Next')")
+            except:
                 try:
-                    next_button = wait.until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-                    print(f"✅ Found Next/Submit button: {selector}")
-                    break
-                except TimeoutException:
-                    continue
+                    # Fallback to submit button
+                    next_button = self.driver.find_element(By.CSS_SELECTOR, "input[type='submit'], button[type='submit']")
+                except:
+                    # Last resort: find any button that might be the Next button
+                    buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                    next_button = None
+                    for btn in buttons:
+                        if btn.text.lower() in ['next', 'continue', 'submit']:
+                            next_button = btn
+                            break
+                    
+                    if not next_button:
+                        print("❌ Next button not found")
+                        return False
+            
+            print("✅ Next button found and ready")
 
             if not next_button:
                 print("❌ Next/Submit button not found")
@@ -349,37 +327,75 @@ class OktaSeleniumAuth:
             # Take screenshot of password page
             self._take_screenshot("password_page_loaded")
 
-            # STEP 3: Find and fill password field on the second page
-            print("📡 Step 3: Looking for password field on second page...")
+            # STEP 3: Fill password field on the second page
+            print("📡 Step 3: Filling password field...")
 
-            # Wait a bit more for password field to appear
-            if not self.headless:
-                print("⏸️ Waiting additional 1 second for password field to load...")
-                time.sleep(1)
+            # Wait for password page to load and stabilize
+            wait.until(lambda driver: driver.execute_script("""
+                return (
+                    document.querySelector('input[name="credentials.passcode"]') !== null &&
+                    document.readyState === 'complete'
+                );
+            """))
+            print("✅ Password field ready")
 
-            # Look for password field with comprehensive selectors
-            password_selectors = [
-                "input[name='password']",
-                "input[name='passcode']",
-                "input[type='password']",
-                "input[id*='password' i]",
-                "input[id*='passcode' i]",
-                "input[placeholder*='password' i]",
-                "input[placeholder*='passcode' i]",
-                "input[placeholder*='pass' i]",
-            ]
+            # Direct access to password field using the correct selector
+            try:
+                password_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='credentials.passcode']")
+                print("✅ Password field found and ready")
+            except Exception as e:
+                print(f"❌ Password field not found: {e}")
+                # Fallback to comprehensive search if needed
+                password_selectors = [
+                    "input[name='credentials.passcode']",  # Primary selector based on actual form
+                    "input[name='passcode']",
+                    "input[name='password']",
+                    "input[type='password']",
+                    "input[id*='password' i]",
+                    "input[id*='passcode' i]",
+                    "input[placeholder*='password' i]",
+                    "input[placeholder*='passcode' i]",
+                    "input[placeholder*='pass' i]",
+                ]
 
-            password_field = None
-            for selector in password_selectors:
-                try:
-                    # Try to find password field with shorter timeout
-                    password_field = WebDriverWait(self.driver, 8).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-                    print(f"✅ Found password field: {selector}")
-                    break
-                except TimeoutException:
-                    continue
+                password_field = None
+                for selector in password_selectors:
+                    try:
+                        password_field = WebDriverWait(self.driver, 5).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                        )
+                        print(f"✅ Found password field with fallback: {selector}")
+                        break
+                    except TimeoutException:
+                        continue
+                
+                if not password_field:
+                    print("❌ Password field not found on second page")
+                    print("🔍 Available form elements on second page:")
+                    try:
+                        inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                        for i, inp in enumerate(inputs):
+                            print(
+                                f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
+                            )
+
+                        # Also look for any password-like elements
+                        print("🔍 Looking for password-like elements...")
+                        all_elements = self.driver.find_elements(
+                            By.XPATH,
+                            "//*[contains(text(), 'password') or contains(text(), 'Password') or contains(text(), 'passcode') or contains(text(), 'Passcode')]",
+                        )
+                        for elem in all_elements:
+                            print(
+                                f"   Password-related element: {elem.tag_name} - {elem.text[:50]}..."
+                            )
+
+                    except Exception as e:
+                        print(f"   Error listing elements: {e}")
+
+                    # Take screenshot for debugging
+                    self._take_screenshot("password_field_not_found")
+                    return False
 
             if not password_field:
                 print("❌ Password field not found on second page")
@@ -419,63 +435,53 @@ class OktaSeleniumAuth:
             if not self.headless:
                 time.sleep(0.5)
 
-            # STEP 4: Find and click final Submit button
-            print("📡 Step 4: Looking for final Submit button...")
-            final_submit_selectors = [
-                "input[type='submit']",
-                "button[type='submit']",
-                "button:contains('Sign In')",
-                "button:contains('Log In')",
-                "button:contains('Submit')",
-                "button:contains('Sign')",
-                "button:contains('Login')",
-                "input[value*='Sign' i]",
-                "input[value*='Log' i]",
-                "input[value*='Submit' i]",
-                "button[class*='submit' i]",
-                "button[class*='signin' i]",
-                "button[class*='login' i]",
-                "input[class*='submit' i]",
-                "input[class*='signin' i]",
-                "input[class*='login' i]",
-            ]
-
-            final_submit_button = None
-            for selector in final_submit_selectors:
+            # STEP 4: Click final Submit button
+            print("📡 Step 4: Clicking final Submit button...")
+            
+            # Direct access to submit button - usually the submit button or button with "Sign In" text
+            try:
+                # Try common submit button selectors
+                final_submit_button = self.driver.find_element(By.CSS_SELECTOR, "button:contains('Sign In'), button:contains('Log In'), button:contains('Submit')")
+            except:
                 try:
-                    final_submit_button = wait.until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-                    print(f"✅ Found final Submit button: {selector}")
-                    break
-                except TimeoutException:
-                    continue
-
-            if not final_submit_button:
-                print("❌ Final Submit button not found")
-                print("🔍 Available buttons on password page:")
-                try:
+                    # Fallback to submit button
+                    final_submit_button = self.driver.find_element(By.CSS_SELECTOR, "input[type='submit'], button[type='submit']")
+                except:
+                    # Last resort: find any button that might be the submit button
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
-                    for i, btn in enumerate(buttons):
-                        print(
-                            f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
-                        )
+                    final_submit_button = None
+                    for btn in buttons:
+                        if btn.text.lower() in ['sign in', 'log in', 'submit', 'sign', 'login']:
+                            final_submit_button = btn
+                            break
+                    
+                    if not final_submit_button:
+                        print("❌ Final Submit button not found")
+                        print("🔍 Available buttons on password page:")
+                        try:
+                            buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                            for i, btn in enumerate(buttons):
+                                print(
+                                    f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                                )
 
-                    # Also look for submit inputs
-                    submit_inputs = self.driver.find_elements(
-                        By.CSS_SELECTOR, "input[type='submit']"
-                    )
-                    for i, inp in enumerate(submit_inputs):
-                        print(
-                            f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
-                        )
+                            # Also look for submit inputs
+                            submit_inputs = self.driver.find_elements(
+                                By.CSS_SELECTOR, "input[type='submit']"
+                            )
+                            for i, inp in enumerate(submit_inputs):
+                                print(
+                                    f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
+                                )
 
-                except Exception as e:
-                    print(f"   Error listing buttons: {e}")
+                        except Exception as e:
+                            print(f"   Error listing buttons: {e}")
 
-                # Take screenshot for debugging
-                self._take_screenshot("final_submit_button_not_found")
-                return False
+                        # Take screenshot for debugging
+                        self._take_screenshot("final_submit_button_not_found")
+                        return False
+            
+            print("✅ Final Submit button found and ready")
 
             # Submit the final form
             print("🚀 Submitting final login form...")

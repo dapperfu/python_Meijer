@@ -1938,9 +1938,17 @@ def login_command(
                 )
 
                 try:
-                    from meijer.okta_selenium_auth import authenticate_with_selenium
-
-                    result = authenticate_with_selenium(user, password, headless_bool)
+                    # For visible browser, always keep it open for debugging
+                    if not headless_bool:
+                        from meijer.okta_selenium_auth import (
+                            authenticate_with_selenium_and_keep_open,
+                        )
+                        result = authenticate_with_selenium_and_keep_open(
+                            user, password, headless_bool
+                        )
+                    else:
+                        from meijer.okta_selenium_auth import authenticate_with_selenium
+                        result = authenticate_with_selenium(user, password, headless_bool)
                 except Exception as e:
                     raise click.ClickException(
                         f"❌ Selenium authentication failed: {e}"
