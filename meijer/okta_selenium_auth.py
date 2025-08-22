@@ -452,39 +452,40 @@ class OktaSeleniumAuth:
             print(f"📄 After final submission - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
 
-            # STEP 5: Handle email confirmation page
-            print("📡 Step 5: Looking for email confirmation page...")
+            # STEP 5: Handle 2FA selection page
+            print("📡 Step 5: Looking for 2FA selection page...")
             
-            # Wait for the email confirmation page to load
+            # Wait for the 2FA selection page to load
             wait.until(lambda driver: driver.execute_script("""
                 return (
-                    document.querySelector('button[data-se="save"]') !== null &&
+                    document.querySelector('button[data-se="authenticator-button"]') !== null &&
                     document.readyState === 'complete'
                 );
             """))
-            print("✅ Email confirmation page loaded")
+            print("✅ 2FA selection page loaded")
 
-            # Find and click the "Send Me an Email" button
-            email_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-se="save"]')
-            print("✅ Found 'Send Me an Email' button")
+            # Find and click the "Send Email" button
+            email_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-se="authenticator-button"]')
+            print("✅ Found 'Send Email' button")
             
             # Verify it's the right button by checking the text
-            if "Send Me an Email" in email_button.text:
-                print("✅ Confirmed correct button - clicking 'Send Me an Email'...")
+            if "Send Email" in email_button.text:
+                print("✅ Confirmed correct button - clicking 'Send Email'...")
                 email_button.click()
                 
-                # Wait for the email verification page to load
-                print("📡 Step 6: Waiting for email verification page...")
+                # Wait for the email confirmation page to load
+                print("📡 Step 6: Waiting for email confirmation page...")
                 time.sleep(3)  # Give the page time to transition
                 
-                print(f"📄 After email button click - URL: {self.driver.current_url}")
+                print(f"📄 After Send Email click - URL: {self.driver.current_url}")
                 print(f"📄 Page title: {self.driver.title}")
                 
-                # Take screenshot of email verification page
-                self._take_screenshot("email_verification_page")
+                # Take screenshot of email confirmation page
+                self._take_screenshot("email_confirmation_page")
                 
-                print("📧 Email verification initiated - waiting for email...")
-                return True
+                # Now handle the email confirmation page
+                print("📡 Step 7: Handling email confirmation page...")
+                return self._handle_email_confirmation_page()
             else:
                 print(f"❌ Unexpected button text: {email_button.text}")
                 return False
@@ -561,6 +562,59 @@ class OktaSeleniumAuth:
             
         except Exception as e:
             print(f"❌ Error handling email verification: {e}")
+            return False
+
+    def _handle_email_confirmation_page(self) -> bool:
+        """Handle the email confirmation page after clicking 'Send Email'."""
+        try:
+            print("📧 Handling email confirmation page...")
+            
+            # Wait for the confirmation page to stabilize
+            wait = WebDriverWait(self.driver, 15)
+            wait.until(lambda driver: driver.execute_script("return document.readyState === 'complete'"))
+            
+            print(f"📄 Email confirmation page - URL: {self.driver.current_url}")
+            print(f"📄 Page title: {self.driver.title}")
+            
+            # Look for the "Send Me an Email" button
+            print("🔍 Looking for 'Send Me an Email' button...")
+            
+            # Wait for the button to appear
+            wait.until(lambda driver: driver.execute_script("""
+                return (
+                    document.querySelector('button[data-se="save"]') !== null &&
+                    document.readyState === 'complete'
+                );
+            """))
+            print("✅ Email confirmation button ready")
+            
+            # Find and click the "Send Me an Email" button
+            confirm_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-se="save"]')
+            print("✅ Found 'Send Me an Email' button")
+            
+            # Verify it's the right button by checking the text
+            if "Send Me an Email" in confirm_button.text:
+                print("✅ Confirmed correct button - clicking 'Send Me an Email'...")
+                confirm_button.click()
+                
+                # Wait for the email verification page to load
+                print("📡 Step 8: Waiting for email verification page...")
+                time.sleep(3)  # Give the page time to transition
+                
+                print(f"📄 After confirmation click - URL: {self.driver.current_url}")
+                print(f"📄 Page title: {self.driver.title}")
+                
+                # Take screenshot of email verification page
+                self._take_screenshot("email_verification_page")
+                
+                print("📧 Email verification initiated - waiting for email...")
+                return True
+            else:
+                print(f"❌ Unexpected button text: {confirm_button.text}")
+                return False
+            
+        except Exception as e:
+            print(f"❌ Error handling email confirmation page: {e}")
             return False
 
     def _poll_email_for_code(self) -> Optional[str]:
@@ -1161,6 +1215,19 @@ class OktaSeleniumAuth:
         print("🔍 Browser will remain open for debugging")
         print("💡 Use close_browser() method when done")
         return True
+
+    def __del__(self):
+        """Destructor - only close browser if not keeping it open for debugging."""
+        try:
+            if hasattr(self, '_keep_open') and self._keep_open and self.driver:
+                print("🔍 Destructor called but keeping browser open for debugging")
+                print("💡 Close the browser manually when done")
+            elif hasattr(self, 'driver') and self.driver:
+                print("🧹 Destructor closing browser...")
+                self.driver.quit()
+        except Exception as e:
+            # Ignore errors during cleanup
+            pass
 
 
 def authenticate_with_selenium(
