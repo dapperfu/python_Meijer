@@ -74,6 +74,13 @@ from .homecards import (
     MarketingCarouselCard, SeasonalCard, FavoritesOnSaleCard, CardType, ListType
 )
 
+# Import Phase 3 advanced features
+from .recommendations import (
+    RecommendationsManager, RecommendationSet, RecommendationItem, 
+    RecommendationType, RecommendationSource, CustomerPreferences
+)
+from .product_operations import ProductOperations, EnhancedProductInfo
+
 __all__ = [
     # Main client
     "Meijer",
@@ -122,7 +129,7 @@ __all__ = [
     "MeijerAuth",
     "extract_bearer_token_from_mitmproxy",
     "load_auth_from_config_file",
-    # Enhanced modules
+    # Enhanced modules (Phase 1-2)
     "EnhancedCart",
     "CartItem", 
     "CartSummary",
@@ -142,4 +149,13 @@ __all__ = [
     "FavoritesOnSaleCard",
     "CardType",
     "ListType",
+    # Advanced features (Phase 3)
+    "RecommendationsManager",
+    "RecommendationSet",
+    "RecommendationItem",
+    "RecommendationType",
+    "RecommendationSource",
+    "CustomerPreferences",
+    "ProductOperations",
+    "EnhancedProductInfo",
 ]

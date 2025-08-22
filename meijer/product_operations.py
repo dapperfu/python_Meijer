@@ -7,9 +7,115 @@ to reduce file size and improve organization.
 """
 
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+from dataclasses import dataclass, field
+from datetime import datetime
 
 from .models import MeijerItem
+
+
+@dataclass
+class EnhancedProductInfo:
+    """Enhanced product information with rich data."""
+    
+    product_code: str
+    """Product identifier (UPC, SKU, etc.)"""
+    
+    name: str
+    """Product name"""
+    
+    description: Optional[str] = None
+    """Product description"""
+    
+    brand: Optional[str] = None
+    """Product brand"""
+    
+    category: Optional[str] = None
+    """Product category"""
+    
+    subcategory: Optional[str] = None
+    """Product subcategory"""
+    
+    price: Optional[float] = None
+    """Current price"""
+    
+    original_price: Optional[float] = None
+    """Original price if on sale"""
+    
+    is_on_sale: bool = False
+    """Whether the product is on sale"""
+    
+    discount_percentage: Optional[float] = None
+    """Discount percentage if on sale"""
+    
+    unit_price: Optional[float] = None
+    """Price per unit (e.g., per ounce, per pound)"""
+    
+    unit: str = "each"
+    """Unit of measurement"""
+    
+    image_urls: List[str] = field(default_factory=list)
+    """Product image URLs"""
+    
+    nutritional_info: Optional[Dict[str, Any]] = None
+    """Nutritional information"""
+    
+    ingredients: List[str] = field(default_factory=list)
+    """Product ingredients"""
+    
+    allergens: List[str] = field(default_factory=list)
+    """Allergen information"""
+    
+    dietary_info: List[str] = field(default_factory=list)
+    """Dietary information (organic, gluten-free, etc.)"""
+    
+    storage_instructions: Optional[str] = None
+    """Storage instructions"""
+    
+    preparation_instructions: Optional[str] = None
+    """Preparation instructions"""
+    
+    serving_size: Optional[str] = None
+    """Serving size information"""
+    
+    servings_per_container: Optional[int] = None
+    """Number of servings per container"""
+    
+    weight: Optional[float] = None
+    """Product weight"""
+    
+    weight_unit: Optional[str] = None
+    """Weight unit (oz, lb, g, kg)"""
+    
+    dimensions: Optional[Dict[str, float]] = None
+    """Product dimensions (length, width, height)"""
+    
+    is_available: bool = True
+    """Whether the product is currently available"""
+    
+    availability_status: Optional[str] = None
+    """Detailed availability status"""
+    
+    store_availability: Dict[str, bool] = field(default_factory=dict)
+    """Availability by store"""
+    
+    rating: Optional[float] = None
+    """Product rating (1-5 stars)"""
+    
+    review_count: Optional[int] = None
+    """Number of reviews"""
+    
+    reviews: List[Dict[str, Any]] = field(default_factory=list)
+    """Product reviews"""
+    
+    related_products: List[str] = field(default_factory=list)
+    """Related product codes"""
+    
+    tags: List[str] = field(default_factory=list)
+    """Product tags and labels"""
+    
+    last_updated: datetime = field(default_factory=datetime.now)
+    """When product information was last updated"""
 
 
 class ProductOperations:
@@ -19,6 +125,241 @@ class ProductOperations:
         """Initialize with a reference to the main client."""
         self.client = client
         self.logger = client.logger
+        
+        # Enhanced product info endpoints
+        self.enhanced_endpoints = {
+            "get_enhanced_product_info": "/edaa/product/productinfo/v1/item",
+            "get_product_variants": "/edaa/product/productinfo/v1/item/{productCode}/variants",
+            "get_product_reviews": "/edaa/product/productinfo/v1/item/{productCode}/reviews",
+            "get_product_availability": "/edaa/product/productinfo/v1/item/{productCode}/availability",
+        }
+
+    def get_enhanced_product_info(self, 
+                                product_code: str,
+                                store_id: Optional[str] = None,
+                                include_reviews: bool = False,
+                                include_variants: bool = False) -> Optional[EnhancedProductInfo]:
+        """
+        Get enhanced product information using the EDAA product info endpoint.
+        
+        This endpoint provides rich product data including nutritional information,
+        ingredients, allergens, and detailed availability.
+        
+        Parameters
+        ----------
+        product_code : str
+            Product identifier (UPC, SKU, etc.)
+        store_id : Optional[str], default=None
+            Store identifier for store-specific information
+        include_reviews : bool, default=False
+            Whether to include product reviews
+        include_variants : bool, default=False
+            Whether to include product variants
+        
+        Returns
+        -------
+        Optional[EnhancedProductInfo]
+            Enhanced product information or None if not found
+        
+        Raises
+        ------
+        Exception
+            If there's an error retrieving product information
+        """
+        try:
+            endpoint = self.enhanced_endpoints["get_enhanced_product_info"]
+            
+            # Prepare request data
+            data = {
+                "productCode": product_code,
+                "includeReviews": include_reviews,
+                "includeVariants": include_variants
+            }
+            
+            if store_id:
+                data["storeId"] = store_id
+            
+            # Make POST request to get enhanced product info
+            response = self.client._make_request("POST", endpoint, json=data)
+            
+            if response:
+                return self._parse_enhanced_product_info_response(response)
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error getting enhanced product info for {product_code}: {e}")
+            return None
+    
+    def get_product_variants(self, product_code: str) -> List[EnhancedProductInfo]:
+        """
+        Get product variants for a specific product.
+        
+        Parameters
+        ----------
+        product_code : str
+            Product identifier
+        
+        Returns
+        -------
+        List[EnhancedProductInfo]
+            List of product variants
+        """
+        try:
+            endpoint = self.enhanced_endpoints["get_product_variants"].format(
+                productCode=product_code
+            )
+            
+            response = self.client._make_request("GET", endpoint)
+            
+            if response and "variants" in response:
+                variants = []
+                for variant_data in response["variants"]:
+                    variant = self._parse_enhanced_product_info_response(variant_data)
+                    if variant:
+                        variants.append(variant)
+                return variants
+            
+            return []
+            
+        except Exception as e:
+            self.logger.error(f"Error getting product variants for {product_code}: {e}")
+            return []
+    
+    def get_product_reviews(self, 
+                           product_code: str,
+                           page: int = 1,
+                           page_size: int = 10,
+                           sort_by: str = "date") -> Dict[str, Any]:
+        """
+        Get product reviews.
+        
+        Parameters
+        ----------
+        product_code : str
+            Product identifier
+        page : int, default=1
+            Page number
+        page_size : int, default=10
+            Reviews per page
+        sort_by : str, default="date"
+            Sort order (date, rating, helpfulness)
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Reviews with pagination information
+        """
+        try:
+            endpoint = self.enhanced_endpoints["get_product_reviews"].format(
+                productCode=product_code
+            )
+            
+            params = {
+                "page": page,
+                "pageSize": page_size,
+                "sortBy": sort_by
+            }
+            
+            response = self.client._make_request("GET", endpoint, params=params)
+            return response or {}
+            
+        except Exception as e:
+            self.logger.error(f"Error getting product reviews for {product_code}: {e}")
+            return {}
+    
+    def get_product_availability(self, 
+                               product_code: str,
+                               store_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Get detailed product availability information.
+        
+        Parameters
+        ----------
+        product_code : str
+            Product identifier
+        store_ids : Optional[List[str]], default=None
+            List of store IDs to check availability for
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Product availability information
+        """
+        try:
+            endpoint = self.enhanced_endpoints["get_product_availability"].format(
+                productCode=product_code
+            )
+            
+            params = {}
+            if store_ids:
+                params["storeIds"] = ",".join(store_ids)
+            
+            response = self.client._make_request("GET", endpoint, params=params)
+            return response or {}
+            
+        except Exception as e:
+            self.logger.error(f"Error getting product availability for {product_code}: {e}")
+            return {}
+    
+    def _parse_enhanced_product_info_response(self, response: Dict[str, Any]) -> Optional[EnhancedProductInfo]:
+        """Parse enhanced product info response."""
+        try:
+            if not response:
+                return None
+            
+            # Extract basic product information
+            product_info = EnhancedProductInfo(
+                product_code=response.get("productCode", ""),
+                name=response.get("productName", ""),
+                description=response.get("description"),
+                brand=response.get("brand"),
+                category=response.get("category"),
+                subcategory=response.get("subcategory"),
+                price=response.get("currentPrice"),
+                original_price=response.get("originalPrice"),
+                is_on_sale=response.get("onSale", False),
+                discount_percentage=response.get("discountPercentage"),
+                unit_price=response.get("unitPrice"),
+                unit=response.get("unit", "each"),
+                image_urls=response.get("imageUrls", []),
+                nutritional_info=response.get("nutritionalInfo"),
+                ingredients=response.get("ingredients", []),
+                allergens=response.get("allergens", []),
+                dietary_info=response.get("dietaryInfo", []),
+                storage_instructions=response.get("storageInstructions"),
+                preparation_instructions=response.get("preparationInstructions"),
+                serving_size=response.get("servingSize"),
+                servings_per_container=response.get("servingsPerContainer"),
+                weight=response.get("weight"),
+                weight_unit=response.get("weightUnit"),
+                dimensions=response.get("dimensions"),
+                is_available=response.get("available", True),
+                availability_status=response.get("availabilityStatus"),
+                store_availability=response.get("storeAvailability", {}),
+                rating=response.get("rating"),
+                review_count=response.get("reviewCount"),
+                reviews=response.get("reviews", []),
+                related_products=response.get("relatedProducts", []),
+                tags=response.get("tags", []),
+                last_updated=self._parse_datetime(response.get("lastUpdated"))
+            )
+            
+            return product_info
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing enhanced product info: {e}")
+            return None
+    
+    def _parse_datetime(self, datetime_str: Optional[str]) -> Optional[datetime]:
+        """Parse datetime string safely."""
+        if not datetime_str:
+            return None
+        
+        try:
+            return datetime.fromisoformat(datetime_str)
+        except ValueError:
+            return None
 
     def get_product_detail(
         self, upc: str, store_id: Optional[str] = None
