@@ -2266,14 +2266,34 @@ def auth_login_command(method: str, keep_open: bool):
     click.echo("=" * 50)
     
     try:
+        # Read credentials from config file
+        import os
+        credentials_file = os.path.expanduser("~/.config/meijer/login.txt")
+        if not os.path.exists(credentials_file):
+            click.echo("❌ No credentials found!")
+            click.echo("💡 Please create ~/.config/meijer/login.txt with your credentials")
+            return
+        
+        with open(credentials_file, 'r') as f:
+            lines = f.readlines()
+            if len(lines) < 2:
+                click.echo("❌ Invalid credentials file format!")
+                click.echo("💡 File should contain username on line 1, password on line 2")
+                return
+            
+            username = lines[0].strip()
+            password = lines[1].strip()
+        
+        click.echo(f"👤 Using credentials for: {username}")
+        
         from ..okta_selenium_auth import authenticate_with_selenium
         
         if method == "headless":
             # Force headless mode
-            result = authenticate_with_selenium(headless=True, keep_open=False)
+            result = authenticate_with_selenium(username, password, headless=True, keep_open=False)
         else:
             # Selenium mode - always keep open for debugging
-            result = authenticate_with_selenium(headless=False, keep_open=True)
+            result = authenticate_with_selenium(username, password, headless=False, keep_open=True)
         
         if result:
             click.echo("✅ Login successful!")
@@ -2283,6 +2303,8 @@ def auth_login_command(method: str, keep_open: bool):
             if not method == "headless":
                 click.echo("🔒 Browser will remain open until you close it manually")
                 click.echo("💡 The authentication process is complete - you can inspect the browser")
+                click.echo("⏸️ Waiting for you to close the browser...")
+                import time
                 while True:
                     time.sleep(1)  # Keep alive until user closes browser
         else:

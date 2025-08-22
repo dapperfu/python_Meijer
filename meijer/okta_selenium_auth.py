@@ -51,6 +51,46 @@ class OktaSeleniumAuth:
         except Exception as e:
             print(f"⚠️ Failed to take screenshot: {e}")
 
+    def _check_for_rate_limiting(self) -> bool:
+        """Check if the page shows rate limiting error."""
+        try:
+            # Look for the specific rate limiting error message
+            rate_limit_texts = [
+                "There was an unexpected internal error. Please try again.",
+                "unexpected internal error",
+                "rate limit",
+                "too many requests",
+                "try again later"
+            ]
+            
+            # First check for the exact div structure
+            try:
+                rate_limit_div = self.driver.find_element(By.CSS_SELECTOR, 'div[class*="MuiBox-root"]')
+                if rate_limit_div and "There was an unexpected internal error. Please try again." in rate_limit_div.text:
+                    print("🚫 RATE LIMITING DETECTED!")
+                    print("💡 Found exact error div: 'There was an unexpected internal error. Please try again.'")
+                    print("⏰ This means you are being rate limited.")
+                    print("💡 Please try logging in again in a few hours.")
+                    return True
+            except:
+                pass
+            
+            # Fallback to text search
+            page_text = self.driver.page_source.lower()
+            for text in rate_limit_texts:
+                if text.lower() in page_text:
+                    print("🚫 RATE LIMITING DETECTED!")
+                    print("💡 The page shows: 'There was an unexpected internal error. Please try again.'")
+                    print("⏰ This means you are being rate limited.")
+                    print("💡 Please try logging in again in a few hours.")
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"⚠️ Error checking for rate limiting: {e}")
+            return False
+
     def authenticate(self) -> Optional[Dict[str, Any]]:
         """
         Perform authentication using Selenium WebDriver.
@@ -78,6 +118,11 @@ class OktaSeleniumAuth:
 
             # Take screenshot of the OAuth2 page
             self._take_screenshot("oauth2_page_loaded")
+            
+            # Check for rate limiting errors
+            if self._check_for_rate_limiting():
+                print("🚫 Authentication stopped due to rate limiting")
+                return None
 
             # Step 3: Wait for login form and submit credentials
             print("📡 Step 3: Submitting credentials...")
@@ -86,6 +131,11 @@ class OktaSeleniumAuth:
 
             # Take screenshot after credential submission
             self._take_screenshot("credentials_submitted")
+            
+            # Check for rate limiting errors after credential submission
+            if self._check_for_rate_limiting():
+                print("🚫 Authentication stopped due to rate limiting after login")
+                return None
 
             # Step 4: Handle email verification if required
             print("📡 Step 4: Checking for email verification...")
@@ -1274,6 +1324,13 @@ def authenticate_with_selenium(
     if keep_open:
         print("🔍 Browser window remains open for debugging")
         print("💡 Use auth.close_browser() to close it when done")
+        
+        # Keep the process running indefinitely
+        print("🔒 Process will remain active until you manually close the browser")
+        print("💡 The authentication process is complete - you can inspect the browser")
+        print("⏸️ Waiting for you to close the browser...")
+        while True:
+            time.sleep(1)  # Keep alive until user closes browser
     
     return result
 
