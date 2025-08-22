@@ -145,8 +145,14 @@ class EmailVerification:
                 print(f"   Checking email... (elapsed: {elapsed_time}s)")
                 
                 # Search for recent verification emails from Meijer (more specific search)
-                search_criteria = '(FROM "meijer" SUBJECT "verification" SINCE "1 day ago")'
-                _, message_numbers = mail.search(None, search_criteria)
+                try:
+                    # Try with date filter first
+                    search_criteria = '(FROM "meijer" SUBJECT "verification" SINCE "1 day ago")'
+                    _, message_numbers = mail.search(None, search_criteria)
+                except Exception as e:
+                    # Fallback to simpler search if date filter fails
+                    print(f"   Date search failed, using simple search: {e}")
+                    _, message_numbers = mail.search(None, 'FROM "meijer"')
                 
                 if message_numbers[0]:
                     # Get the most recent verification email
@@ -319,10 +325,35 @@ def get_code(timeout: int = 300) -> Optional[str]:
 
 # Test the module
 if __name__ == "__main__":
+    print("🧪 Testing Email Verification Module")
+    print("=" * 40)
+    
     verifier = EmailVerification()
+    
+    # Test 1: Connection
+    print("\n📧 Test 1: Connection Test")
     if verifier.test_connection():
-        code = verifier.get_code(timeout=60)
-        if code:
-            print(f"🎉 Got verification code: {code}")
-        else:
-            print("❌ No verification code found")
+        print("✅ Connection test passed")
+    else:
+        print("❌ Connection test failed")
+        exit(1)
+    
+    # Test 2: Code Extraction
+    print("\n🔑 Test 2: Code Extraction Test")
+    code = verifier.test_code_extraction()
+    if code:
+        print(f"✅ Code extraction test passed: {code}")
+    else:
+        print("❌ Code extraction test failed")
+        exit(1)
+    
+    # Test 3: Full get_code function
+    print("\n🚀 Test 3: Full get_code() Function Test")
+    code = get_code(timeout=30)
+    if code:
+        print(f"🎉 Full test passed! Got verification code: {code}")
+    else:
+        print("❌ Full test failed")
+        exit(1)
+    
+    print("\n🎉 All tests passed! Email verification module is working correctly.")
