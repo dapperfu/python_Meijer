@@ -1,0 +1,75 @@
+# Real Endpoints Preferred Over Mocks
+
+## Core Principle
+**Mock interfaces are NOT preferred. Always prefer to use real endpoints with actual authentication.**
+
+## Authentication Requirements
+- If the Meijer app returns unauthenticated status, attempt Meijer authentication
+- If authentication fails, tests should short circuit and exit gracefully
+- Never proceed with unauthenticated requests to live endpoints
+
+## Live Endpoint Priority
+1. **Live endpoints with real API keys are ALWAYS preferred**
+2. **Real authentication tokens must be used**
+3. **Actual network calls to Meijer services are required**
+
+## Why Real Endpoints
+- **Real-world validation**: Only real endpoints can verify the app actually works
+- **API changes detection**: Catch breaking changes in Meijer's API immediately
+- **Authentication flow testing**: Verify real token handling and refresh logic
+- **Performance testing**: Measure actual network latency and response times
+- **Error handling**: Test real error conditions and edge cases
+
+## Mock Usage Guidelines
+- Mocks should only be used when:
+  - Real endpoints are temporarily unavailable
+  - Testing error handling scenarios
+  - Development environment setup
+  - CI/CD pipeline requirements
+- **Never use mocks for happy path testing**
+- **Never use mocks for authentication flows**
+
+## Implementation Requirements
+- All test suites must attempt real authentication first
+- Authentication failures should trigger graceful test exit
+- Mock fallbacks should be clearly documented and justified
+- Real endpoint tests should be the primary test suite
+- Mock tests should be secondary and clearly marked
+
+## Error Handling
+- Unauthenticated responses → Attempt re-authentication
+- Authentication failure → Short circuit tests with clear error message
+- Network failures → Retry with exponential backoff
+- API errors → Log detailed error information for debugging
+
+## Testing Strategy
+- **Primary**: Live endpoint tests with real authentication
+- **Secondary**: Mock tests for specific scenarios only
+- **Fallback**: Mock tests when live endpoints unavailable
+- **Documentation**: Clear separation between live and mock test suites
+
+## Code Examples
+```python
+# PREFERRED: Real endpoint with authentication
+def test_real_endpoint():
+    if not client.is_authenticated():
+        client.authenticate()
+        if not client.is_authenticated():
+            pytest.skip("Authentication failed, skipping live endpoint test")
+    
+    result = client.call_real_endpoint()
+    assert result.status_code == 200
+
+# AVOID: Mock that just returns expected values
+def test_mock_endpoint():
+    mock_client = Mock()
+    mock_client.call_endpoint.return_value = MockResponse(200, "success")
+    # This doesn't test if the real app works!
+```
+
+## Summary
+**Real endpoints with real authentication are the gold standard. Mocks are a last resort, not a preferred approach. The goal is to ensure the Meijer app actually works in production, not just passes tests with fake data.**
+description:
+globs:
+alwaysApply: false
+---
