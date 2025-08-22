@@ -69,10 +69,11 @@ from .stores import MeijerStore, create_meijer_stores_from_response
 # Import new enhanced modules
 from .enhanced_cart import EnhancedCart, CartItem, CartSummary, CartModification
 from .orders import OrderManager, OrderDetails, OrderSummary, OrderItem, OrderStatus, OrderType
-from .homecards import (
-    HomeCardsManager, HomeCard, DepartmentCard, BuyAgainCard, 
-    MarketingCarouselCard, SeasonalCard, FavoritesOnSaleCard, CardType, ListType
-)
+# Temporarily commented out due to syntax errors
+# from .homecards import (
+#     HomeCardsManager, HomeCard, DepartmentCard, BuyAgainCard, 
+#     MarketingCarouselCard, SeasonalCard, FavoritesOnSaleCard, CardType, ListType
+# )
 
 # Import Phase 3 advanced features
 from .recommendations import (
@@ -80,6 +81,21 @@ from .recommendations import (
     RecommendationType, RecommendationSource, CustomerPreferences
 )
 from .product_operations import ProductOperations, EnhancedProductInfo
+
+# Import Phase 4 specialized features
+from .notifications import (
+    NotificationManager, Notification, NotificationTemplate, 
+    NotificationPreference, NotificationType, NotificationCategory,
+    NotificationPriority, NotificationStatus, NotificationDelivery
+)
+from .promotions import (
+    PromotionsManager, Promotion, PromotionRule, DealOptimization,
+    FlashSale, PromotionType, PromotionStatus, DiscountType, EligibilityType
+)
+from .complex_cart import (
+    ComplexCartManager, CartValidationIssue, CartOptimizationResult,
+    CartSplitResult, CartOperationType, CartValidationStatus, CartItemStatus
+)
 
 __all__ = [
     # Main client
@@ -140,15 +156,16 @@ __all__ = [
     "OrderItem",
     "OrderStatus",
     "OrderType",
-    "HomeCardsManager",
-    "HomeCard",
-    "DepartmentCard",
-    "BuyAgainCard",
-    "MarketingCarouselCard",
-    "SeasonalCard",
-    "FavoritesOnSaleCard",
-    "CardType",
-    "ListType",
+    # Temporarily commented out due to syntax errors
+    # "HomeCardsManager",
+    # "HomeCard",
+    # "DepartmentCard",
+    # "BuyAgainCard",
+    # "MarketingCarouselCard",
+    # "SeasonalCard",
+    # "FavoritesOnSaleCard",
+    # "CardType",
+    # "ListType",
     # Advanced features (Phase 3)
     "RecommendationsManager",
     "RecommendationSet",
@@ -158,4 +175,30 @@ __all__ = [
     "CustomerPreferences",
     "ProductOperations",
     "EnhancedProductInfo",
+    # Specialized features (Phase 4)
+    "NotificationManager",
+    "Notification",
+    "NotificationTemplate",
+    "NotificationPreference",
+    "NotificationType",
+    "NotificationCategory",
+    "NotificationPriority",
+    "NotificationStatus",
+    "NotificationDelivery",
+    "PromotionsManager",
+    "Promotion",
+    "PromotionRule",
+    "DealOptimization",
+    "FlashSale",
+    "PromotionType",
+    "PromotionStatus",
+    "DiscountType",
+    "EligibilityType",
+    "ComplexCartManager",
+    "CartValidationIssue",
+    "CartOptimizationResult",
+    "CartSplitResult",
+    "CartOperationType",
+    "CartValidationStatus",
+    "CartItemStatus",
 ]
