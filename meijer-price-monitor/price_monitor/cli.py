@@ -50,7 +50,8 @@ def get_authenticated_meijer_client():
         return client
     except Exception as e:
         console.print(f"❌ Failed to create authenticated Meijer client: {e}")
-        console.print("Please ensure you have run 'meijer status' and are authenticated.")
+        console.print("Please ensure you have run 'meijer auth status' and are authenticated.")
+        console.print("Note: Use 'meijer auth status' (not 'meijer status') due to top-level command conflicts.")
         sys.exit(1)
 
 console = Console()
