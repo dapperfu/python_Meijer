@@ -85,7 +85,7 @@ log:
 		--web-port 8081 \
 		--web-host 0.0.0.0 \
 		-w "$$LOG_FILE" \
-		-s shop_n_scan_faker.py \
+		-s scripts/shop_n_scan_faker.py \
 		--set block_global=false
 
 .PHONY: logs
