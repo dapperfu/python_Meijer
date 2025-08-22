@@ -66,6 +66,14 @@ from .shop_scan import ShopNScan
 from .shopping_list import MeijerList
 from .stores import MeijerStore, create_meijer_stores_from_response
 
+# Import new enhanced modules
+from .enhanced_cart import EnhancedCart, CartItem, CartSummary, CartModification
+from .orders import OrderManager, OrderDetails, OrderSummary, OrderItem, OrderStatus, OrderType
+from .homecards import (
+    HomeCardsManager, HomeCard, DepartmentCard, BuyAgainCard, 
+    MarketingCarouselCard, SeasonalCard, FavoritesOnSaleCard, CardType, ListType
+)
+
 __all__ = [
     # Main client
     "Meijer",
@@ -114,4 +122,24 @@ __all__ = [
     "MeijerAuth",
     "extract_bearer_token_from_mitmproxy",
     "load_auth_from_config_file",
+    # Enhanced modules
+    "EnhancedCart",
+    "CartItem", 
+    "CartSummary",
+    "CartModification",
+    "OrderManager",
+    "OrderDetails",
+    "OrderSummary",
+    "OrderItem",
+    "OrderStatus",
+    "OrderType",
+    "HomeCardsManager",
+    "HomeCard",
+    "DepartmentCard",
+    "BuyAgainCard",
+    "MarketingCarouselCard",
+    "SeasonalCard",
+    "FavoritesOnSaleCard",
+    "CardType",
+    "ListType",
 ]
