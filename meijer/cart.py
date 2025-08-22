@@ -2571,3 +2571,67 @@ Your cart is currently empty.
             self.logger.error(f"Error in backup item substitution workflow: {e}")
             return False
 
+    def total_backup_substitutions(self) -> int:
+        """Get the total number of backup/fallback items configured across all cart items."""
+        return sum(item.backup_item_count for item in self._cart_items)
+
+    def calculate_cart_savings(self) -> float:
+        """
+        Calculate the total savings across all cart items.
+        
+        This method calculates the difference between base prices and actual prices,
+        accounting for discounts, promotions, and bulk pricing.
+        
+        Returns
+        -------
+        float
+            Total savings amount (positive value indicates savings)
+        """
+        try:
+            total_savings = 0.0
+            
+            for item in self._cart_items:
+                # Calculate potential savings for this item
+                base_total = item.base_price * item.current_quantity
+                actual_total = item.total_price
+                
+                # If there's a difference, it represents savings
+                if base_total > actual_total:
+                    item_savings = base_total - actual_total
+                    total_savings += item_savings
+                    
+                    self.logger.debug(f"Item {item.product_name}: Base ${base_total:.2f}, Actual ${actual_total:.2f}, Savings ${item_savings:.2f}")
+            
+            self.logger.info(f"Total cart savings calculated: ${total_savings:.2f}")
+            return total_savings
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating cart savings: {e}")
+            return 0.0
+
+    def get_savings_breakdown(self) -> Dict[str, float]:
+        """
+        Get a detailed breakdown of savings by item.
+        
+        Returns
+        -------
+        Dict[str, float]
+            Dictionary mapping product names to their individual savings amounts
+        """
+        try:
+            savings_breakdown = {}
+            
+            for item in self._cart_items:
+                base_total = item.base_price * item.current_quantity
+                actual_total = item.total_price
+                
+                if base_total > actual_total:
+                    item_savings = base_total - actual_total
+                    savings_breakdown[item.product_name or item.product_code] = item_savings
+            
+            return savings_breakdown
+            
+        except Exception as e:
+            self.logger.error(f"Error getting savings breakdown: {e}")
+            return {}
+
