@@ -383,6 +383,11 @@ class EnhancedSearchEngine:
             Converted SearchResult object, or None if conversion failed
         """
         try:
+            # Debug: see what the item looks like
+            self.logger.debug(f"Converting item: {item}")
+            self.logger.debug(f"Item type: {type(item)}")
+            self.logger.debug(f"Item dir: {dir(item)}")
+            
             # Extract UPC from the item
             upc = self._extract_upc(item)
             if not upc:

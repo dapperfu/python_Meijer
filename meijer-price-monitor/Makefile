@@ -1,11 +1,14 @@
 # Makefile for Meijer Price Monitor
 # This Makefile provides targets for setting up and managing the price monitoring system
 
-.PHONY: help setup install-deps test clean cron-setup cron-remove cron-status run-monitors
+.PHONY: help auth auth-login auth-logout auth-status setup install-deps test clean cron-setup cron-remove cron-status run-monitors
 
 # Default target
 help:
 	@echo "Meijer Price Monitor - Available targets:"
+	@echo ""
+	@echo "Authentication targets:"
+	@echo "  auth           - Authentication management (see 'make auth help')"
 	@echo ""
 	@echo "Setup targets:"
 	@echo "  setup          - Set up the price monitoring system"
@@ -24,6 +27,42 @@ help:
 	@echo "Maintenance:"
 	@echo "  clean          - Clean up temporary files and logs"
 	@echo "  logs           - Show recent monitoring logs"
+
+# Authentication management
+auth:
+	@echo "Meijer Price Monitor - Authentication Management"
+	@echo ""
+	@echo "Usage: make auth <command>"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  login          - Login to Meijer (required for API access)"
+	@echo "  logout         - Logout from Meijer"
+	@echo "  status         - Check authentication status"
+	@echo "  help           - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make auth login     - Login to Meijer"
+	@echo "  make auth status    - Check if you're logged in"
+	@echo "  make auth logout    - Logout from Meijer"
+
+auth-login: venv
+	@echo "🔐 Logging in to Meijer..."
+	@echo "This will open your browser for authentication."
+	@echo "You must be logged in to use the price monitoring features."
+	@echo ""
+	@venv/bin/python -m meijer.cli.main login
+	@echo ""
+	@echo "✅ Login complete! You can now use the price monitoring features."
+
+auth-logout: venv
+	@echo "🚪 Logging out from Meijer..."
+	@venv/bin/python -m meijer.cli.main logout
+	@echo ""
+	@echo "✅ Logout complete!"
+
+auth-status: venv
+	@echo "🔍 Checking Meijer authentication status..."
+	@venv/bin/python scripts/check_auth.py
 
 # Check if virtual environment exists
 venv:
