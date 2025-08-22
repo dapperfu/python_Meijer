@@ -45,7 +45,7 @@ class Meijer:
     - Store information
     """
 
-    def __init__(self, auth: Optional[str] = None):
+    def __init__(self, auth: Optional[str] = None, base_url: Optional[str] = None):
         """
         Initialize Meijer client.
 
@@ -54,12 +54,22 @@ class Meijer:
                 - Path to auth.txt file with bearer=token or user=email&password=pass
                 - Path to mitmproxy log file
                 - None to auto-detect from ~/.config/meijer.txt
+            base_url: Base URL for API endpoints. If provided, will redirect all API calls
+                     to this URL instead of the default Meijer domains.
+                     Example: "http://127.0.0.1:5000" for local Flask server
         """
         self.logger = logging.getLogger(__name__)
 
         # API configuration based on APK analysis
         self.api_base_url = "https://api.meijer.com"
         self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis
+        
+        # Handle base URL override for local development/testing
+        if base_url:
+            self.logger.info(f"Using custom base URL: {base_url}")
+            self._setup_local_endpoints(base_url)
+        else:
+            self._setup_default_endpoints()
 
         # Initialize token storage
         self.token_storage = TokenStorage()
@@ -92,6 +102,61 @@ class Meijer:
 
         # Load authentication
         self._load_auth(auth)
+
+    def _setup_default_endpoints(self):
+        """Setup default Meijer API endpoints."""
+        self.api_base_url = "https://api.meijer.com"
+        self.id_base_url = "https://id.meijer.com"
+        self.digital_base_url = "https://digital.meijer.com"
+        self.loyalty_base_url = "https://loyalty.meijer.com"
+        self.www_base_url = "https://www.meijer.com"
+        self.constructor_base_url = "https://ac.cnstrc.com"
+        self.feedback_base_url = "https://meijer.md-apis.medallia.com/mobileSDK/v2"
+
+    def _setup_local_endpoints(self, base_url: str):
+        """
+        Setup local endpoints for development/testing.
+        
+        Args:
+            base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
+        """
+        # Remove trailing slash if present
+        base_url = base_url.rstrip('/')
+        
+        # Setup local endpoints - redirect all to the local Flask server
+        self.api_base_url = f"{base_url}/api/meijer"
+        self.id_base_url = f"{base_url}/api/meijer"
+        self.digital_base_url = f"{base_url}/api/meijer"
+        self.loyalty_base_url = f"{base_url}/api/meijer"
+        self.www_base_url = f"{base_url}/api/meijer"
+        self.constructor_base_url = f"{base_url}/api/meijer"
+        self.feedback_base_url = f"{base_url}/api/meijer"
+        
+        self.logger.info(f"Configured local endpoints:")
+        self.logger.info(f"  API Base: {self.api_base_url}")
+        self.logger.info(f"  ID Base: {self.id_base_url}")
+        self.logger.info(f"  Digital Base: {self.digital_base_url}")
+        self.logger.info(f"  Loyalty Base: {self.loyalty_base_url}")
+        self.logger.info(f"  WWW Base: {self.www_base_url}")
+        self.logger.info(f"  Constructor Base: {self.constructor_base_url}")
+        self.logger.info(f"  Feedback Base: {self.feedback_base_url}")
+
+    def _get_api_url(self, endpoint: str) -> str:
+        """
+        Get the full API URL for an endpoint.
+        
+        Args:
+            endpoint: API endpoint path
+            
+        Returns:
+            Full URL for the endpoint
+        """
+        # If using local endpoints, prepend the base
+        if hasattr(self, 'api_base_url') and self.api_base_url.startswith('http://'):
+            return f"{self.api_base_url}/{endpoint.lstrip('/')}"
+        
+        # Otherwise use the default Meijer API
+        return f"https://api.meijer.com/{endpoint.lstrip('/')}"
 
     def _load_auth(self, auth: Optional[str] = None):
         """Load authentication credentials from various sources."""
@@ -411,7 +476,7 @@ class Meijer:
         # Otherwise, use the working storeInfo endpoint with provided or default coordinates
         try:
             # Use the working storeInfo endpoint instead of the non-existent /stores
-            url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
+            url = self._get_api_url("digital/storeInfo/v2/stores/proximity")
 
             # Use provided coordinates or default to center of Michigan
             if latitude and longitude:
@@ -523,7 +588,7 @@ class Meijer:
         """
         try:
             # Use the storeInfo proximity endpoint for better results
-            url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
+            url = self._get_api_url("digital/storeInfo/v2/stores/proximity")
 
             params = {
                 "latitude": latitude,
@@ -607,7 +672,7 @@ class Meijer:
         try:
             # Use the proximity endpoint with a large radius to find the store
             # This approach is more reliable than direct store ID lookup
-            url = "https://api.meijer.com/digital/storeInfo/v2/stores/proximity"
+            url = self._get_api_url("digital/storeInfo/v2/stores/proximity")
 
             # Use coordinates near the center of Michigan as a starting point
             # The API will return stores within the radius, and we'll filter by ID

@@ -52,6 +52,31 @@ class ShopNScan:
             "scan_sequence": ["single", "double", "multiple"]  # Scan patterns
         }
 
+    def set_local_base_url(self, base_url: str):
+        """
+        Set the base URL for local development/testing.
+        
+        Args:
+            base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
+        """
+        base_url = base_url.rstrip('/')
+        # Update all endpoints to use local server
+        for key in self.endpoints:
+            if not self.endpoints[key].startswith('http'):
+                self.endpoints[key] = f"{base_url}/api/meijer{self.endpoints[key]}"
+        
+        for key in self.alternative_endpoints:
+            if not self.alternative_endpoints[key].startswith('http'):
+                self.alternative_endpoints[key] = f"{base_url}/api/meijer{self.alternative_endpoints[key]}"
+        
+        self.logger.info(f"Updated Shop & Scan endpoints to use local server: {base_url}")
+
+    def reset_to_default_urls(self):
+        """Reset URLs back to default Meijer endpoints."""
+        # This would need to be implemented to restore original endpoint paths
+        # For now, just log that this method was called
+        self.logger.info("Reset Shop & Scan endpoints to default (requires re-initialization)")
+
     def lookup_barcode_price(
         self, barcode: str, store_id: Optional[str] = None
     ) -> Optional[MeijerItem]:

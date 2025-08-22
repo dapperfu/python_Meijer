@@ -10,6 +10,7 @@ A local caching server for the Meijer API that allows local testing and developm
 - **Bearer Token Support**: Accepts all bearer tokens for authentication
 - **CORS Enabled**: Cross-origin requests supported
 - **Health Monitoring**: Built-in health checks and cache statistics
+- **Meijer Client Integration**: Updated Meijer client supports local endpoints
 
 ## API Endpoints
 
@@ -104,6 +105,30 @@ curl "https://api.meijer.com/digital/occ/v3/carts/current?store=71"
 
 # Use:
 curl "http://localhost:5000/api/meijer/digital/occ/v3/carts/current?store=71"
+```
+
+### Using with Meijer Client
+
+The Meijer client has been updated to support local endpoints:
+
+```python
+from meijer import Meijer
+
+# Create client with local endpoints
+meijer = Meijer(base_url="http://127.0.0.1:5000")
+
+# All API calls now go to the local Flask server
+cart = meijer.get_current_cart()
+stores = meijer.get_stores()
+```
+
+### Demo Script
+
+Run the demo to see local endpoints in action:
+
+```bash
+cd meijer-api-flask
+python demo_local_client.py
 ```
 
 ### Authentication

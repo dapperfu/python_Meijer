@@ -38,6 +38,26 @@ class MeijerAuthConfig:
     api_base: str = "https://api.meijer.com"
     digital_base: str = "https://digital.meijer.com"
     loyalty_base: str = "https://loyalty.meijer.com"
+    
+    def __post_init__(self):
+        """Post-initialization to handle local development URLs."""
+        # Check if we're using local endpoints
+        if hasattr(self, '_local_base_url') and self._local_base_url:
+            self._setup_local_endpoints(self._local_base_url)
+    
+    def _setup_local_endpoints(self, base_url: str):
+        """Setup local endpoints for development/testing."""
+        base_url = base_url.rstrip('/')
+        self.auth_url = f"{base_url}/api/meijer/oauth2/default/v1/authorize"
+        self.token_url = f"{base_url}/api/meijer/oauth2/default/v1/token"
+        self.api_base = f"{base_url}/api/meijer"
+        self.digital_base = f"{base_url}/api/meijer"
+        self.loyalty_base = f"{base_url}/api/meijer"
+    
+    def set_local_base_url(self, base_url: str):
+        """Set the base URL for local development."""
+        self._local_base_url = base_url
+        self._setup_local_endpoints(base_url)
 
 
 @dataclass

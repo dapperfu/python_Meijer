@@ -115,6 +115,24 @@ class MeijerFeedback:
         self.meijer_client = meijer_client
         self.logger = meijer_client.logger
         self.base_url = "https://meijer.md-apis.medallia.com/mobileSDK/v2"
+        # Store original URL for local development support
+        self._original_base_url = self.base_url
+
+    def set_local_base_url(self, base_url: str):
+        """
+        Set the base URL for local development/testing.
+        
+        Args:
+            base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
+        """
+        base_url = base_url.rstrip('/')
+        self.base_url = f"{base_url}/api/meijer"
+        self.logger.info(f"Using local feedback base URL: {self.base_url}")
+
+    def reset_to_default_urls(self):
+        """Reset URLs back to default Meijer endpoints."""
+        self.base_url = self._original_base_url
+        self.logger.info(f"Reset feedback base URL to: {self.base_url}")
 
     def submit_feedback(
         self,

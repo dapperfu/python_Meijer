@@ -22,6 +22,8 @@ class Search:
 
         # Actual API configuration from APK analysis
         self.constructor_base_url = "https://ac.cnstrc.com"
+        # Store original URL for local development support
+        self._original_constructor_base_url = self.constructor_base_url
         self.api_key = "key_GdYuTcnduTUtsZd6"  # Valid key from APK analysis
 
         # Actual endpoints from APK analysis
@@ -31,6 +33,22 @@ class Search:
             "browse": "/browse",
             "recommendations": "/recommendations",
         }
+
+    def set_local_base_url(self, base_url: str):
+        """
+        Set the base URL for local development/testing.
+        
+        Args:
+            base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
+        """
+        base_url = base_url.rstrip('/')
+        self.constructor_base_url = f"{base_url}/api/meijer"
+        self.logger.info(f"Using local constructor base URL: {self.constructor_base_url}")
+
+    def reset_to_default_urls(self):
+        """Reset URLs back to default Meijer endpoints."""
+        self.constructor_base_url = self._original_constructor_base_url
+        self.logger.info(f"Reset constructor base URL to: {self.constructor_base_url}")
 
     def search(
         self,

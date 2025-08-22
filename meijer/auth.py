@@ -101,10 +101,28 @@ class TokenStorage:
 
         # OAuth2 configuration based on log analysis
         self.oauth_base_url = "https://id.meijer.com/oauth2/default/v1"
+        # Store original URL for local development support
+        self._original_oauth_base_url = self.oauth_base_url
         self.client_id = "0oa1o8g9njWsUvwsx697"  # From log analysis
 
         # Token refresh settings
         self.refresh_buffer_seconds = 300  # 5 minutes before expiry
+
+    def set_local_base_url(self, base_url: str):
+        """
+        Set the base URL for local development/testing.
+        
+        Args:
+            base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
+        """
+        base_url = base_url.rstrip('/')
+        self.oauth_base_url = f"{base_url}/api/meijer/oauth2/default/v1"
+        self.logger.info(f"Using local OAuth base URL: {self.oauth_base_url}")
+
+    def reset_to_default_urls(self):
+        """Reset URLs back to default Meijer endpoints."""
+        self.oauth_base_url = self._original_oauth_base_url
+        self.logger.info(f"Reset OAuth base URL to: {self.oauth_base_url}")
 
     def _get_config_path(self, filename: str) -> str:
         """
