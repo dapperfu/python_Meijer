@@ -1,0 +1,34 @@
+# Python Development Rules
+
+## Virtual Environment Requirements
+- **ALL** Python related matters **SHALL** use a virtual environment
+- The Python virtual environment **SHALL** be called `venv`
+- **NEVER** attempt to use the system pip
+- **NEVER** attempt to install Python packages to the system
+
+## Virtual Environment Setup
+- Use `python -m venv venv` to create the virtual environment
+- Activate with `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
+- Deactivate with `deactivate` command
+
+## Package Management
+- Use `venv/bin/pip` for package installation
+- Use `venv/bin/python` for running Python scripts
+- Use `venv/bin/pytest` for running tests
+- Use full paths to venv bin directory in Makefiles: `${VENV}/bin/pip`, `${VENV}/bin/python`
+
+## Makefile Integration
+- Use `venv` as a dependency for targets that require Python
+- Example: `target: venv` ensures virtual environment is created before target execution
+- Use `${VENV}/bin/` prefix for all Python tools in Makefiles
+- Avoid system Python references
+
+## Best Practices
+- Always activate virtual environment before development
+- Keep requirements.txt updated with `venv/bin/pip freeze > requirements.txt`
+- Use virtual environment for all Python development tasks
+- Ensure isolation from system Python packages
+description:
+globs:
+alwaysApply: false
+---

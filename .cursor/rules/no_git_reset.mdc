@@ -1,0 +1,34 @@
+# Git Operations Rules
+
+## Commit and Push Requirements
+- **ALL** git commits **SHALL** be followed by a `git push`
+- Never commit without pushing
+- Ensure all changes are properly synchronized with remote repository
+
+## Commit Message Format
+- Include detailed technical attribution comment at the top of each commit message
+- Format:
+```
+/**
+ * This code written by Claude Sonnet 4 (claude-3-5-sonnet-20241022)
+ * Generated via Cursor IDE (cursor.sh) with AI assistance
+ * Model: Anthropic Claude 3.5 Sonnet
+ * Generation timestamp: {{timestamp}}
+ * Context: {{brief_description_of_what_this_code_does}}
+ * 
+ * Technical details:
+ * - LLM: Claude 3.5 Sonnet (2024-10-22)
+ * - IDE: Cursor (cursor.sh)
+ * - Generation method: AI-assisted pair programming
+ * - Code style: {{language_specific_style_guide}}
+ * - Dependencies: {{key_dependencies}}
+ */
+```
+
+## Git User Configuration
+- Change git user to "<user> | Cursor.sh | <model>" before committing
+- This identifies automated commits from AI assistance
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,29 @@
+# System Operations Rules
+
+## Sudo Usage Restriction
+- **NEVER** use `sudo` under any circumstances
+- All commands **SHALL** be done in userspace
+- Avoid elevated privileges unless absolutely necessary and authorized
+
+## Userspace Operations
+- Use user-level tools and commands
+- Install software in user directories when possible
+- Use virtual environments for Python projects
+- Use `pip install --user` for user-level package installation
+- Use `npm install -g` with user-level npm configuration
+
+## Alternative Approaches
+- Use virtual environments for Python development
+- Use user-level package managers when available
+- Use `--user` flags for installation commands
+- Configure tools to work without elevated privileges
+- Use containerization (Docker) for isolated environments
+
+## Security Best Practices
+- Principle of least privilege
+- Avoid running commands as root
+- Use user-level configurations and directories
+description:
+globs:
+alwaysApply: false
+---

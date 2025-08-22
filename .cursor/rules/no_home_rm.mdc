@@ -1,0 +1,23 @@
+# File Deletion Safety Rules
+
+## Critical Safety Rule
+- **NEVER** under any circumstances run `rm -rf ~/`
+- This command is extremely dangerous and can destroy the entire home directory
+- Always use absolute paths when deleting directories
+- Verify paths before executing destructive commands
+
+## Safe Deletion Practices
+- Use absolute paths for deletion operations
+- Double-check paths before executing `rm` commands
+- Consider using `rm -i` for interactive confirmation
+- Use `find` with `-delete` for safer bulk operations
+- Always backup important data before major cleanup operations
+
+## Alternative Approaches
+- Use `trash-cli` for safer file deletion (moves to trash instead of permanent deletion)
+- Implement soft deletion where possible
+- Use version control for code files
+description:
+globs:
+alwaysApply: false
+---

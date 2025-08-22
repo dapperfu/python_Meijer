@@ -1,0 +1,28 @@
+# Cursor Rules for Python Meijer Project
+
+This project follows specific development rules and best practices. All rules are defined in the `.cursor/rules/` directory.
+
+## Rule Categories
+
+- **log_handling.mdc**: Rules for handling mitmproxy logs and binary files
+- **no_git_reset.mdc**: Git operations and commit requirements
+- **no_home_rm.mdc**: File deletion safety rules
+- **no_sudo.mdc**: System operations and privilege restrictions
+- **plaintext_tools.mdc**: Proper tool selection for different file types
+- **python_venv.mdc**: Python virtual environment requirements
+
+## General Guidelines
+
+- Follow all rules defined in the `.cursor/rules/` directory
+- Use appropriate tools for each file type
+- Maintain security best practices
+- Follow Python development standards
+- Use proper git workflow with commits and pushes
+
+## Project-Specific Rules
+
+- All Python development uses virtual environments (`venv`)
+- Never use system pip or install packages system-wide
+- Use proper tools for mitmproxy log analysis
+- Follow detailed commit message format with technical attribution
+- Maintain proper file safety practices

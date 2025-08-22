@@ -1,0 +1,28 @@
+# Tool Usage Rules
+
+## Plain Text Tool Restrictions
+- **NEVER** use strings, grep, or plain text tools on mitmproxy logs
+- These files contain binary data and should not be treated as plain text
+- Use the appropriate specialized tools for each file type
+
+## Proper Tool Selection
+- **mitmproxy logs (*.log)**: Use `mitmdump` for analysis
+- **Binary files**: Use appropriate binary analysis tools
+- **Configuration files**: Use language-specific parsers when available
+- **Log files**: Determine format before choosing analysis method
+
+## Tool-Specific Guidelines
+- `mitmdump` for mitmproxy/mitmweb/mitmweb logs
+- `file` command to determine file type before analysis
+- `hexdump` or `xxd` for binary file inspection
+- Use proper parsers for structured data (JSON, XML, etc.)
+
+## When in Doubt
+- Check file type with `file` command
+- Use specialized tools that exist for the specific file format
+- Avoid assumptions about file content
+- Prefer tools designed for the specific data format
+description:
+globs:
+alwaysApply: false
+---
