@@ -76,21 +76,44 @@ The `MeijerAuth` class is a custom authentication class that implements the `req
 ### Basic Usage
 """)
 
-    meijer_auth_example = nbf.v4.new_code_cell("""# MeijerAuth basic usage
-# Create an authentication instance
-bearer_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.token"
-auth = MeijerAuth(bearer_token)
+    meijer_auth_example = nbf.v4.new_code_cell("""# MeijerAuth basic usage with proper token storage
+# Create an authentication instance with proper token storage
+temp_dir = tempfile.mkdtemp()
+test_storage_file = os.path.join(temp_dir, "test_tokens.pkl")
+
+# Create TokenStorage first
+storage = TokenStorage(test_storage_file)
+
+# Create sample token data (simulating AuthTokens)
+class MockAuthTokens:
+    def __init__(self, access_token: str, refresh_token: str = None, expires_at: str = None):
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.expires_at = expires_at
+
+# Create sample tokens and save them
+sample_tokens = MockAuthTokens(
+    access_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.token",
+    refresh_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.token",
+    expires_at="2024-12-31T23:59:59Z"
+)
+
+# Save tokens to storage
+storage.save_tokens(sample_tokens)
+
+# Now create MeijerAuth with the storage
+auth = MeijerAuth(storage)
 
 print("[LOCK] MeijerAuth Created:")
-print(f"Bearer Token: {bearer_token[:20]}...")
+print(f"Bearer Token: {sample_tokens.access_token[:20]}...")
 print(f"Auth Type: {type(auth).__name__}")
 print(f"Base Class: {auth.__class__.__bases__[0].__name__}")
 
 # Test the authentication mechanism
 print(f"\\n[CLIPBOARD] Authentication Details:")
-print(f"Token Length: {len(bearer_token)} characters")
-print(f"Token Prefix: {bearer_token[:10]}...")
-print(f"Token Suffix: ...{bearer_token[-10:]}")
+print(f"Token Length: {len(sample_tokens.access_token)} characters")
+print(f"Token Prefix: {sample_tokens.access_token[:10]}...")
+print(f"Token Suffix: ...{sample_tokens.access_token[-10:]}")
 
 # Simulate request header modification
 class MockRequest:

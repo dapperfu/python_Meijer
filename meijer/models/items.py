@@ -283,6 +283,8 @@ class MeijerItem:
     _meijer_client: Optional["Meijer"] = field(default=None, repr=False, compare=False)
     _async_cache: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
     _logger: Optional[logging.Logger] = field(default=None, repr=False, compare=False)
+    _price: Optional[float] = field(default=None, repr=False, compare=False)
+    _price_population_triggered: bool = field(default=False, repr=False, compare=False)
 
     def __post_init__(self):
         """Initialize internal components after dataclass creation."""
@@ -290,6 +292,9 @@ class MeijerItem:
             self._logger = self._meijer_client.logger
         else:
             self._logger = logging.getLogger(__name__)
+        
+        # Initialize price from the dataclass field
+        self._price = self.price
 
     @classmethod
     def from_upc(
@@ -329,6 +334,52 @@ class MeijerItem:
         """Get the logger instance."""
         return self._logger or logging.getLogger(__name__)
 
+    @property
+    def price(self) -> Optional[float]:
+        """
+        Get the current price, automatically triggering population if needed.
+        
+        This property will:
+        1. Return existing price if available
+        2. Trigger async population in the background if no price exists
+        3. Return None initially, then the populated price on subsequent calls
+        
+        Returns:
+            Current price or None if still loading
+        """
+        if self._price is not None:
+            return self._price
+        
+        # Trigger background population if we have a client and UPC
+        if (self._meijer_client and self.upc and 
+            not self._price_population_triggered):
+            self._price_population_triggered = True
+            
+            # Schedule background population
+            async def populate_in_background():
+                try:
+                    await self._populate_price_data()
+                except Exception as e:
+                    self.logger.error(f"Background price population failed: {e}")
+            
+            # Run in background if event loop is running
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(populate_in_background())
+                else:
+                    loop.run_until_complete(populate_in_background())
+            except RuntimeError:
+                # No event loop, run synchronously
+                asyncio.run(populate_in_background())
+        
+        return self._price
+
+    @price.setter
+    def price(self, value: Optional[float]) -> None:
+        """Set the price value."""
+        self._price = value
+
     @async_property
     async def populated_price(self) -> Optional[float]:
         """
@@ -339,13 +390,31 @@ class MeijerItem:
         2. Try search API for pricing
         3. Fall back to shop'n'scan for pricing
         4. Fall back to cart operations for final pricing
+        
+        Use this when you need to ensure data is populated before proceeding.
         """
-        if self.price is not None:
-            return self.price
+        if self._price is not None:
+            return self._price
         
         # Try to populate price using fallback methods
         await self._populate_price_data()
-        return self.price
+        return self._price
+
+    @async_property
+    async def force_refresh_price(self) -> Optional[float]:
+        """
+        Force refresh the price data, ignoring any cached values.
+        
+        This is useful when you need to get the latest pricing information
+        regardless of what's already cached.
+        """
+        # Clear any cached price data
+        self._price = None
+        self._price_population_triggered = False
+        
+        # Populate fresh data
+        await self._populate_price_data()
+        return self._price
 
     @async_property
     async def populated_details(self) -> Dict[str, Any]:

@@ -34,8 +34,6 @@ import time
 
 # Try to import from the core Meijer API
 try:
-    # First try to import from the parent directory (if this is a subproject)
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     from meijer.client import Meijer
     from meijer.search import Search
     from meijer.stores import MeijerStore
