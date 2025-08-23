@@ -2451,9 +2451,9 @@ def login_selenium(headless: bool, keep_open: bool):
 @click.option(
     "--method",
     "-m",
-    type=click.Choice(["enhanced", "selenium", "fake-headers"]),
-    default="enhanced",
-    help="Authentication method to use (default: enhanced)",
+    type=click.Choice(["requests", "selenium", "fake-headers"]),
+    default="requests",
+    help="Authentication method to use (default: requests)",
 )
 @click.option(
     "--headless",
@@ -2488,15 +2488,20 @@ def login_command(
     )
 
     try:
-        from meijer.enhanced_auth import EnhancedMeijerAuth
 
         # Handle credential clearing
         if clear_credentials:
-            auth = EnhancedMeijerAuth()
-            if auth.clear_credentials():
-                click.echo("✅ Credentials cleared successfully")
-            else:
-                click.echo("❌ Failed to clear credentials")
+            try:
+                from meijer.auth import get_meijer_config_path
+                import os
+                login_file = os.path.join(get_meijer_config_path(""), "login.txt")
+                if os.path.exists(login_file):
+                    os.remove(login_file)
+                    click.echo("✅ Credentials cleared successfully")
+                else:
+                    click.echo("✅ No credentials file found to clear")
+            except Exception as e:
+                click.echo(f"❌ Failed to clear credentials: {e}")
             return
 
         # Smart fallback logic: check login.txt before prompting
@@ -2656,45 +2661,70 @@ def login_command(
                     click.echo("🎉 Ready for API calls!")
                 else:
                     click.echo("❌ Fake headers authentication failed")
-                    click.echo("💡 Try enhanced or selenium methods instead")
+                    click.echo("💡 Try requests or selenium methods instead")
 
             except Exception as e:
                 click.echo(f"❌ Fake headers authentication failed: {e}")
                 click.echo(
-                    "💡 This method is experimental - try enhanced or selenium methods"
+                    "💡 This method is experimental - try requests or selenium methods"
                 )
 
-        else:  # enhanced method (default)
-            click.echo("🔐 Using enhanced authentication method")
+        elif method == "requests":  # requests method (default)
+            click.echo("🚀 Using headless requests authentication method")
 
-            # Create enhanced authentication instance
-            auth = EnhancedMeijerAuth(user, password)
+            # Check for email 2FA config
+            email_2fa_config = None
+            email_config_path = os.path.join(get_meijer_config_path(""), "email.txt")
+            if os.path.exists(email_config_path):
+                use_email_2fa = click.confirm(
+                    "📧 Email 2FA config found. Use it for MFA?"
+                )
+                if use_email_2fa:
+                    email_2fa_config = email_config_path
+                    click.echo("✅ Using email 2FA configuration")
 
-            # Save credentials if requested
-            if save_credentials:
-                if auth.token_storage.save_credentials_to_file(user, password):
-                    click.echo("💾 Credentials saved to login.txt for fallback use")
-                else:
-                    click.echo("⚠️ Failed to save credentials to login.txt")
+            try:
+                from meijer.headless_auth import authenticate_with_requests
 
-            # Attempt authentication (force fresh login)
-            click.echo("🔐 Attempting fresh authentication...")
-            tokens = auth.authenticate(force_login=True)
+                click.echo("🚀 Starting headless authentication...")
+                click.echo(
+                    "📋 Flow: OAuth2 → IDX → Username → Password → Token Exchange"
+                )
 
-            if tokens:
-                click.echo("🎉 Enhanced authentication successful!")
-                click.echo(f"🔑 Access token: {tokens.access_token[:30]}...")
-                click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
+                tokens = authenticate_with_requests(
+                    user, password, email_2fa_config
+                )
 
-                # Test API call capability
-                auth_header = auth.get_auth_header()
-                if auth_header:
-                    click.echo(f"🔒 Auth header ready: {auth_header[:50]}...")
+                if tokens:
+                    click.echo("🎉 Headless authentication successful!")
+                    click.echo(
+                        f"🔑 Access token: {tokens.get('access_token', 'N/A')[:30]}..."
+                    )
+                    click.echo(
+                        f"🔄 Refresh token: {tokens.get('refresh_token', 'N/A')[:30]}..."
+                    )
+                    click.echo(f"🆔 ID token: {tokens.get('id_token', 'N/A')[:30]}...")
+                    click.echo(f"⏰ Expires in: {tokens.get('expires_in', 'N/A')} seconds")
+                    click.echo("🚀 No browser required - pure HTTP requests!")
                     click.echo("🎉 Ready for API calls!")
+
+                    # Save credentials if requested
+                    if save_credentials:
+                        try:
+                            from meijer.auth import get_meijer_config_path
+                            import os
+                            login_file = os.path.join(get_meijer_config_path(""), "login.txt")
+                            with open(login_file, "w") as f:
+                                f.write(f"{user}\n{password}\n")
+                            click.echo("💾 Credentials saved to login.txt for fallback use")
+                        except Exception as e:
+                            click.echo(f"⚠️ Failed to save credentials: {e}")
                 else:
-                    click.echo("❌ No auth header available")
-            else:
-                click.echo("❌ Enhanced authentication failed")
+                    click.echo("❌ Headless authentication failed")
+                    click.echo("💡 Try selenium or fake-headers methods instead")
+
+            except Exception as e:
+                click.echo(f"❌ Headless authentication failed: {e}")
                 click.echo("\n💡 Try these alternatives:")
                 click.echo(
                     "   1. Try fake headers method: meijer login --method fake-headers"

@@ -93,7 +93,7 @@ def cli(verbose: int):
     • stores - Manage store information and search
     • settings - Manage account settings and preferences
     • email-2fa - Manage email 2FA configuration and testing
-    • login - Login with username/password (enhanced or Selenium methods, Selenium defaults to visible browser)
+    • login - Login with username/password (requests, Selenium, or fake-headers methods, requests is default)
     • auth - Manage authentication (login, logout, status, log extraction, email setup)
     • status - Show authentication status
     • ads - Browse weekly ad items
