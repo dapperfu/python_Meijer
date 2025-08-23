@@ -1590,6 +1590,308 @@ class MeijerCart:
             self.logger.error(f"Error adding item to cart: {e}")
             return False
 
+    def add_item_to_cart(self, upc: str, quantity: int = 1) -> bool:
+        """
+        User-friendly helper to add an item to cart by UPC code with detailed feedback.
+        
+        This method provides detailed status messages and error handling for adding items.
+        
+        Parameters
+        ----------
+        upc : str
+            UPC code of the product to add
+        quantity : int, optional
+            Quantity to add (default: 1)
+            
+        Returns
+        -------
+        bool
+            True if item was successfully added, False otherwise
+        """
+        try:
+            self.logger.info(f"Adding {quantity}x item with UPC {upc}...")
+            success = self.add_item_by_upc(upc, quantity)
+            
+            if success:
+                self.logger.info(f"Successfully added {quantity}x item with UPC {upc}")
+                
+                # Refresh cart to show updated contents
+                try:
+                    self.refresh()
+                    self.logger.info("Cart refreshed")
+                    return True
+                except Exception as e:
+                    self.logger.warning(f"Could not refresh cart: {e}")
+                    return True  # Item was added, just couldn't refresh
+            else:
+                self.logger.error(f"Failed to add item with UPC {upc}")
+                self.logger.info("This might be due to:")
+                self.logger.info("  - Invalid UPC code")
+                self.logger.info("  - Item not available at current store")
+                self.logger.info("  - API endpoint not accessible")
+                self.logger.info("  - Authentication issues")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error adding item to cart: {e}")
+            return False
+
+    def update_item_quantity_by_index(self, item_index: int, new_quantity: int) -> bool:
+        """
+        Update the quantity of an item in cart by its index position.
+        
+        This method provides a user-friendly way to update items by their position
+        in the cart instead of using entry numbers.
+        
+        Parameters
+        ----------
+        item_index : int
+            1-based index of the item in the cart
+        new_quantity : int
+            New quantity for the item
+            
+        Returns
+        -------
+        bool
+            True if quantity was successfully updated, False otherwise
+        """
+        try:
+            if self.empty:
+                self.logger.error("Cart is empty - no items to update")
+                return False
+            
+            if item_index < 1 or item_index > len(self._cart_items):
+                self.logger.error(f"Invalid item index {item_index}. Cart has {len(self._cart_items)} items.")
+                return False
+            
+            item = self._cart_items[item_index - 1]
+            entry_number = item.entry_number
+            current_qty = item.current_quantity
+            item_name = getattr(item, 'name', f'Item {item_index}')
+            
+            if not entry_number:
+                self.logger.error(f"Cannot update {item_name} - no entry number available")
+                return False
+            
+            self.logger.info(f"Updating {item_name} from quantity {current_qty} to {new_quantity}")
+            
+            success = self.update_item_quantity(entry_number, new_quantity)
+            
+            if success:
+                self.logger.info(f"Successfully updated {item_name} quantity to {new_quantity}")
+                
+                # Refresh cart to show updated contents
+                try:
+                    self.refresh()
+                    self.logger.info("Cart refreshed")
+                    return True
+                except Exception as e:
+                    self.logger.warning(f"Could not refresh cart: {e}")
+                    return True  # Quantity was updated, just couldn't refresh
+            else:
+                self.logger.error(f"Failed to update {item_name} quantity")
+                return False
+            
+        except Exception as e:
+            self.logger.error(f"Error updating item quantity: {e}")
+            return False
+
+    def remove_item_by_index(self, item_index: int) -> bool:
+        """
+        Remove an item from cart by its index position.
+        
+        This method provides a user-friendly way to remove items by their position
+        in the cart instead of using entry numbers.
+        
+        Parameters
+        ----------
+        item_index : int
+            1-based index of the item in the cart
+            
+        Returns
+        -------
+        bool
+            True if item was successfully removed, False otherwise
+        """
+        try:
+            if self.empty:
+                self.logger.error("Cart is empty - no items to remove")
+                return False
+            
+            if item_index < 1 or item_index > len(self._cart_items):
+                self.logger.error(f"Invalid item index {item_index}. Cart has {len(self._cart_items)} items.")
+                return False
+            
+            item = self._cart_items[item_index - 1]
+            entry_number = item.entry_number
+            item_name = getattr(item, 'name', f'Item {item_index}')
+            
+            if not entry_number:
+                self.logger.error(f"Cannot remove {item_name} - no entry number available")
+                return False
+            
+            self.logger.info(f"Removing {item_name} from cart")
+            
+            success = self.remove_item(entry_number)
+            
+            if success:
+                self.logger.info(f"Successfully removed {item_name} from cart")
+                
+                # Refresh cart to show updated contents
+                try:
+                    self.refresh()
+                    self.logger.info("Cart refreshed")
+                    return True
+                except Exception as e:
+                    self.logger.warning(f"Could not refresh cart: {e}")
+                    return True  # Item was removed, just couldn't refresh
+            else:
+                self.logger.error(f"Failed to remove {item_name} from cart")
+                return False
+            
+        except Exception as e:
+            self.logger.error(f"Error removing item from cart: {e}")
+            return False
+
+    def set_cart_store(self, store_id: str) -> bool:
+        """
+        Set the store for cart operations with detailed feedback.
+        
+        This method provides a user-friendly way to change the store with
+        automatic cart refresh for the new store.
+        
+        Parameters
+        ----------
+        store_id : str
+            New store ID for cart operations
+            
+        Returns
+        -------
+        bool
+            True if store was successfully changed, False otherwise
+        """
+        try:
+            old_store = self._store_id
+            self.logger.info(f"Changing store from {old_store} to {store_id}")
+            
+            self.store_id = store_id
+            
+            self.logger.info(f"Store changed to {self._store_id}")
+            self.logger.info("Cart data will be refreshed for the new store")
+            
+            # Clear cart cache for new store
+            try:
+                self.refresh()
+                self.logger.info("Cart refreshed for new store")
+                return True
+            except Exception as e:
+                self.logger.warning(f"Could not refresh cart: {e}")
+                return True  # Store was changed, just couldn't refresh
+            
+        except Exception as e:
+            self.logger.error(f"Error setting store: {e}")
+            return False
+
+    def demonstrate_cart_workflow(self) -> Dict[str, Any]:
+        """
+        Demonstrate a complete cart workflow with detailed step-by-step operations.
+        
+        This method provides a comprehensive example of cart operations including
+        store setting, item addition, quantity updates, and removal operations.
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Summary of workflow results with step outcomes
+        """
+        results = {
+            "workflow_started": datetime.now().isoformat(),
+            "steps": {},
+            "success": True,
+            "errors": []
+        }
+        
+        self.logger.info("=== COMPLETE CART WORKFLOW DEMO ===")
+        
+        try:
+            # Step 1: Set store
+            self.logger.info("1️⃣ Setting store to 217 (default)")
+            results["steps"]["set_store"] = self.set_cart_store("217")
+            
+            # Step 2: Show initial cart
+            self.logger.info("2️⃣ Showing initial cart contents")
+            initial_item_count = self.item_count
+            results["steps"]["initial_cart"] = {
+                "item_count": initial_item_count,
+                "total_quantity": self.total_quantity,
+                "empty": self.empty
+            }
+            
+            # Step 3: Add a test item (using a placeholder UPC)
+            test_upc = "0000000000000"  # Placeholder UPC
+            self.logger.info(f"3️⃣ Adding test item with UPC {test_upc}")
+            add_result = self.add_item_to_cart(test_upc, 2)
+            results["steps"]["add_item"] = add_result
+            
+            if not add_result:
+                results["errors"].append("Failed to add test item")
+            
+            # Step 4: Show updated cart
+            self.logger.info("4️⃣ Showing updated cart contents")
+            results["steps"]["updated_cart"] = {
+                "item_count": self.item_count,
+                "total_quantity": self.total_quantity,
+                "empty": self.empty
+            }
+            
+            # Step 5: Update quantity (if we have items)
+            if self.has_items:
+                self.logger.info("5️⃣ Updating item quantity")
+                update_result = self.update_item_quantity_by_index(1, 3)
+                results["steps"]["update_quantity"] = update_result
+                
+                if not update_result:
+                    results["errors"].append("Failed to update item quantity")
+            else:
+                self.logger.info("5️⃣ Skipping quantity update - no items in cart")
+                results["steps"]["update_quantity"] = "skipped"
+            
+            # Step 6: Remove item (if we have items)
+            if self.has_items:
+                self.logger.info("6️⃣ Removing item from cart")
+                remove_result = self.remove_item_by_index(1)
+                results["steps"]["remove_item"] = remove_result
+                
+                if not remove_result:
+                    results["errors"].append("Failed to remove item")
+            else:
+                self.logger.info("6️⃣ Skipping item removal - no items in cart")
+                results["steps"]["remove_item"] = "skipped"
+            
+            # Step 7: Final cart state
+            self.logger.info("7️⃣ Final cart state")
+            results["steps"]["final_cart"] = {
+                "item_count": self.item_count,
+                "total_quantity": self.total_quantity,
+                "empty": self.empty
+            }
+            
+            self.logger.info("=== WORKFLOW COMPLETE ===")
+            
+            if results["errors"]:
+                results["success"] = False
+                self.logger.warning(f"Workflow completed with {len(results['errors'])} errors")
+            else:
+                self.logger.info("Workflow completed successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Workflow failed: {e}")
+            results["success"] = False
+            results["errors"].append(str(e))
+        
+        results["workflow_completed"] = datetime.now().isoformat()
+        return results
+
     def remove_item(self, entry_number: str) -> bool:
         """
         Remove a specific item from the cart.
