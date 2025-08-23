@@ -42,6 +42,11 @@ class ShopNScan:
             "update_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket",
             "complete_transaction": "/retail/shopandscan/api/v1/NextGenPOSBasket/complete",
             "status": "/retail/shopandscan/api/v1/NextGenPOSBasket/Status",
+            "update_quantity": "/retail/shopandscan/api/v1/NextGenPOSBasket/updateQuantity",
+            "checkout": "/retail/shopandscan/api/v1/NextGenPOSBasket/checkout",
+            "transfer": "/retail/shopandscan/api/v1/NextGenPOSBasket/transfer",
+            "generate_barcode": "/retail/shopandscan/api/v1/NextGenPOSBasket/generateBarcode",
+            "is_enabled": "/dgtlmma/accounts/isShopAndScanEnabled",
         }
 
         # Alternative endpoints from older implementations
@@ -1268,3 +1273,538 @@ class ShopNScan:
             "X-Device-Manufacturer": "HTC",
         }
         return headers
+
+    @_require_session
+    def update_item_quantity(self, barcode: str, new_quantity: float, store_id: Optional[str] = None) -> bool:
+        """
+        Update the quantity of an item in the Shop & Scan cart.
+        
+        This method handles the UPDATE_QUANTITY operation found in the logs.
+        
+        Args:
+            barcode: The barcode/UPC of the item to update
+            new_quantity: The new quantity (can be decimal for weight-based items)
+            store_id: Optional store ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Get current cart to find the item
+            cart_data = self.get_cart_detailed(store_id)
+            if not cart_data:
+                self.logger.error("Could not retrieve cart data for quantity update")
+                return False
+            
+            # Find the item in the cart
+            item = self._find_item_in_cart(cart_data, barcode)
+            if not item:
+                self.logger.error(f"Item with barcode {barcode} not found in cart")
+                return False
+            
+            # Prepare the UPDATE_QUANTITY payload based on log analysis
+            payload = {
+                "type": "UPDATE_QUANTITY",
+                "header": {
+                    "transactionDateTime": self._get_current_datetime(),
+                    "transactionDateTimeUTC": self._get_current_datetime_utc(),
+                    "storeId": store_id or self.meijer.store_id,
+                    "terminal": 4001,  # Default terminal from logs
+                    "eventTimeStamp": self._get_current_datetime(),
+                    "eventTimeStampUTC": self._get_current_datetime_utc(),
+                    "deviceId": self._generate_device_id(),
+                    "deviceOS": "Android",
+                    "deviceAppVersion": "10.28.0",
+                    "deviceOSVersion": "10",
+                    "transactionStatus": "New",
+                    "transactionId": self._generate_transaction_id(),
+                    "trackingId": self._generate_tracking_id(),
+                    "transactionNumber": self._get_next_transaction_number()
+                },
+                "eventData": {
+                    "barcodeData": barcode,
+                    "unitEntryType": "quantityEntered",
+                    "quantityWeight": new_quantity,
+                    "correlationId": self._generate_correlation_id()
+                }
+            }
+            
+            # Make the request to update quantity
+            response = self.meijer._make_request(
+                "POST",
+                f"{self.meijer.api_base_url}{self.endpoints['update_quantity']}",
+                headers=self._get_shop_scan_headers(),
+                json_data=payload
+            )
+            
+            if response.status_code in [200, 201]:
+                self.logger.info(f"Successfully updated quantity for {barcode} to {new_quantity}")
+                return True
+            else:
+                self.logger.error(f"Failed to update quantity: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error updating item quantity: {e}")
+            return False
+
+    @_require_session
+    def checkout_transaction(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Initiate the checkout process for the Shop & Scan transaction.
+        
+        This method handles the CHECKOUT operation from the user-described flow.
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            Checkout response data or None if failed
+        """
+        try:
+            # Prepare the checkout payload
+            payload = {
+                "type": "CHECKOUT",
+                "header": {
+                    "transactionDateTime": self._get_current_datetime(),
+                    "transactionDateTimeUTC": self._get_current_datetime_utc(),
+                    "storeId": store_id or self.meijer.store_id,
+                    "terminal": 4001,
+                    "eventTimeStamp": self._get_current_datetime(),
+                    "eventTimeStampUTC": self._get_current_datetime_utc(),
+                    "deviceId": self._generate_device_id(),
+                    "deviceOS": "Android",
+                    "deviceAppVersion": "10.28.0",
+                    "deviceOSVersion": "10",
+                    "transactionStatus": "Checkout",
+                    "transactionId": self._generate_transaction_id(),
+                    "trackingId": self._generate_tracking_id(),
+                    "transactionNumber": self._get_next_transaction_number()
+                },
+                "eventData": {
+                    "checkoutType": "standard",
+                    "paymentMethod": "pending",
+                    "correlationId": self._generate_correlation_id()
+                }
+            }
+            
+            # Make the checkout request
+            response = self.meijer._make_request(
+                "POST",
+                f"{self.meijer.api_base_url}{self.endpoints['checkout']}",
+                headers=self._get_shop_scan_headers(),
+                json_data=payload
+            )
+            
+            if response.status_code == 200:
+                checkout_data = response.json()
+                self.logger.info("Checkout initiated successfully")
+                return checkout_data
+            else:
+                self.logger.error(f"Checkout failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error during checkout: {e}")
+            return None
+
+    @_require_session
+    def transfer_transaction(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Transfer the transaction to the checkout system.
+        
+        This method handles the TRANSFER operation from the user-described flow.
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            Transfer response data or None if failed
+        """
+        try:
+            # Prepare the transfer payload
+            payload = {
+                "type": "TRANSFER",
+                "header": {
+                    "transactionDateTime": self._get_current_datetime(),
+                    "transactionDateTimeUTC": self._get_current_datetime_utc(),
+                    "storeId": store_id or self.meijer.store_id,
+                    "terminal": 4001,
+                    "eventTimeStamp": self._get_current_datetime(),
+                    "eventTimeStampUTC": self._get_current_datetime_utc(),
+                    "deviceId": self._generate_device_id(),
+                    "deviceOS": "Android",
+                    "deviceAppVersion": "10.28.0",
+                    "deviceOSVersion": "10",
+                    "transactionStatus": "Transfer",
+                    "transactionId": self._generate_transaction_id(),
+                    "trackingId": self._generate_tracking_id(),
+                    "transactionNumber": self._get_next_transaction_number()
+                },
+                "eventData": {
+                    "transferType": "checkout",
+                    "correlationId": self._generate_correlation_id()
+                }
+            }
+            
+            # Make the transfer request
+            response = self.meijer._make_request(
+                "POST",
+                f"{self.meijer.api_base_url}{self.endpoints['transfer']}",
+                headers=self._get_shop_scan_headers(),
+                json_data=payload
+            )
+            
+            if response.status_code == 200:
+                transfer_data = response.json()
+                self.logger.info("Transaction transferred successfully")
+                return transfer_data
+            else:
+                self.logger.error(f"Transfer failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error during transfer: {e}")
+            return None
+
+    @_require_session
+    def complete_transaction(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Complete the Shop & Scan transaction.
+        
+        This method handles the COMPLETE operation from the user-described flow.
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            Completion response data or None if failed
+        """
+        try:
+            # Prepare the completion payload
+            payload = {
+                "type": "COMPLETE",
+                "header": {
+                    "transactionDateTime": self._get_current_datetime(),
+                    "transactionDateTimeUTC": self._get_current_datetime_utc(),
+                    "storeId": store_id or self.meijer.store_id,
+                    "terminal": 4001,
+                    "eventTimeStamp": self._get_current_datetime(),
+                    "eventTimeStampUTC": self._get_current_datetime_utc(),
+                    "deviceId": self._generate_device_id(),
+                    "deviceOS": "Android",
+                    "deviceAppVersion": "10.28.0",
+                    "deviceOSVersion": "10",
+                    "transactionStatus": "Complete",
+                    "transactionId": self._generate_transaction_id(),
+                    "trackingId": self._generate_tracking_id(),
+                    "transactionNumber": self._get_next_transaction_number()
+                },
+                "eventData": {
+                    "completionType": "standard",
+                    "correlationId": self._generate_correlation_id()
+                }
+            }
+            
+            # Make the completion request
+            response = self.meijer._make_request(
+                "POST",
+                f"{self.meijer.api_base_url}{self.endpoints['complete']}",
+                headers=self._get_shop_scan_headers(),
+                json_data=payload
+            )
+            
+            if response.status_code == 200:
+                completion_data = response.json()
+                self.logger.info("Transaction completed successfully")
+                return completion_data
+            else:
+                self.logger.error(f"Completion failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error during completion: {e}")
+            return None
+
+    def generate_pdf417_barcode(self, transaction_id: str, store_id: Optional[str] = None) -> Optional[str]:
+        """
+        Generate a PDF417 barcode for checkout.
+        
+        This method handles the GENERATE_PDF417 operation from the user-described flow.
+        
+        Args:
+            transaction_id: The transaction ID to encode in the barcode
+            store_id: Optional store ID
+            
+        Returns:
+            Generated PDF417 barcode string or None if failed
+        """
+        try:
+            # Prepare the barcode generation payload
+            payload = {
+                "type": "GENERATE_PDF417",
+                "header": {
+                    "transactionDateTime": self._get_current_datetime(),
+                    "transactionDateTimeUTC": self._get_current_datetime_utc(),
+                    "storeId": store_id or self.meijer.store_id,
+                    "terminal": 4001,
+                    "eventTimeStamp": self._get_current_datetime(),
+                    "eventTimeStampUTC": self._get_current_datetime_utc(),
+                    "deviceId": self._generate_device_id(),
+                    "deviceOS": "Android",
+                    "deviceAppVersion": "10.28.0",
+                    "deviceOSVersion": "10",
+                    "transactionStatus": "Barcode",
+                    "transactionId": transaction_id,
+                    "trackingId": self._generate_tracking_id(),
+                    "transactionNumber": self._get_next_transaction_number()
+                },
+                "eventData": {
+                    "barcodeType": "PDF_417",
+                    "correlationId": self._generate_correlation_id()
+                }
+            }
+            
+            # Make the barcode generation request
+            response = self.meijer._make_request(
+                "POST",
+                f"{self.meijer.api_base_url}{self.endpoints['generate_barcode']}",
+                headers=self._get_shop_scan_headers(),
+                json_data=payload
+            )
+            
+            if response.status_code == 200:
+                barcode_data = response.json()
+                # Extract the generated barcode from response
+                barcode = barcode_data.get("barcode") or barcode_data.get("pdf417")
+                if barcode:
+                    self.logger.info(f"PDF417 barcode generated successfully: {barcode}")
+                    return barcode
+                else:
+                    self.logger.error("Barcode generated but not found in response")
+                    return None
+            else:
+                self.logger.error(f"Barcode generation failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error generating PDF417 barcode: {e}")
+            return None
+
+    def get_checkout_summary(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Get checkout summary including totals, taxes, and savings.
+        
+        This method provides the checkout summary information described in the user flow.
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            Checkout summary data or None if failed
+        """
+        try:
+            # Get current cart data
+            cart_data = self.get_cart_detailed(store_id)
+            if not cart_data:
+                return None
+            
+            # Extract summary information
+            cart_totals = cart_data.get("cartTotals", {})
+            
+            summary = {
+                "item_total": cart_totals.get("cartNowTotal", 0.0),
+                "estimated_taxes": cart_totals.get("tax", 0.0),
+                "subtotal": cart_totals.get("cartNowTotal", 0.0),
+                "total_savings": cart_totals.get("cartSavingsTotal", 0.0),
+                "estimated_total": cart_totals.get("basketTotalWithTax", 0.0),
+                "cart_items_count": len(cart_data.get("cartItems", [])),
+                "transaction_id": cart_data.get("transactionHeader", {}).get("transactionId"),
+                "store_id": store_id or self.meijer.store_id
+            }
+            
+            return summary
+            
+        except Exception as e:
+            self.logger.error(f"Error getting checkout summary: {e}")
+            return None
+
+    def complete_checkout_flow(self, store_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Complete the entire checkout flow as described by the user.
+        
+        This method orchestrates the complete flow:
+        1. Checkout
+        2. Transfer
+        3. Complete
+        4. Generate PDF417 barcode
+        5. Return summary
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            Complete checkout flow results or None if failed
+        """
+        try:
+            results = {
+                "checkout": None,
+                "transfer": None,
+                "complete": None,
+                "pdf417_barcode": None,
+                "summary": None,
+                "success": False
+            }
+            
+            # Step 1: Initiate checkout
+            self.logger.info("Step 1: Initiating checkout...")
+            checkout_result = self.checkout_transaction(store_id)
+            if not checkout_result:
+                self.logger.error("Checkout failed - stopping flow")
+                return results
+            results["checkout"] = checkout_result
+            
+            # Step 2: Transfer transaction
+            self.logger.info("Step 2: Transferring transaction...")
+            transfer_result = self.transfer_transaction(store_id)
+            if not transfer_result:
+                self.logger.error("Transfer failed - stopping flow")
+                return results
+            results["transfer"] = transfer_result
+            
+            # Step 3: Complete transaction
+            self.logger.info("Step 3: Completing transaction...")
+            complete_result = self.complete_transaction(store_id)
+            if not complete_result:
+                self.logger.error("Completion failed - stopping flow")
+                return results
+            results["complete"] = complete_result
+            
+            # Step 4: Generate PDF417 barcode
+            self.logger.info("Step 4: Generating PDF417 barcode...")
+            transaction_id = complete_result.get("transactionId") or self._generate_transaction_id()
+            barcode = self.generate_pdf417_barcode(transaction_id, store_id)
+            if barcode:
+                results["pdf417_barcode"] = barcode
+            else:
+                self.logger.warning("PDF417 barcode generation failed")
+            
+            # Step 5: Get final summary
+            self.logger.info("Step 5: Getting checkout summary...")
+            summary = self.get_checkout_summary(store_id)
+            results["summary"] = summary
+            
+            results["success"] = True
+            self.logger.info("Complete checkout flow finished successfully")
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error in complete checkout flow: {e}")
+            return None
+
+    # Helper methods for the new functionality
+    def _generate_transaction_id(self) -> str:
+        """Generate a unique transaction ID."""
+        import uuid
+        return str(uuid.uuid4())
+
+    def _generate_tracking_id(self) -> str:
+        """Generate a tracking ID in the format from logs."""
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        return f"{timestamp}20250822094757"
+
+    def _get_next_transaction_number(self) -> int:
+        """Get the next transaction number (incremental)."""
+        if not hasattr(self, '_transaction_counter'):
+            self._transaction_counter = 0
+        self._transaction_counter += 1
+        return self._transaction_counter
+
+    def _generate_correlation_id(self) -> str:
+        """Generate a correlation ID for tracking operations."""
+        import uuid
+        return str(uuid.uuid4())
+
+    def is_shop_and_scan_enabled(self, store_id: Optional[str] = None) -> bool:
+        """
+        Check if Shop & Scan is enabled for the current user and store.
+        
+        This method calls the isShopAndScanEnabled endpoint to verify functionality.
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            True if Shop & Scan is enabled, False otherwise
+        """
+        try:
+            # Prepare the request parameters
+            params = {}
+            if store_id:
+                params["storeId"] = store_id
+            
+            # Make the request to check if Shop & Scan is enabled
+            response = self.meijer._make_request(
+                "GET",
+                f"{self.meijer.api_base_url}{self.endpoints['is_enabled']}",
+                headers=self._get_shop_scan_headers(),
+                params=params
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Check if the response indicates Shop & Scan is enabled
+                is_enabled = data.get("isEnabled", False)
+                self.logger.info(f"Shop & Scan enabled check: {is_enabled}")
+                return is_enabled
+            else:
+                self.logger.warning(f"Shop & Scan enabled check failed: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error checking if Shop & Scan is enabled: {e}")
+            return False
+
+    def resume_shop_and_scan_session(self, store_id: Optional[str] = None) -> bool:
+        """
+        Resume an existing Shop & Scan session.
+        
+        This method is called when the app is relaunched and needs to resume
+        an existing session, as described in the user flow.
+        
+        Args:
+            store_id: Optional store ID
+            
+        Returns:
+            True if session resumed successfully, False otherwise
+        """
+        try:
+            # First check if Shop & Scan is enabled
+            if not self.is_shop_and_scan_enabled(store_id):
+                self.logger.warning("Shop & Scan is not enabled for this store")
+                return False
+            
+            # Get current cart to see if there's an existing session
+            cart_data = self.get_cart_detailed(store_id)
+            if cart_data and cart_data.get("cartItems"):
+                # Session exists, mark it as active
+                self._session_active = True
+                self._current_store_id = store_id or self.meijer.store_id
+                self._session_start_time = self._get_current_datetime()
+                
+                # Extract transaction ID if available
+                transaction_header = cart_data.get("transactionHeader", {})
+                if transaction_header.get("transactionId"):
+                    self._current_transaction_id = transaction_header["transactionId"]
+                
+                self.logger.info(f"Successfully resumed Shop & Scan session with {len(cart_data.get('cartItems', []))} items")
+                return True
+            else:
+                self.logger.info("No existing session found, starting new session")
+                return self.start_shop_n_scan_session(store_id)
+                
+        except Exception as e:
+            self.logger.error(f"Error resuming Shop & Scan session: {e}")
+            return False
