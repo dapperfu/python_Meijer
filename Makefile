@@ -9,6 +9,7 @@ help:
 	@echo ""
 	@echo "📱 Traffic Capture:"
 	@echo "  make log          - Start mitmweb with automatic log rotation (every 30 min)"
+	@echo "  make test-log     - Test log creation and rotation (30 second test)"
 	@echo "  make logs         - Show available log files"
 	@echo "  make rotate-logs  - Manually rotate current log file"
 	@echo ""
@@ -81,8 +82,11 @@ log:
 	@echo ""
 	@LOG_FILE="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
 	echo "📝 Log file: $$LOG_FILE" && \
+	echo "📝 Creating initial log file..." && \
+	touch "$$LOG_FILE" && \
+	echo "✅ Initial log file created: $$LOG_FILE" && \
 	echo "🔄 Starting log rotation daemon (every 30 minutes)..." && \
-	(while true; do sleep 1800; if [ -f "$$LOG_FILE" ]; then ROTATED_LOG="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log"; echo "🔄 Rotating log from $$LOG_FILE to $$ROTATED_LOG"; mv "$$LOG_FILE" "$$ROTATED_LOG"; echo "📝 New log file: $$LOG_FILE"; fi; done) & \
+	(while true; do sleep 1800; if [ -f "$$LOG_FILE" ]; then ROTATED_LOG="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log"; echo "🔄 Rotating log from $$LOG_FILE to $$ROTATED_LOG"; mv "$$LOG_FILE" "$$ROTATED_LOG"; echo "📝 New log file: $$LOG_FILE"; touch "$$LOG_FILE"; fi; done) & \
 	ROTATION_PID=$$! && \
 	echo "🔄 Log rotation daemon started (PID: $$ROTATION_PID)" && \
 	echo "💡 To stop rotation: kill $$ROTATION_PID" && \
@@ -98,6 +102,28 @@ log:
 	echo "🔄 Stopping log rotation daemon..." && \
 	kill $$ROTATION_PID 2>/dev/null || true && \
 	echo "✅ Log rotation daemon stopped"
+
+.PHONY: test-log
+test-log:
+	@echo "🧪 Testing log creation and rotation (30 second test)..."
+	@echo "📝 This will create a test log file and rotate it after 30 seconds"
+	@echo ""
+	@LOG_FILE="test_meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
+	echo "📝 Test log file: $$LOG_FILE" && \
+	echo "📝 Creating initial test log file..." && \
+	touch "$$LOG_FILE" && \
+	echo "✅ Initial test log file created: $$LOG_FILE" && \
+	echo "🔄 Starting test log rotation daemon (every 30 seconds)..." && \
+	(while true; do sleep 30; if [ -f "$$LOG_FILE" ]; then ROTATED_LOG="test_meijer_mitm_$$(date +%Y%m%d_%H%M%S).log"; echo "🔄 Rotating test log from $$LOG_FILE to $$ROTATED_LOG"; mv "$$LOG_FILE" "$$ROTATED_LOG"; echo "📝 New test log file: $$LOG_FILE"; touch "$$LOG_FILE"; echo "✅ Test log rotated successfully"; fi; done) & \
+	ROTATION_PID=$$! && \
+	echo "🔄 Test log rotation daemon started (PID: $$ROTATION_PID)" && \
+	echo "⏰ Waiting 30 seconds for rotation test..." && \
+	sleep 30 && \
+	echo "🔄 Stopping test log rotation daemon..." && \
+	kill $$ROTATION_PID 2>/dev/null || true && \
+	echo "✅ Test log rotation daemon stopped" && \
+	echo "📁 Test log files created:" && \
+	ls -la test_meijer_mitm_*.log 2>/dev/null || echo "❌ No test log files found"
 
 .PHONY: logs
 logs:
@@ -223,7 +249,7 @@ completion-bash:
 	@echo ""
 	@echo "    # Main make targets"
 	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
-	@echo "        opts=\"help venv notebook demos log logs auth clean completion completion-bash completion-install\""
+	@echo "        opts=\"help venv notebook demos log test-log logs rotate-logs auth clean completion completion-bash completion-install\""
 	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
 	@echo "        return 0"
 	@echo "    fi"
