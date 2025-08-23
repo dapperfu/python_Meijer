@@ -106,7 +106,7 @@ log:
 	@mkdir -p logs
 	@echo "📁 Logs will be stored in logs/ directory"
 	@echo ""
-	@bash -c 'set -eu; trap "echo; echo \"🔄 Stopping mitmweb and rotation...\"; exit 0" INT TERM; while true; do minute=$$(date +%M); rounded=$$(printf "%02d" $$(( (10#$$minute/30)*30 ))); ts=$$(date +%Y%m%d_%H)$${rounded}; LOG_FILE="logs/meijer_mitm_$${ts}.log"; echo "📝 Starting capture session at $$(date)"; echo "📝 Log file: $$LOG_FILE"; next_hour=$$(($$(date +%H) + ($$minute >= 30 ? 1 : 0))); next_min=$$(($$minute >= 30 ? 0 : 30)); printf "⏰ Next rotation at: %02d:%02d\n" $$next_hour $$next_min; echo ""; timeout --foreground -k 5s 30m mitmweb --mode wireguard --mode regular@0.0.0.0:8080 --mode socks5@0.0.0.0:1080 --web-port 8081 --web-host 0.0.0.0 -w "$$LOG_FILE" -s scripts/shop_n_scan_faker.py --set block_global=false || (echo "⚠️  mitmweb exited, restarting in 5 seconds..."; sleep 5); echo "🔄 Rotated at $$(date)"; echo ""; done'
+	@bash -c 'set -eu; trap "echo; echo \"🔄 Stopping mitmweb and rotation...\"; exit 0" INT TERM; while true; do minute=$$(date +%M); rounded=$$(printf "%02d" $$(( (10#$$minute/30)*30 ))); ts=$$(date +%Y%m%d_%H)$${rounded}; LOG_FILE="logs/meijer_mitm_$${ts}.log"; echo "📝 Starting capture session at $$(date)"; echo "📝 Log file: $$LOG_FILE"; next_hour=$$(($$(date +%H) + ($$minute >= 30 ? 1 : 0))); next_min=$$(($$minute >= 30 ? 0 : 30)); printf "⏰ Next rotation at: %02d:%02d\n" $$next_hour $$next_min; echo ""; timeout --foreground -k 5s 30m mitmweb --mode wireguard --mode regular@0.0.0.0:8080 --mode socks5@0.0.0.0:1080 --web-port 8081 --web-host 0.0.0.0 -w "$$LOG_FILE" -s tools/shop_n_scan_faker.py --set block_global=false || (echo "⚠️  mitmweb exited, restarting in 5 seconds..."; sleep 5); echo "🔄 Rotated at $$(date)"; echo ""; done'
 
 
 
@@ -211,7 +211,7 @@ docs-serve:
 .PHONY: docs-deploy
 docs-deploy:
 	@echo "🚀 Deploying documentation to GitHub Pages..."
-	@./scripts/deploy_docs.sh
+	@./tools/deploy_docs.sh
 
 .PHONY: docs-validate
 docs-validate:
