@@ -69,7 +69,10 @@ class AuthenticatedMeijerClient:
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0'
+            'Cache-Control': 'max-age=0',
+            'Sec-CH-UA': '"Firefox";v="141", "Gecko";v="20100101"',
+            'Sec-CH-UA-Mobile': '?0',
+            'Sec-CH-UA-Platform': '"Linux"'
         })
     
     def _setup_browser(self):
@@ -99,30 +102,77 @@ class AuthenticatedMeijerClient:
     
     def _capture_initial_cookies(self) -> Dict[str, str]:
         """
-        Navigate to Meijer landing page and capture Akamai cookies.
+        Navigate to Meijer login page and capture Akamai cookies.
         
         Returns:
             Dictionary of captured cookies
         """
         try:
-            logger.info("Navigating to Meijer landing page...")
+            logger.info("Navigating to Meijer login page...")
+            
+            # First go to the main page to get initial cookies
             self.driver.get(self.meijer_base)
+            time.sleep(3)
+            
+            # Then navigate to the login page to trigger full authentication flow
+            login_url = f"{self.meijer_base}/signin"
+            logger.info(f"Navigating to login page: {login_url}")
+            self.driver.get(login_url)
             
             # Wait for page to load and JavaScript to execute
             time.sleep(5)
             
-            # Wait for Akamai cookies to be set
-            WebDriverWait(self.driver, self.browser_timeout).until(
-                lambda driver: any('ak_' in cookie['name'] or 'bm_' in cookie['name'] 
-                                 for cookie in driver.get_cookies())
-            )
-            
-            # Capture all cookies
+            # Wait for Akamai cookies to be set - try multiple times
+            max_attempts = 15
+            attempt = 0
             cookies = {}
-            for cookie in self.driver.get_cookies():
-                cookies[cookie['name']] = cookie['value']
             
-            logger.info(f"Captured {len(cookies)} cookies from landing page")
+            while attempt < max_attempts:
+                attempt += 1
+                logger.info(f"Cookie capture attempt {attempt}/{max_attempts}")
+                
+                # Capture all cookies
+                cookies = {}
+                for cookie in self.driver.get_cookies():
+                    cookies[cookie['name']] = cookie['value']
+                
+                # Check if we have the critical cookies
+                critical_cookies = ['ak_bmsc', '_abck', 'bm_sz', 'bm_sv']
+                missing_cookies = [c for c in critical_cookies if c not in cookies]
+                
+                if not missing_cookies:
+                    logger.info("All critical Akamai cookies captured")
+                    break
+                
+                logger.info(f"Missing cookies: {missing_cookies}, waiting 3 seconds...")
+                time.sleep(3)
+                
+                # Try to trigger some activity to help cookie generation
+                if attempt % 3 == 0:
+                    try:
+                        # Scroll down and up to trigger more JavaScript
+                        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        time.sleep(1)
+                        self.driver.execute_script("window.scrollTo(0, 0);")
+                        
+                        # Try to find and click on login elements to trigger more JavaScript
+                        try:
+                            login_elements = self.driver.find_elements("xpath", "//*[contains(text(), 'Sign In') or contains(text(), 'Login') or contains(@class, 'login') or contains(@id, 'login')]")
+                            if login_elements:
+                                logger.info("Found login elements, clicking to trigger more activity")
+                                login_elements[0].click()
+                                time.sleep(2)
+                        except:
+                            pass
+                    except:
+                        pass
+            
+            logger.info(f"Captured {len(cookies)} cookies from login page")
+            
+            # Log all captured cookies for debugging
+            for cookie_name in cookies:
+                if any(prefix in cookie_name for prefix in ['ak_', 'bm_', 'JSESSIONID']):
+                    logger.info(f"Cookie: {cookie_name} = {cookies[cookie_name][:50]}...")
             
             # Verify critical cookies are present
             critical_cookies = ['ak_bmsc', '_abck', 'bm_sz', 'bm_sv']
@@ -130,6 +180,12 @@ class AuthenticatedMeijerClient:
             
             if missing_cookies:
                 logger.warning(f"Missing critical cookies: {missing_cookies}")
+                logger.warning("Authentication may fail due to bot detection")
+                
+                # Try to get at least some Akamai cookies
+                akamai_cookies = {k: v for k, v in cookies.items() if k.startswith('ak_') or k.startswith('bm_')}
+                if akamai_cookies:
+                    logger.info(f"Have some Akamai cookies: {list(akamai_cookies.keys())}")
             
             return cookies
             
@@ -395,6 +451,56 @@ class AuthenticatedMeijerClient:
             logger.error(f"Error submitting password: {e}")
             raise AuthenticationError(f"Password submission failed: {e}")
     
+    def _load_existing_auth_tokens(self) -> bool:
+        """
+        Load existing authentication tokens from ~/.config/meijer/auth.json.
+        
+        Returns:
+            True if tokens were loaded successfully, False otherwise
+        """
+        try:
+            config_dir = Path.home() / ".config" / "meijer"
+            auth_file = config_dir / "auth.json"
+            
+            if not auth_file.exists():
+                logger.info("No existing auth.json file found")
+                return False
+            
+            with open(auth_file, 'r') as f:
+                auth_data = json.load(f)
+            
+            # Check if tokens are still valid
+            if 'extracted_at' in auth_data:
+                # Check if tokens are less than 8 hours old (expires_in is 28800 seconds = 8 hours)
+                if time.time() - auth_data['extracted_at'] > 28800:
+                    logger.info("Stored tokens are expired")
+                    return False
+            
+            # Set the bearer token in headers
+            if 'access_token' in auth_data:
+                self.session.headers['Authorization'] = f"Bearer {auth_data['access_token']}"
+                logger.info("Loaded access token from existing auth.json")
+                
+                # Test if the token is still valid
+                try:
+                    response = self.session.get(f"{self.meijer_base}/account", timeout=10)
+                    if response.status_code == 200:
+                        self.authenticated = True
+                        logger.info("Successfully authenticated using existing tokens")
+                        return True
+                    else:
+                        logger.info(f"Existing token test failed: {response.status_code}")
+                        return False
+                except Exception as e:
+                    logger.info(f"Failed to test existing token: {e}")
+                    return False
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Failed to load existing auth tokens: {e}")
+            return False
+    
     def login(self, username: str, password: str, two_factor_callback=None) -> bool:
         """
         Complete login process including 2FA if required.
@@ -409,6 +515,13 @@ class AuthenticatedMeijerClient:
         """
         try:
             logger.info("Starting Meijer authentication process...")
+            
+            # First try to use existing authentication tokens
+            if self._load_existing_auth_tokens():
+                logger.info("Authentication successful using existing tokens")
+                return True
+            
+            logger.info("No valid existing tokens, proceeding with full authentication...")
             
             # Step 1: Setup browser and capture initial cookies
             self._setup_browser()
@@ -471,26 +584,49 @@ class AuthenticatedMeijerClient:
             True if tokens were loaded successfully, False otherwise
         """
         try:
+            logger.info("Attempting to load auth tokens from auth.json")
+            
             if not Path('auth.json').exists():
+                logger.info("auth.json does not exist")
                 return False
             
+            logger.info("auth.json exists, reading contents...")
             with open('auth.json', 'r') as f:
                 auth_data = json.load(f)
             
+            logger.info(f"Loaded auth data with keys: {list(auth_data.keys())}")
+            
             # Check if tokens are still valid (not expired)
-            if 'timestamp' in auth_data:
-                # Check if tokens are less than 1 hour old
-                if time.time() - auth_data['timestamp'] > 3600:
+            # Use extracted_at if available, otherwise timestamp
+            timestamp = auth_data.get('extracted_at') or auth_data.get('timestamp', 0)
+            expires_in = auth_data.get('expires_in', 28800)  # Default to 8 hours
+            
+            logger.info(f"Token timestamp: {timestamp}, expires_in: {expires_in}")
+            
+            if timestamp > 0:
+                # Check if tokens are still valid (within expiration time)
+                current_time = time.time()
+                time_diff = current_time - timestamp
+                logger.info(f"Current time: {current_time}, time difference: {time_diff}")
+                
+                if time_diff > expires_in:
                     logger.info("Stored tokens are expired")
                     return False
+                else:
+                    logger.info("Tokens are still valid")
+            else:
+                logger.info("No timestamp found, assuming tokens are valid")
             
             # Restore session state
             if 'jsessionid' in auth_data:
                 self.jsessionid = auth_data['jsessionid']
+                logger.info("Restored JSESSIONID")
             if 'state_handle' in auth_data:
                 self.state_handle = auth_data['state_handle']
+                logger.info("Restored state_handle")
             if 'authenticator_id' in auth_data:
                 self.authenticator_id = auth_data['authenticator_id']
+                logger.info("Restored authenticator_id")
             
             # Restore cookies
             if 'cookies' in auth_data:
@@ -501,20 +637,25 @@ class AuthenticatedMeijerClient:
                         domain=cookie_data.get('domain', ''),
                         path=cookie_data.get('path', '/')
                     )
+                logger.info(f"Restored {len(auth_data['cookies'])} cookies")
             
             # Restore bearer token if present
             if 'bearer_token' in auth_data:
                 self.session.headers['Authorization'] = f"Bearer {auth_data['bearer_token']}"
+                logger.info("Restored bearer_token")
             
-            # Restore access token if present
+            # Restore access token if present (preferred over bearer_token)
             if 'access_token' in auth_data:
                 self.session.headers['Authorization'] = f"Bearer {auth_data['access_token']}"
+                logger.info("Access token loaded from auth.json")
             
-            logger.info("Authentication tokens loaded from auth.json")
+            logger.info("Authentication tokens loaded from auth.json successfully")
             return True
             
         except Exception as e:
             logger.error(f"Failed to load auth tokens: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return False
     
     def is_authenticated(self) -> bool:
