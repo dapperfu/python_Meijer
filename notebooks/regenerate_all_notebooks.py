@@ -19,7 +19,7 @@ def run_generation_script(script_path):
             [sys.executable, script_path],
             capture_output=True,
             text=True,
-            cwd="notebooks",
+            cwd=".",  # Current directory since we're already in notebooks/
         )
 
         if result.returncode == 0:
@@ -45,7 +45,7 @@ def main():
     print("=" * 50)
 
     # Get all notebook generation files
-    notebook_dir = "notebooks"
+    notebook_dir = "."  # Current directory since we're already in notebooks/
     generation_scripts = []
 
     for filename in os.listdir(notebook_dir):

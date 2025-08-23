@@ -19,6 +19,9 @@ help:
 	@echo "🛠️  Development:"
 	@echo "  make venv         - Create/update virtual environment"
 	@echo "  make notebook     - Start Jupyter notebook"
+	@echo "  make regenerate-notebooks - Regenerate all notebooks from generation scripts"
+	@echo "  make execute-notebooks   - Execute all notebooks to show outputs"
+	@echo "  make notebook-workflow   - Complete notebook regeneration and execution"
 	@echo "  make demos        - Run all demo scripts in demos/ directory"
 	@echo "  make clean        - Clean build artifacts"
 	@echo ""
@@ -59,6 +62,27 @@ ${VENV}:
 .PHONY: notebook
 notebook:
 	@${VENV}/bin/jupyter-notebook
+
+.PHONY: regenerate-notebooks
+regenerate-notebooks: ${VENV}
+	@echo "🔄 Regenerating all Jupyter notebooks from generation scripts..."
+	@echo "================================================================"
+	@echo "💡 This will run all *_notebook_gen.py scripts to create fresh notebooks"
+	@echo ""
+	@cd notebooks && ../venv/bin/python regenerate_all_notebooks.py
+
+.PHONY: execute-notebooks
+execute-notebooks: ${VENV}
+	@echo "🚀 Executing all Jupyter notebooks to demonstrate functionality..."
+	@echo "================================================================="
+	@echo "💡 This will run all notebooks and show execution outputs"
+	@echo ""
+	@cd notebooks && ../venv/bin/python execute_notebooks.py
+
+.PHONY: notebook-workflow
+notebook-workflow: regenerate-notebooks execute-notebooks
+	@echo "🎉 Complete notebook workflow finished!"
+	@echo "📚 Notebooks regenerated and executed successfully"
 
 .PHONY: demos
 demos: ${VENV}
@@ -218,7 +242,7 @@ completion-bash:
 	@echo ""
 	@echo "    # Main make targets"
 	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
-	@echo "        opts=\"help venv notebook demos log logs rotate-logs auth clean completion completion-bash completion-install\""
+	@echo "        opts=\"help venv notebook regenerate-notebooks execute-notebooks notebook-workflow demos log logs rotate-logs auth clean completion completion-bash completion-install\""
 	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
 	@echo "        return 0"
 	@echo "    fi"
