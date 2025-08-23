@@ -13,10 +13,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from .auth import MeijerAuth, TokenStorage
 from .coupon_operations import CouponOperations
-from .coupons import MeijerCouponManager
+from .coupons import CouponManager
 from .exceptions import MeijerAPIError, MeijerAuthenticationError
 from .feedback import MeijerFeedback
-from .models import AuthTokens, ListItem, MeijerCoupon, MeijerItem, SearchResult
+from .models import AuthTokens, ListItem, MeijerItem, SearchResult
 from .mperks import (
     EarnableOffer,
     EarnedReward,
@@ -177,7 +177,7 @@ class Meijer:
 
         # Initialize sub-components
         self.shopping_list = MeijerList(self)
-        self.coupons = MeijerCouponManager(self)
+        self.coupons = CouponManager(self)
         self.coupon_ops = CouponOperations(self)
         self.product_ops = ProductOperations(self)
         self.search = Search(self)
@@ -209,7 +209,18 @@ class Meijer:
         
         # SSL configuration
         self.ssl_verify = True
-        self.ssl_cert_path = None
+        self.ssl_cert_path = "/keg/cursor/.mitmproxy/mitmproxy-ca-cert.pem"
+        
+        # Auto-configure SSL with mitmproxy certificate if available
+        if Path(self.ssl_cert_path).exists():
+            self.logger.info(f"🔒 Auto-configuring SSL with mitmproxy certificate: {self.ssl_cert_path}")
+            # When using mitmproxy, we typically need to disable SSL verification
+            # as the proxy intercepts and re-signs certificates
+            self.ssl_verify = False
+            self.logger.info("🔒 SSL verification disabled for mitmproxy compatibility")
+        else:
+            self.logger.warning(f"⚠️ Mitmproxy certificate not found: {self.ssl_cert_path}")
+            self.ssl_verify = True  # Fall back to system certificates
 
     def _setup_default_endpoints(self):
         """Setup default Meijer API endpoints."""
@@ -253,12 +264,13 @@ class Meijer:
         else:
             self.logger.warning("⚠️ SSL verification disabled - this may be insecure")
             
-        # Also set environment variable for requests
+                        # Also set environment variable for requests
         import os
         if cert_path and os.path.exists(cert_path):
             os.environ['MEIJER_SSL_CERT'] = cert_path
         elif not verify:
             os.environ['MEIJER_SSL_VERIFY'] = 'false'
+        
         self.id_base_url = f"{base_url}/api/meijer"
         self.digital_base_url = f"{base_url}/api/meijer"
         self.loyalty_base_url = f"{base_url}/api/meijer"
@@ -534,10 +546,26 @@ class Meijer:
                 ssl_verify = False
                 self.logger.info("🔒 Using proxy - SSL verification disabled")
             
-            # Use client's SSL configuration
-            if self.ssl_cert_path and os.path.exists(self.ssl_cert_path):
+            # Use client's SSL configuration - prioritize the verify setting over cert path
+            if not self.ssl_verify:
+                # If SSL verification is disabled, don't use certificate path
+                ssl_verify = False
+                self.logger.info("🔒 SSL verification disabled as configured")
+            elif self.ssl_cert_path and os.path.exists(self.ssl_cert_path):
+                # Only use certificate path if SSL verification is enabled
                 ssl_verify = self.ssl_cert_path
                 self.logger.info(f"🔒 Using custom SSL certificate: {self.ssl_cert_path}")
+            
+            # Debug SSL configuration
+            self.logger.info(f"🔒 Final SSL verification setting: {ssl_verify}")
+            self.logger.info(f"🔒 Client SSL verify: {self.ssl_verify}")
+            self.logger.info(f"🔒 Client SSL cert path: {self.ssl_cert_path}")
+            
+            # Set environment variables for requests when SSL verification is disabled
+            if ssl_verify is False:
+                os.environ['REQUESTS_CA_BUNDLE'] = ''
+                os.environ['CURL_CA_BUNDLE'] = ''
+                self.logger.info("🔒 Environment variables set to disable SSL verification")
             
             # Make request with SSL configuration
             response = requests.request(
@@ -1182,17 +1210,17 @@ class Meijer:
 
     def get_offers(
         self, store_id: Optional[str] = None, limit: int = 100
-    ) -> List[MeijerCoupon]:
+    ) -> List["Coupon"]:
         """Get available offers/coupons using the coupon operations module."""
         return self.coupon_ops.get_offers(store_id=store_id, limit=limit)
 
     def get_coupons(
         self, limit: int = 1000, use_pagination: bool = True
-    ) -> List[MeijerCoupon]:
+    ) -> List["Coupon"]:
         """Get available coupons with pagination support using the coupon operations module."""
         return self.coupon_ops.get_coupons(limit=limit, use_pagination=use_pagination)
 
-    def get_all_coupons(self) -> List[MeijerCoupon]:
+    def get_all_coupons(self) -> List["Coupon"]:
         """Get all available coupons using the most effective method via coupon operations module."""
         return self.coupon_ops.get_all_coupons()
 

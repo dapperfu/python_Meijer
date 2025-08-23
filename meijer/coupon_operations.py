@@ -8,7 +8,7 @@ to reduce file size and improve organization.
 
 from typing import List, Optional
 
-from .models import MeijerCoupon
+from .models import Coupon
 
 
 class CouponOperations:
@@ -21,7 +21,7 @@ class CouponOperations:
 
     def get_offers(
         self, store_id: Optional[str] = None, limit: int = 100
-    ) -> List[MeijerCoupon]:
+    ) -> List[Coupon]:
         """
         Get available offers/coupons.
 
@@ -30,7 +30,7 @@ class CouponOperations:
             limit: Maximum number of offers to return
 
         Returns:
-            List of MeijerCoupon objects
+            List of Coupon objects
         """
         try:
             # Actual endpoint from APK analysis
@@ -110,7 +110,7 @@ class CouponOperations:
 
     def get_coupons(
         self, limit: int = 1000, use_pagination: bool = True
-    ) -> List[MeijerCoupon]:
+    ) -> List[Coupon]:
         """
         Get available coupons with improved pagination support.
 
@@ -119,7 +119,7 @@ class CouponOperations:
             use_pagination: Whether to use pagination for large requests
 
         Returns:
-            List of MeijerCoupon objects representing all available coupons
+            List of Coupon objects representing all available coupons
         """
         try:
             # Actual endpoint from APK analysis
@@ -244,7 +244,7 @@ class CouponOperations:
             self.logger.error(f"Error getting coupons: {e}")
             return []
 
-    def get_all_coupons(self) -> List[MeijerCoupon]:
+    def get_all_coupons(self) -> List[Coupon]:
         """
         Get all available coupons using the most effective method.
 
@@ -254,7 +254,7 @@ class CouponOperations:
         3. Returns the maximum number of coupons available
 
         Returns:
-            List of all available MeijerCoupon objects
+            List of all available Coupon objects
         """
         try:
             self.logger.info("Fetching all available coupons...")

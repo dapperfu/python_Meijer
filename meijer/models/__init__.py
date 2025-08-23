@@ -6,7 +6,7 @@ from the Meijer mobile app, based on analysis of the decompiled APK.
 """
 
 from .base import AuthTokens, ItemType
-from .coupons import MeijerCoupon
+from .coupons import Coupon, CouponCollection, CouponType, CouponStatus
 from .items import ListItem, MeijerItem, create_meijer_item
 from .search import SearchResult, create_meijer_items_from_search
 from .stores import Store, StoreHours
@@ -16,7 +16,10 @@ __all__ = [
     "AuthTokens",
     "MeijerItem",
     "ListItem",
-    "MeijerCoupon",
+    "Coupon",
+    "CouponCollection", 
+    "CouponType",
+    "CouponStatus",
     "Store",
     "StoreHours",
     "SearchResult",

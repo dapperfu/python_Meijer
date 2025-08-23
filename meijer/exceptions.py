@@ -66,6 +66,12 @@ class ShopScanError(MeijerError):
     pass
 
 
+class CouponError(MeijerError):
+    """Raised when coupon operations fail."""
+
+    pass
+
+
 # ============================================================================
 # Error Handling Utilities
 # ============================================================================

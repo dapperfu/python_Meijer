@@ -39,7 +39,6 @@ from .models import (
     AuthTokens,
     ItemType,
     ListItem,
-    MeijerCoupon,
     MeijerItem,
     SearchResult,
     Store,
@@ -107,7 +106,7 @@ __all__ = [
     # Data models
     "MeijerItem",
     "ListItem",
-    "MeijerCoupon",
+
     "Store",
     "StoreHours",
     "SearchResult",

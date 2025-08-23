@@ -1,483 +1,284 @@
 """
-Meijer Coupon Management
-=======================
+Coupons module for Meijer API client.
 
-Coupon and offers functionality for the Meijer API client.
+This module provides coupon management functionality including:
+- Fetching available coupons
+- Clipping/unclipping coupons
+- Managing coupon collections
 """
 
-from dataclasses import dataclass
-from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-from .exceptions import MeijerAuthenticationError
-
-if TYPE_CHECKING:
-    from .client import Meijer
+import json
+from typing import List, Optional, Dict, Any
+from .models.coupons import Coupon, CouponCollection, CouponType, CouponStatus
+from .exceptions import MeijerAPIError, CouponError
 
 
-class HatColor(Enum):
-    """Hat color enumeration based on APK analysis."""
-
-    NONE = 0
-    BLUE = 1
-    RED = 2
-
-
-class BorderColor(Enum):
-    """Border color enumeration based on APK analysis."""
-
-    NONE = 0
-    BLUE = 1
-    RED = 2
-
-
-@dataclass
-class CouponDepartment:
-    """Represents a department/category for a coupon."""
-
-    category_id: str
-    category_name: str
-    sub_category_id: Optional[str] = None
-    sub_category_name: Optional[str] = None
-    offer_count_sub_category: int = 0
-    offer_count_department: int = 0
-    is_custom_category: bool = False
-
-
-@dataclass
-class CouponCategory:
-    """Represents a coupon category/segment."""
-
-    segment_id: Optional[str] = None
-    segment_name: Optional[str] = None
-
-
-@dataclass
-class CouponCondition:
-    """Represents earning conditions for a coupon."""
-
-    condition_type_id: int = 0
-    condition_value: float = 0.0
-
-
-@dataclass
-class CouponReward:
-    """Represents reward details for a coupon."""
-
-    redeem_amount: Optional[float] = None
-    discount_type_id: int = 0
-    discount_level_id: int = 0
-    reward_program_id: int = 0
-
-
-@dataclass
-class MeijerCoupon:
-    """
-    Comprehensive Meijer coupon/offer with all discovered fields.
-
-    This class provides methods to clip() and unclip() coupons, as well as
-    access to all coupon metadata discovered from API and APK analysis.
-    """
-
-    # Core identification
-    meijer_offer_id: int
-    title: str
-    description: str
-
-    # Status flags
-    is_clipped: bool = False
-    is_suggested: bool = False
-    is_targeted: bool = False
-    is_hidden: bool = False
-    is_active: bool = True
-
-    # Display elements
-    image_url: Optional[str] = None
-    disclaimer: Optional[str] = None
-    hat_color: HatColor = HatColor.NONE
-    border_color: BorderColor = BorderColor.NONE
-
-    # Dates
-    redemption_start_date: Optional[datetime] = None
-    redemption_end_date: Optional[datetime] = None
-    modified_ts: Optional[datetime] = None
-
-    # Rewards and conditions
-    redeem_amount: Optional[float] = None
-    condition_value: Optional[float] = None
-    discount_type_id: int = 0
-    discount_level_id: int = 0
-    condition_type_id: int = 0
-
-    # Categories and departments
-    departments: List[CouponDepartment] = None
-    category: Optional[CouponCategory] = None
-
-    # Reference to the client for API operations
-    _meijer_client: Optional["Meijer"] = None
-
-    def __post_init__(self):
-        """Initialize default values."""
-        if self.departments is None:
-            self.departments = []
-
-    def clip(self) -> bool:
-        """Clip (activate) this coupon."""
-        if not self._meijer_client:
-            raise ValueError("No Meijer client available for coupon operations")
-
+class CouponManager:
+    """Manages coupon operations for the Meijer client."""
+    
+    def __init__(self, client):
+        """Initialize the coupon manager with a client instance."""
+        self.client = client
+        self._coupons_cache: Optional[CouponCollection] = None
+    
+    def __call__(self) -> CouponCollection:
+        """Return the current coupons collection."""
+        if self._coupons_cache is None:
+            self.refresh()
+        return self._coupons_cache
+    
+    def refresh(self) -> CouponCollection:
+        """Refresh the coupons collection from the API."""
         try:
-            success = self._meijer_client.clip_coupon(self)
-            if success:
-                self.is_clipped = True
-            return success
-        except Exception as e:
-            self._meijer_client.logger.error(
-                f"Failed to clip coupon {self.meijer_offer_id}: {e}"
+            # Fetch coupons from the API
+            response = self.client._make_request(
+                'GET',
+                '/api/coupons',
+                params={'includeClipped': True}
             )
-            return False
-
-    def unclip(self) -> bool:
-        """Unclip (deactivate) this coupon."""
-        if not self._meijer_client:
-            raise ValueError("No Meijer client available for coupon operations")
-
-        try:
-            success = self._meijer_client.unclip_coupon(self)
-            if success:
-                self.is_clipped = False
-            return success
+            
+            coupons_data = response.get('coupons', [])
+            self._coupons_cache = self._parse_coupons(coupons_data)
+            
+            return self._coupons_cache
+            
         except Exception as e:
-            self._meijer_client.logger.error(
-                f"Failed to unclip coupon {self.meijer_offer_id}: {e}"
-            )
-            return False
-
-    @property
-    def formatted_discount(self) -> str:
-        """Get formatted discount string."""
-        if self.redeem_amount:
-            return f"${self.redeem_amount:.2f}"
-        elif self.condition_value:
-            return f"{self.condition_value}%"
-        else:
-            return "Special Offer"
-
-    @property
-    def is_expired(self) -> bool:
-        """Check if coupon is expired."""
-        if self.redemption_end_date:
-            return datetime.now() > self.redemption_end_date
-        return False
-
-
-def create_meijer_coupons_from_response(
-    response_data: Dict[str, Any], meijer_client: Optional["Meijer"] = None
-) -> List[MeijerCoupon]:
-    """
-    Create MeijerCoupon objects from API response data.
-
-    Args:
-        response_data: Raw API response data
-        meijer_client: Meijer client instance for coupon operations
-
-    Returns:
-        List of MeijerCoupon objects
-    """
-    if response_data is None:
-        return []
-
-    coupons = []
-
-    # Try different possible field names for offers/coupons based on API response
-    offers = []
-
-    # From APK debug: API returns 'listOfCoupons' with 473 coupons
-    if "listOfCoupons" in response_data:
-        offers = response_data["listOfCoupons"]
-    elif "offers" in response_data:
-        offers = response_data["offers"]
-    elif "data" in response_data:
-        offers = response_data["data"]
-    elif "coupons" in response_data:
-        offers = response_data["coupons"]
-    elif "offerCollection" in response_data:
-        offers = response_data["offerCollection"]
-
-    if meijer_client:
-        meijer_client.logger.info(f"Parsing {len(offers)} coupons from API response")
-
-    for offer_data in offers:
-        try:
-            # Handle nested offer structure - some responses have {offer: {...}, isClipped: ...}
-            if "offer" in offer_data and isinstance(offer_data["offer"], dict):
-                # Extract top-level status flags
-                is_clipped = offer_data.get("isClipped", False)
-                is_suggested = offer_data.get("isSuggested", False)
-                is_targeted = offer_data.get("isTargeted", False)
-                is_hidden = offer_data.get("isHidden", False)
-
-                # Get actual offer data
-                actual_offer = offer_data["offer"]
-
-                # Also check inside the offer object for status flags
-                if not is_clipped:
-                    is_clipped = actual_offer.get("isClipped", False)
-                if not is_suggested:
-                    is_suggested = actual_offer.get("isSuggested", False)
-                if not is_targeted:
-                    is_targeted = actual_offer.get("isTargeted", False)
-                if not is_hidden:
-                    is_hidden = actual_offer.get("isHidden", False)
-            else:
-                # Direct offer structure
-                is_clipped = offer_data.get("isClipped", False)
-                is_suggested = offer_data.get("isSuggested", False)
-                is_targeted = offer_data.get("isTargeted", False)
-                is_hidden = offer_data.get("isHidden", False)
-                actual_offer = offer_data
-
-            # Validate that we have the minimum required fields
-            if not isinstance(actual_offer, dict):
-                if meijer_client:
-                    meijer_client.logger.debug(
-                        f"Skipping non-dict offer: {type(actual_offer)}"
-                    )
-                continue
-
-            meijer_offer_id = actual_offer.get("meijerOfferId", actual_offer.get("id"))
-            if not meijer_offer_id or not isinstance(meijer_offer_id, (int, str)):
-                if meijer_client:
-                    meijer_client.logger.debug(
-                        f"Skipping invalid meijer_offer_id: {meijer_offer_id}"
-                    )
-                continue
-
-            title = actual_offer.get("title", actual_offer.get("name"))
-            if not title or not isinstance(title, str):
-                if meijer_client:
-                    meijer_client.logger.debug(f"Skipping invalid title: {title}")
-                continue
-
-            if meijer_client:
-                meijer_client.logger.debug(
-                    f"Creating coupon with id={meijer_offer_id}, title={title}"
-                )
-
-            # Extract core fields from actual offer data
-            meijer_offer_id = int(meijer_offer_id)
-            title = str(title)
-            description = actual_offer.get("description", actual_offer.get("desc"))
-            if description == "":
-                description = None
-
-            # Parse dates from actual offer data
-            redemption_start = None
-            redemption_end = None
-
-            if actual_offer.get("redemptionStartDate"):
-                try:
-                    redemption_start = datetime.fromisoformat(
-                        actual_offer["redemptionStartDate"].replace("Z", "+00:00")
-                    )
-                except ValueError:
-                    pass
-
-            if actual_offer.get("redemptionEndDate"):
-                try:
-                    redemption_end = datetime.fromisoformat(
-                        actual_offer["redemptionEndDate"].replace("Z", "+00:00")
-                    )
-                except ValueError:
-                    pass
-
-            # Create coupon using the extracted status flags and actual offer data
+            raise CouponError(f"Failed to fetch coupons: {e}")
+    
+    def _parse_coupons(self, coupons_data: List[Dict[str, Any]]) -> CouponCollection:
+        """Parse raw coupon data into Coupon objects."""
+        collection = CouponCollection()
+        
+        for coupon_data in coupons_data:
             try:
-                coupon = MeijerCoupon(
-                    meijer_offer_id=meijer_offer_id,
-                    title=title,
-                    description=description,
-                    image_url=actual_offer.get(
-                        "imageUrl"
-                    ),  # Fix: use "imageUrl" not "imageURL"
-                    disclaimer=actual_offer.get("disclaimer"),
-                    redemption_start_date=redemption_start,
-                    redemption_end_date=redemption_end,
-                    redeem_amount=actual_offer.get("redeemAmount"),
-                    condition_value=actual_offer.get("conditionValue"),
-                    discount_type_id=actual_offer.get("discountTypeId", 0),
-                    discount_level_id=actual_offer.get("discountLevelId", 0),
-                    condition_type_id=actual_offer.get("conditionTypeId", 0),
-                    is_clipped=is_clipped,
-                    is_suggested=is_suggested,
-                    is_targeted=is_targeted,
-                    is_hidden=is_hidden,
-                    hat_color=HatColor(actual_offer.get("hatColor", 0)),
-                    border_color=BorderColor(actual_offer.get("borderColor", 0)),
-                    _meijer_client=meijer_client,
-                )
-
-                if meijer_client:
-                    meijer_client.logger.debug(f"Successfully created coupon: {coupon}")
-
-                coupons.append(coupon)
-
+                coupon = self._create_coupon_from_data(coupon_data)
+                collection.add(coupon)
             except Exception as e:
-                if meijer_client:
-                    meijer_client.logger.error(f"Failed to create MeijerCoupon: {e}")
-                    meijer_client.logger.error(
-                        f"Data: meijer_offer_id={meijer_offer_id}, title={title}, description={description}"
-                    )
+                # Log error but continue processing other coupons
+                print(f"Error parsing coupon {coupon_data.get('id', 'unknown')}: {e}")
                 continue
-
+        
+        return collection
+    
+    def _create_coupon_from_data(self, data: Dict[str, Any]) -> Coupon:
+        """Create a Coupon object from API data."""
+        # Map API fields to our Coupon model
+        coupon = Coupon(
+            id=str(data.get('id', '')),
+            name=data.get('name', ''),
+            description=data.get('description'),
+            coupon_type=self._map_coupon_type(data.get('couponType')),
+            status=self._map_coupon_status(data.get('status')),
+            clipped=data.get('isClipped', False),
+            auto_clipped=data.get('isAutoClipped', False),
+            discount_amount=data.get('discountAmount'),
+            discount_type=data.get('discountType'),
+            minimum_purchase=data.get('minimumPurchase'),
+            redeem_amount=data.get('redeemAmount'),
+            start_date=data.get('startDate'),
+            end_date=data.get('endDate'),
+            created_date=data.get('createdDate'),
+            modified_date=data.get('modifiedDate'),
+            product_ids=data.get('productIds', []),
+            category=data.get('category'),
+            department=data.get('department'),
+            brand=data.get('brand'),
+            image_url=data.get('imageUrl'),
+            large_image_url=data.get('largeImageUrl'),
+            terms_and_conditions=data.get('termsAndConditions'),
+            restrictions=data.get('restrictions', []),
+            metadata=data
+        )
+        
+        return coupon
+    
+    def _map_coupon_type(self, api_type: Optional[str]) -> CouponType:
+        """Map API coupon type to our enum."""
+        if not api_type:
+            return CouponType.DIGITAL
+        
+        type_mapping = {
+            'manufacturer': CouponType.MANUFACTURER,
+            'store': CouponType.STORE,
+            'digital': CouponType.DIGITAL,
+            'printable': CouponType.PRINTABLE,
+            'reward': CouponType.REWARD
+        }
+        
+        return type_mapping.get(api_type.lower(), CouponType.DIGITAL)
+    
+    def _map_coupon_status(self, api_status: Optional[str]) -> CouponStatus:
+        """Map API coupon status to our enum."""
+        if not api_status:
+            return CouponStatus.ACTIVE
+        
+        status_mapping = {
+            'active': CouponStatus.ACTIVE,
+            'expired': CouponStatus.EXPIRED,
+            'used': CouponStatus.USED,
+            'inactive': CouponStatus.INACTIVE
+        }
+        
+        return status_mapping.get(api_status.lower(), CouponStatus.ACTIVE)
+    
+    def clip(self, coupon_id: str) -> bool:
+        """Clip a specific coupon by ID."""
+        try:
+            response = self.client._make_request(
+                'POST',
+                f'/api/coupons/{coupon_id}/clip'
+            )
+            
+            if response.get('success', False):
+                # Update local cache
+                if self._coupons_cache:
+                    coupon = self._coupons_cache.get_by_id(coupon_id)
+                    if coupon:
+                        coupon.clip()
+                return True
+            
+            return False
+            
         except Exception as e:
-            if meijer_client:
-                meijer_client.logger.warning(f"Failed to parse coupon data: {e}")
-            continue
-
-    return coupons
-
-
-# Coupon management functions for the main client
-def clip_coupon(client: "Meijer", coupon_id: int) -> bool:
-    """Clip a coupon by ID using APK-discovered endpoint structure."""
-    try:
-        if not client._ensure_authenticated():
-            raise MeijerAuthenticationError("Authentication required")
-
-        url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Clip"
-        headers = client._get_api_headers()
-
-        # Use APK-discovered headers from Zk/b.java
-        headers.update(
-            {
-                "Accept": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
-                "Content-Type": "application/vnd.meijer.digitalmperks.clip-v1.0+json",
-            }
-        )
-
-        # Use APK-discovered request body structure (ClipUnclipCouponRequest)
-        data = {
-            "meijerOfferId": coupon_id,  # Long - the coupon's meijerOfferId (not offerId)
-            "storeId": 0,  # Int - store ID, 0 for any store
-            "cartIsActive": False,  # Boolean - whether shopping cart is active
-        }
-
-        response = client._make_request("POST", url, headers=headers, json_data=data)
-
-        # Check for success based on APK-discovered response structure
-        if response.status_code in [200, 201]:
-            try:
-                response_json = response.json()
-                # APK shows ClipUnclipCouponResponse has 'result' field
-                return response_json.get("result", "").lower() == "success"
-            except Exception:
-                # Fallback to status code check
+            raise CouponError(f"Failed to clip coupon {coupon_id}: {e}")
+    
+    def unclip(self, coupon_id: str) -> bool:
+        """Unclip a specific coupon by ID."""
+        try:
+            response = self.client._make_request(
+                'POST',
+                f'/api/coupons/{coupon_id}/unclip'
+            )
+            
+            if response.get('success', False):
+                # Update local cache
+                if self._coupons_cache:
+                    coupon = self._coupons_cache.get_by_id(coupon_id)
+                    if coupon:
+                        coupon.unclip()
                 return True
-
-        return False
-
-    except Exception as e:
-        client.logger.error(f"Failed to clip coupon {coupon_id}: {e}")
-        return False
-
-
-def unclip_coupon(client: "Meijer", coupon_id: int) -> bool:
-    """Unclip a coupon by ID using APK-discovered endpoint structure."""
-    try:
-        if not client._ensure_authenticated():
-            raise MeijerAuthenticationError("Authentication required")
-
-        url = f"{client.api_base_url}/loyalty/mPerks/api/offers/Unclip"
-        headers = client._get_api_headers()
-
-        # Use APK-discovered headers from Zk/b.java
-        headers.update(
-            {
-                "Accept": "application/vnd.meijer.digitalmperks.unclip-v1.0+json",
-                "Content-Type": "application/vnd.meijer.digitalmperks.unclip-v1.0+json",
-            }
-        )
-
-        # Use APK-discovered request body structure (ClipUnclipCouponRequest)
-        data = {
-            "meijerOfferId": coupon_id,  # Long - the coupon's meijerOfferId (not offerId)
-            "storeId": 0,  # Int - store ID, 0 for any store
-            "cartIsActive": False,  # Boolean - whether shopping cart is active
+            
+            return False
+            
+        except Exception as e:
+            raise CouponError(f"Failed to unclip coupon {coupon_id}: {e}")
+    
+    def clip_all_available(self) -> int:
+        """Clip all available coupons. Returns count of clipped."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.clip_all()
+    
+    def unclip_all(self) -> int:
+        """Unclip all clipped coupons. Returns count of unclipped."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.unclip_all()
+    
+    def get_by_department(self, department: str) -> CouponCollection:
+        """Get coupons filtered by department."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.filter_by_department(department)
+    
+    def get_by_category(self, category: str) -> CouponCollection:
+        """Get coupons filtered by category."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.filter_by_category(category)
+    
+    def get_clipped(self) -> CouponCollection:
+        """Get all clipped coupons."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.filter_clipped(True)
+    
+    def get_available(self) -> CouponCollection:
+        """Get all available (unclipped) coupons."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.filter_clipped(False)
+    
+    def search(self, query: str) -> CouponCollection:
+        """Search coupons by name or description."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        query_lower = query.lower()
+        filtered = [
+            c for c in self._coupons_cache.coupons
+            if (c.name and query_lower in c.name.lower()) or
+               (c.description and query_lower in c.description.lower())
+        ]
+        
+        return CouponCollection(filtered)
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get coupon statistics."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return {
+            'total': len(self._coupons_cache),
+            'clipped': self._coupons_cache.get_clipped_count(),
+            'available': self._coupons_cache.get_available_count(),
+            'active': len(self._coupons_cache.filter_active()),
+            'expired': len(self._coupons_cache.filter_expired())
         }
+    
+    def export_to_json(self, filepath: str) -> None:
+        """Export coupons to JSON file."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        with open(filepath, 'w') as f:
+            json.dump(self._coupons_cache.to_list(), f, indent=2, default=str)
+    
+    def create_coupons_from_response(self, response_data: Dict[str, Any]) -> List[Coupon]:
+        """Create Coupon objects from API response data (for backward compatibility)."""
+        try:
+            # Try to extract coupons from various possible response structures
+            coupons_data = []
+            
+            if "listOfCoupons" in response_data:
+                coupons_data = response_data["listOfCoupons"]
+            elif "offers" in response_data:
+                coupons_data = response_data["offers"]
+            elif "data" in response_data:
+                coupons_data = response_data["data"]
+            elif "coupons" in response_data:
+                coupons_data = response_data["coupons"]
+            elif "offerCollection" in response_data:
+                coupons_data = response_data["offerCollection"]
+            
+            if not coupons_data:
+                return []
+            
+            # Parse the coupons data
+            collection = self._parse_coupons(coupons_data)
+            return collection.coupons
+            
+        except Exception as e:
+            print(f"Error creating coupons from response: {e}")
+            return []
+    
+    def __str__(self) -> str:
+        """String representation of the coupon manager."""
+        if self._coupons_cache:
+            return str(self._coupons_cache)
+        return "CouponManager(no coupons loaded)"
+    
+    def __repr__(self) -> str:
+        """Detailed representation of the coupon manager."""
+        return f"CouponManager(cache_size={len(self._coupons_cache) if self._coupons_cache else 0})"
 
-        response = client._make_request("POST", url, headers=headers, json_data=data)
 
-        # Check for success based on APK-discovered response structure
-        if response.status_code in [200, 201]:
-            try:
-                response_json = response.json()
-                # APK shows ClipUnclipCouponResponse has 'result' field
-                return response_json.get("result", "").lower() == "success"
-            except Exception:
-                # Fallback to status code check
-                return True
-
-        return False
-
-    except Exception as e:
-        client.logger.error(f"Failed to unclip coupon {coupon_id}: {e}")
-        return False
-
-
-class MeijerCouponManager:
-    """
-    Manager class for Meijer coupon operations.
-
-    This class provides the interface that the main client expects
-    for managing coupons and offers.
-    """
-
-    def __init__(self, meijer_client: "Meijer"):
-        """
-        Initialize the coupon manager.
-
-        Args:
-            meijer_client: The main Meijer client instance
-        """
-        self.meijer_client = meijer_client
-        self.logger = meijer_client.logger
-
-    def create_meijer_coupons_from_response(
-        self, data: Dict[str, Any]
-    ) -> List["MeijerCoupon"]:
-        """
-        Create MeijerCoupon objects from API response data.
-
-        Args:
-            data: API response data containing coupon information
-
-        Returns:
-            List of MeijerCoupon objects
-        """
-        return create_meijer_coupons_from_response(data, self.meijer_client)
-
-    def clip_coupon(self, coupon_id: int) -> bool:
-        """
-        Clip a coupon by ID.
-
-        Args:
-            coupon_id: The coupon ID to clip
-
-        Returns:
-            True if successful, False otherwise
-        """
-        return clip_coupon(self.meijer_client, coupon_id)
-
-    def unclip_coupon(self, coupon_id: int) -> bool:
-        """
-        Unclip a coupon by ID.
-
-        Args:
-            coupon_id: The coupon ID to unclip
-
-        Returns:
-            True if successful, False otherwise
-        """
-        return unclip_coupon(self.meijer_client, coupon_id)
+class CouponError(MeijerAPIError):
+    """Exception raised for coupon-related errors."""
+    pass
