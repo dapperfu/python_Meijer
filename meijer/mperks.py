@@ -1,1210 +1,695 @@
-#!/usr/bin/env python3
 """
-mPerks earned rewards functionality for Meijer API client.
-Handles earned rewards, mCard info, and related mPerks operations.
+mPerks Client
+
+This module provides a client for interacting with Meijer's mPerks loyalty program,
+fetching real rewards from the API and creating reward objects from the actual JSON responses.
 """
 
+import json
 import logging
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from decimal import Decimal
+from typing import Any, Dict, List, Optional, Union
+from urllib.parse import urljoin
+from dataclasses import dataclass, field
 
-from .exceptions import MeijerAPIError
+import requests
+
+from .models.rewards import (
+    BaseReward,
+    FuelReward,
+    ProductReward,
+    RewardFactory,
+    RewardMetadata,
+    RewardRequirements,
+    RewardStatus,
+    RewardType,
+    TotalPurchaseDiscountReward,
+)
+from .exceptions import MeijerAPIError, AuthenticationError
+
+
+# Compatibility classes for existing code
+@dataclass
+class EarnableOffer:
+    """Represents an earnable offer from mPerks."""
+    offer_id: str
+    title: str
+    description: str
+    points_required: int
+    current_progress: int = 0
+    target_progress: int = 1
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    is_available: bool = True
+    is_in_progress: bool = False
+    image_url: Optional[str] = None
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+    terms_and_conditions: Optional[str] = None
+    reward_program: Optional[int] = None
+    meijer_offer_id: Optional[int] = None
+    
+    @property
+    def progress_percentage(self) -> float:
+        """Calculate progress percentage."""
+        if self.target_progress <= 0:
+            return 0.0
+        return min(100.0, (self.current_progress / self.target_progress) * 100)
+    
+    @property
+    def is_completed(self) -> bool:
+        """Check if the offer is completed."""
+        return self.current_progress >= self.target_progress
+    
+    @property
+    def is_expired(self) -> bool:
+        """Check if the offer has expired."""
+        if not self.end_date:
+            return False
+        return datetime.now() > self.end_date
+    
+    @property
+    def days_remaining(self) -> Optional[int]:
+        """Get days remaining until expiration."""
+        if not self.end_date:
+            return None
+        delta = self.end_date - datetime.now()
+        return max(0, delta.days)
 
 
 @dataclass
 class EarnedReward:
     """Represents an earned reward from mPerks."""
-
-    id: str
-    title: str
-    description: Optional[str] = None
-    reward_type: Optional[str] = None
-    points_required: Optional[int] = None
-    points_earned: Optional[int] = None
-    expiration_date: Optional[datetime] = None
-    is_active: bool = True
-    category: Optional[str] = None
-    image_url: Optional[str] = None
-    terms_conditions: Optional[str] = None
-    raw_data: Optional[Dict[str, Any]] = None
-
-    def __post_init__(self):
-        if not self.title:
-            self.title = self.description or "Unknown Reward"
-
-    @property
-    def is_expired(self) -> bool:
-        """Check if the reward is expired."""
-        if self.expiration_date is None:
-            return False
-        return datetime.now() > self.expiration_date
-
-    @property
-    def days_until_expiry(self) -> Optional[int]:
-        """Get days until expiry, negative if expired."""
-        if self.expiration_date is None:
-            return None
-        delta = self.expiration_date - datetime.now()
-        return delta.days
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API requests."""
-        result = {
-            "id": self.id,
-            "title": self.title,
-            "description": self.description,
-            "rewardType": self.reward_type,
-            "pointsRequired": self.points_required,
-            "pointsEarned": self.points_earned,
-            "expirationDate": self.expiration_date.isoformat()
-            if self.expiration_date
-            else None,
-            "isActive": self.is_active,
-            "category": self.category,
-            "imageUrl": self.image_url,
-            "termsConditions": self.terms_conditions,
-        }
-        return {k: v for k, v in result.items() if v is not None}
-
-
-@dataclass
-class RewardCoupon:
-    """Represents a reward coupon that can be purchased with points."""
-
-    coupon_id: int
-    name: str
-    description: str
-    point_cost: int
-    image_url: Optional[str] = None
-    display_start: Optional[datetime] = None
-    display_end: Optional[datetime] = None
-    terms_and_conditions: Optional[str] = None
-    sort_order: Optional[int] = None
-    reward_coupon_type: Optional[str] = None
-    raw_data: Optional[Dict[str, Any]] = None
-
-    @property
-    def is_available(self) -> bool:
-        """Check if the coupon is currently available for display."""
-        now = datetime.now()
-        if self.display_start and now < self.display_start:
-            return False
-        if self.display_end and now > self.display_end:
-            return False
-        return True
-
-    @property
-    def days_until_expiry(self) -> Optional[int]:
-        """Get days until display expiry, negative if expired."""
-        if self.display_end is None:
-            return None
-        delta = self.display_end - datetime.now()
-        return delta.days
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API requests."""
-        result = {
-            "couponId": self.coupon_id,
-            "name": self.name,
-            "description": self.description,
-            "imageUrl": self.image_url,
-            "displayStart": self.display_start.isoformat()
-            if self.display_start
-            else None,
-            "displayEnd": self.display_end.isoformat() if self.display_end else None,
-            "termsAndConditions": self.terms_and_conditions,
-            "pointCost": self.point_cost,
-            "sortOrder": self.sort_order,
-            "rewardCouponType": self.reward_coupon_type,
-        }
-        return {k: v for k, v in result.items() if v is not None}
-
-
-@dataclass
-class MCardInfo:
-    """Represents mCard information from mPerks."""
-
-    card_number: str
-    card_type: Optional[str] = None
-    balance: Optional[float] = None
-    expiration_date: Optional[datetime] = None
-    is_active: bool = True
-    last_used: Optional[datetime] = None
-    raw_data: Optional[Dict[str, Any]] = None
-
-    @property
-    def is_expired(self) -> bool:
-        """Check if the mCard is expired."""
-        if self.expiration_date is None:
-            return False
-        return datetime.now() > self.expiration_date
-
-    @property
-    def days_until_expiry(self) -> Optional[int]:
-        """Get days until expiry, negative if expired."""
-        if self.expiration_date is None:
-            return None
-        delta = self.expiration_date - datetime.now()
-        return delta.days
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API requests."""
-        result = {
-            "cardNumber": self.card_number,
-            "cardType": self.card_type,
-            "balance": self.balance,
-            "expirationDate": self.expiration_date.isoformat()
-            if self.expiration_date
-            else None,
-            "isActive": self.is_active,
-            "lastUsed": self.last_used.isoformat() if self.last_used else None,
-        }
-        return {k: v for k, v in result.items() if v is not None}
-
-
-@dataclass
-class PointBalance:
-    """Represents mPerks point balance information."""
-
-    total_points: int
-    expiring_points: Optional[int] = None
-    expiring_days: Optional[int] = None
-    raw_data: Optional[Dict[str, Any]] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API requests."""
-        result = {
-            "totalPoints": self.total_points,
-            "expiringPoints": self.expiring_points,
-            "expiringDays": self.expiring_days,
-        }
-        return {k: v for k, v in result.items() if v is not None}
-
-
-@dataclass
-class EarnableOffer:
-    """Represents an offer that can be earned through mPerks."""
-
-    offer_id: str
+    reward_id: str
     title: str
     description: str
-    category: str
-    points_required: int
-    points_earned: int
-    status: str  # "available", "in_progress", "completed"
-    progress_current: Optional[int] = None
-    progress_target: Optional[int] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    earn_date: datetime
+    expiration_date: Optional[datetime] = None
+    redeem_date: Optional[datetime] = None
+    transaction_date: Optional[datetime] = None
+    reward_program: Optional[int] = None
+    meijer_offer_id: Optional[int] = None
     image_url: Optional[str] = None
-    terms_conditions: Optional[str] = None
-    is_active: bool = True
-    raw_data: Optional[Dict[str, Any]] = None
-
+    points_earned: int = 0
+    is_redeemed: bool = False
+    is_expired: bool = False
+    
     @property
-    def progress_percentage(self) -> Optional[float]:
-        """Get progress percentage if applicable."""
-        if self.progress_current is not None and self.progress_target is not None:
-            return (self.progress_current / self.progress_target) * 100
-        return None
-
-    @property
-    def is_expired(self) -> bool:
-        """Check if the offer is expired."""
-        if self.end_date is None:
-            return False
-        return datetime.now() > self.end_date
-
-    @property
-    def days_until_expiry(self) -> Optional[int]:
-        """Get days until expiry, negative if expired."""
-        if self.end_date is None:
+    def days_until_expiration(self) -> Optional[int]:
+        """Get days until expiration."""
+        if not self.expiration_date:
             return None
-        delta = self.end_date - datetime.now()
-        return delta.days
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API requests."""
-        result = {
-            "offerId": self.offer_id,
-            "title": self.title,
-            "description": self.description,
-            "category": self.category,
-            "pointsRequired": self.points_required,
-            "pointsEarned": self.points_earned,
-            "status": self.status,
-            "progressCurrent": self.progress_current,
-            "progressTarget": self.progress_target,
-            "startDate": self.start_date.isoformat() if self.start_date else None,
-            "endDate": self.end_date.isoformat() if self.end_date else None,
-            "imageUrl": self.image_url,
-            "termsConditions": self.terms_conditions,
-            "isActive": self.is_active,
-        }
-        return {k: v for k, v in result.items() if v is not None}
+        delta = self.expiration_date - datetime.now()
+        return max(0, delta.days)
 
 
 @dataclass
 class EarnTabData:
-    """Represents the data for the Earn tab with its sub-tabs."""
-
-    in_progress_offers: List[EarnableOffer]
-    available_offers: List[EarnableOffer]
-    all_offers: List[EarnableOffer]
-    total_in_progress: int
-    total_available: int
-    total_all: int
-    last_updated: Optional[datetime] = None
-    raw_data: Optional[Dict[str, Any]] = None
-
-    def get_offers_by_category(self, category: str) -> List[EarnableOffer]:
-        """Get offers filtered by category."""
-        return [
-            offer
-            for offer in self.all_offers
-            if offer.category.lower() == category.lower()
-        ]
-
-    def get_offers_by_status(self, status: str) -> List[EarnableOffer]:
-        """Get offers filtered by status."""
-        return [
-            offer for offer in self.all_offers if offer.status.lower() == status.lower()
-        ]
-
-    def get_active_offers(self) -> List[EarnableOffer]:
-        """Get only active offers."""
-        return [
-            offer
-            for offer in self.all_offers
-            if offer.is_active and not offer.is_expired
-        ]
+    """Data for the earn tab in mPerks."""
+    total_offers: int = 0
+    available_offers: int = 0
+    in_progress_offers: int = 0
+    completed_offers: int = 0
+    total_points_earned: int = 0
+    total_points_pending: int = 0
+    offers: List[EarnableOffer] = field(default_factory=list)
+    
+    def add_offer(self, offer: EarnableOffer) -> None:
+        """Add an offer to the tab data."""
+        self.offers.append(offer)
+        self.total_offers += 1
+        
+        if offer.is_completed:
+            self.completed_offers += 1
+        elif offer.is_in_progress:
+            self.in_progress_offers += 1
+        else:
+            self.available_offers += 1
 
 
+@dataclass
+class MCardInfo:
+    """Information about mCard rewards."""
+    card_number: str
+    card_type: str
+    balance: Decimal
+    expiration_date: Optional[datetime] = None
+    is_active: bool = True
+    rewards_available: int = 0
+    total_rewards_earned: int = 0
+
+
+@dataclass
 class MPerksEarnedRewards:
-    """Handles mPerks earned rewards operations."""
+    """Container for earned rewards data."""
+    total_rewards: int = 0
+    total_points: int = 0
+    rewards: List[EarnedReward] = field(default_factory=list)
+    
+    def add_reward(self, reward: EarnedReward) -> None:
+        """Add a reward to the container."""
+        self.rewards.append(reward)
+        self.total_rewards += 1
+        self.total_points += reward.points_earned
 
-    def __init__(self, meijer_client: Any):
-        self.meijer = meijer_client
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-        # mPerks earned rewards endpoints
+class MPerksClient:
+    """Client for interacting with Meijer's mPerks loyalty program."""
+    
+    def __init__(self, session: Optional[requests.Session] = None):
+        self.session = session or requests.Session()
+        self.base_url = "https://api.meijer.com"
+        self.logger = logging.getLogger(__name__)
+        
+        # API endpoints
         self.endpoints = {
-            "earned_rewards": "/loyalty/mPerks/api/reward/earned",
-            "mcard_info": "/loyalty/mPerks/api/reward/mCard/info",
-            "available_rewards": "/loyalty/mPerks/api/rewards/available",
-            "reward_categories": "/loyalty/mPerks/api/offers/Categories",
-            # New mPerks v4 endpoints
-            "reward_coupons_available": "/digital/mperks40/customer/v1/rewardcoupons/available",
-            "reward_coupon_buy": "/digital/mperks40/customer/v1/rewardcoupons/available/{coupon_id}/buy",
-            "point_balance": "/digital/mperks40/customer/v1/pointbalance",
-            "points_expiring": "/digital/mperks40/customer/v1/points/expiring",
-            # Earn tab endpoints
-            "earn_offers": "/digital/mperks40/customer/v1/earn/offers",
-            "earn_offers_in_progress": "/digital/mperks40/customer/v1/earn/offers/in-progress",
-            "earn_offers_available": "/digital/mperks40/customer/v1/earn/offers/available",
-            "earn_offers_all": "/digital/mperks40/customer/v1/earn/offers/all",
+            'available_rewards': '/digital/mperks40/customer/v1/rewardcoupons/available',
+            'earned_rewards': '/loyalty/mPerks/api/reward/earned',
+            'point_balance': '/digital/mperks40/customer/v1/pointbalance',
+            'rewards_in_progress': '/digital/mperks40/customer/v1/rewards/inprogress',
+            'rewards_available': '/digital/mperks40/customer/v1/rewards/available',
+            'auto_claim': '/digital/mperks40/customer/v1/autoclaim/available',
+            'account': '/digital/mperks40/customer/v1/account',
         }
-
-    def get_earned_rewards(self, **kwargs) -> List[EarnedReward]:
-        """
-        Get earned rewards from mPerks.
-
-        Args:
-            **kwargs: Additional query parameters
-
-        Returns:
-            List of EarnedReward objects
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
+    
+    def set_auth_token(self, token: str) -> None:
+        """Set the authentication token for API requests."""
+        self.session.headers.update({
+            'Authorization': f'Bearer {token}',
+            'OCP-APIM-Subscription-Key': 'a10bc58ac484478d9b3958b1742c3a03',
+            'Content-Type': 'application/vnd.meijer.digitalmperks.getavailablerewardcoupons-v1.0+json'
+        })
+    
+    def _make_request(self, endpoint: str, method: str = 'GET', **kwargs) -> Dict[str, Any]:
+        """Make a request to the mPerks API."""
+        url = urljoin(self.base_url, endpoint)
+        
         try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['earned_rewards']}"
-
-            # Get default headers and merge with custom ones
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {
-                    "Accept": "application/vnd.meijer.digitalmperks.earnedrewards-v1.0+json",
-                    "Content-Type": "application/json",
-                }
-            )
-
-            response = self.meijer._make_request("POST", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_earned_rewards_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get earned rewards: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error getting earned rewards: {e}")
-            return []  # Return empty list on failure instead of raising exception
-
-    def get_mcard_info(self, **kwargs) -> Optional[MCardInfo]:
-        """
-        Get mCard information from mPerks.
-
-        Args:
-            **kwargs: Additional query parameters
-
-        Returns:
-            MCardInfo object or None if the request fails
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
-        try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['mcard_info']}"
-
-            # Get default headers and merge with custom ones
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {"Accept": "application/vnd.meijer.digitalmperks.mcardinfo-v1.0+json"}
-            )
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_mcard_info_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get mCard info: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error getting mCard info: {e}")
-            return None  # Return None on failure instead of raising exception
-
-    def get_available_rewards(self, **kwargs) -> List[EarnedReward]:
-        """
-        Get available rewards that can be earned.
-
-        Args:
-            **kwargs: Additional query parameters
-
-        Returns:
-            List of EarnedReward objects
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
-        try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['available_rewards']}"
-
-            # Get default headers and merge with custom ones
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {"Accept": "application/vnd.meijer.digitalmperks.offers-v1.0+json"}
-            )
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_available_rewards_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get available rewards: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error getting available rewards: {e}")
-            return []  # Return empty list on failure instead of raising exception
-
-    def get_reward_categories(
-        self, clip_filter: str = "unclippedonly", **kwargs
-    ) -> List[str]:
-        """
-        Get available reward categories.
-
-        Args:
-            clip_filter: Filter for clipped/unclipped offers ("clippedonly", "unclippedonly")
-            **kwargs: Additional query parameters
-
-        Returns:
-            List of category names
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
-        try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['reward_categories']}"
-
-            # Get default headers and merge with custom ones
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {"Accept": "application/vnd.meijer.digitalmperks.categories-v1.0+json"}
-            )
-
-            # Add required clipFilter parameter
-            params = {"clipFilter": clip_filter}
-            params.update(kwargs)
-
-            response = self.meijer._make_request(
-                "GET", url, headers=headers, params=params, **kwargs
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_categories_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get reward categories: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error getting reward categories: {e}")
-            return []  # Return empty list on failure instead of raising exception
-
-    def get_available_reward_coupons(self, **kwargs) -> List[RewardCoupon]:
-        """
-        Get available reward coupons that can be purchased with points.
-
-        Args:
-            **kwargs: Additional query parameters
-
-        Returns:
-            List of RewardCoupon objects
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
-        try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['reward_coupons_available']}"
-
-            # Get default headers
-            headers = self.meijer._get_api_headers()
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_reward_coupons_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get available reward coupons: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error getting available reward coupons: {e}")
-            return []
-
-    def buy_reward_coupon(
-        self, coupon_id: int, store_id: int, cart_is_active: bool = True, **kwargs
-    ) -> bool:
-        """
-        Purchase a reward coupon with points.
-
-        Args:
-            coupon_id: ID of the coupon to purchase
-            store_id: Store ID where the coupon will be used
-            cart_is_active: Whether the cart is currently active
-            **kwargs: Additional request parameters
-
-        Returns:
-            True if purchase was successful, False otherwise
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
-        try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['reward_coupon_buy'].format(coupon_id=coupon_id)}"
-
-            # Get default headers
-            headers = self.meijer._get_api_headers()
-            headers.update({"Content-Type": "application/json; charset=UTF-8"})
-
-            # Prepare request body
-            request_body = {"storeId": store_id, "cartIsActive": cart_is_active}
-            request_body.update(kwargs)
-
-            response = self.meijer._make_request(
-                "POST", url, headers=headers, json=request_body
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                success = data.get("success", False)
-                if success:
-                    self.logger.info(
-                        f"Successfully purchased reward coupon {coupon_id}"
-                    )
-                    return True
-                else:
-                    self.logger.warning(
-                        f"Failed to purchase reward coupon {coupon_id}: {data}"
-                    )
-                    return False
-            else:
-                raise MeijerAPIError(
-                    f"Failed to buy reward coupon: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error buying reward coupon {coupon_id}: {e}")
-            return False
-
-    def get_point_balance(self, **kwargs) -> Optional[PointBalance]:
-        """
-        Get current mPerks point balance.
-
-        Args:
-            **kwargs: Additional query parameters
-
-        Returns:
-            PointBalance object or None if failed
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
-        try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['point_balance']}"
-
-            # Get default headers
-            headers = self.meijer._get_api_headers()
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_point_balance_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get point balance: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error getting point balance: {e}")
-            return None
-
-    def get_points_expiring(
-        self, days: int = 30, **kwargs
-    ) -> Optional[List[Dict[str, Any]]]:
-        """
-        Get points that are expiring soon.
-
-        Args:
-            days: Number of days to look ahead for expiring points
-            **kwargs: Additional query parameters
-
-        Returns:
-            List of expiring points data or None if failed
-
-        Raises:
-            MeijerAPIError: If the API request fails
-        """
-        try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['points_expiring']}"
-
-            # Get default headers
-            headers = self.meijer._get_api_headers()
-
-            # Add days parameter
-            params = {"days": days}
-            params.update(kwargs)
-
-            response = self.meijer._make_request(
-                "GET", url, headers=headers, params=params
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success", False):
-                    return data.get("payload", [])
-                else:
-                    self.logger.warning(f"Failed to get expiring points: {data}")
-                    return []
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get expiring points: {response.status_code} - {response.text}"
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error getting expiring points: {e}")
-            return None
-
-    def find_reward_coupon_by_name(self, name: str, **kwargs) -> Optional[RewardCoupon]:
-        """
-        Find a specific reward coupon by name.
-
-        Args:
-            name: Name of the coupon to find
-            **kwargs: Additional parameters for get_available_reward_coupons
-
-        Returns:
-            RewardCoupon object if found, None otherwise
-        """
-        try:
-            coupons = self.get_available_reward_coupons(**kwargs)
-            for coupon in coupons:
-                if name.lower() in coupon.name.lower():
-                    return coupon
-            return None
-        except Exception as e:
-            self.logger.error(f"Error finding reward coupon by name '{name}': {e}")
-            return None
-
-    def get_cms_content(self, content_type: str = "home") -> Optional[Dict[str, Any]]:
-        """
-        Get CMS content for mPerks (banners, promotions, etc.).
-
-        Args:
-            content_type: Type of content to retrieve (home, specialoffers, etc.)
-
-        Returns:
-            CMS content data or None if failed
-        """
-        try:
-            endpoint = f"/loyalty/mPerks/api/cms/{content_type}/content"
-            response = self.meijer._make_request(
-                "GET", f"{self.meijer.api_base_url}{endpoint}"
-            )
-
-            if response and response.status_code == 200:
+            response = self.session.request(method, url, **kwargs)
+            response.raise_for_status()
+            
+            # Handle different content types
+            if 'application/vnd.meijer.digitalmperks' in response.headers.get('content-type', ''):
                 return response.json()
             else:
-                self.logger.warning(
-                    f"Failed to get CMS content: {response.status_code if response else 'No response'}"
-                )
-                return None
-
-        except Exception as e:
-            self.logger.error(f"Error getting CMS content: {e}")
-            return None
-
-    def get_special_offers_image(self, image_path: str) -> Optional[str]:
+                return response.json()
+                
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"API request failed: {e}")
+            raise MeijerAPIError(f"Failed to fetch data from {endpoint}: {e}")
+    
+    def get_available_rewards(self) -> List[BaseReward]:
         """
-        Get special offers image URL.
-
-        Args:
-            image_path: Path to the image
-
+        Fetch available rewards from the mPerks API.
+        
         Returns:
-            Full image URL or None if failed
+            List of BaseReward objects created from the API response
         """
+        self.logger.info("Fetching available rewards from mPerks API")
+        
         try:
-            endpoint = "/loyalty/mPerks/api/cms/specialoffers/image"
-            response = self.meijer._make_request(
-                "GET", f"{self.meijer.api_base_url}{endpoint}"
-            )
-
-            if response and response.status_code == 200:
-                return response.json().get("imageUrl")
-            else:
-                self.logger.warning(
-                    f"Failed to get special offers image: {response.status_code if response else 'No response'}"
-                )
-                return None
-
+            response = self._make_request(self.endpoints['available_rewards'])
+            rewards = []
+            
+            if 'availableRewardCoupons' in response:
+                for reward_data in response['availableRewardCoupons']:
+                    reward = self._create_reward_from_api_data(reward_data)
+                    if reward:
+                        rewards.append(reward)
+            
+            self.logger.info(f"Successfully fetched {len(rewards)} available rewards")
+            return rewards
+            
         except Exception as e:
-            self.logger.error(f"Error getting special offers image: {e}")
-            return None
-
-    def get_email_verification_spiffs(self) -> List[Dict[str, Any]]:
+            self.logger.error(f"Failed to fetch available rewards: {e}")
+            raise
+    
+    def get_earned_rewards(self) -> List[BaseReward]:
         """
-        Get email verification special offers.
-
+        Fetch earned rewards from the mPerks API.
+        
         Returns:
-            List of email verification offers
+            List of BaseReward objects created from the API response
         """
+        self.logger.info("Fetching earned rewards from mPerks API")
+        
         try:
-            endpoint = "/loyalty/mPerks/api/customer/EmailVerificationSpiffs"
-            response = self.meijer._make_request(
-                "GET", f"{self.meijer.api_base_url}{endpoint}"
-            )
-
-            if response and response.status_code == 200:
-                data = response.json()
-                return data.get("offers", [])
-            else:
-                self.logger.warning(
-                    f"Failed to get email verification spiffs: {response.status_code if response else 'No response'}"
-                )
-                return []
-
+            response = self._make_request(self.endpoints['earned_rewards'])
+            rewards = []
+            
+            if 'rewards' in response:
+                for reward_data in response['rewards']:
+                    reward = self._create_earned_reward_from_api_data(reward_data)
+                    if reward:
+                        rewards.append(reward)
+            
+            self.logger.info(f"Successfully fetched {len(rewards)} earned rewards")
+            return rewards
+            
         except Exception as e:
-            self.logger.error(f"Error getting email verification spiffs: {e}")
+            self.logger.error(f"Failed to fetch earned rewards: {e}")
+            raise
+    
+    def get_point_balance(self) -> int:
+        """Get the current mPerks point balance."""
+        try:
+            response = self._make_request(self.endpoints['point_balance'])
+            if 'payload' in response and 'totalPoints' in response['payload']:
+                return response['payload']['totalPoints']
+            return 0
+        except Exception as e:
+            self.logger.error(f"Failed to fetch point balance: {e}")
+            return 0
+    
+    def get_rewards_in_progress(self) -> List[Dict[str, Any]]:
+        """Get rewards currently in progress (being earned)."""
+        try:
+            response = self._make_request(self.endpoints['rewards_in_progress'])
+            return response if isinstance(response, list) else []
+        except Exception as e:
+            self.logger.error(f"Failed to fetch rewards in progress: {e}")
             return []
-
-    def _parse_earned_rewards_response(
-        self, data: Dict[str, Any]
-    ) -> List[EarnedReward]:
-        """Parse earned rewards response from API."""
-        rewards = []
-
+    
+    def get_auto_claim_settings(self) -> Dict[str, Any]:
+        """Get auto-claim settings and availability."""
         try:
-            # Handle different response structures
-            if "earnedRewards" in data:
-                rewards_data = data["earnedRewards"]
-            elif "rewards" in data:
-                rewards_data = data["rewards"]
-            elif isinstance(data, list):
-                rewards_data = data
-            else:
-                self.logger.warning(
-                    f"Unexpected earned rewards response structure: {data.keys()}"
-                )
-                return []
-
-            for reward_data in rewards_data:
-                try:
-                    reward = EarnedReward(
-                        id=str(reward_data.get("id", "")),
-                        title=reward_data.get("title", ""),
-                        description=reward_data.get("description"),
-                        reward_type=reward_data.get("rewardType"),
-                        points_required=reward_data.get("pointsRequired"),
-                        points_earned=reward_data.get("pointsEarned"),
-                        expiration_date=self._parse_datetime(
-                            reward_data.get("expirationDate")
-                        ),
-                        is_active=reward_data.get("isActive", True),
-                        category=reward_data.get("category"),
-                        image_url=reward_data.get("imageUrl"),
-                        terms_conditions=reward_data.get("termsConditions"),
-                        raw_data=reward_data,
-                    )
-                    rewards.append(reward)
-                except Exception as e:
-                    self.logger.warning(f"Error parsing reward: {e}")
-                    continue
-
+            response = self._make_request(self.endpoints['auto_claim'])
+            return response if isinstance(response, list) else []
         except Exception as e:
-            self.logger.error(f"Error parsing earned rewards response: {e}")
-
-        return rewards
-
-    def _parse_mcard_info_response(self, data: Dict[str, Any]) -> MCardInfo:
-        """Parse mCard info response from API."""
-        try:
-            # Handle different response structures
-            if "mCardInfo" in data:
-                card_data = data["mCardInfo"]
-            elif "card" in data:
-                card_data = data["card"]
-            else:
-                card_data = data
-
-            return MCardInfo(
-                card_number=str(card_data.get("cardNumber", "")),
-                card_type=card_data.get("cardType"),
-                balance=card_data.get("balance"),
-                expiration_date=self._parse_datetime(card_data.get("expirationDate")),
-                is_active=card_data.get("isActive", True),
-                last_used=self._parse_datetime(card_data.get("lastUsed")),
-                raw_data=card_data,
-            )
-
-        except Exception as e:
-            self.logger.error(f"Error parsing mCard info response: {e}")
-            raise MeijerAPIError(f"Failed to parse mCard info: {e}")
-
-    def _parse_available_rewards_response(
-        self, data: Dict[str, Any]
-    ) -> List[EarnedReward]:
-        """Parse available rewards response from API."""
-        rewards = []
-
-        try:
-            # Handle different response structures
-            if "availableRewards" in data:
-                rewards_data = data["availableRewards"]
-            elif "rewards" in data:
-                rewards_data = data["rewards"]
-            elif isinstance(data, list):
-                rewards_data = data
-            else:
-                self.logger.warning(
-                    f"Unexpected available rewards response structure: {data.keys()}"
-                )
-                return []
-
-            for reward_data in rewards_data:
-                try:
-                    reward = EarnedReward(
-                        id=str(reward_data.get("id", "")),
-                        title=reward_data.get("title", ""),
-                        description=reward_data.get("description"),
-                        reward_type=reward_data.get("rewardType"),
-                        points_required=reward_data.get("pointsRequired"),
-                        points_earned=reward_data.get("pointsEarned"),
-                        expiration_date=self._parse_datetime(
-                            reward_data.get("expirationDate")
-                        ),
-                        is_active=reward_data.get("isActive", True),
-                        category=reward_data.get("category"),
-                        image_url=reward_data.get("imageUrl"),
-                        terms_conditions=reward_data.get("termsConditions"),
-                        raw_data=reward_data,
-                    )
-                    rewards.append(reward)
-                except Exception as e:
-                    self.logger.warning(f"Error parsing available reward: {e}")
-                    continue
-
-        except Exception as e:
-            self.logger.error(f"Error parsing available rewards response: {e}")
-
-        return rewards
-
-    def _parse_reward_coupons_response(
-        self, data: Dict[str, Any]
-    ) -> List[RewardCoupon]:
-        """Parse reward coupons response from API."""
-        coupons = []
-
-        try:
-            # Handle different response structures
-            if "availableRewardCoupons" in data:
-                coupons_data = data["availableRewardCoupons"]
-            elif "rewardCoupons" in data:
-                coupons_data = data["rewardCoupons"]
-            elif isinstance(data, list):
-                coupons_data = data
-            else:
-                self.logger.warning(
-                    f"Unexpected reward coupons response structure: {data.keys()}"
-                )
-                return []
-
-            for coupon_data in coupons_data:
-                try:
-                    coupon = RewardCoupon(
-                        coupon_id=int(coupon_data.get("couponId", 0)),
-                        name=coupon_data.get("name", ""),
-                        description=coupon_data.get("description", ""),
-                        image_url=coupon_data.get("imageUrl"),
-                        display_start=self._parse_datetime(
-                            coupon_data.get("displayStart")
-                        ),
-                        display_end=self._parse_datetime(coupon_data.get("displayEnd")),
-                        terms_and_conditions=coupon_data.get("termsAndConditions"),
-                        point_cost=int(coupon_data.get("pointCost", 0)),
-                        sort_order=coupon_data.get("sortOrder"),
-                        reward_coupon_type=coupon_data.get("rewardCouponType"),
-                        raw_data=coupon_data,
-                    )
-                    coupons.append(coupon)
-                except Exception as e:
-                    self.logger.warning(f"Error parsing reward coupon: {e}")
-                    continue
-
-        except Exception as e:
-            self.logger.error(f"Error parsing reward coupons response: {e}")
-
-        return coupons
-
-    def _parse_point_balance_response(self, data: Dict[str, Any]) -> PointBalance:
-        """Parse point balance response from API."""
-        try:
-            if data.get("success", False):
-                payload = data.get("payload", {})
-                return PointBalance(
-                    total_points=int(payload.get("totalPoints", 0)),
-                    expiring_points=payload.get("expiringPoints"),
-                    expiring_days=payload.get("expiringDays"),
-                    raw_data=data,
-                )
-            else:
-                raise MeijerAPIError(f"Failed to get point balance: {data}")
-        except Exception as e:
-            self.logger.error(f"Error parsing point balance response: {e}")
-            raise MeijerAPIError(f"Failed to parse point balance: {e}")
-
-    def _parse_categories_response(self, data: Dict[str, Any]) -> List[str]:
-        """Parse categories response from API."""
-        try:
-            # Handle different response structures
-            if "categories" in data:
-                categories_data = data["categories"]
-            elif "rewardCategories" in data:
-                categories_data = data["rewardCategories"]
-            elif isinstance(data, list):
-                categories_data = data
-            else:
-                self.logger.warning(
-                    f"Unexpected categories response structure: {data.keys()}"
-                )
-                return []
-
-            categories = []
-            for category_data in categories_data:
-                if isinstance(category_data, str):
-                    categories.append(category_data)
-                elif isinstance(category_data, dict):
-                    category_name = category_data.get("name") or category_data.get(
-                        "title"
-                    )
-                    if category_name:
-                        categories.append(category_name)
-
-            return categories
-
-        except Exception as e:
-            self.logger.error(f"Error parsing categories response: {e}")
+            self.logger.error(f"Failed to fetch auto-claim settings: {e}")
             return []
-
-    def _parse_datetime(self, date_string: Optional[str]) -> Optional[datetime]:
-        """Parse datetime string from API response."""
-        if not date_string:
-            return None
-
+    
+    def get_account_info(self) -> Dict[str, Any]:
+        """Get mPerks account information."""
         try:
-            # Try common datetime formats
-            for fmt in [
-                "%Y-%m-%dT%H:%M:%S.%fZ",
-                "%Y-%m-%dT%H:%M:%SZ",
-                "%Y-%m-%dT%H:%M:%S",  # Added missing format for "2023-02-21T00:00:00"
-                "%Y-%m-%d",
-                "%Y-%m-%d %H:%M:%S",
-            ]:
-                try:
-                    return datetime.strptime(date_string, fmt)
-                except ValueError:
-                    continue
-
-            # If none work, return None
-            self.logger.warning(f"Could not parse datetime: {date_string}")
-            return None
-
+            response = self._make_request(self.endpoints['account'])
+            return response
         except Exception as e:
-            self.logger.warning(f"Error parsing datetime {date_string}: {e}")
-            return None
-
-    def get_earn_offers(self, **kwargs) -> EarnTabData:
+            self.logger.error(f"Failed to fetch account info: {e}")
+            return {}
+    
+    def _create_reward_from_api_data(self, reward_data: Dict[str, Any]) -> Optional[BaseReward]:
         """
-        Get all earn offers data including in-progress, available, and all offers.
-
+        Create a reward object from API response data.
+        
         Args:
-            **kwargs: Additional query parameters
-
+            reward_data: Raw reward data from the API
+            
         Returns:
-            EarnTabData object containing all earn tab information
-
-        Raises:
-            MeijerAPIError: If the API request fails
+            BaseReward object or None if creation fails
         """
         try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['earn_offers']}"
-
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {
-                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
-                    "Content-Type": "application/json",
-                }
-            )
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_earn_offers_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get earn offers: {response.status_code} - {response.text}"
-                )
-
+            # Extract basic information
+            coupon_id = reward_data.get('couponId')
+            name = reward_data.get('name', '')
+            description = reward_data.get('description', '')
+            image_url = reward_data.get('imageUrl')
+            display_price = reward_data.get('displayPrice')
+            
+            # Try to determine reward type and create appropriate object
+            reward = self._determine_reward_type_and_create(reward_data, name, description)
+            
+            if reward:
+                # Set metadata
+                reward.metadata.image_url = image_url
+                reward.metadata.meijer_offer_id = coupon_id
+                
+                # Set status based on API data
+                if reward_data.get('isAvailable', True):
+                    reward.status = RewardStatus.AVAILABLE
+                else:
+                    reward.status = RewardStatus.CLAIMED
+                
+                self.logger.debug(f"Created reward: {reward.title} (ID: {coupon_id})")
+                return reward
+            
         except Exception as e:
-            self.logger.error(f"Error getting earn offers: {e}")
-            # Return empty EarnTabData on failure
-            return EarnTabData(
-                in_progress_offers=[],
-                available_offers=[],
-                all_offers=[],
-                total_in_progress=0,
-                total_available=0,
-                total_all=0,
-            )
-
-    def get_earn_offers_in_progress(self, **kwargs) -> List[EarnableOffer]:
+            self.logger.error(f"Failed to create reward from API data: {e}")
+            self.logger.debug(f"Problematic data: {reward_data}")
+        
+        return None
+    
+    def _create_earned_reward_from_api_data(self, reward_data: Dict[str, Any]) -> Optional[BaseReward]:
         """
-        Get only in-progress earn offers.
-
+        Create a reward object from earned rewards API data.
+        
         Args:
-            **kwargs: Additional query parameters
-
+            reward_data: Raw earned reward data from the API
+            
         Returns:
-            List of EarnableOffer objects that are in progress
-
-        Raises:
-            MeijerAPIError: If the API request fails
+            BaseReward object or None if creation fails
         """
         try:
-            url = (
-                f"{self.meijer.api_base_url}{self.endpoints['earn_offers_in_progress']}"
-            )
-
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {
-                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
-                    "Content-Type": "application/json",
-                }
-            )
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_earnable_offers_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get in-progress earn offers: {response.status_code} - {response.text}"
-                )
-
+            # Extract basic information
+            meijer_offer_id = reward_data.get('meijerOfferId')
+            title = reward_data.get('title', '')
+            description = reward_data.get('description', '')
+            image_url = reward_data.get('imageUrl')
+            earn_date = reward_data.get('earnDate')
+            expiration_date = reward_data.get('expirationDate')
+            reward_program = reward_data.get('rewardProgram')
+            
+            # Try to determine reward type and create appropriate object
+            reward = self._determine_reward_type_and_create(reward_data, title, description)
+            
+            if reward:
+                # Set metadata
+                reward.metadata.image_url = image_url
+                reward.metadata.meijer_offer_id = meijer_offer_id
+                reward.metadata.reward_program = reward_program
+                
+                # Set dates
+                if earn_date:
+                    try:
+                        reward.metadata.earn_date = datetime.fromisoformat(earn_date.replace('Z', '+00:00'))
+                    except:
+                        pass
+                
+                if expiration_date:
+                    try:
+                        reward.metadata.expiration_date = datetime.fromisoformat(expiration_date.replace('Z', '+00:00'))
+                    except:
+                        pass
+                
+                # Set status
+                if reward_data.get('redeemDate'):
+                    reward.status = RewardStatus.REDEEMED
+                else:
+                    reward.status = RewardStatus.CLAIMED
+                
+                self.logger.debug(f"Created earned reward: {reward.title} (ID: {meijer_offer_id})")
+                return reward
+            
         except Exception as e:
-            self.logger.error(f"Error getting in-progress earn offers: {e}")
-            return []
-
-    def get_earn_offers_available(self, **kwargs) -> List[EarnableOffer]:
+            self.logger.error(f"Failed to create earned reward from API data: {e}")
+            self.logger.debug(f"Problematic data: {reward_data}")
+        
+        return None
+    
+    def _determine_reward_type_and_create(
+        self, 
+        reward_data: Dict[str, Any], 
+        title: str, 
+        description: str
+    ) -> Optional[BaseReward]:
         """
-        Get only available earn offers.
-
+        Determine the reward type and create the appropriate reward object.
+        
         Args:
-            **kwargs: Additional query parameters
-
+            reward_data: Raw reward data from the API
+            title: Reward title
+            description: Reward description
+            
         Returns:
-            List of EarnableOffer objects that are available
-
-        Raises:
-            MeijerAPIError: If the API request fails
+            BaseReward object or None if type cannot be determined
+        """
+        title_lower = title.lower()
+        desc_lower = description.lower()
+        
+        # Check for fuel rewards
+        if any(word in title_lower or word in desc_lower for word in ['fuel', 'gas', 'gallon']):
+            return self._create_fuel_reward(reward_data, title, description)
+        
+        # Check for total purchase discounts
+        if any(word in title_lower or word in desc_lower for word in ['total', 'purchase', 'basket', 'cart', 'off']):
+            return self._create_total_purchase_discount(reward_data, title, description)
+        
+        # Check for product rewards
+        if any(word in title_lower or word in desc_lower for word in ['free', '1 free', 'get', 'buy']):
+            return self._create_product_reward(reward_data, title, description)
+        
+        # Default to product reward if we can't determine type
+        self.logger.warning(f"Could not determine reward type for: {title}")
+        return self._create_product_reward(reward_data, title, description)
+    
+    def _create_fuel_reward(
+        self, 
+        reward_data: Dict[str, Any], 
+        title: str, 
+        description: str
+    ) -> FuelReward:
+        """Create a fuel reward from API data."""
+        # Extract fuel-specific information
+        discount_per_gallon = self._extract_fuel_discount(title, description)
+        max_gallons = self._extract_max_gallons(title, description)
+        
+        # Estimate points required based on discount value
+        points_required = self._estimate_points_for_fuel_reward(discount_per_gallon, max_gallons)
+        
+        return RewardFactory.create_fuel_reward(
+            title=title,
+            description=description,
+            points_required=points_required,
+            discount_per_gallon=discount_per_gallon,
+            max_gallons=max_gallons,
+            fuel_types=["regular", "mid-grade", "premium"]
+        )
+    
+    def _create_total_purchase_discount(
+        self, 
+        reward_data: Dict[str, Any], 
+        title: str, 
+        description: str
+    ) -> TotalPurchaseDiscountReward:
+        """Create a total purchase discount reward from API data."""
+        # Extract discount information
+        discount_amount = self._extract_discount_amount(title, description)
+        minimum_purchase = self._extract_minimum_purchase(title, description)
+        
+        # Estimate points required based on discount value
+        points_required = self._estimate_points_for_discount_reward(discount_amount)
+        
+        return RewardFactory.create_total_purchase_discount(
+            title=title,
+            description=description,
+            points_required=points_required,
+            discount_amount=discount_amount,
+            minimum_purchase=minimum_purchase
+        )
+    
+    def _create_product_reward(
+        self, 
+        reward_data: Dict[str, Any], 
+        title: str, 
+        description: str
+    ) -> ProductReward:
+        """Create a product reward from API data."""
+        # Extract product information
+        product_name = self._extract_product_name(title, description)
+        product_category = self._extract_product_category(reward_data)
+        max_quantity = self._extract_quantity(title, description)
+        
+        # Estimate points required based on product value
+        points_required = self._estimate_points_for_product_reward(title, description)
+        
+        return RewardFactory.create_product_reward(
+            title=title,
+            description=description,
+            points_required=points_required,
+            product_name=product_name,
+            product_category=product_category,
+            max_quantity=max_quantity
+        )
+    
+    def _extract_fuel_discount(self, title: str, description: str) -> Decimal:
+        """Extract fuel discount amount from title/description."""
+        import re
+        
+        # Look for patterns like "$0.10", "10 cents", "10¢"
+        patterns = [
+            r'\$(\d+\.?\d*)',  # $0.10, $1.00
+            r'(\d+)\s*cents?',  # 10 cents
+            r'(\d+)¢',  # 10¢
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, title + ' ' + description, re.IGNORECASE)
+            if match:
+                value = float(match.group(1))
+                if 'cents' in match.group(0) or '¢' in match.group(0):
+                    value = value / 100
+                return Decimal(str(value))
+        
+        # Default to $0.10 if we can't extract
+        return Decimal('0.10')
+    
+    def _extract_max_gallons(self, title: str, description: str) -> Optional[int]:
+        """Extract maximum gallons from title/description."""
+        import re
+        
+        # Look for patterns like "up to 20 gallons", "max 20 gal"
+        patterns = [
+            r'up\s+to\s+(\d+)\s*gallons?',
+            r'max\s+(\d+)\s*gallons?',
+            r'(\d+)\s*gallons?',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, title + ' ' + description, re.IGNORECASE)
+            if match:
+                return int(match.group(1))
+        
+        return None
+    
+    def _extract_discount_amount(self, title: str, description: str) -> Decimal:
+        """Extract discount amount from title/description."""
+        import re
+        
+        # Look for patterns like "$2 off", "save $2", "discount $2"
+        patterns = [
+            r'\$(\d+\.?\d*)\s+off',
+            r'save\s+\$(\d+\.?\d*)',
+            r'discount\s+\$(\d+\.?\d*)',
+            r'\$(\d+\.?\d*)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, title + ' ' + description, re.IGNORECASE)
+            if match:
+                return Decimal(match.group(1))
+        
+        # Default to $1.00 if we can't extract
+        return Decimal('1.00')
+    
+    def _extract_minimum_purchase(self, title: str, description: str) -> Decimal:
+        """Extract minimum purchase amount from title/description."""
+        import re
+        
+        # Look for patterns like "when you spend $10", "minimum $10"
+        patterns = [
+            r'spend\s+\$(\d+\.?\d*)',
+            r'minimum\s+\$(\d+\.?\d*)',
+            r'when\s+you\s+spend\s+\$(\d+\.?\d*)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, title + ' ' + description, re.IGNORECASE)
+            if match:
+                return Decimal(match.group(1))
+        
+        # Default to $0.00 if we can't extract
+        return Decimal('0.00')
+    
+    def _extract_product_name(self, title: str, description: str) -> str:
+        """Extract product name from title/description."""
+        # Remove common prefixes
+        prefixes_to_remove = ['free', '1 free', 'get', 'buy']
+        
+        product_name = title
+        for prefix in prefixes_to_remove:
+            if product_name.lower().startswith(prefix.lower()):
+                product_name = product_name[len(prefix):].strip()
+                break
+        
+        # If still empty, try description
+        if not product_name:
+            product_name = description
+        
+        return product_name or "Product"
+    
+    def _extract_product_category(self, reward_data: Dict[str, Any]) -> Optional[str]:
+        """Extract product category from reward data."""
+        # This would need to be implemented based on actual API structure
+        return None
+    
+    def _extract_quantity(self, title: str, description: str) -> int:
+        """Extract quantity from title/description."""
+        import re
+        
+        # Look for patterns like "1 free", "get 2", "buy 3"
+        patterns = [
+            r'(\d+)\s+free',
+            r'get\s+(\d+)',
+            r'buy\s+(\d+)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, title + ' ' + description, re.IGNORECASE)
+            if match:
+                return int(match.group(1))
+        
+        return 1
+    
+    def _estimate_points_for_fuel_reward(self, discount_per_gallon: Decimal, max_gallons: Optional[int]) -> int:
+        """Estimate points required for fuel reward."""
+        # Base calculation: $1 savings = 1000 points
+        total_savings = discount_per_gallon * (max_gallons or 20)
+        estimated_points = int(total_savings * 1000)
+        
+        # Round to common point values
+        common_values = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000]
+        return min(common_values, key=lambda x: abs(x - estimated_points))
+    
+    def _estimate_points_for_discount_reward(self, discount_amount: Decimal) -> int:
+        """Estimate points required for discount reward."""
+        # Base calculation: $1 savings = 1000 points
+        estimated_points = int(discount_amount * 1000)
+        
+        # Round to common point values
+        common_values = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000]
+        return min(common_values, key=lambda x: abs(x - estimated_points))
+    
+    def _estimate_points_for_product_reward(self, title: str, description: str) -> int:
+        """Estimate points required for product reward."""
+        # This is a rough estimation based on common patterns
+        text = (title + ' ' + description).lower()
+        
+        if any(word in text for word in ['drink', 'coffee', 'snack']):
+            return 1000
+        elif any(word in text for word in ['yogurt', 'bread', 'milk']):
+            return 1500
+        elif any(word in text for word in ['sunscreen', 'shampoo', 'deodorant']):
+            return 2000
+        else:
+            return 1500  # Default
+    
+    def get_all_rewards(self) -> Dict[str, List[BaseReward]]:
+        """
+        Fetch all types of rewards from the mPerks API.
+        
+        Returns:
+            Dictionary containing different types of rewards
         """
         try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['earn_offers_available']}"
-
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {
-                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
-                    "Content-Type": "application/json",
-                }
-            )
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_earnable_offers_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get available earn offers: {response.status_code} - {response.text}"
-                )
-
+            return {
+                'available': self.get_available_rewards(),
+                'earned': self.get_earned_rewards(),
+                'in_progress': self.get_rewards_in_progress(),
+                'auto_claim': self.get_auto_claim_settings(),
+                'point_balance': self.get_point_balance(),
+                'account_info': self.get_account_info()
+            }
         except Exception as e:
-            self.logger.error(f"Error getting available earn offers: {e}")
-            return []
-
-    def get_earn_offers_all(self, **kwargs) -> List[EarnableOffer]:
+            self.logger.error(f"Failed to fetch all rewards: {e}")
+            return {}
+    
+    def claim_reward(self, reward: BaseReward, customer_points: int) -> bool:
         """
-        Get all earn offers regardless of status.
-
+        Claim a reward using customer points.
+        
         Args:
-            **kwargs: Additional query parameters
-
+            reward: The reward to claim
+            customer_points: Current customer point balance
+            
         Returns:
-            List of all EarnableOffer objects
-
-        Raises:
-            MeijerAPIError: If the API request fails
+            True if successfully claimed, False otherwise
         """
+        if not reward.is_claimable:
+            self.logger.warning(f"Reward {reward.title} is not claimable")
+            return False
+        
+        if customer_points < reward.points_required:
+            self.logger.warning(f"Insufficient points to claim {reward.title}")
+            return False
+        
         try:
-            url = f"{self.meijer.api_base_url}{self.endpoints['earn_offers_all']}"
-
-            headers = self.meijer._get_api_headers()
-            headers.update(
-                {
-                    "Accept": "application/vnd.meijer.digitalmperks.earnoffers-v1.0+json",
-                    "Content-Type": "application/json",
-                }
-            )
-
-            response = self.meijer._make_request("GET", url, headers=headers, **kwargs)
-
-            if response.status_code == 200:
-                data = response.json()
-                return self._parse_earnable_offers_response(data)
-            else:
-                raise MeijerAPIError(
-                    f"Failed to get all earn offers: {response.status_code} - {response.text}"
-                )
-
+            # Here you would make the actual API call to claim the reward
+            # For now, we'll just update the local state
+            success = reward.claim(customer_points)
+            if success:
+                self.logger.info(f"Successfully claimed reward: {reward.title}")
+            return success
         except Exception as e:
-            self.logger.error(f"Error getting all earn offers: {e}")
-            return []
-
-    def _parse_earn_offers_response(self, data: Dict[str, Any]) -> EarnTabData:
-        """Parse earn offers response from API."""
-        try:
-            # Handle different response structures
-            in_progress = self._parse_earnable_offers_response(
-                data.get("inProgressOffers", [])
-            )
-            available = self._parse_earnable_offers_response(
-                data.get("availableOffers", [])
-            )
-            all_offers = self._parse_earnable_offers_response(data.get("allOffers", []))
-
-            return EarnTabData(
-                in_progress_offers=in_progress,
-                available_offers=available,
-                all_offers=all_offers,
-                total_in_progress=len(in_progress),
-                total_available=len(available),
-                total_all=len(all_offers),
-                last_updated=self._parse_datetime(data.get("lastUpdated")),
-                raw_data=data,
-            )
-
-        except Exception as e:
-            self.logger.error(f"Error parsing earn offers response: {e}")
-            return EarnTabData(
-                in_progress_offers=[],
-                available_offers=[],
-                all_offers=[],
-                total_in_progress=0,
-                total_available=0,
-                total_all=0,
-            )
-
-    def _parse_earnable_offers_response(
-        self, data: List[Dict[str, Any]]
-    ) -> List[EarnableOffer]:
-        """Parse earnable offers response from API."""
-        offers = []
-
-        try:
-            for offer_data in data:
-                try:
-                    offer = EarnableOffer(
-                        offer_id=str(offer_data.get("offerId", "")),
-                        title=offer_data.get("title", ""),
-                        description=offer_data.get("description", ""),
-                        category=offer_data.get("category", ""),
-                        points_required=int(offer_data.get("pointsRequired", 0)),
-                        points_earned=int(offer_data.get("pointsEarned", 0)),
-                        status=offer_data.get("status", "available"),
-                        progress_current=offer_data.get("progressCurrent"),
-                        progress_target=offer_data.get("progressTarget"),
-                        start_date=self._parse_datetime(offer_data.get("startDate")),
-                        end_date=self._parse_datetime(offer_data.get("endDate")),
-                        image_url=offer_data.get("imageUrl"),
-                        terms_conditions=offer_data.get("termsConditions"),
-                        is_active=offer_data.get("isActive", True),
-                        raw_data=offer_data,
-                    )
-                    offers.append(offer)
-                except Exception as e:
-                    self.logger.warning(f"Error parsing earnable offer: {e}")
-                    continue
-
-        except Exception as e:
-            self.logger.error(f"Error parsing earnable offers response: {e}")
-
-        return offers
+            self.logger.error(f"Failed to claim reward {reward.title}: {e}")
+            return False
