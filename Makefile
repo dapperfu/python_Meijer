@@ -8,8 +8,7 @@ help:
 	@echo "=========================================="
 	@echo ""
 	@echo "📱 Traffic Capture:"
-	@echo "  make log          - Start mitmweb with automatic log rotation (every 30 min)"
-	@echo "  make test-log     - Test log creation and rotation (30 second test)"
+	@echo "  make log          - Start mitmweb with automatic log rotation (at :00/:30)"
 	@echo "  make logs         - Show available log files"
 	@echo "  make rotate-logs  - Manually rotate current log file"
 	@echo ""
@@ -41,11 +40,11 @@ help:
 	@echo "  make completion-test    - Test completion functionality"
 	@echo ""
 	@echo "💡 Workflow:"
-	@echo "  1. make log       - Start capturing traffic (auto-rotates every 30 min)"
+	@echo "  1. make log       - Start capturing traffic (auto-rotates at :00/:30)"
 	@echo "  2. Use Meijer app - Generate traffic to capture"
-	@echo "  3. Ctrl+C         - Stop mitmweb and rotation daemon"
+	@echo "  3. Ctrl+C         - Stop mitmweb and rotation"
 	@echo "  4. make auth      - Extract authentication tokens"
-	@echo "  💡 Logs automatically rotate to prevent large file sizes"
+	@echo "  💡 Logs stored in logs/ directory and rotate automatically"
 	@echo ""
 	@echo "📚 For more info, see README.md"
 
@@ -71,80 +70,50 @@ demos: ${VENV}
 
 .PHONY: log
 log:
-	@echo "🚀 Starting mitmweb with multiple listeners and automatic log rotation..."
+	@echo "🚀 Starting mitmweb with automatic log rotation every 30 minutes..."
 	@echo "📱 Use the Meijer app while this is running"
 	@echo "🌐 Web interface available at http://localhost:8081"
 	@echo "🔌 SOCKS5 proxy available on 0.0.0.0:1080"
 	@echo "🌍 HTTP proxy available on 0.0.0.0:8080"
 	@echo "⏹️  Press Ctrl+C when done"
 	@echo "🔑 After stopping, run 'make auth' to extract authentication tokens"
-	@echo "🔄 Logs will automatically rotate every 30 minutes"
+	@echo "🔄 Logs automatically rotate at :00 and :30 of each hour"
 	@echo ""
-	@LOG_FILE="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
-	echo "📝 Log file: $$LOG_FILE" && \
-	echo "📝 Creating initial log file..." && \
-	touch "$$LOG_FILE" && \
-	echo "✅ Initial log file created: $$LOG_FILE" && \
-	echo "🔄 Starting log rotation daemon (every 30 minutes)..." && \
-	(while true; do sleep 1800; if [ -f "$$LOG_FILE" ]; then ROTATED_LOG="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log"; echo "🔄 Rotating log from $$LOG_FILE to $$ROTATED_LOG"; mv "$$LOG_FILE" "$$ROTATED_LOG"; echo "📝 New log file: $$LOG_FILE"; touch "$$LOG_FILE"; fi; done) & \
-	ROTATION_PID=$$! && \
-	echo "🔄 Log rotation daemon started (PID: $$ROTATION_PID)" && \
-	echo "💡 To stop rotation: kill $$ROTATION_PID" && \
-	mitmweb \
-		--mode wireguard \
-		--mode regular@0.0.0.0:8080 \
-		--mode socks5@0.0.0.0:1080 \
-		--web-port 8081 \
-		--web-host 0.0.0.0 \
-		-w "$$LOG_FILE" \
-		-s scripts/shop_n_scan_faker.py \
-		--set block_global=false; \
-	echo "🔄 Stopping log rotation daemon..." && \
-	kill $$ROTATION_PID 2>/dev/null || true && \
-	echo "✅ Log rotation daemon stopped"
+	@mkdir -p logs
+	@echo "📁 Logs will be stored in logs/ directory"
+	@echo ""
+	@bash -c 'set -eu; trap "echo; echo \"🔄 Stopping mitmweb and rotation...\"; exit 0" INT TERM; while true; do minute=$$(date +%M); rounded=$$(printf "%02d" $$(( (10#$$minute/30)*30 ))); ts=$$(date +%Y%m%d_%H)$${rounded}; LOG_FILE="logs/meijer_mitm_$${ts}.log"; echo "📝 Starting capture session at $$(date)"; echo "📝 Log file: $$LOG_FILE"; next_hour=$$(($$(date +%H) + ($$minute >= 30 ? 1 : 0))); next_min=$$(($$minute >= 30 ? 0 : 30)); printf "⏰ Next rotation at: %02d:%02d\n" $$next_hour $$next_min; echo ""; timeout --foreground -k 5s 30m mitmweb --mode wireguard --mode regular@0.0.0.0:8080 --mode socks5@0.0.0.0:1080 --web-port 8081 --web-host 0.0.0.0 -w "$$LOG_FILE" -s scripts/shop_n_scan_faker.py --set block_global=false || (echo "⚠️  mitmweb exited, restarting in 5 seconds..."; sleep 5); echo "🔄 Rotated at $$(date)"; echo ""; done'
 
-.PHONY: test-log
-test-log:
-	@echo "🧪 Testing log creation and rotation (30 second test)..."
-	@echo "📝 This will create a test log file and rotate it after 30 seconds"
-	@echo ""
-	@LOG_FILE="test_meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
-	echo "📝 Test log file: $$LOG_FILE" && \
-	echo "📝 Creating initial test log file..." && \
-	touch "$$LOG_FILE" && \
-	echo "✅ Initial test log file created: $$LOG_FILE" && \
-	echo "🔄 Starting test log rotation daemon (every 30 seconds)..." && \
-	(while true; do sleep 30; if [ -f "$$LOG_FILE" ]; then ROTATED_LOG="test_meijer_mitm_$$(date +%Y%m%d_%H%M%S).log"; echo "🔄 Rotating test log from $$LOG_FILE to $$ROTATED_LOG"; mv "$$LOG_FILE" "$$ROTATED_LOG"; echo "📝 New test log file: $$LOG_FILE"; touch "$$LOG_FILE"; echo "✅ Test log rotated successfully"; fi; done) & \
-	ROTATION_PID=$$! && \
-	echo "🔄 Test log rotation daemon started (PID: $$ROTATION_PID)" && \
-	echo "⏰ Waiting 30 seconds for rotation test..." && \
-	sleep 30 && \
-	echo "🔄 Stopping test log rotation daemon..." && \
-	kill $$ROTATION_PID 2>/dev/null || true && \
-	echo "✅ Test log rotation daemon stopped" && \
-	echo "📁 Test log files created:" && \
-	ls -la test_meijer_mitm_*.log 2>/dev/null || echo "❌ No test log files found"
+
 
 .PHONY: logs
 logs:
 	@echo "📁 Available log files:"
-	@ls -la meijer_mitm_*.log 2>/dev/null | head -10 || echo "❌ No log files found"
+	@if [ -d "logs" ]; then \
+		ls -la logs/meijer_mitm_*.log 2>/dev/null | head -10 || echo "❌ No log files found in logs/ directory"; \
+	else \
+		echo "❌ No logs/ directory found"; \
+	fi
 	@echo ""
 	@echo "💡 Use 'make auth' to extract tokens from the most recent log file"
-	@echo "💡 Or specify a specific file: 'make auth FILE=meijer_mitm_20250117_191500.log'"
+	@echo "💡 Or specify a specific file: 'make auth FILE=logs/meijer_mitm_20250117_191500.log'"
 
 .PHONY: rotate-logs
 rotate-logs:
 	@echo "🔄 Manually rotating current log file..."
-	@CURRENT_LOG=$$(ls -t meijer_mitm_*.log 2>/dev/null | head -1) && \
-	if [ -n "$$CURRENT_LOG" ]; then \
-		ROTATED_LOG="meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
-		echo "📝 Rotating $$CURRENT_LOG to $$ROTATED_LOG" && \
-		mv "$$CURRENT_LOG" "$$ROTATED_LOG" && \
-		echo "✅ Log rotated successfully" && \
-		echo "📁 New current log: $$ROTATED_LOG"; \
+	@if [ -d "logs" ]; then \
+		CURRENT_LOG=$$(ls -t logs/meijer_mitm_*.log 2>/dev/null | head -1) && \
+		if [ -n "$$CURRENT_LOG" ]; then \
+			ROTATED_LOG="logs/meijer_mitm_$$(date +%Y%m%d_%H%M%S).log" && \
+			echo "📝 Rotating $$CURRENT_LOG to $$ROTATED_LOG" && \
+			mv "$$CURRENT_LOG" "$$ROTATED_LOG" && \
+			echo "✅ Log rotated successfully" && \
+			echo "📁 New current log: $$ROTATED_LOG"; \
+		else \
+			echo "❌ No log files found to rotate"; \
+		fi; \
 	else \
-		echo "❌ No log files found to rotate"; \
+		echo "❌ No logs/ directory found"; \
 	fi
 
 .PHONY: auth
@@ -154,12 +123,12 @@ auth:
 		echo "📋 Using specified log file: $$LOG_FILE"; \
 	else \
 		echo "🔍 Finding most recent log file..."; \
-		LATEST_LOG=$$(ls -t meijer_mitm_*.log 2>/dev/null | head -1); \
+		LATEST_LOG=$$(ls -t logs/meijer_mitm_*.log 2>/dev/null | head -1); \
 		if [ -n "$$LATEST_LOG" ]; then \
 			LOG_FILE="$$LATEST_LOG"; \
 			echo "📋 Using most recent log: $$LOG_FILE"; \
 		else \
-			echo "❌ No log files found. Run 'make log' first to capture traffic."; \
+			echo "❌ No log files found in logs/ directory. Run 'make log' first to capture traffic."; \
 			exit 1; \
 		fi; \
 	fi; \
@@ -249,7 +218,7 @@ completion-bash:
 	@echo ""
 	@echo "    # Main make targets"
 	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
-	@echo "        opts=\"help venv notebook demos log test-log logs rotate-logs auth clean completion completion-bash completion-install\""
+	@echo "        opts=\"help venv notebook demos log logs rotate-logs auth clean completion completion-bash completion-install\""
 	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
 	@echo "        return 0"
 	@echo "    fi"
@@ -257,7 +226,7 @@ completion-bash:
 	@echo "    # Handle FILE= parameter for auth target"
 	@echo "    if [ \"\$$prev\" = \"auth\" ] || [ \"\$$prev\" = \"FILE=\" ]; then"
 	@echo "        # Complete log files"
-	@echo "        local log_files=\$$(ls meijer_mitm_*.log 2>/dev/null | sed 's/^/FILE=/' 2>/dev/null || echo \"\")"
+	@echo "        local log_files=\$$(ls logs/meijer_mitm_*.log 2>/dev/null | sed 's/^/FILE=/' 2>/dev/null || echo \"\")"
 	@echo "        if [ -n \"\$$log_files\" ]; then"
 	@echo "            COMPREPLY=( \$$(compgen -W \"\$$log_files\" -- \$$cur) )"
 	@echo "        fi"
