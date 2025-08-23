@@ -216,6 +216,32 @@ class OktaSeleniumAuth:
                 print("🚫 Authentication stopped due to rate limiting")
                 print("📄 HTML page captured for analysis in /tmp/")
                 return None
+            
+            # Check if the page is trying to navigate to introspect endpoint
+            print("🔍 Checking for introspect endpoint navigation...")
+            current_url = self.driver.current_url
+            if "introspect" in current_url:
+                print("⚠️ WARNING: Page navigated to introspect endpoint!")
+                print(f"   Current URL: {current_url}")
+                print("   This suggests the OAuth2 page is redirecting incorrectly")
+                print("   Capturing the introspect page for analysis...")
+                self._capture_html_page("introspect_redirect")
+                
+                # Try to go back to the OAuth2 page
+                print("🔄 Attempting to return to OAuth2 page...")
+                self.driver.back()
+                time.sleep(2)
+                
+                # Check if we're back on the OAuth2 page
+                if "introspect" not in self.driver.current_url:
+                    print("✅ Successfully returned to OAuth2 page")
+                else:
+                    print("❌ Still on introspect page - this may indicate a flow issue")
+                    return None
+            
+            # Start navigation monitoring to catch any introspect redirects
+            print("🔍 Starting navigation monitoring...")
+            self.monitor_navigation(timeout=10)  # Monitor for 10 seconds
 
             # Step 3: Wait for login form and submit credentials
             print("📡 Step 3: Submitting credentials...")
@@ -1716,6 +1742,48 @@ class OktaSeleniumAuth:
             print(f"   URL: {self.driver.current_url}")
             print(f"   Title: {self.driver.title}")
         return filename
+
+    def monitor_navigation(self, timeout: int = 30):
+        """Monitor browser navigation and capture any unexpected redirects."""
+        print("🔍 Starting navigation monitoring...")
+        start_time = time.time()
+        last_url = self.driver.current_url
+        
+        while time.time() - start_time < timeout:
+            current_url = self.driver.current_url
+            
+            # Check for unexpected navigation to introspect endpoint
+            if current_url != last_url:
+                print(f"🔄 Navigation detected: {last_url} -> {current_url}")
+                
+                if "introspect" in current_url:
+                    print("⚠️ WARNING: Navigation to introspect endpoint detected!")
+                    print("   This endpoint expects POST requests, not GET")
+                    print("   Capturing the page for analysis...")
+                    self._capture_html_page("introspect_navigation")
+                    
+                    # Check if this is a GET request (which will fail)
+                    if "method" not in current_url.lower():
+                        print("💡 This appears to be a GET request - will likely fail")
+                        print("   The introspect endpoint requires POST with stateToken")
+                    
+                    # Try to prevent further navigation
+                    print("🔄 Attempting to return to previous page...")
+                    self.driver.back()
+                    time.sleep(2)
+                    
+                    if "introspect" not in self.driver.current_url:
+                        print("✅ Successfully returned from introspect endpoint")
+                    else:
+                        print("❌ Still on introspect endpoint - flow may be broken")
+                        return False
+                
+                last_url = current_url
+            
+            time.sleep(1)
+        
+        print("✅ Navigation monitoring completed")
+        return True
 
     def __del__(self):
         """Destructor - only close browser if not keeping it open for debugging."""
