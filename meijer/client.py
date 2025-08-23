@@ -455,27 +455,71 @@ class Meijer:
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         radius: Optional[int] = None,
+        required_services: Optional[List[str]] = None,
+        max_results: int = 50
     ) -> List[MeijerStore]:
         """
-        Get list of Meijer stores with enhanced proximity search support.
-
-        Args:
-            zip_code: Optional ZIP code for location-based search
-            city: Optional city name for location-based search (case-insensitive, partial matching)
-            latitude: Optional latitude for location-based search
-            longitude: Optional longitude for location-based search
-            radius: Optional radius in miles for proximity search (uses enhanced API)
-
-        Returns:
-            List of MeijerStore objects
+        Enhanced store search with comprehensive filtering and service detection.
+        
+        This method provides a unified interface for store discovery with automatic
+        service filtering, error handling, and intelligent fallbacks. It consolidates
+        all store search functionality into a single, robust method.
+        
+        Parameters
+        ----------
+        zip_code : str, optional
+            ZIP code for location-based search
+        city : str, optional
+            City name for location-based search (case-insensitive, partial matching)
+        latitude : float, optional
+            Search latitude (required if radius specified)
+        longitude : float, optional
+            Search longitude (required if radius specified)
+        radius : int, optional
+            Search radius in miles (default: 50)
+        required_services : List[str], optional
+            List of required services (e.g., 'pharmacy', 'gas_station', 'curbside_pickup', 'delivery')
+        max_results : int, optional
+            Maximum number of stores to return (default: 50)
+            
+        Returns
+        -------
+        List[MeijerStore]
+            List of stores matching criteria, sorted by distance
+            
+        Examples
+        --------
+        >>> # Basic search with coordinates
+        >>> stores = client.get_stores(42.9634, -85.6681, 25)
+        >>> 
+        >>> # Search with service filtering
+        >>> stores = client.get_stores(42.9634, -85.6681, 50, required_services=['pharmacy', 'gas_station'])
+        >>> 
+        >>> # Search by ZIP code
+        >>> stores = client.get_stores(zip_code="49508", radius=25)
+        >>> 
+        >>> # Search by city
+        >>> stores = client.get_stores(city="Grand Rapids", radius=30)
         """
-        # If radius is specified, use the enhanced proximity search
-        if radius and latitude and longitude:
-            return self.find_stores_nearby(latitude, longitude, radius)
-
-        # Otherwise, use the working storeInfo endpoint with provided or default coordinates
         try:
-            # Use the working storeInfo endpoint instead of the non-existent /stores
+            # If radius is specified with coordinates, use the enhanced proximity search
+            if radius and latitude and longitude:
+                self.logger.info(f"Searching for stores within {radius} miles of ({latitude}, {longitude})")
+                stores = self.find_stores_nearby(latitude, longitude, radius, max_results)
+                
+                if not stores:
+                    self.logger.warning(f"No stores found within {radius} miles")
+                    return []
+                
+                self.logger.info(f"Found {len(stores)} stores in radius")
+                
+                # Filter by required services if specified
+                if required_services:
+                    stores = self._filter_stores_by_services(stores, required_services)
+                
+                return stores
+
+            # Otherwise, use the working storeInfo endpoint with provided or default coordinates
             url = self._get_api_url("digital/storeInfo/v2/stores/proximity")
 
             # Use provided coordinates or default to center of Michigan
@@ -484,7 +528,7 @@ class Meijer:
                     "latitude": latitude,
                     "longitude": longitude,
                     "miles": radius or 50,  # Use provided radius or default to 50 miles
-                    "numToReturn": 100,
+                    "numToReturn": max_results,
                     "dataVariant": 2,
                 }
             else:
@@ -493,7 +537,7 @@ class Meijer:
                     "latitude": 44.3148,  # Center of Michigan
                     "longitude": -85.6024,
                     "miles": 500,  # Large radius to get stores across the region
-                    "numToReturn": 100,  # Get more stores
+                    "numToReturn": max_results,  # Get more stores
                     "dataVariant": 2,
                 }
 
@@ -558,6 +602,10 @@ class Meijer:
                         self.logger.warning(f"Failed to parse store data: {e}")
                         continue
 
+                # Filter by required services if specified
+                if required_services:
+                    stores = self._filter_stores_by_services(stores, required_services)
+
                 return stores
             else:
                 self.logger.warning(f"Failed to get stores: {response.status_code}")
@@ -566,6 +614,55 @@ class Meijer:
         except Exception as e:
             self.logger.error(f"Error getting stores: {e}")
             return []
+
+    def _filter_stores_by_services(self, stores: List[MeijerStore], required_services: List[str]) -> List[MeijerStore]:
+        """
+        Filter stores by required services.
+        
+        Parameters
+        ----------
+        stores : List[MeijerStore]
+            List of stores to filter
+        required_services : List[str]
+            List of required services
+            
+        Returns
+        -------
+        List[MeijerStore]
+            Filtered list of stores with all required services
+        """
+        self.logger.info(f"Filtering {len(stores)} stores by required services: {required_services}")
+        filtered_stores = []
+        
+        for store in stores:
+            store_services = []
+            
+            # Check available services
+            if hasattr(store, 'has_pharmacy') and store.has_pharmacy:
+                store_services.append('pharmacy')
+            if hasattr(store, 'has_gas_station') and store.has_gas_station():
+                store_services.append('gas_station')
+            if hasattr(store, 'has_curbside_pickup') and store.has_curbside_pickup:
+                store_services.append('curbside_pickup')
+            if hasattr(store, 'has_delivery') and store.has_delivery:
+                store_services.append('delivery')
+            if hasattr(store, 'has_pickup') and store.has_pickup:
+                store_services.append('pickup')
+            if hasattr(store, 'has_grocery') and store.has_grocery:
+                store_services.append('grocery')
+            if hasattr(store, 'has_general_merchandise') and store.has_general_merchandise:
+                store_services.append('general_merchandise')
+            
+            # Check if store has all required services
+            if all(service in store_services for service in required_services):
+                filtered_stores.append(store)
+                self.logger.debug(f"Store {store.unit_id} ({store.name}) matches service requirements")
+            else:
+                missing_services = [s for s in required_services if s not in store_services]
+                self.logger.debug(f"Store {store.unit_id} ({store.name}) missing services: {missing_services}")
+        
+        self.logger.info(f"Found {len(filtered_stores)} stores with required services: {required_services}")
+        return filtered_stores
 
     def find_stores_nearby(
         self,
@@ -809,92 +906,7 @@ class Meijer:
             self.logger.error(f"Error getting store by id {store_id}: {e}")
             return None
 
-    def robust_store_search(
-        self,
-        latitude: float,
-        longitude: float,
-        radius: int,
-        required_services: Optional[List[str]] = None,
-        max_results: int = 50
-    ) -> List[MeijerStore]:
-        """
-        Robust store search with error handling and service filtering.
-        
-        This method provides enhanced store search with automatic service filtering
-        and comprehensive error handling. Originally implemented as notebook example,
-        now moved to core functionality.
-        
-        Parameters
-        ----------
-        latitude : float
-            Search latitude
-        longitude : float
-            Search longitude
-        radius : int
-            Search radius in miles
-        required_services : List[str], optional
-            List of required services (e.g., 'pharmacy', 'gas_station', 'curbside_pickup', 'delivery')
-        max_results : int, optional
-            Maximum number of stores to return (default: 50)
-            
-        Returns
-        -------
-        List[MeijerStore]
-            List of stores matching criteria, sorted by distance
-            
-        Examples
-        --------
-        >>> # Find stores with pharmacy and gas station
-        >>> stores = client.robust_store_search(42.9634, -85.6681, 50, ['pharmacy', 'gas_station'])
-        >>> 
-        >>> # Find all stores within 25 miles
-        >>> stores = client.robust_store_search(42.9634, -85.6681, 25)
-        """
-        try:
-            # Search for stores using the enhanced proximity search
-            self.logger.info(f"Searching for stores within {radius} miles of ({latitude}, {longitude})")
-            stores = self.find_stores_nearby(latitude, longitude, radius, max_results)
-            
-            if not stores:
-                self.logger.warning(f"No stores found within {radius} miles")
-                return []
-            
-            self.logger.info(f"Found {len(stores)} stores in radius")
-            
-            # Filter by required services if specified
-            if required_services:
-                self.logger.info(f"Filtering stores by required services: {required_services}")
-                filtered_stores = []
-                
-                for store in stores:
-                    store_services = []
-                    
-                    # Check available services
-                    if hasattr(store, 'has_pharmacy') and store.has_pharmacy:
-                        store_services.append('pharmacy')
-                    if hasattr(store, 'has_gas_station') and store.has_gas_station():
-                        store_services.append('gas_station')
-                    if hasattr(store, 'has_curbside_pickup') and store.has_curbside_pickup:
-                        store_services.append('curbside_pickup')
-                    if hasattr(store, 'has_delivery') and store.has_delivery:
-                        store_services.append('delivery')
-                    
-                    # Check if store has all required services
-                    if all(service in store_services for service in required_services):
-                        filtered_stores.append(store)
-                        self.logger.debug(f"Store {store.unit_id} ({store.name}) matches service requirements")
-                    else:
-                        missing_services = [s for s in required_services if s not in store_services]
-                        self.logger.debug(f"Store {store.unit_id} ({store.name}) missing services: {missing_services}")
-                
-                stores = filtered_stores
-                self.logger.info(f"Found {len(stores)} stores with required services: {required_services}")
-            
-            return stores
-            
-        except Exception as e:
-            self.logger.error(f"Error during robust store search: {e}")
-            return []
+
 
     def find_stores_with_services(
         self,
@@ -907,7 +919,7 @@ class Meijer:
         """
         Find stores that have specific services available.
         
-        This is a convenience method that wraps robust_store_search for service-based filtering.
+        This is a convenience method that wraps get_stores for service-based filtering.
         
         Parameters
         ----------
@@ -932,7 +944,13 @@ class Meijer:
         >>> # Find pharmacies with gas stations
         >>> stores = client.find_stores_with_services(42.9634, -85.6681, 25, ['pharmacy', 'gas_station'])
         """
-        return self.robust_store_search(latitude, longitude, radius, services, max_results)
+        return self.get_stores(
+            latitude=latitude,
+            longitude=longitude,
+            radius=radius,
+            required_services=services,
+            max_results=max_results
+        )
 
     def find_nearest_store_with_service(
         self,
@@ -965,7 +983,13 @@ class Meijer:
         >>> # Find nearest pharmacy
         >>> store = client.find_nearest_store_with_service(42.9634, -85.6681, 'pharmacy')
         """
-        stores = self.robust_store_search(latitude, longitude, max_radius, [service], max_results=1)
+        stores = self.get_stores(
+            latitude=latitude,
+            longitude=longitude,
+            radius=max_radius,
+            required_services=[service],
+            max_results=1
+        )
         return stores[0] if stores else None
 
     def get_store_service_summary(self, store: MeijerStore) -> Dict[str, bool]:
