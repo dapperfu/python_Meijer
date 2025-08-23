@@ -593,6 +593,221 @@ class MeijerItem:
     # Jupyter Notebook Rich Representations
     # ============================================================================
 
+    @property
+    def has_image(self) -> bool:
+        """Check if the item has an image available."""
+        return bool(self.image_url or self.large_image_url)
+
+    @property
+    def on_sale(self) -> bool:
+        """Check if the item is currently on sale."""
+        return (self.sale_price is not None and 
+                self.price is not None and 
+                self.sale_price < self.price)
+
+    @property
+    def discount_percentage(self) -> Optional[float]:
+        """Calculate the discount percentage if on sale."""
+        if not self.on_sale or not self.price or not self.sale_price:
+            return None
+        return round(((self.price - self.sale_price) / self.price) * 100, 2)
+
+    @property
+    def savings_amount(self) -> Optional[float]:
+        """Calculate the amount saved if on sale."""
+        if not self.on_sale or not self.price or not self.sale_price:
+            return None
+        return round(self.price - self.sale_price, 2)
+
+    @property
+    def effective_price(self) -> Optional[float]:
+        """Get the effective price (sale price if on sale, otherwise regular price)."""
+        return self.sale_price if self.on_sale else self.price
+
+    @property
+    def price_display(self) -> str:
+        """Get a formatted price display string."""
+        if self.on_sale:
+            return f"${self.sale_price:.2f} (was ${self.price:.2f})"
+        elif self.price:
+            return f"${self.price:.2f}"
+        else:
+            return "Price not available"
+
+    @property
+    def search_relevance_score(self) -> float:
+        """Calculate a basic search relevance score based on available data."""
+        score = 0.0
+        
+        # Base score for having basic info
+        if self.title:
+            score += 1.0
+        if self.description:
+            score += 0.5
+        if self.brand:
+            score += 0.3
+        if self.category:
+            score += 0.2
+        if self.upc:
+            score += 0.4
+        if self.has_image:
+            score += 0.3
+        if self.price is not None:
+            score += 0.2
+        if self.is_available:
+            score += 0.1
+            
+        return min(score, 3.0)  # Cap at 3.0
+
+    def matches_search_query(self, query: str) -> bool:
+        """
+        Check if this item matches a search query.
+        
+        Args:
+            query: Search query string
+            
+        Returns:
+            True if item matches query, False otherwise
+        """
+        if not query:
+            return True
+            
+        query_lower = query.lower()
+        
+        # Check title
+        if self.title and query_lower in self.title.lower():
+            return True
+            
+        # Check description
+        if self.description and query_lower in self.description.lower():
+            return True
+            
+        # Check brand
+        if self.brand and query_lower in self.brand.lower():
+            return True
+            
+        # Check category
+        if self.category and query_lower in self.category.lower():
+            return True
+            
+        # Check UPC
+        if self.upc and query_lower in self.upc:
+            return True
+            
+        return False
+
+    def get_search_highlights(self, query: str) -> List[str]:
+        """
+        Get search highlights for this item based on a query.
+        
+        Args:
+            query: Search query string
+            
+        Returns:
+            List of highlighted fields that match the query
+        """
+        highlights = []
+        query_lower = query.lower()
+        
+        if self.title and query_lower in self.title.lower():
+            highlights.append("title")
+        if self.description and query_lower in self.description.lower():
+            highlights.append("description")
+        if self.brand and query_lower in self.brand.lower():
+            highlights.append("brand")
+        if self.category and query_lower in self.category.lower():
+            highlights.append("category")
+        if self.upc and query_lower in self.upc:
+            highlights.append("upc")
+            
+        return highlights
+
+    def to_search_result(self) -> Dict[str, Any]:
+        """
+        Convert to search result format for API responses.
+        
+        Returns:
+            Dictionary formatted for search API responses
+        """
+        result = self.to_dict()
+        
+        # Add search-specific fields
+        result.update({
+            "searchRelevanceScore": self.search_relevance_score,
+            "hasImage": self.has_image,
+            "onSale": self.on_sale,
+            "discountPercentage": self.discount_percentage,
+            "savingsAmount": self.savings_amount,
+            "effectivePrice": self.effective_price,
+            "priceDisplay": self.price_display,
+        })
+        
+        return result
+
+    @classmethod
+    def from_constructor_response(
+        cls,
+        constructor_data: Dict[str, Any],
+        client: Optional["Meijer"] = None
+    ) -> "MeijerItem":
+        """
+        Create a MeijerItem from Constructor.io response data.
+        
+        Args:
+            constructor_data: Raw data from Constructor.io API
+            client: Optional Meijer client reference
+            
+        Returns:
+            MeijerItem instance populated with Constructor.io data
+        """
+        try:
+            # Extract data from Constructor.io result structure
+            item_data = constructor_data.get("data", {})
+            value = constructor_data.get("value", "")
+            
+            # Create item with proper field mapping
+            return cls(
+                id=item_data.get("id", str(constructor_data.get("id", ""))),
+                title=value or item_data.get("description", "Unknown Product"),
+                description=item_data.get("description"),
+                brand=item_data.get("brand"),
+                category=item_data.get("category"),
+                subcategory=item_data.get("subcategory"),
+                upc=item_data.get("ean"),  # Constructor.io uses 'ean' field
+                sku=item_data.get("sku", item_data.get("id")),
+                image_url=item_data.get("image_url"),
+                large_image_url=item_data.get("large_image_url"),
+                price=item_data.get("price"),
+                sale_price=item_data.get("sale_price"),
+                unit_price=str(item_data.get("unit_price", item_data.get("price")))
+                if item_data.get("unit_price") or item_data.get("price")
+                else None,
+                is_weighted=item_data.get("priceByWeight", False),
+                weight_unit=item_data.get("weight_unit"),
+                weight_amount=item_data.get("weight_amount"),
+                is_available=item_data.get("is_available", True),
+                store_id=item_data.get("store_id"),
+                department_id=item_data.get("department_id"),
+                sub_department_id=item_data.get("sub_department_id"),
+                tags=item_data.get("tags", []),
+                raw_data=constructor_data,
+                _meijer_client=client,
+            )
+            
+        except Exception as e:
+            # Log error but return a basic item
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to create MeijerItem from Constructor.io data: {e}")
+            
+            # Return minimal item
+            return cls(
+                id=str(constructor_data.get("id", "unknown")),
+                title="Unknown Product",
+                raw_data=constructor_data,
+                _meijer_client=client,
+            )
+
     def _repr_html_(self) -> str:
         """Rich HTML representation for Jupyter notebooks."""
         html = f"""
