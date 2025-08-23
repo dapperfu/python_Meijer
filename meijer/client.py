@@ -30,6 +30,7 @@ from .settings import MeijerSettings
 from .shop_scan import ShopNScan
 from .shopping_list import MeijerList
 from .stores import MeijerStore
+from .account import AccountManager
 
 
 class StoresInterface:
@@ -184,6 +185,9 @@ class Meijer:
         self.mperks = MPerksEarnedRewards(self)
         self.feedback = MeijerFeedback(self)
         self.settings = MeijerSettings(self)
+        
+        # Initialize account management
+        self.account = AccountManager(self)
 
         # Initialize cart instance
         try:

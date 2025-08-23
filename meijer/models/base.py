@@ -5,10 +5,26 @@ This module provides foundational data structures including authentication token
 and item type enumerations used throughout the Meijer API client.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional
+from typing import Optional, Any, Dict
+
+
+@dataclass
+class BaseModel:
+    """Base model class for all dataclass models."""
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert dataclass to dictionary.
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary representation of the model
+        """
+        return asdict(self)
 
 
 class ItemType(Enum):
@@ -21,7 +37,7 @@ class ItemType(Enum):
 
 
 @dataclass
-class AuthTokens:
+class AuthTokens(BaseModel):
     """Authentication tokens for Meijer API."""
 
     access_token: str
