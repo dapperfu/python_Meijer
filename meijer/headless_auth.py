@@ -54,11 +54,14 @@ class HeadlessMeijerAuth:
     """
 
     def __init__(
-        self, username: str, password: str, email_2fa_config: Optional[str] = None
+        self, username: str, password: str, email_2fa_config: Optional[str] = None, 
+        proxy_host: Optional[str] = None, proxy_port: Optional[int] = None
     ):
         self.username = username
         self.password = password
         self.email_2fa_config = email_2fa_config
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
         self.session = requests.Session()
         self.flow_state = AuthFlowState()
 
@@ -71,8 +74,31 @@ class HeadlessMeijerAuth:
         self.redirect_uri = "com.meijer.mobile.meijer:/login"
         self.scope = "openid profile offline_access"
 
-        # Setup session with default headers
+        # Setup session with proxy and SSL settings
+        self._setup_session()
+
+    def _setup_session(self):
+        """Setup the session with headers, proxy, and SSL settings for mitmproxy."""
+        # Setup headers
         self._setup_session_headers()
+        
+        # Setup proxy if specified
+        if self.proxy_host and self.proxy_port:
+            proxy_url = f"http://{self.proxy_host}:{self.proxy_port}"
+            self.session.proxies = {
+                "http": proxy_url,
+                "https": proxy_url
+            }
+            print(f"🌐 Proxy configured: {proxy_url}")
+        
+        # Disable SSL verification for mitmproxy
+        self.session.verify = False
+        
+        # Suppress SSL warnings
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        
+        print("🔓 SSL verification disabled for mitmproxy support")
 
     def _setup_session_headers(self):
         """Setup the session with realistic headers from the captured flow."""
@@ -285,7 +311,9 @@ class HeadlessMeijerAuth:
 def authenticate_with_requests(
     username: str, 
     password: str, 
-    email_2fa_config: Optional[str] = None
+    email_2fa_config: Optional[str] = None,
+    proxy_host: Optional[str] = None,
+    proxy_port: Optional[int] = None
 ) -> Optional[Dict]:
     """
     Authenticate with Meijer using pure HTTP requests (headless).
@@ -294,6 +322,8 @@ def authenticate_with_requests(
         username: Meijer username/email
         password: Meijer password
         email_2fa_config: Optional path to email configuration file
+        proxy_host: Optional proxy host for mitmproxy (default: None)
+        proxy_port: Optional proxy port for mitmproxy (default: None)
         
     Returns:
         Dict with tokens if successful, None if failed
@@ -302,5 +332,5 @@ def authenticate_with_requests(
         MeijerAuthenticationError: If authentication fails
         MFARequiredError: If MFA is required
     """
-    auth = HeadlessMeijerAuth(username, password, email_2fa_config)
+    auth = HeadlessMeijerAuth(username, password, email_2fa_config, proxy_host, proxy_port)
     return auth.authenticate()

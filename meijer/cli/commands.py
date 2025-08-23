@@ -2465,10 +2465,10 @@ def login_selenium(headless: bool, keep_open: bool):
     "--keep-open", is_flag=True, help="Keep browser open for debugging (selenium only)"
 )
 @click.option(
-    "--proxy-host", default="127.0.0.1", help="Proxy host for selenium (default: 127.0.0.1 for mitmproxy)"
+    "--proxy-host", default="127.0.0.1", help="Proxy host for mitmproxy (default: 127.0.0.1, works with requests and selenium methods)"
 )
 @click.option(
-    "--proxy-port", default=8080, help="Proxy port for selenium (default: 8080 for mitmproxy)"
+    "--proxy-port", default=8080, help="Proxy port for mitmproxy (default: 8080, works with requests and selenium methods)"
 )
 def login_command(
     user: Optional[str],
@@ -2690,9 +2690,17 @@ def login_command(
                 click.echo(
                     "📋 Flow: OAuth2 → IDX → Username → Password → Token Exchange"
                 )
+                
+                # Show proxy configuration if specified
+                if proxy_host and proxy_port:
+                    click.echo(f"🌐 Proxy configured: {proxy_host}:{proxy_port}")
+                    click.echo("📊 All traffic will be logged through mitmproxy for analysis")
+                    click.echo("🔓 SSL verification disabled for mitmproxy support")
+                else:
+                    click.echo("🌐 No proxy configured - direct connection")
 
                 tokens = authenticate_with_requests(
-                    user, password, email_2fa_config
+                    user, password, email_2fa_config, proxy_host, proxy_port
                 )
 
                 if tokens:
