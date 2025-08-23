@@ -194,6 +194,144 @@ class AuthenticatedMeijerClient:
             logger.error(f"Error submitting username: {e}")
             raise AuthenticationError(f"Username submission failed: {e}")
     
+    def _save_auth_tokens(self, response_data: Dict[str, Any]):
+        """
+        Save authentication tokens to auth.json file.
+        
+        Args:
+            response_data: Response data containing tokens
+        """
+        try:
+            auth_data = {
+                'timestamp': time.time(),
+                'jsessionid': self.jsessionid,
+                'state_handle': self.state_handle,
+                'authenticator_id': self.authenticator_id,
+                'cookies': {}
+            }
+            
+            # Extract cookies from session
+            for cookie in self.session.cookies:
+                auth_data['cookies'][cookie.name] = {
+                    'value': cookie.value,
+                    'domain': cookie.domain,
+                    'path': cookie.path,
+                    'secure': cookie.secure,
+                    'expires': cookie.expires
+                }
+            
+            # Extract tokens from response data
+            if 'tokens' in response_data:
+                tokens = response_data['tokens']
+                if 'accessToken' in tokens:
+                    auth_data['access_token'] = tokens['accessToken']['value']
+                    auth_data['token_type'] = tokens['accessToken'].get('tokenType', 'Bearer')
+                if 'refreshToken' in tokens:
+                    auth_data['refresh_token'] = tokens['refreshToken']['value']
+                if 'idToken' in tokens:
+                    auth_data['id_token'] = tokens['idToken']['value']
+            
+            # Extract bearer token from headers if present
+            if 'authorization' in self.session.headers:
+                auth_header = self.session.headers['authorization']
+                if auth_header.startswith('Bearer '):
+                    auth_data['bearer_token'] = auth_header[7:]  # Remove 'Bearer ' prefix
+            
+            # Save to auth.json
+            with open('auth.json', 'w') as f:
+                json.dump(auth_data, f, indent=2)
+            
+            logger.info("Authentication tokens saved to auth.json")
+            
+        except Exception as e:
+            logger.error(f"Failed to save auth tokens: {e}")
+
+    def _submit_2fa_code(self, code: str) -> Dict[str, Any]:
+        """
+        Submit 2FA verification code.
+        
+        Args:
+            code: 2FA verification code
+            
+        Returns:
+            Response data from 2FA verification
+        """
+        try:
+            if not self.state_handle:
+                raise AuthenticationError("No state handle available for 2FA verification")
+            
+            # Prepare 2FA verification request
+            verification_data = {
+                "credentials": {
+                    "passcode": code
+                },
+                "stateHandle": self.state_handle
+            }
+            
+            logger.info("Submitting 2FA verification code...")
+            response = self.session.post(
+                f"{self.okta_base}/idp/idx/challenge/answer",
+                json=verification_data,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                raise AuthenticationError(f"2FA verification failed: {response.status_code}")
+            
+            response_data = response.json()
+            logger.info("2FA verification successful")
+            
+            # Save authentication tokens
+            self._save_auth_tokens(response_data)
+            
+            return response_data
+            
+        except Exception as e:
+            logger.error(f"Error submitting 2FA code: {e}")
+            raise AuthenticationError(f"2FA verification failed: {e}")
+    
+    def _initiate_2fa_challenge(self, method: str = "email") -> Dict[str, Any]:
+        """
+        Initiate 2FA challenge.
+        
+        Args:
+            method: 2FA method (email, sms, etc.)
+            
+        Returns:
+            Response data from 2FA challenge initiation
+        """
+        try:
+            if not self.state_handle:
+                raise AuthenticationError("No state handle available for 2FA challenge")
+            
+            # Prepare 2FA challenge request
+            challenge_data = {
+                "authenticator": {
+                    "methodType": method,
+                    "id": self.authenticator_id
+                },
+                "stateHandle": self.state_handle
+            }
+            
+            logger.info(f"Initiating {method} 2FA challenge...")
+            response = self.session.post(
+                f"{self.okta_base}/idp/idx/challenge",
+                json=challenge_data,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                raise AuthenticationError(f"2FA challenge initiation failed: {response.status_code}")
+            
+            response_data = response.json()
+            logger.info(f"{method.capitalize()} 2FA challenge initiated")
+            
+            return response_data
+            
+        except Exception as e:
+            logger.error(f"Error initiating 2FA challenge: {e}")
+            raise AuthenticationError(f"2FA challenge initiation failed: {e}")
+    
     def _submit_password(self, password: str) -> Dict[str, Any]:
         """
         Submit password to Okta challenge endpoint.
@@ -246,6 +384,9 @@ class AuthenticatedMeijerClient:
                 logger.info("2FA challenge required")
                 raise TwoFactorRequiredError("2FA challenge required")
             
+            # If no 2FA required, save tokens now
+            self._save_auth_tokens(response_data)
+            
             return response_data
             
         except TwoFactorRequiredError:
@@ -253,89 +394,6 @@ class AuthenticatedMeijerClient:
         except Exception as e:
             logger.error(f"Error submitting password: {e}")
             raise AuthenticationError(f"Password submission failed: {e}")
-    
-    def _initiate_2fa_challenge(self, method: str = "email") -> Dict[str, Any]:
-        """
-        Initiate 2FA challenge.
-        
-        Args:
-            method: 2FA method (email, sms, etc.)
-            
-        Returns:
-            Response data from 2FA challenge initiation
-        """
-        try:
-            if not self.state_handle:
-                raise AuthenticationError("No state handle available for 2FA challenge")
-            
-            # Prepare 2FA challenge request
-            challenge_data = {
-                "authenticator": {
-                    "methodType": method,
-                    "id": self.authenticator_id
-                },
-                "stateHandle": self.state_handle
-            }
-            
-            logger.info(f"Initiating {method} 2FA challenge...")
-            response = self.session.post(
-                f"{self.okta_base}/idp/idx/challenge",
-                json=challenge_data,
-                timeout=30
-            )
-            
-            if response.status_code != 200:
-                raise AuthenticationError(f"2FA challenge initiation failed: {response.status_code}")
-            
-            response_data = response.json()
-            logger.info(f"{method.capitalize()} 2FA challenge initiated")
-            
-            return response_data
-            
-        except Exception as e:
-            logger.error(f"Error initiating 2FA challenge: {e}")
-            raise AuthenticationError(f"2FA challenge initiation failed: {e}")
-    
-    def _submit_2fa_code(self, code: str) -> Dict[str, Any]:
-        """
-        Submit 2FA verification code.
-        
-        Args:
-            code: 2FA verification code
-            
-        Returns:
-            Response data from 2FA verification
-        """
-        try:
-            if not self.state_handle:
-                raise AuthenticationError("No state handle available for 2FA verification")
-            
-            # Prepare 2FA verification request
-            verification_data = {
-                "credentials": {
-                    "passcode": code
-                },
-                "stateHandle": self.state_handle
-            }
-            
-            logger.info("Submitting 2FA verification code...")
-            response = self.session.post(
-                f"{self.okta_base}/idp/idx/challenge/answer",
-                json=verification_data,
-                timeout=30
-            )
-            
-            if response.status_code != 200:
-                raise AuthenticationError(f"2FA verification failed: {response.status_code}")
-            
-            response_data = response.json()
-            logger.info("2FA verification successful")
-            
-            return response_data
-            
-        except Exception as e:
-            logger.error(f"Error submitting 2FA code: {e}")
-            raise AuthenticationError(f"2FA verification failed: {e}")
     
     def login(self, username: str, password: str, two_factor_callback=None) -> bool:
         """
@@ -405,6 +463,83 @@ class AuthenticatedMeijerClient:
                     pass
                 self.driver = None
     
+    def _load_auth_tokens(self) -> bool:
+        """
+        Load authentication tokens from auth.json file.
+        
+        Returns:
+            True if tokens were loaded successfully, False otherwise
+        """
+        try:
+            if not Path('auth.json').exists():
+                return False
+            
+            with open('auth.json', 'r') as f:
+                auth_data = json.load(f)
+            
+            # Check if tokens are still valid (not expired)
+            if 'timestamp' in auth_data:
+                # Check if tokens are less than 1 hour old
+                if time.time() - auth_data['timestamp'] > 3600:
+                    logger.info("Stored tokens are expired")
+                    return False
+            
+            # Restore session state
+            if 'jsessionid' in auth_data:
+                self.jsessionid = auth_data['jsessionid']
+            if 'state_handle' in auth_data:
+                self.state_handle = auth_data['state_handle']
+            if 'authenticator_id' in auth_data:
+                self.authenticator_id = auth_data['authenticator_id']
+            
+            # Restore cookies
+            if 'cookies' in auth_data:
+                for cookie_name, cookie_data in auth_data['cookies'].items():
+                    self.session.cookies.set(
+                        cookie_name,
+                        cookie_data['value'],
+                        domain=cookie_data.get('domain', ''),
+                        path=cookie_data.get('path', '/')
+                    )
+            
+            # Restore bearer token if present
+            if 'bearer_token' in auth_data:
+                self.session.headers['Authorization'] = f"Bearer {auth_data['bearer_token']}"
+            
+            # Restore access token if present
+            if 'access_token' in auth_data:
+                self.session.headers['Authorization'] = f"Bearer {auth_data['access_token']}"
+            
+            logger.info("Authentication tokens loaded from auth.json")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to load auth tokens: {e}")
+            return False
+    
+    def is_authenticated(self) -> bool:
+        """Check if client is authenticated."""
+        if self.authenticated:
+            return True
+        
+        # Try to load existing tokens
+        if self._load_auth_tokens():
+            # Test if the session is still valid
+            try:
+                response = self.session.get(f"{self.meijer_base}/account", timeout=10)
+                if response.status_code == 200:
+                    self.authenticated = True
+                    logger.info("Session restored from stored tokens")
+                    return True
+                else:
+                    logger.info("Stored tokens are invalid")
+                    return False
+            except Exception as e:
+                logger.info(f"Failed to validate stored tokens: {e}")
+                return False
+        
+        return False
+    
     def get_session(self) -> requests.Session:
         """
         Get the authenticated session for making requests.
@@ -412,14 +547,10 @@ class AuthenticatedMeijerClient:
         Returns:
             Authenticated requests session
         """
-        if not self.authenticated:
+        if not self.is_authenticated():
             raise AuthenticationError("Not authenticated. Call login() first.")
         
         return self.session
-    
-    def is_authenticated(self) -> bool:
-        """Check if client is authenticated."""
-        return self.authenticated
     
     def logout(self):
         """Logout and clear session."""
@@ -429,11 +560,22 @@ class AuthenticatedMeijerClient:
         except:
             pass
         
+        # Clear auth.json file
+        try:
+            if Path('auth.json').exists():
+                Path('auth.json').unlink()
+                logger.info("auth.json cleared")
+        except Exception as e:
+            logger.error(f"Failed to clear auth.json: {e}")
+        
         self.session = requests.Session()
         self.authenticated = False
         self.state_handle = None
         self.authenticator_id = None
         self.jsessionid = None
+        
+        # Reset session headers
+        self._setup_session_headers()
         
         logger.info("Logged out successfully")
     
