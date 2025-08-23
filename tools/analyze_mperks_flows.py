@@ -3,7 +3,8 @@
 Analyze mPerks flows from mitmproxy log files.
 
 This tool specifically analyzes the mPerks-related API calls and flows that occur
-after a user clicks on mPerks in the Meijer mobile app.
+after a user clicks on mPerks in the Meijer mobile app, with special focus on
+reward claiming flows.
 """
 
 import json
@@ -33,8 +34,9 @@ class MPerksFlowAnalyzer:
         self.mperks_endpoints = defaultdict(list)
         self.flow_sequence = []
         self.auth_flows = []
+        self.reward_claiming_flows = []
         
-        # Known mPerks-related endpoints
+        # Enhanced mPerks-related keywords including reward claiming
         self.mperks_keywords = [
             'mperks',
             'mPerks', 
@@ -44,10 +46,23 @@ class MPerksFlowAnalyzer:
             'coupons',
             'points',
             'earned',
-            'balance'
+            'balance',
+            'claim',
+            'claimed',
+            'claiming',
+            'redeem',
+            'redemption',
+            'fuel',
+            'gas',
+            'gallon',
+            'sunscreen',
+            'yogurt',
+            'total purchase',
+            'basket',
+            'cart'
         ]
         
-        # mPerks-specific API endpoints
+        # Enhanced mPerks-specific API endpoints including reward operations
         self.mperks_endpoints_patterns = [
             '/loyalty/mPerks/',
             '/api/mperks/',
@@ -57,7 +72,14 @@ class MPerksFlowAnalyzer:
             '/api/coupons/',
             '/api/points/',
             '/api/balance/',
-            '/api/earned/'
+            '/api/earned/',
+            '/api/claim/',
+            '/api/redeem/',
+            '/digital/mperks40/',
+            '/digital/occ/',
+            '/loyalty/shoppinglist/',
+            '/digital/homecards/',
+            '/digital/multi-upc/'
         ]
 
     def analyze_log_file(self, log_file_path: str) -> Dict[str, Any]:
@@ -74,6 +96,9 @@ class MPerksFlowAnalyzer:
             
             # Analyze mPerks flows
             self._analyze_mperks_flows()
+            
+            # Analyze reward claiming flows specifically
+            self._analyze_reward_claiming_flows()
             
             # Generate comprehensive report
             report = self._generate_report()
@@ -126,6 +151,16 @@ class MPerksFlowAnalyzer:
         # Sort flows by timestamp to understand the sequence
         self._sort_flows_by_sequence()
 
+    def _analyze_reward_claiming_flows(self) -> None:
+        """Analyze flows specifically for reward claiming operations."""
+        print("🎁 Analyzing reward claiming flows...")
+        
+        for flow in self.mperks_flows:
+            if self._is_reward_claiming_flow(flow):
+                self.reward_claiming_flows.append(flow)
+        
+        print(f"✅ Found {len(self.reward_claiming_flows)} reward claiming flows")
+
     def _is_mperks_flow(self, flow: HTTPFlow) -> bool:
         """Check if a flow is mPerks-related."""
         if not flow.request:
@@ -162,6 +197,48 @@ class MPerksFlowAnalyzer:
                 
         return False
 
+    def _is_reward_claiming_flow(self, flow: HTTPFlow) -> bool:
+        """Check if a flow is specifically related to reward claiming."""
+        if not flow.request:
+            return False
+            
+        url = flow.request.pretty_url.lower()
+        path = flow.request.path.lower()
+        
+        # Check for claim-specific keywords
+        claim_keywords = ['claim', 'claimed', 'claiming', 'redeem', 'redemption']
+        if any(keyword in url for keyword in claim_keywords):
+            return True
+            
+        if any(keyword in path for keyword in claim_keywords):
+            return True
+            
+        # Check request content for claim operations
+        if flow.request.content:
+            try:
+                content = flow.request.content.decode('utf-8', errors='ignore').lower()
+                if any(keyword in content for keyword in claim_keywords):
+                    return True
+                # Check for specific reward types mentioned
+                reward_types = ['fuel', 'gas', 'gallon', 'sunscreen', 'yogurt', 'total purchase']
+                if any(reward_type in content for reward_type in reward_types):
+                    return True
+            except:
+                pass
+                
+        # Check response content for claim confirmations
+        if flow.response and flow.response.content:
+            try:
+                content = flow.response.content.decode('utf-8', errors='ignore').lower()
+                if any(keyword in content for keyword in claim_keywords):
+                    return True
+                if any(reward_type in content for reward_type in ['fuel', 'gas', 'gallon', 'sunscreen', 'yogurt', 'total purchase']):
+                    return True
+            except:
+                pass
+                
+        return False
+
     def _extract_mperks_info(self, flow: HTTPFlow, flow_index: int) -> None:
         """Extract detailed information from mPerks flows."""
         try:
@@ -177,7 +254,8 @@ class MPerksFlowAnalyzer:
                 'response_headers': dict(flow.response.headers) if flow.response else {},
                 'request_content_preview': None,
                 'response_content_preview': None,
-                'flow_type': self._classify_mperks_flow(flow)
+                'flow_type': self._classify_mperks_flow(flow),
+                'is_reward_claiming': self._is_reward_claiming_flow(flow)
             }
             
             # Extract request content preview
@@ -230,6 +308,10 @@ class MPerksFlowAnalyzer:
         if any(profile in path for profile in ['profile', 'settings', 'preferences']):
             return 'profile_settings'
             
+        # Reward claiming and redemption
+        if any(claim in path for claim in ['claim', 'redeem', 'redemption']):
+            return 'reward_claiming'
+            
         # General mPerks API
         if 'mperks' in path or 'loyalty' in path:
             return 'general_mperks'
@@ -276,10 +358,12 @@ class MPerksFlowAnalyzer:
             'analysis_timestamp': datetime.now().isoformat(),
             'total_flows': len(self.flows),
             'mperks_flows': len(self.mperks_flows),
+            'reward_claiming_flows': len(self.reward_claiming_flows),
             'flow_sequences': len(self.flow_sequence),
             'endpoints_summary': {},
             'flow_types_summary': defaultdict(int),
             'sequence_analysis': [],
+            'reward_claiming_analysis': [],
             'key_findings': []
         }
         
@@ -297,6 +381,19 @@ class MPerksFlowAnalyzer:
             flow_type = self._classify_mperks_flow(flow)
             report['flow_types_summary'][flow_type] += 1
         
+        # Analyze reward claiming flows
+        for flow in self.reward_claiming_flows:
+            claim_info = {
+                'timestamp': flow.request.timestamp_start if flow.request else None,
+                'method': flow.request.method if flow.request else None,
+                'url': flow.request.pretty_url if flow.request else None,
+                'path': flow.request.path if flow.request else None,
+                'request_content': flow.request.content.decode('utf-8', errors='ignore') if flow.request and flow.request.content else None,
+                'response_content': flow.response.content.decode('utf-8', errors='ignore') if flow.response and flow.response.content else None,
+                'reward_type': self._identify_reward_type(flow)
+            }
+            report['reward_claiming_analysis'].append(claim_info)
+        
         # Analyze sequences
         for i, sequence in enumerate(self.flow_sequence):
             sequence_info = {
@@ -305,6 +402,7 @@ class MPerksFlowAnalyzer:
                 'duration_seconds': 0,
                 'endpoints': list(set(flow['path'] for flow in sequence)),
                 'flow_types': list(set(flow['flow_type'] for flow in sequence)),
+                'has_reward_claiming': any(flow.get('is_reward_claiming', False) for flow in sequence),
                 'flows': sequence
             }
             
@@ -320,6 +418,31 @@ class MPerksFlowAnalyzer:
         report['key_findings'] = self._generate_key_findings(report)
         
         return report
+
+    def _identify_reward_type(self, flow: HTTPFlow) -> str:
+        """Identify the type of reward being claimed."""
+        if not flow.request and not flow.response:
+            return 'unknown'
+        
+        content = ""
+        if flow.request and flow.request.content:
+            content += flow.request.content.decode('utf-8', errors='ignore').lower()
+        if flow.response and flow.response.content:
+            content += flow.response.content.decode('utf-8', errors='ignore').lower()
+        
+        # Check for specific reward types
+        if any(word in content for word in ['fuel', 'gas', 'gallon']):
+            return 'fuel_reward'
+        elif 'sunscreen' in content:
+            return 'product_reward_sunscreen'
+        elif 'yogurt' in content:
+            return 'product_reward_yogurt'
+        elif any(word in content for word in ['total purchase', 'basket', 'cart']):
+            return 'total_purchase_discount'
+        elif 'claim' in content or 'redeem' in content:
+            return 'general_reward_claim'
+        
+        return 'unknown'
 
     def _generate_key_findings(self, report: Dict[str, Any]) -> List[str]:
         """Generate key findings from the analysis."""
@@ -342,6 +465,19 @@ class MPerksFlowAnalyzer:
                                for flow_type, count in report['flow_types_summary'].items()]
             findings.append(f"Flow type distribution: {', '.join(type_distribution)}")
         
+        # Reward claiming analysis
+        if report['reward_claiming_flows'] > 0:
+            findings.append(f"Reward claiming flows: {report['reward_claiming_flows']} flows")
+            
+            # Analyze reward types
+            reward_types = defaultdict(int)
+            for claim in report['reward_claiming_analysis']:
+                reward_types[claim['reward_type']] += 1
+            
+            if reward_types:
+                reward_summary = [f"{reward_type}: {count}" for reward_type, count in reward_types.items()]
+                findings.append(f"Reward types claimed: {', '.join(reward_summary)}")
+        
         # Sequence patterns
         if report['sequence_analysis']:
             avg_sequence_length = sum(seq['flow_count'] for seq in report['sequence_analysis']) / len(report['sequence_analysis'])
@@ -350,11 +486,11 @@ class MPerksFlowAnalyzer:
             # Find longest sequence
             longest_sequence = max(report['sequence_analysis'], key=lambda x: x['flow_count'])
             findings.append(f"Longest mPerks flow sequence: {longest_sequence['flow_count']} flows")
-        
-        # Authentication patterns
-        auth_flows = [flow for flow in self.mperks_flows if self._classify_mperks_flow(flow) == 'authentication']
-        if auth_flows:
-            findings.append(f"Authentication flows: {len(auth_flows)} flows")
+            
+            # Count sequences with reward claiming
+            claiming_sequences = sum(1 for seq in report['sequence_analysis'] if seq.get('has_reward_claiming', False))
+            if claiming_sequences > 0:
+                findings.append(f"Sequences with reward claiming: {claiming_sequences}")
         
         return findings
 
@@ -364,6 +500,7 @@ class MPerksFlowAnalyzer:
         print("=" * 60)
         print(f"Total flows analyzed: {report['total_flows']}")
         print(f"mPerks-related flows: {report['mperks_flows']}")
+        print(f"Reward claiming flows: {report['reward_claiming_flows']}")
         print(f"Flow sequences identified: {report['flow_sequences']}")
         
         print(f"\n🔑 FLOW TYPES:")
@@ -379,6 +516,15 @@ class MPerksFlowAnalyzer:
         
         for endpoint, data in top_endpoints:
             print(f"  {endpoint}: {data['count']} calls")
+        
+        if report['reward_claiming_flows'] > 0:
+            print(f"\n🎁 REWARD CLAIMING ANALYSIS:")
+            reward_types = defaultdict(int)
+            for claim in report['reward_claiming_analysis']:
+                reward_types[claim['reward_type']] += 1
+            
+            for reward_type, count in reward_types.items():
+                print(f"  {reward_type}: {count} claims")
         
         print(f"\n💡 KEY FINDINGS:")
         for finding in report['key_findings']:
