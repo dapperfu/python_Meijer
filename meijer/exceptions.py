@@ -24,6 +24,11 @@ class AuthenticationError(MeijerAuthenticationError):
     pass
 
 
+class TwoFactorRequiredError(Exception):
+    """Raised when 2FA is required to complete authentication."""
+    pass
+
+
 class MFARequiredError(MeijerError):
     """Raised when multi-factor authentication is required."""
 

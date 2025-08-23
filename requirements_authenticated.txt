@@ -1,0 +1,13 @@
+# Requirements for Meijer Authenticated Client
+# These packages are needed for browser automation and authentication
+
+# Core dependencies
+requests>=2.31.0
+selenium>=4.15.0
+
+# Browser drivers (optional - can be installed separately)
+# geckodriver for Firefox
+# chromedriver for Chrome
+
+# Additional useful packages
+webdriver-manager>=4.0.0  # Auto-manage browser drivers
