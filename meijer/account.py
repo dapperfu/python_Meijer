@@ -127,44 +127,11 @@ class AccountProfile(BaseModel):
     birth_date: Optional[datetime] = None
     """User's birth date"""
     
-    mperks_store_id: int
-    """Store ID for mPerks"""
-    
-    mperks_status: str
-    """mPerks program status"""
-    
-    eguest_id: int
-    """eGuest program ID"""
-    
     eguest_status: Optional[str] = None
     """eGuest program status"""
     
-    employee_id: int
-    """Employee ID if applicable"""
-    
-    employee_store_id: int
-    """Employee store ID"""
-    
     employee_status: Optional[str] = None
     """Employee status"""
-    
-    epanel_id: int
-    """ePanel ID"""
-    
-    epanel_status: str
-    """ePanel status"""
-    
-    created_date: datetime
-    """Account creation date"""
-    
-    created_by: str
-    """Who created the account"""
-    
-    updated_date: datetime
-    """Last update date"""
-    
-    updated_by: str
-    """Who last updated the account"""
     
     vehicle_information: Optional[str] = None
     """Vehicle information for fuel rewards"""
@@ -281,6 +248,32 @@ class Receipt(BaseModel):
             return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
         except ValueError:
             return None
+    
+    def save(self, file_path: str, format: ReceiptFormat = ReceiptFormat.PDF) -> bool:
+        """
+        Save receipt to file.
+        
+        This method provides a convenient way to download and save the receipt.
+        Usage: receipt = client.account.receipts[0]; receipt.save("foo.pdf")
+        
+        Parameters
+        ----------
+        file_path : str
+            Path where to save the receipt file
+        format : ReceiptFormat, optional
+            Receipt format, by default ReceiptFormat.PDF
+            
+        Returns
+        -------
+        bool
+            True if download was successful, False otherwise
+        """
+        # We need access to the account manager to download
+        # This will be set by the AccountManager when creating Receipt objects
+        if hasattr(self, '_account_manager') and self._account_manager:
+            return self._account_manager.download_receipt(self.receipt_id, file_path, format)
+        else:
+            raise RuntimeError("Receipt object is not associated with an AccountManager. Use account.download_receipt() instead.")
 
 
 @dataclass
@@ -349,6 +342,11 @@ class AccountManager:
         self.client = client
         self.logger = getattr(client, 'logger', None)
         
+        # Cache for frequently accessed data
+        self._receipts_cache: Optional[List[Receipt]] = None
+        self._savings_cache: Optional[SavingsSummary] = None
+        self._profile_cache: Optional[AccountProfile] = None
+        
         # Account endpoints discovered from log analysis
         self.endpoints = {
             # Profile management
@@ -380,6 +378,71 @@ class AccountManager:
             "get_vehicle_info": "/loyalty/accounts/getVehicleInformation",
             "update_vehicle_info": "/loyalty/accounts/updateVehicleInformation",
         }
+    
+    @property
+    def receipts(self) -> List[Receipt]:
+        """
+        Get cached receipts list.
+        
+        This property provides easy access to receipts with automatic caching.
+        Usage: receipt = client.account.receipts[0]
+        
+        Returns
+        -------
+        List[Receipt]
+            List of receipt objects
+        """
+        if self._receipts_cache is None:
+            self._receipts_cache = self.get_receipts()
+        return self._receipts_cache
+    
+    @property
+    def savings(self) -> Optional[SavingsSummary]:
+        """
+        Get cached savings summary.
+        
+        This property provides easy access to savings data with automatic caching.
+        Usage: total = client.account.savings.total_savings
+        
+        Returns
+        -------
+        SavingsSummary or None
+            Savings summary if available
+        """
+        if self._savings_cache is None:
+            self._savings_cache = self.get_savings_summary()
+        return self._savings_cache
+    
+    @property
+    def profile(self) -> Optional[AccountProfile]:
+        """
+        Get cached account profile.
+        
+        This property provides easy access to profile data with automatic caching.
+        Usage: name = client.account.profile.first_name
+        
+        Returns
+        -------
+        AccountProfile or None
+            Account profile if available
+        """
+        if self._profile_cache is None:
+            self._profile_cache = self.get_profile()
+        return self._profile_cache
+    
+    def refresh_cache(self) -> None:
+        """
+        Clear all cached data to force fresh API calls.
+        
+        This method clears the internal cache for receipts, savings, and profile
+        data, ensuring the next property access will fetch fresh data from the API.
+        """
+        self._receipts_cache = None
+        self._savings_cache = None
+        self._profile_cache = None
+        
+        if self.logger:
+            self.logger.info("🔄 Account cache cleared")
     
     def get_profile(self) -> Optional[AccountProfile]:
         """
@@ -584,6 +647,11 @@ class AccountManager:
                     Receipt.from_api_response(receipt) 
                     for receipt in data.get("receipts", [])
                 ]
+                
+                # Associate each receipt with this account manager for the save() method
+                for receipt in receipts:
+                    receipt._account_manager = self
+                
                 if self.logger:
                     self.logger.info(f"✅ Found {len(receipts)} receipts")
                 return receipts
@@ -623,6 +691,10 @@ class AccountManager:
             if response.status_code == 200:
                 data = response.json()
                 receipt = Receipt.from_api_response(data)
+                
+                # Associate receipt with this account manager for the save() method
+                receipt._account_manager = self
+                
                 if self.logger:
                     self.logger.info("✅ Receipt details retrieved successfully")
                 return receipt

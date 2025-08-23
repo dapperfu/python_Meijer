@@ -85,9 +85,9 @@ def demo_receipts():
     print("\n🧾 === Receipts Demo ===")
     
     try:
-        # Get receipts
-        print("\n1. Getting receipts...")
-        receipts = client.account.get_receipts(page=0, page_size=5)
+        # Get receipts using cached property
+        print("\n1. Getting receipts using cached property...")
+        receipts = client.account.receipts  # This calls get_receipts() and caches the result
         
         if receipts:
             print(f"   ✅ Found {len(receipts)} receipts")
@@ -99,25 +99,28 @@ def demo_receipts():
                 print(f"      - Date: {receipt.transaction_date}")
                 print(f"      - Total: ${receipt.total_amount:.2f}")
             
-            # Demonstrate receipt download
+            # Demonstrate receipt.save() method
             if receipts:
-                print("\n2. Downloading first receipt...")
-                receipt = receipts[0]
+                print("\n2. Using receipt.save() method...")
+                receipt = receipts[0]  # Get first receipt from cached property
                 download_path = f"receipt_{receipt.receipt_id}.pdf"
                 
-                success = client.account.download_receipt(
-                    receipt.receipt_id, 
-                    download_path
-                )
+                success = receipt.save(download_path)  # Use the convenient save method
                 
                 if success:
-                    print(f"   ✅ Receipt downloaded to: {download_path}")
+                    print(f"   ✅ Receipt saved to: {download_path}")
                     # Clean up the downloaded file
                     if os.path.exists(download_path):
                         os.remove(download_path)
                         print("   🧹 Downloaded file cleaned up")
                 else:
-                    print("   ❌ Failed to download receipt")
+                    print("   ❌ Failed to save receipt")
+                    
+            # Demonstrate cache refresh
+            print("\n3. Cache functionality:")
+            print("   - Subsequent calls to client.account.receipts use cached data")
+            print("   - Use client.account.refresh_cache() to clear cache")
+            
         else:
             print("   ❌ No receipts found")
             
@@ -172,9 +175,9 @@ def demo_savings():
     print("\n💰 === Savings Demo ===")
     
     try:
-        # Get savings summary
-        print("\n1. Getting savings summary...")
-        savings_summary = client.account.get_savings_summary()
+        # Get savings using cached property
+        print("\n1. Getting savings using cached property...")
+        savings_summary = client.account.savings  # This calls get_savings_summary() and caches the result
         
         if savings_summary:
             print(f"   ✅ Total Savings: ${savings_summary.total_savings:.2f}")
@@ -298,13 +301,18 @@ def main():
         
         print("\n🎉 Account management demo completed successfully!")
         print("\n📋 Summary of available features:")
-        print("• Profile management: get_profile(), update_profile()")
+        print("• Profile management: get_profile(), update_profile(), client.account.profile")
         print("• Shop & Scan: is_shop_scan_enabled(), get_mperks_barcode()")
-        print("• Receipts: get_receipts(), get_receipt(), download_receipt()")
+        print("• Receipts: get_receipts(), client.account.receipts, receipt.save()")
         print("• Orders: get_orders(), get_order_details()")
-        print("• Savings: get_savings_summary(), get_savings_history()")
+        print("• Savings: get_savings_summary(), client.account.savings")
         print("• Preferences: get_preferences(), update_preference()")
         print("• Vehicle: get_vehicle_information(), update_vehicle_information()")
+        print("• Cache management: client.account.refresh_cache()")
+        print("\n🚀 Quick examples:")
+        print("  receipt = client.account.receipts[0]")
+        print("  receipt.save('my_receipt.pdf')")
+        print("  total = client.account.savings.total_savings")
         
     except Exception as e:
         print(f"❌ Demo failed: {e}")
