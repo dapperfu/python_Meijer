@@ -1196,6 +1196,63 @@ class Meijer:
         """
         return self.search.search(query, results_per_page, page)
 
+    def search_multiple_products_by_upc(
+        self, 
+        upcs: List[str], 
+        store_id: Optional[str] = None
+    ) -> List[MeijerItem]:
+        """
+        Search for multiple products by UPC codes using the multi-UPC endpoint.
+        
+        This method provides efficient bulk UPC lookup by making a single API call
+        instead of multiple individual searches. It's ideal for processing shopping
+        lists, inventory checks, or bulk product information retrieval.
+        
+        Args:
+            upcs: List of UPC codes to search for (maximum 20 per request)
+            store_id: Optional store ID for store-specific pricing and availability
+            
+        Returns:
+            List of MeijerItem objects for found products
+            
+        Raises:
+            ValueError: If more than 20 UPCs are provided
+            
+        Example:
+            >>> upcs = ["1189600014", "1780016746", "1114110614"]
+            >>> products = client.search_multiple_products_by_upc(upcs, store_id="19")
+            >>> for product in products:
+            ...     print(f"{product.title}: ${product.price}")
+        """
+        return self.search.search_multiple_upcs(upcs, store_id)
+
+    def search_product_by_upc(
+        self, 
+        upc: str, 
+        store_id: Optional[str] = None
+    ) -> Optional[MeijerItem]:
+        """
+        Search for a single product by UPC code.
+        
+        This method provides a convenient way to search for individual products
+        by their UPC code, with optional store-specific pricing.
+        
+        Args:
+            upc: UPC code to search for
+            store_id: Optional store ID for store-specific pricing and availability
+            
+        Returns:
+            MeijerItem if found, None otherwise
+            
+        Example:
+            >>> product = client.search_product_by_upc("1189600014", store_id="19")
+            >>> if product:
+            ...     print(f"{product.title}: ${product.price}")
+            ... else:
+            ...     print("Product not found")
+        """
+        return self.search.search_by_barcode(upc)
+
     def get_shopping_list(self) -> List[ListItem]:
         """Get current shopping list items."""
         return self.shopping_list.get()

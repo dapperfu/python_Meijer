@@ -328,6 +328,253 @@ class Search:
             self.logger.error(f"Error searching by barcode {barcode}: {e}")
             return None
 
+    def search_multiple_upcs(
+        self, 
+        upcs: List[str], 
+        store_id: Optional[str] = None
+    ) -> List[MeijerItem]:
+        """
+        Search for multiple products by UPC codes using the multi-UPC endpoint.
+        
+        This method provides efficient bulk UPC lookup by making a single API call
+        instead of multiple individual searches.
+        
+        Args:
+            upcs: List of UPC codes to search for (max 20 per request)
+            store_id: Optional store ID for store-specific pricing and availability
+            
+        Returns:
+            List of MeijerItem objects for found products
+            
+        Raises:
+            ValueError: If more than 20 UPCs are provided
+            Exception: If the API request fails
+        """
+        if len(upcs) > 20:
+            raise ValueError("Maximum of 20 UPCs allowed per request")
+        
+        if not upcs:
+            return []
+        
+        try:
+            # Use the multi-UPC endpoint for efficient bulk lookup
+            url = f"{self.meijer.config.api_base}/digital/multi-upc/v1/upcs"
+            
+            # Prepare request payload
+            payload = {
+                "upcs": upcs
+            }
+            
+            # Add store ID if provided
+            if store_id:
+                payload["unitId"] = store_id
+            
+            # Set headers for the multi-UPC endpoint
+            headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json; charset=UTF-8",
+                "OCP-APIM-Subscription-Key": "a10bc58ac484478d9b3958b1742c3a03"
+            }
+            
+            self.logger.info(
+                f"Searching for {len(upcs)} UPCs using multi-UPC endpoint "
+                f"(store: {store_id or 'all'})"
+            )
+            
+            # Make the request
+            response = self.meijer._make_request(
+                "POST", 
+                url, 
+                json=payload,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return self._parse_multi_upc_response(data, upcs)
+            else:
+                self.logger.error(
+                    f"Multi-UPC search failed: {response.status_code} - {response.text}"
+                )
+                # Fallback to individual searches if multi-UPC fails
+                return self._fallback_multiple_upc_search(upcs, store_id)
+                
+        except Exception as e:
+            self.logger.error(f"Error during multi-UPC search: {e}")
+            # Fallback to individual searches
+            return self._fallback_multiple_upc_search(upcs, store_id)
+    
+    def _parse_multi_upc_response(
+        self, 
+        response_data: Dict[str, Any], 
+        requested_upcs: List[str]
+    ) -> List[MeijerItem]:
+        """
+        Parse the response from the multi-UPC endpoint.
+        
+        Args:
+            response_data: Raw response from the multi-UPC API
+            requested_upcs: Original list of UPCs that were requested
+            
+        Returns:
+            List of MeijerItem objects
+        """
+        try:
+            results = []
+            response_results = response_data.get("response", {}).get("results", [])
+            
+            # Create a mapping of UPC to result for efficient lookup
+            upc_to_result = {}
+            for result in response_results:
+                if "data" in result and "id" in result["data"]:
+                    upc = str(result["data"]["id"])
+                    upc_to_result[upc] = result
+            
+            # Process each requested UPC
+            for upc in requested_upcs:
+                if upc in upc_to_result:
+                    # Create MeijerItem from the result
+                    item = self._create_meijer_item_from_multi_upc(
+                        upc_to_result[upc], upc
+                    )
+                    if item:
+                        results.append(item)
+                else:
+                    # UPC not found in response
+                    self.logger.debug(f"UPC {upc} not found in multi-UPC response")
+            
+            self.logger.info(
+                f"Multi-UPC search returned {len(results)} products "
+                f"out of {len(requested_upcs)} requested UPCs"
+            )
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing multi-UPC response: {e}")
+            return []
+    
+    def _create_meijer_item_from_multi_upc(
+        self, 
+        result: Dict[str, Any], 
+        upc: str
+    ) -> Optional[MeijerItem]:
+        """
+        Create a MeijerItem from a multi-UPC response result.
+        
+        Args:
+            result: Individual result from multi-UPC response
+            upc: UPC code for the item
+            
+        Returns:
+            MeijerItem if successfully created, None otherwise
+        """
+        try:
+            data = result.get("data", {})
+            value = result.get("value", "")
+            
+            # Extract basic product information
+            item = MeijerItem(
+                id=data.get("id", upc),
+                title=value or f"Product {upc}",
+                upc=upc,
+                description=data.get("description"),
+                brand=data.get("brand"),
+                image_url=data.get("image_url"),
+                large_image_url=data.get("image_url"),  # Use same image for now
+                price=data.get("price"),
+                sale_price=data.get("discountSalePriceValue") if data.get("sale") else None,
+                unit_price=data.get("priceUnit"),
+                is_weighted=data.get("priceByWeight", False),
+                weight_unit=data.get("productUnit"),
+                is_available=data.get("stockLevelStatus") != "outOfStock",
+                store_id=data.get("unitId"),
+                raw_data=data
+            )
+            
+            # Set additional fields from the multi-UPC response
+            if hasattr(item, 'data_ean'):
+                item.data_ean = data.get("ean")
+            if hasattr(item, 'data_isbopas'):
+                item.data_isbopas = data.get("isBopas")
+            if hasattr(item, 'data_isbuyable'):
+                item.data_isbuyable = data.get("isBuyable")
+            if hasattr(item, 'data_isalcohol'):
+                item.data_isalcohol = data.get("isAlcohol")
+            if hasattr(item, 'data_hasmperks'):
+                item.data_hasmperks = data.get("hasMPerks")
+            if hasattr(item, 'data_specialbuy'):
+                item.data_specialbuy = data.get("specialBuy")
+            if hasattr(item, 'data_deactivated'):
+                item.data_deactivated = data.get("deactivated")
+            if hasattr(item, 'data_productunit'):
+                item.data_productunit = data.get("productUnit")
+            if hasattr(item, 'data_qtyincrement'):
+                item.data_qtyincrement = data.get("qtyIncrement")
+            if hasattr(item, 'data_chokinghazard'):
+                item.data_chokinghazard = data.get("chokingHazard")
+            if hasattr(item, 'data_ispurchasable'):
+                item.data_ispurchasable = data.get("isPurchasable")
+            if hasattr(item, 'data_pricebyweight'):
+                item.data_pricebyweight = data.get("priceByWeight")
+            if hasattr(item, 'data_mperksofferid'):
+                item.data_mperksofferid = data.get("MPerksOfferID")
+            if hasattr(item, 'data_isagerestricted'):
+                item.data_isagerestricted = data.get("isAgeRestricted")
+            if hasattr(item, 'data_ebtfoodstampable'):
+                item.data_ebtfoodstampable = data.get("ebtFoodstampable")
+            if hasattr(item, 'data_pickupavailableflag'):
+                item.data_pickupavailableflag = data.get("pickupAvailableFlag")
+            if hasattr(item, 'data_homedeliverynotavailable'):
+                item.data_homedeliverynotavailable = data.get("homeDeliveryNotAvailable")
+            if hasattr(item, 'data_requiresdiscreteinventorytracking'):
+                item.data_requiresdiscreteinventorytracking = data.get("requiresDiscreteInventoryTracking")
+            if hasattr(item, 'data_ismap'):
+                item.data_ismap = data.get("isMap")
+            
+            return item
+            
+        except Exception as e:
+            self.logger.error(f"Error creating MeijerItem from multi-UPC result: {e}")
+            return None
+    
+    def _fallback_multiple_upc_search(
+        self, 
+        upcs: List[str], 
+        store_id: Optional[str] = None
+    ) -> List[MeijerItem]:
+        """
+        Fallback method for multiple UPC search using individual searches.
+        
+        This is used when the multi-UPC endpoint fails or is unavailable.
+        
+        Args:
+            upcs: List of UPC codes to search for
+            store_id: Optional store ID for store-specific pricing
+            
+        Returns:
+            List of MeijerItem objects for found products
+        """
+        self.logger.info(
+            f"Falling back to individual UPC searches for {len(upcs)} UPCs"
+        )
+        
+        results = []
+        for upc in upcs:
+            try:
+                item = self.search_by_barcode(upc)
+                if item:
+                    results.append(item)
+            except Exception as e:
+                self.logger.error(f"Error searching for UPC {upc}: {e}")
+        
+        self.logger.info(
+            f"Fallback search completed: {len(results)} products found "
+            f"out of {len(upcs)} requested UPCs"
+        )
+        
+        return results
+
     def browse(
         self, collection_id: str, page: int = 1, results_per_page: int = 24, **kwargs
     ) -> SearchResult:
