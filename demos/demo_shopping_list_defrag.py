@@ -267,10 +267,10 @@ def main():
     try:
         # Initialize client
         print("🔐 Initializing Meijer client...")
-        client = Meijer(auth="auth.txt")
+        client = Meijer(auth="~/.config/meijer/auth.json")
 
         if not client.is_authenticated():
-            print("❌ Failed to authenticate. Please check your auth.txt file.")
+            print("❌ Failed to authenticate. Please check your ~/.config/meijer/auth.json file.")
             return
 
         print("✅ Successfully authenticated with Meijer!")

@@ -7,7 +7,7 @@ This demo shows basic search functionality:
 - Barcode lookup
 - Store search
 
-Assumes ~/.config/meijer.txt exists with valid authentication.
+Assumes ~/.config/meijer/auth.json exists with valid authentication.
 """
 
 from meijer import Meijer
@@ -17,12 +17,12 @@ def main():
     print("Search Demo")
     print("=" * 40)
 
-    # Initialize client (auto-loads from ~/.config/meijer.txt)
+    # Initialize client (auto-loads from ~/.config/meijer/auth.json)
     print("Initializing Meijer client...")
     m = Meijer()
 
     if not m.is_authenticated():
-        print("❌ Not authenticated. Please check ~/.config/meijer.txt")
+        print("❌ Not authenticated. Please check ~/.config/meijer/auth.json")
         return
 
     print("✅ Authenticated successfully!")

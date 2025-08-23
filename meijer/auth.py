@@ -527,7 +527,7 @@ def load_auth_from_config_file(
     Load authentication from cross-platform config directory.
 
     Args:
-        config_file_path: Optional path to config file, defaults to cross-platform auth.txt
+        config_file_path: Optional path to config file, defaults to cross-platform auth.json
 
     Returns:
         Tuple of (bearer_token, user_agent) if found, None otherwise
@@ -535,7 +535,7 @@ def load_auth_from_config_file(
     try:
         if config_file_path is None:
             # Use cross-platform config directory
-            config_file_path = Path(get_meijer_config_path("auth.txt"))
+            config_file_path = Path(get_meijer_config_path("auth.json"))
         else:
             config_file_path = Path(config_file_path)
 

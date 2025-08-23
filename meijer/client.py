@@ -149,9 +149,9 @@ class Meijer:
 
         Args:
             auth: Authentication method - can be:
-                - Path to auth.txt file with bearer=token or user=email&password=pass
+                - Path to auth.json file with bearer token or credentials
                 - Path to mitmproxy log file
-                - None to auto-detect from ~/.config/meijer.txt
+                - None to auto-detect from ~/.config/meijer/auth.json
             base_url: Base URL for API endpoints. If provided, will redirect all API calls
                      to this URL instead of the default Meijer domains.
                      Example: "http://127.0.0.1:5000" for local Flask server

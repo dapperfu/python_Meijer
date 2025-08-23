@@ -61,7 +61,7 @@ def test_defrag() -> None:
         if client.auth_status.name != "AUTHENTICATED":
             print("❌ Authentication failed!")
             print(
-                "   Please ensure you have auth.txt or ~/.config/meijer.txt configured"
+                "   Please ensure you have ~/.config/meijer/auth.json configured"
             )
             return
 

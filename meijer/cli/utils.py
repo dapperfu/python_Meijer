@@ -29,7 +29,7 @@ def get_meijer_client() -> Meijer:
     logger.debug("Initializing Meijer client")
 
     try:
-        # Use the new token storage system instead of local auth.txt files
+        # Use the new token storage system instead of local auth files
         logger.debug("Using token storage system for authentication")
         client = Meijer()
 

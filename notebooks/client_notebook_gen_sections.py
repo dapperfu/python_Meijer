@@ -53,8 +53,8 @@ except Exception as e:
 # Method 2: With auth file path
 try:
     # This would use an actual auth file if available
-    # client_auth = Meijer(auth="auth.txt")
-    print("📁 Auth file method (commented out - requires auth.txt)")
+    # client_auth = Meijer(auth="~/.config/meijer/auth.json")
+print("📁 Auth file method (commented out - requires ~/.config/meijer/auth.json)")
 except Exception as e:
     print(f"❌ Auth file method failed: {e}")
 

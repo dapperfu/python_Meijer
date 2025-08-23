@@ -245,24 +245,7 @@ def save_tokens(token_info: Dict[str, Any], output_file: str = None):
 
     print(f"   📄 JSON data also saved to {current_dir_file}")
 
-    # Also save the old auth.txt format for backward compatibility
-    old_auth_file = os.path.join(config_dir, "auth.txt")
-    if token_info.get("source") == "oauth2_token_exchange":
-        with open(old_auth_file, "w") as f:
-            json.dump(auth_data, f, indent=2)
-    else:
-        with open(old_auth_file, "w") as f:
-            f.write("# Bearer token extracted from request header\n")
-            f.write(f"# Timestamp: {token_info['timestamp']}\n")
-            f.write(f"# From URL: {token_info['url']}\n")
-            f.write(f"# Status: {token_info.get('status_code', 'Unknown')}\n")
-            f.write(f"bearer_token={token_info['bearer_token']}\n")
-            f.write(f"user_agent={token_info.get('user_agent', '')}\n")
-            f.write(
-                "# Note: No refresh token available - tokens cannot be refreshed automatically\n"
-            )
-
-    print(f"   📄 Legacy format also saved to {old_auth_file}")
+    # Note: Only JSON format is supported now - no plain text backup files
 
 
 def main():

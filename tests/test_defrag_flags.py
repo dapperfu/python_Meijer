@@ -47,19 +47,19 @@ def test_defrag_flags() -> None:
         # Initialize client (you'll need to provide auth)
         print("1. 🔐 Initializing Meijer client...")
         try:
-            client = Meijer(auth="auth.txt")
+            client = Meijer(auth="~/.config/meijer/auth.json")
             print(f"   Authentication status: {client.is_authenticated()}")
 
             if not client.is_authenticated():
                 print("   ❌ Failed to authenticate")
-                print("   💡 Make sure you have a valid auth.txt file")
+                print("   💡 Make sure you have a valid ~/.config/meijer/auth.json file")
                 return
 
             print("   ✅ Successfully authenticated!")
 
         except FileNotFoundError:
-            print("   ❌ auth.txt file not found")
-            print("   💡 Please create an auth.txt file with your credentials")
+            print("   ❌ ~/.config/meijer/auth.json file not found")
+print("   💡 Please create ~/.config/meijer/auth.json file with your credentials")
             return
         except Exception as e:
             print(f"   ❌ Authentication error: {e}")
@@ -362,7 +362,7 @@ def create_defrag_flags_notebook() -> Dict[str, Any]:
                     "    from meijer import Meijer\n",
                     "    \n",
                     "    # Initialize with auth file\n",
-                    "    client = Meijer(auth='auth.txt')\n",
+                    "    client = Meijer(auth='~/.config/meijer/auth.json')\n",
                     "    \n",
                     "    # Check authentication status\n",
                     "    if client.is_authenticated():\n",
@@ -370,14 +370,14 @@ def create_defrag_flags_notebook() -> Dict[str, Any]:
                     '        print(f"🔐 Authentication status: {client.is_authenticated()}")\n',
                     "    else:\n",
                     '        print("❌ Authentication failed")\n',
-                    '        print("💡 Make sure you have a valid auth.txt file")\n',
+                    '        print("💡 Make sure you have a valid ~/.config/meijer/auth.json file")\n',
                     "        \n",
                     "except ImportError:\n",
                     '    print("❌ Meijer package not found")\n',
                     '    print("💡 Install with: pip install meijer")\n',
                     "except FileNotFoundError:\n",
-                    '    print("❌ auth.txt file not found")\n',
-                    '    print("💡 Please create an auth.txt file with your credentials")\n',
+                    '    print("❌ ~/.config/meijer/auth.json file not found")\n',
+'    print("💡 Please create ~/.config/meijer/auth.json file with your credentials")\n',
                     "except Exception as e:\n",
                     '    print(f"❌ Error initializing client: {e}")',
                 ],

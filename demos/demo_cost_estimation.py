@@ -304,7 +304,7 @@ def main() -> None:
 
         if client.auth_status.name != "AUTHENTICATED":
             print("❌ Authentication failed! Please check your credentials.")
-            print("   Ensure you have auth.txt or ~/.config/meijer.txt configured")
+            print("   Ensure you have ~/.config/meijer/auth.json configured")
             return
 
         print("✅ Authentication successful!")

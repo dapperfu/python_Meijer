@@ -13,7 +13,7 @@ def main():
     try:
         # Initialize client with auth
         print("1. 🔐 Initializing Meijer client...")
-        client = Meijer(auth="auth.txt")
+        client = Meijer(auth="~/.config/meijer/auth.json")
         print(f"   Authentication status: {client.is_authenticated()}")
 
         if not client.is_authenticated():

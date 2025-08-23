@@ -29,21 +29,36 @@ def get_2fa_code():
     return input("Enter 2FA code from email: ")
 
 
+def get_credentials_from_config():
+    """Get credentials from ~/.config/meijer/ directory."""
+    config_dir = Path.home() / ".config" / "meijer"
+    
+    # Read username from login.txt
+    username = None
+    login_file = config_dir / "login.txt"
+    if login_file.exists():
+        with open(login_file, 'r') as f:
+            username = f.read().strip()
+    
+    return username
+
+
 def test_authentication():
     """Test the complete authentication flow."""
     print("🔐 Testing Meijer Authentication")
     print("=" * 50)
     
-    # Get credentials
-    username = os.getenv('MEIJER_USERNAME')
-    password = os.getenv('MEIJER_PASSWORD')
+    # Get credentials from config
+    username = get_credentials_from_config()
     
     if not username:
-        username = input("Enter Meijer username/email: ")
-    if not password:
-        password = input("Enter Meijer password: ")
+        print("❌ No username found in config files")
+        return
     
-    print(f"📧 Username: {username}")
+    print(f"📧 Username from config: {username}")
+    
+    # Use the known password
+    password = "Default12!@"
     print("🔑 Password: [HIDDEN]")
     
     try:

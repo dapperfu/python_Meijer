@@ -4,7 +4,7 @@ This folder contains simple, focused demos for the Meijer API client.
 
 ## Prerequisites
 
-1. **Authentication**: Create `~/.config/meijer.txt` with your Meijer credentials:
+1. **Authentication**: Create `~/.config/meijer/auth.json` with your Meijer credentials:
    ```json
    {
      "access_token": "your_bearer_token_here",
@@ -64,7 +64,7 @@ Demonstrates search capabilities:
 
 ## Running Demos
 
-All demos assume `~/.config/meijer.txt` exists and contains valid authentication. The `Meijer()` constructor will automatically load from this file.
+All demos assume `~/.config/meijer/auth.json` exists and contains valid authentication. The `Meijer()` constructor will automatically load from this file.
 
 ```bash
 # From the demos directory
@@ -90,6 +90,6 @@ python demo_search.py
 
 ## Troubleshooting
 
-- **Authentication errors**: Check that `~/.config/meijer.txt` exists and contains valid tokens
+- **Authentication errors**: Check that `~/.config/meijer/auth.json` exists and contains valid tokens
 - **Import errors**: Ensure the `meijer` package is properly installed
 - **API errors**: Some endpoints may require specific permissions or may be rate-limited

@@ -516,11 +516,21 @@ class OktaSeleniumAuth:
             # Direct access to username field
             username_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='identifier']")
             print("✅ Username field found and ready")
+            
+            # Debug: show field details
+            print(f"🔍 Username field details:")
+            print(f"   ID: {username_field.get_attribute('id')}")
+            print(f"   Name: {username_field.get_attribute('name')}")
+            print(f"   Type: {username_field.get_attribute('type')}")
+            print(f"   Class: {username_field.get_attribute('class')}")
+            print(f"   Value before: '{username_field.get_attribute('value')}'")
 
             # Fill username
             print("🔑 Entering username...")
             username_field.clear()
+            print(f"   Field cleared, current value: '{username_field.get_attribute('value')}'")
             username_field.send_keys(self.username)
+            print(f"   Field after send_keys, current value: '{username_field.get_attribute('value')}'")
             print(f"👤 Username entered: {self.username}")
 
             # Add much longer delay to avoid triggering rate limiting
@@ -537,14 +547,16 @@ class OktaSeleniumAuth:
             # STEP 2: Click Next button to go to password page
             print("📡 Step 2: Clicking Next button...")
             
-            # Direct access to Next button - usually the first submit button or button with "Next" text
+            # Use the exact button selector from the user's form
             try:
-                # Try common Next button selectors
-                next_button = self.driver.find_element(By.CSS_SELECTOR, "button:contains('Next')")
+                # Primary selector: button with data-se="save" and text "Next"
+                next_button = self.driver.find_element(By.CSS_SELECTOR, "button[data-se='save']")
+                print("✅ Next button found using data-se='save' selector")
             except:
                 try:
-                    # Fallback to submit button
-                    next_button = self.driver.find_element(By.CSS_SELECTOR, "input[type='submit'], button[type='submit']")
+                    # Fallback: button with type="submit" and text "Next"
+                    next_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                    print("✅ Next button found using type='submit' selector")
                 except:
                     # Last resort: find any button that might be the Next button
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")

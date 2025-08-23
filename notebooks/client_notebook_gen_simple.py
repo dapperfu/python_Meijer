@@ -76,8 +76,8 @@ print("  - Account management")""")
 
 The `Meijer` client can be initialized with different authentication methods:
 
-- **None**: Auto-detect from `~/.config/meijer.txt`
-- **Auth file path**: Path to auth.txt file with bearer token or credentials
+- **None**: Auto-detect from `~/.config/meijer/auth.json`
+- **Auth file path**: Path to ~/.config/meijer/auth.json file with bearer token or credentials
 - **Log file path**: Path to mitmproxy log file for token extraction
 
 ### Basic Initialization
@@ -99,7 +99,7 @@ except Exception as e:
 # Method 2: With auth file path
 try:
     # This would use an actual auth file if available
-    client_auth = Meijer(auth="auth.txt")
+    client_auth = Meijer(auth="~/.config/meijer/auth.json")
     print("Auth file client created")
     print(f"  Authentication Status: {client_auth.auth_status}")
 except Exception as e:

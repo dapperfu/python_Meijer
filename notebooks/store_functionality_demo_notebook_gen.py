@@ -49,7 +49,7 @@ This notebook demonstrates the complete store functionality of the Meijer Python
 - **Store Operations**: Distance calculations, service summaries, and utilities
 
 ## Prerequisites
-- Valid Meijer authentication (auth.txt or ~/.config/meijer.txt)
+- Valid Meijer authentication (~/.config/meijer/auth.json)
 - Meijer package installed (`pip install -e .`)
 - All required dependencies installed
 
@@ -83,7 +83,7 @@ if client.auth_status.name == "AUTHENTICATED":
     print("[OK] Successfully authenticated!")
 else:
     print("[X] Authentication failed. Please check your credentials.")
-    print("   Ensure you have auth.txt or ~/.config/meijer.txt configured")""")
+    print("   Ensure you have ~/.config/meijer/auth.json configured")""")
     )
 
     # Store Search Demo

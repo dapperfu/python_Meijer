@@ -53,6 +53,8 @@ class MeijerHeadlessLogin:
         self.auth_code = None
         self.access_token = None
         self.id_token = None
+        self.state_token = None  # Add missing attribute
+        self.device_nonce = None  # Add missing attribute
         
         # Headers based on successful flow
         self.default_headers = {
@@ -424,22 +426,33 @@ class MeijerHeadlessLogin:
 
 def main():
     """Main function to demonstrate the headless login workflow."""
-    import argparse
+    # Read credentials directly from login.txt file
+    login_file = "/keg/cursor/.config/meijer/login.txt"
     
-    parser = argparse.ArgumentParser(description="Meijer Headless Login Workflow")
-    parser.add_argument("--username", required=True, help="Meijer username/email")
-    parser.add_argument("--password", required=True, help="Meijer password")
-    parser.add_argument("--proxy-host", help="Proxy host (e.g., 127.0.0.1)")
-    parser.add_argument("--proxy-port", type=int, help="Proxy port (e.g., 8080)")
+    try:
+        with open(login_file, 'r') as f:
+            lines = f.readlines()
+            if len(lines) >= 2:
+                username = lines[0].strip()
+                password = lines[1].strip()
+            else:
+                print("❌ login.txt must contain username and password on separate lines")
+                return
+    except Exception as e:
+        print(f"❌ Error reading {login_file}: {e}")
+        return
     
-    args = parser.parse_args()
+    print(f"🔐 Using credentials from {login_file}")
+    print(f"👤 Username: {username}")
+    print(f"🔑 Password: {'*' * len(password)}")
+    print()
     
-    # Create login instance
+    # Create login instance with proxy support
     login = MeijerHeadlessLogin(
-        username=args.username,
-        password=args.password,
-        proxy_host=args.proxy_host,
-        proxy_port=args.proxy_port
+        username=username,
+        password=password,
+        proxy_host="127.0.0.1",
+        proxy_port=8080
     )
     
     # Execute workflow

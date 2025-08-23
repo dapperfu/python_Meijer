@@ -16,15 +16,15 @@ def test_auth_file():
         meijer = Meijer()
 
         # Test reading auth file
-        print("Reading authentication from auth.txt...")
-        auth_data = meijer._read_auth_file("auth.txt")
+        print("Reading authentication from auth.json...")
+auth_data = meijer._read_auth_file("~/.config/meijer/auth.json")
 
         print(f"Username: {auth_data['username']}")
         print(f"Password: {'*' * len(auth_data['password'])} (hidden)")
 
         # Test login with auth file
         print("\nAttempting login with auth file...")
-        if meijer.login():  # Uses default auth.txt
+        if meijer.login():  # Uses default auth.json
             print("✅ Login successful!")
 
             # Get user info

@@ -25,10 +25,10 @@ def test_authentication_methods():
 
     print("\n📋 Available Authentication Methods:")
     print(
-        "1. Username/Password (Selenium) - auth.txt with user=/pass= or username=/password="
+        "1. Username/Password (Selenium) - auth.json with user/pass or username/password fields"
     )
-    print("2. Bearer token - auth.txt or bearer_auth.txt with bearer= or bearer_token=")
-    print("3. Config file - ~/.config/meijer.txt with bearer=")
+    print("2. Bearer token - auth.json with bearer or bearer_token field")
+    print("3. Config file - ~/.config/meijer/auth.json with bearer field")
     print("4. Mitmproxy log - extract latest bearer token from log files")
     print("5. Persistent tokens - automatic restore from previous login")
     print("6. Interactive OAuth - manual browser authentication (fallback)")
@@ -39,7 +39,7 @@ def test_authentication_methods():
     print("\n" + "1️⃣ TESTING USERNAME/PASSWORD AUTHENTICATION")
     print("-" * 50)
 
-    auth_files = ["auth.txt", "bearer_auth.txt"]
+    auth_files = ["~/.config/meijer/auth.json"]
     credentials_found = False
 
     for auth_file in auth_files:
@@ -60,7 +60,7 @@ def test_authentication_methods():
 
     if not credentials_found:
         print("⚠️ No username/password credentials found")
-        print("💡 Create auth.txt with:")
+        print("💡 Create ~/.config/meijer/auth.json with:")
         print("   user=your_email@example.com")
         print("   pass=your_password")
 
@@ -78,7 +78,7 @@ def test_authentication_methods():
         print(f"   User Agent: {user_agent[:50]}...")
     else:
         print(f"❌ No bearer token found in {meijer.bearer_auth_file}")
-        print("💡 Create bearer_auth.txt with:")
+        print("💡 Create ~/.config/meijer/auth.json with:")
         print("   bearer=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIs...")
         print("   user_agent=Meijer/101200000 okhttp/4.12.0...")
 
@@ -90,12 +90,12 @@ def test_authentication_methods():
 
     if config_auth:
         bearer_token, user_agent = config_auth
-        print("✅ Found bearer token in ~/.config/meijer.txt")
+        print("✅ Found bearer token in ~/.config/meijer/auth.json")
         print(f"   Token: {bearer_token[:20]}...")
         print(f"   User Agent: {user_agent[:50]}...")
     else:
-        print("❌ No bearer token found in ~/.config/meijer.txt")
-        print("💡 Create ~/.config/meijer.txt with:")
+        print("❌ No bearer token found in ~/.config/meijer/auth.json")
+print("💡 Create ~/.config/meijer/auth.json with:")
         print("   bearer=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIs...")
         print("   user_agent=Meijer/101200000 okhttp/4.12.0...")
 
@@ -210,7 +210,7 @@ def create_example_auth_files():
     print("\n📝 CREATING EXAMPLE AUTHENTICATION FILES")
     print("-" * 50)
 
-    # Example auth.txt with credentials
+    # Example auth.json with credentials
     example_auth = """# Meijer Authentication File
 # Method 1: Username/Password (Selenium)
 user=your_email@example.com
@@ -221,7 +221,7 @@ bearer=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6...
 user_agent=Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)
 """
 
-    print("📄 Example auth.txt:")
+    print("📄 Example auth.json:")
     print(example_auth)
 
     # Example config file
@@ -231,7 +231,7 @@ bearer=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6...
 user_agent=Meijer/101200000 okhttp/4.12.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)
 """
 
-    print("📄 Example ~/.config/meijer.txt:")
+    print("📄 Example ~/.config/meijer/auth.json:")
     print(example_config)
 
     print("💡 To use these examples:")
