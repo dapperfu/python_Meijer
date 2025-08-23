@@ -438,11 +438,51 @@ class OktaSeleniumAuth:
             print(f"📥 Page loaded: {self.driver.title}")
             print(f"📄 Current URL: {self.driver.current_url}")
 
+            # Add much longer session warming delay to avoid rate limiting
+            base_delay = 10  # Increased to 10 seconds
+            jitter = random.uniform(2.0, 5.0)  # Increased jitter
+            total_delay = base_delay + jitter
+            print(f"⏸️ Adding {total_delay:.1f} second session warming delay to avoid rate limiting...")
+            time.sleep(total_delay)
+            
+            # Perform session warming by making benign requests
+            print("🔥 Warming up session with benign requests...")
+            self._warm_up_session()
+
             return True
 
         except Exception as e:
             print(f"❌ Error loading OAuth2 page: {e}")
             return False
+
+    def _warm_up_session(self) -> None:
+        """Perform session warming by making benign requests to avoid rate limiting."""
+        try:
+            print("🔥 Warming up session to avoid rate limiting...")
+            
+            # Make multiple benign requests to warm up the session
+            try:
+                print("🔥 Making benign request to main page...")
+                self.driver.execute_script("window.open('https://www.meijer.com', '_blank');")
+                time.sleep(2)
+                self.driver.switch_to.window(self.driver.window_handles[0])  # Switch back to main window
+                
+                print("🔥 Making benign request to store locator...")
+                self.driver.execute_script("window.open('https://www.meijer.com/store-locator', '_blank');")
+                time.sleep(2)
+                self.driver.switch_to.window(self.driver.window_handles[0])  # Switch back to main window
+                
+                print("🔥 Making benign request to weekly ad...")
+                self.driver.execute_script("window.open('https://www.meijer.com/weekly-ad', '_blank');")
+                time.sleep(2)
+                self.driver.switch_to.window(self.driver.window_handles[0])  # Switch back to main window
+                
+                print("✅ Session warming completed with multiple pages")
+            except Exception as e:
+                print(f"⚠️ Session warming failed: {e}")
+                
+        except Exception as e:
+            print(f"⚠️ Error during session warming: {e}")
 
     def _submit_credentials(self) -> bool:
         """Submit username and password through the two-step login form."""
@@ -482,6 +522,13 @@ class OktaSeleniumAuth:
             username_field.clear()
             username_field.send_keys(self.username)
             print(f"👤 Username entered: {self.username}")
+
+            # Add much longer delay to avoid triggering rate limiting
+            base_delay = 8  # Increased to 8 seconds
+            jitter = random.uniform(2.0, 4.0)  # Increased jitter
+            total_delay = base_delay + jitter
+            print(f"⏸️ Adding {total_delay:.1f} second delay to avoid rate limiting...")
+            time.sleep(total_delay)
 
             # For debugging: pause to see username entered
             if not self.headless:
@@ -545,10 +592,16 @@ class OktaSeleniumAuth:
 
             # For debugging: wait to see the transition
             if not self.headless:
-                print("⏸️ Waiting 1 second to see transition to password page...")
-                time.sleep(1)
+                base_delay = 8  # Increased to 8 seconds
+                jitter = random.uniform(2.0, 4.0)  # Increased jitter
+                total_delay = base_delay + jitter
+                print(f"⏸️ Waiting {total_delay:.1f} seconds to see transition to password page and avoid rate limiting...")
+                time.sleep(total_delay)
             else:
-                time.sleep(0.5)
+                base_delay = 6  # Increased to 6 seconds
+                jitter = random.uniform(1.5, 3.0)  # Increased jitter
+                total_delay = base_delay + jitter
+                time.sleep(total_delay)
 
             print(f"📄 After Next click - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")

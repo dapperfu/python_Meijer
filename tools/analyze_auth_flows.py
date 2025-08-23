@@ -10,6 +10,7 @@ import json
 import re
 from typing import Any, Dict, List
 from datetime import datetime
+import os
 
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow
@@ -26,386 +27,341 @@ def load_flows(log_file: str) -> List[HTTPFlow]:
     return flows
 
 
-def find_auth_flows(flows: List[HTTPFlow]) -> List[Dict[str, Any]]:
-    """Find authentication-related flows focusing on OKTA endpoints."""
+def find_authentication_flows(flows):
+    """Find authentication flows in the mitmproxy flows."""
     auth_flows = []
-
-    for flow in flows:
+    
+    for i, flow in enumerate(flows):
         if not flow.request or not flow.response:
             continue
-
-        # Focus on OKTA and Meijer authentication endpoints
-        path = flow.request.path.lower()
-        host = flow.request.pretty_host.lower()
-
-        # Check if this is a relevant domain
-        if not any(domain in host for domain in ["id.meijer.com", "www.meijer.com", "okta.com", "meijer.okta.com"]):
-            continue
-
-        # Look for auth-related paths
-        if any(
-            keyword in path
-            for keyword in [
-                "oauth2",
-                "login",
-                "auth",
-                "signin",
-                "challenge",
-                "idx",
-                "logout",
-                "fingerprint",
-                "device",
-                "token",
-                "refresh",
-                "authorize",
-                "callback",
-                "session",
-                "profile",
-                "userinfo",
-                "introspect"
-            ]
-        ):
-            flow_data = {
-                "timestamp": flow.timestamp_start,
-                "url": flow.request.pretty_url,
-                "method": flow.request.method,
-                "host": flow.request.pretty_host,
-                "path": flow.request.path,
-                "status_code": flow.response.status_code,
-                "request_headers": dict(flow.request.headers)
-                if flow.request.headers
-                else {},
-                "response_headers": dict(flow.response.headers)
-                if flow.response.headers
-                else {},
-                "request_body": None,
-                "response_body": None,
-                "cookies": {},
-                "set_cookies": [],
-            }
-
-            # Extract cookies from request
-            if flow.request.headers:
-                cookie_header = flow.request.headers.get("cookie", "")
-                if cookie_header:
-                    # Parse cookies
-                    cookies = {}
-                    for cookie in cookie_header.split("; "):
-                        if "=" in cookie:
-                            name, value = cookie.split("=", 1)
-                            cookies[name] = value
-                    flow_data["cookies"] = cookies
-
-            # Extract Set-Cookie headers from response
-            if flow.response.headers:
-                set_cookies = []
-                for header_name, header_value in flow.response.headers.items():
-                    if header_name.lower() == "set-cookie":
-                        set_cookies.append(header_value)
-                flow_data["set_cookies"] = set_cookies
-
-            # Extract request body
-            if flow.request.content:
-                try:
-                    content_type = flow.request.headers.get("content-type", "")
-                    if "application/json" in content_type:
-                        flow_data["request_body"] = json.loads(
-                            flow.request.content.decode("utf-8", errors="ignore")
-                        )
-                    else:
-                        flow_data["request_body"] = flow.request.content.decode(
-                            "utf-8", errors="ignore"
-                        )
-                except:
-                    flow_data["request_body"] = flow.request.content.decode(
-                        "utf-8", errors="ignore"
-                    )
-
-            # Extract response body
-            if flow.response.content:
-                try:
-                    content_type = flow.response.headers.get("content-type", "")
-                    if "application/json" in content_type:
-                        flow_data["response_body"] = json.loads(
-                            flow.response.content.decode("utf-8", errors="ignore")
-                        )
-                    else:
-                        flow_data["response_body"] = flow.response.content.decode(
-                            "utf-8", errors="ignore"
-                        )
-                except:
-                    flow_data["response_body"] = flow.response.content.decode(
-                        "utf-8", errors="ignore"
-                    )
-
-            auth_flows.append(flow_data)
-
+            
+        # Look for the specific successful login events mentioned by user
+        if (flow.request.pretty_host == 'id.meijer.com' and 
+            flow.request.path.startswith('/oauth2/default/v1/authorize') and
+            'login_hint' in flow.request.pretty_url and
+            flow.response.status_code == 200):
+            
+            print(f"🎯 Found successful login authorize event at flow {i}")
+            auth_flows.append({
+                'type': 'login_authorize',
+                'flow_index': i,
+                'flow': flow
+            })
+        
+        # Look for logout events
+        elif (flow.request.pretty_host == 'id.meijer.com' and 
+              flow.request.path == '/oauth2/default/v1/logout' and
+              flow.response.status_code == 200):
+            
+            print(f"🎯 Found successful logout event at flow {i}")
+            auth_flows.append({
+                'type': 'logout',
+                'flow_index': i,
+                'flow': flow
+            })
+        
+        # Look for device nonce requests
+        elif (flow.request.pretty_host == 'id.meijer.com' and 
+              flow.request.path == '/api/v1/internal/device/nonce' and
+              flow.request.method == 'POST' and
+              flow.response.status_code == 200):
+            
+            print(f"🎯 Found device nonce request at flow {i}")
+            auth_flows.append({
+                'type': 'device_nonce',
+                'flow_index': i,
+                'flow': flow
+            })
+        
+        # Look for challenge answer (password submission)
+        elif (flow.request.pretty_host == 'id.meijer.com' and 
+              flow.request.path == '/idp/idx/challenge/answer' and
+              flow.request.method == 'POST' and
+              flow.response.status_code == 200):
+            
+            print(f"🎯 Found challenge answer (password) at flow {i}")
+            auth_flows.append({
+                'type': 'challenge_answer',
+                'flow_index': i,
+                'flow': flow
+            })
+        
+        # Look for OAuth keys request
+        elif (flow.request.pretty_host == 'id.meijer.com' and 
+              flow.request.path.startswith('/oauth2/default/v1/keys') and
+              flow.response.status_code == 200):
+            
+            print(f"🎯 Found OAuth keys request at flow {i}")
+            auth_flows.append({
+                'type': 'oauth_keys',
+                'flow_index': i,
+                'flow': flow
+            })
+        
+        # Look for token exchange
+        elif (flow.request.pretty_host == 'id.meijer.com' and 
+              flow.request.path == '/oauth2/default/v1/token' and
+              flow.request.method == 'POST' and
+              flow.response.status_code == 200):
+            
+            print(f"🎯 Found token exchange at flow {i}")
+            auth_flows.append({
+                'type': 'token_exchange',
+                'flow_index': i,
+                'flow': flow
+            })
+        
+        # Also look for the traditional web login flows
+        elif (flow.request.pretty_host == 'id.meijer.com' and 
+              flow.request.path.startswith('/oauth2/default/v1/authorize') and
+              'response_type=code' in flow.request.pretty_url and
+              'client_id=0oa22cbewuCICOsKz697' in flow.request.pretty_url and
+              flow.response.status_code == 200):
+            
+            print(f"🎯 Found traditional web login authorize event at flow {i}")
+            auth_flows.append({
+                'type': 'web_login_authorize',
+                'flow_index': i,
+                'flow': flow
+            })
+        
+        elif (flow.request.pretty_host == 'id.meijer.com' and 
+              flow.request.path == '/idp/idx/identify' and
+              flow.request.method == 'POST' and
+              flow.response.status_code == 200):
+            
+            print(f"🎯 Found successful web login identify event at flow {i}")
+            auth_flows.append({
+                'type': 'web_login_identify',
+                'flow_index': i,
+                'flow': flow
+            })
+    
     return auth_flows
 
 
-def analyze_auth_patterns(auth_flows: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Analyze authentication flow patterns."""
+def analyze_auth_patterns(auth_flows):
+    """Analyze patterns in authentication flows."""
     analysis = {
-        "total_auth_flows": len(auth_flows),
+        "total_flows": len(auth_flows),
         "endpoints": {},
-        "cookie_progression": {},
-        "flow_sequences": [],
-        "key_findings": [],
-        "device_fingerprinting": [],
-        "token_acquisition": [],
-        "oauth2_flow": [],
-        "authentication_steps": []
+        "cookies": {},
+        "headers": {},
+        "timing": {}
     }
-
-    # Group flows by endpoint
-    for flow in auth_flows:
-        endpoint = flow["path"]
+    
+    for flow_data in auth_flows:
+        flow = flow_data["flow"]
+        
+        if not flow.request or not flow.response:
+            continue
+            
+        # Extract endpoint information
+        endpoint = flow.request.path
         if endpoint not in analysis["endpoints"]:
             analysis["endpoints"][endpoint] = {
                 "count": 0,
                 "methods": set(),
                 "status_codes": set(),
-                "flows": [],
+                "response_sizes": []
             }
-
+        
         analysis["endpoints"][endpoint]["count"] += 1
-        analysis["endpoints"][endpoint]["methods"].add(flow["method"])
-        analysis["endpoints"][endpoint]["status_codes"].add(flow["status_code"])
-        analysis["endpoints"][endpoint]["flows"].append(flow)
-
+        analysis["endpoints"][endpoint]["methods"].add(flow.request.method)
+        analysis["endpoints"][endpoint]["status_codes"].add(flow.response.status_code)
+        if flow.response.content:
+            analysis["endpoints"][endpoint]["response_sizes"].append(len(flow.response.content))
+        
+        # Extract cookie information
+        if flow.request.headers.get("cookie"):
+            cookies = flow.request.headers["cookie"]
+            if cookies not in analysis["cookies"]:
+                analysis["cookies"][cookies] = 0
+            analysis["cookies"][cookies] += 1
+        
+        # Extract header patterns
+        for header_name, header_value in flow.request.headers.items():
+            if header_name not in analysis["headers"]:
+                analysis["headers"][header_name] = {}
+            if header_value not in analysis["headers"][header_name]:
+                analysis["headers"][header_name][header_value] = 0
+            analysis["headers"][header_name][header_value] += 1
+        
+        # Extract timing information
+        if hasattr(flow, 'timestamp_start') and hasattr(flow, 'timestamp_end'):
+            duration = flow.timestamp_end - flow.timestamp_start
+            if "request_duration" not in analysis["timing"]:
+                analysis["timing"]["request_duration"] = []
+            analysis["timing"]["request_duration"].append(duration)
+    
     # Convert sets to lists for JSON serialization
     for endpoint_data in analysis["endpoints"].values():
         endpoint_data["methods"] = list(endpoint_data["methods"])
         endpoint_data["status_codes"] = list(endpoint_data["status_codes"])
-
-    # Analyze cookie progression
-    cookie_names = set()
-    for flow in auth_flows:
-        cookie_names.update(flow["cookies"].keys())
-        for set_cookie in flow["set_cookies"]:
-            # Extract cookie name from Set-Cookie header
-            if "=" in set_cookie:
-                cookie_name = set_cookie.split("=")[0]
-                cookie_names.add(cookie_name)
-
-    analysis["cookie_progression"]["all_cookies"] = list(cookie_names)
-
-    # Look for specific authentication patterns
-    oauth2_flows = [f for f in auth_flows if "oauth2" in f["path"]]
-    login_flows = [f for f in auth_flows if "login" in f["path"]]
-    logout_flows = [f for f in auth_flows if "logout" in f["path"]]
-    fingerprint_flows = [f for f in auth_flows if "fingerprint" in f["path"] or "device" in f["path"]]
-    token_flows = [f for f in auth_flows if "token" in f["path"]]
-    authorize_flows = [f for f in auth_flows if "authorize" in f["path"]]
-    callback_flows = [f for f in auth_flows if "callback" in f["path"]]
-
-    analysis["key_findings"].extend(
-        [
-            f"Found {len(oauth2_flows)} OAuth2 flows",
-            f"Found {len(login_flows)} login flows",
-            f"Found {len(logout_flows)} logout flows",
-            f"Found {len(fingerprint_flows)} device fingerprinting flows",
-            f"Found {len(token_flows)} token flows",
-            f"Found {len(authorize_flows)} authorize flows",
-            f"Found {len(callback_flows)} callback flows",
-        ]
-    )
-
-    # Look for authorization codes
-    auth_codes = []
-    for flow in auth_flows:
-        if flow["response_body"] and isinstance(flow["response_body"], str):
-            # Look for authorization codes in response
-            code_matches = re.findall(r"code=([^&\s]+)", flow["response_body"])
-            auth_codes.extend(code_matches)
-
-    if auth_codes:
-        analysis["key_findings"].append(f"Found {len(auth_codes)} authorization codes")
-
-    # Look for state tokens
-    state_tokens = []
-    for flow in auth_flows:
-        if flow["response_body"] and isinstance(flow["response_body"], str):
-            # Look for state tokens
-            state_matches = re.findall(
-                r'stateToken["\']?\s*:\s*["\']([^"\']+)["\']', flow["response_body"]
-            )
-            state_tokens.extend(state_matches)
-
-    if state_tokens:
-        analysis["key_findings"].append(f"Found {len(state_tokens)} state tokens")
-
-    # Look for access tokens and refresh tokens
-    access_tokens = []
-    refresh_tokens = []
-    for flow in auth_flows:
-        if flow["response_body"] and isinstance(flow["response_body"], dict):
-            response = flow["response_body"]
-            if "access_token" in response:
-                access_tokens.append(response["access_token"])
-            if "refresh_token" in response:
-                refresh_tokens.append(response["refresh_token"])
-        elif flow["response_body"] and isinstance(flow["response_body"], str):
-            # Look for tokens in string responses
-            access_matches = re.findall(r'"access_token"\s*:\s*"([^"]+)"', flow["response_body"])
-            refresh_matches = re.findall(r'"refresh_token"\s*:\s*"([^"]+)"', flow["response_body"])
-            access_tokens.extend(access_matches)
-            refresh_tokens.extend(refresh_matches)
-
-    if access_tokens:
-        analysis["key_findings"].append(f"Found {len(access_tokens)} access tokens")
-    if refresh_tokens:
-        analysis["key_findings"].append(f"Found {len(refresh_tokens)} refresh tokens")
-
-    # Analyze the complete workflow sequence
-    sorted_flows = sorted(auth_flows, key=lambda x: x["timestamp"])
     
-    # Look for device fingerprinting
-    for flow in sorted_flows:
-        if any(keyword in flow["path"].lower() for keyword in ["fingerprint", "device", "browser", "platform"]):
-            analysis["device_fingerprinting"].append({
-                "timestamp": flow["timestamp"],
-                "url": flow["url"],
-                "method": flow["method"],
-                "request_body": flow["request_body"],
-                "response_body": flow["response_body"]
-            })
-    
-    # Look for token acquisition
-    for flow in sorted_flows:
-        if any(keyword in flow["path"].lower() for keyword in ["token", "authorize", "callback"]):
-            analysis["token_acquisition"].append({
-                "timestamp": flow["timestamp"],
-                "url": flow["url"],
-                "method": flow["method"],
-                "request_body": flow["request_body"],
-                "response_body": flow["response_body"]
-            })
-    
-    # Look for OAuth2 flow
-    for flow in sorted_flows:
-        if "oauth2" in flow["path"].lower():
-            analysis["oauth2_flow"].append({
-                "timestamp": flow["timestamp"],
-                "url": flow["url"],
-                "method": flow["method"],
-                "request_body": flow["request_body"],
-                "response_body": flow["response_body"]
-            })
-
     return analysis
+
+
+def flow_to_dict(flow):
+    """Convert HTTPFlow object to a serializable dictionary."""
+    flow_dict = {
+        "timestamp": getattr(flow, 'timestamp_start', None),
+        "url": flow.request.pretty_url if flow.request else None,
+        "method": flow.request.method if flow.request else None,
+        "host": flow.request.pretty_host if flow.request else None,
+        "path": flow.request.path if flow.request else None,
+        "status_code": flow.response.status_code if flow.response else None,
+        "request_headers": dict(flow.request.headers) if flow.request else {},
+        "response_headers": dict(flow.response.headers) if flow.response else {},
+        "request_body": flow.request.content.decode('utf-8', errors='ignore') if flow.request and flow.request.content else None,
+        "response_body": flow.response.content.decode('utf-8', errors='ignore') if flow.response and flow.response.content else None,
+        "cookies": {},
+        "set_cookies": []
+    }
+    
+    # Extract cookies from request headers
+    if "cookie" in flow_dict["request_headers"]:
+        cookie_header = flow_dict["request_headers"]["cookie"]
+        # Parse cookie header
+        for cookie in cookie_header.split(";"):
+            if "=" in cookie:
+                name, value = cookie.strip().split("=", 1)
+                flow_dict["cookies"][name] = value
+    
+    # Extract set-cookie from response headers
+    if "set-cookie" in flow_dict["response_headers"]:
+        set_cookie_headers = flow_dict["response_headers"]["set-cookie"]
+        if isinstance(set_cookie_headers, list):
+            flow_dict["set_cookies"] = set_cookie_headers
+        else:
+            flow_dict["set_cookies"] = [set_cookie_headers]
+    
+    return flow_dict
+
+def print_summary(analysis, auth_flows):
+    """Print a summary of the authentication flow analysis."""
+    print("\n📊 OKTA AUTHENTICATION FLOW ANALYSIS SUMMARY")
+    print("=" * 50)
+    print(f"Total authentication flows: {analysis['total_flows']}")
+    print(f"Unique endpoints: {len(analysis['endpoints'])}")
+    print(f"Total cookies observed: {len(analysis['cookies'])}")
+
+    print("\n🔑 KEY ENDPOINTS:")
+    for endpoint, data in analysis["endpoints"].items():
+        print(f"  {endpoint}: {data['count']} requests")
+
+    print("\n🍪 COOKIES OBSERVED:")
+    for cookie in sorted(analysis["cookies"].keys()):
+        print(f"  {cookie}")
+
+    print("\n💡 KEY FINDINGS:")
+    print(f"  Total flows analyzed: {analysis['total_flows']}")
+
+    # Show device fingerprinting details
+    print("\n🔍 DEVICE FINGERPRINTING FLOWS:")
+    device_flows = [f for f in auth_flows if f["type"] == "device_nonce"]
+    print(f"  Found {len(device_flows)} device nonce requests")
+
+    # Show token acquisition details
+    print("\n🔑 TOKEN ACQUISITION FLOWS:")
+    token_flows = [f for f in auth_flows if f["type"] == "token_exchange"]
+    print(f"  Found {len(token_flows)} token exchange requests")
+
+    # Show OAuth2 flow details
+    print("\n🔄 OAUTH2 FLOW:")
+    oauth_flows = [f for f in auth_flows if f["type"] in ["login_authorize", "web_login_authorize"]]
+    print(f"  Found {len(oauth_flows)} OAuth2 authorize requests")
+
+    # Look for specific patterns in the flows
+    print("\n🔍 DETAILED FLOW ANALYSIS:")
+    for i, flow_data in enumerate(auth_flows[:10]):  # Show first 10 flows
+        flow = flow_data["flow"]
+        print(f"\nFlow {i+1} ({flow_data['type']}):")
+        print(f"  URL: {flow.url}")
+        print(f"  Method: {flow.method}")
+        print(f"  Status: {flow.status_code}")
+        print(f"  Cookies: {len(flow.cookies)}")
+        print(f"  Set-Cookies: {len(flow.set_cookies)}")
+
+        # Look for interesting content
+        if flow.response_body:
+            content = flow.response_body
+            if "stateToken" in content:
+                print("    🔑 Contains stateToken")
+            if "code=" in content:
+                print("    🔑 Contains authorization code")
+            if "login" in content.lower():
+                print("    🔑 Contains login form")
+            if "access_token" in content:
+                print("    🔑 Contains access token")
+            if "refresh_token" in content:
+                print("    🔑 Contains refresh token")
+
+    if len(auth_flows) > 10:
+        print(f"\n... and {len(auth_flows) - 10} more flows")
+
+
+def analyze_log_file(log_file):
+    """Analyze a single mitmproxy log file."""
+    print(f"📥 Loading mitmproxy flows...")
+    
+    try:
+        flows = load_flows(log_file)
+        print(f"✅ Loaded {len(flows)} total flows")
+        
+        print("🔍 Finding authentication flows...")
+        auth_flows = find_authentication_flows(flows)
+        print(f"✅ Found {len(auth_flows)} authentication flows")
+        
+        print("🔍 Analyzing authentication patterns...")
+        analysis = analyze_auth_patterns(auth_flows)
+        
+        # Save detailed analysis
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        analysis_file = f"okta_auth_flow_analysis_{timestamp}.json"
+        
+        with open(analysis_file, 'w') as f:
+            json.dump(analysis, f, indent=2)
+        print(f"💾 Saved detailed analysis to: {analysis_file}")
+        
+        # Save raw auth flows (convert HTTPFlow objects to dictionaries)
+        raw_flows_file = f"okta_auth_flows_raw_{timestamp}.json"
+        serializable_flows = []
+        
+        for flow_data in auth_flows:
+            flow_dict = flow_to_dict(flow_data["flow"])
+            serializable_flows.append({
+                "type": flow_data["type"],
+                "flow_index": flow_data["flow_index"],
+                "flow": flow_dict
+            })
+        
+        with open(raw_flows_file, 'w') as f:
+            json.dump(serializable_flows, f, indent=2)
+        print(f"💾 Saved raw auth flows to: {raw_flows_file}")
+        
+        # Print summary
+        print_summary(analysis, auth_flows)
+        
+    except Exception as e:
+        print(f"❌ Error analyzing {log_file}: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def main():
     """Main analysis function."""
-    log_file = "meijer_mitm_20250821_233419.log"
-
-    print(f"🔍 Analyzing Okta authentication flows from: {log_file}")
-    print("=" * 60)
-
-    try:
-        # Load flows
-        print("📥 Loading mitmproxy flows...")
-        flows = load_flows(log_file)
-        print(f"✅ Loaded {len(flows)} total flows")
-
-        # Find auth flows
-        print("🔍 Finding authentication flows...")
-        auth_flows = find_auth_flows(flows)
-        print(f"✅ Found {len(auth_flows)} authentication flows")
-
-        # Analyze patterns
-        print("🔍 Analyzing authentication patterns...")
-        analysis = analyze_auth_patterns(auth_flows)
-
-        # Save detailed analysis
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = f"okta_auth_flow_analysis_{timestamp}.json"
-        with open(output_file, "w") as f:
-            json.dump(analysis, f, indent=2)
-        print(f"💾 Saved detailed analysis to: {output_file}")
-
-        # Save raw auth flows
-        raw_file = f"okta_auth_flows_raw_{timestamp}.json"
-        with open(raw_file, "w") as f:
-            json.dump(auth_flows, f, indent=2)
-        print(f"💾 Saved raw auth flows to: {raw_file}")
-
-        # Print summary
-        print("\n📊 OKTA AUTHENTICATION FLOW ANALYSIS SUMMARY")
-        print("=" * 50)
-        print(f"Total authentication flows: {analysis['total_auth_flows']}")
-        print(f"Unique endpoints: {len(analysis['endpoints'])}")
-        print(
-            f"Total cookies observed: {len(analysis['cookie_progression']['all_cookies'])}"
-        )
-
-        print("\n🔑 KEY ENDPOINTS:")
-        for endpoint, data in analysis["endpoints"].items():
-            print(f"  {endpoint}: {data['count']} requests")
-
-        print("\n🍪 COOKIES OBSERVED:")
-        for cookie in sorted(analysis["cookie_progression"]["all_cookies"]):
-            print(f"  {cookie}")
-
-        print("\n💡 KEY FINDINGS:")
-        for finding in analysis["key_findings"]:
-            print(f"  {finding}")
-
-        # Show device fingerprinting details
-        if analysis["device_fingerprinting"]:
-            print(f"\n🔍 DEVICE FINGERPRINTING FLOWS ({len(analysis['device_fingerprinting'])}):")
-            for i, flow in enumerate(analysis["device_fingerprinting"][:5]):
-                print(f"  {i+1}. {flow['url']} ({flow['method']})")
-                if flow["request_body"]:
-                    print(f"     Request: {str(flow['request_body'])[:100]}...")
-
-        # Show token acquisition details
-        if analysis["token_acquisition"]:
-            print(f"\n🔑 TOKEN ACQUISITION FLOWS ({len(analysis['token_acquisition'])}):")
-            for i, flow in enumerate(analysis["token_acquisition"][:5]):
-                print(f"  {i+1}. {flow['url']} ({flow['method']})")
-                if flow["response_body"]:
-                    print(f"     Response: {str(flow['response_body'])[:100]}...")
-
-        # Show OAuth2 flow details
-        if analysis["oauth2_flow"]:
-            print(f"\n🔄 OAUTH2 FLOW ({len(analysis['oauth2_flow'])}):")
-            for i, flow in enumerate(analysis["oauth2_flow"][:5]):
-                print(f"  {i+1}. {flow['url']} ({flow['method']})")
-
-        # Look for specific patterns in the flows
-        print("\n🔍 DETAILED FLOW ANALYSIS:")
-        for i, flow in enumerate(auth_flows[:10]):  # Show first 10 flows
-            print(f"\nFlow {i+1}:")
-            print(f"  URL: {flow['url']}")
-            print(f"  Method: {flow['method']}")
-            print(f"  Status: {flow['status_code']}")
-            print(f"  Cookies: {len(flow['cookies'])}")
-            print(f"  Set-Cookies: {len(flow['set_cookies'])}")
-
-            # Look for interesting content
-            if flow["response_body"] and isinstance(flow["response_body"], str):
-                content = flow["response_body"]
-                if "stateToken" in content:
-                    print("    🔑 Contains stateToken")
-                if "code=" in content:
-                    print("    🔑 Contains authorization code")
-                if "login" in content.lower():
-                    print("    🔑 Contains login form")
-                if "access_token" in content:
-                    print("    🔑 Contains access token")
-                if "refresh_token" in content:
-                    print("    🔑 Contains refresh token")
-
-        if len(auth_flows) > 10:
-            print(f"\n... and {len(auth_flows) - 10} more flows")
-
-    except Exception as e:
-        print(f"❌ Error during analysis: {e}")
-        import traceback
-
-        traceback.print_exc()
+    # Analyze the specific log file mentioned by the user
+    log_file = "logs/meijer_mitm_20250823_1400.log"
+    
+    print(f"🔍 Analyzing specific log file: {log_file}")
+    
+    if not os.path.exists(log_file):
+        print(f"❌ Log file not found: {log_file}")
+        return
+    
+    # Analyze the specific log file
+    analyze_log_file(log_file)
 
 
 if __name__ == "__main__":
