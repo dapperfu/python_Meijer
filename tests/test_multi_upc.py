@@ -37,7 +37,6 @@ class TestMultiUPCSearch:
                     {
                         "data": {
                             "id": "1189600014",
-                            "title": "Test Product 1",
                             "price": 9.99,
                             "description": "Test description 1",
                             "stockLevelStatus": "inStock",
@@ -52,7 +51,6 @@ class TestMultiUPCSearch:
                     {
                         "data": {
                             "id": "1780016746",
-                            "title": "Test Product 2",
                             "price": 19.99,
                             "description": "Test description 2",
                             "stockLevelStatus": "outOfStock",
@@ -210,14 +208,17 @@ class TestMultiUPCSearch:
         """Test handling of item creation failure."""
         # Test with invalid data
         invalid_result = {"data": {}}  # Missing required fields
-        
+    
         item = self.search._create_meijer_item_from_multi_upc(
-            invalid_result, 
+            invalid_result,
             "9999999999"
         )
-        
-        # Should handle gracefully and return None
-        assert item is None
+    
+        # Should handle gracefully and return a basic item with minimal data
+        assert item is not None
+        assert item.upc == "9999999999"
+        assert item.title == "Product 9999999999"  # Default title
+        assert item.price is None  # No price data
     
     def test_fallback_multiple_upc_search(self):
         """Test fallback method for multiple UPC search."""

@@ -31,10 +31,12 @@ except ImportError:
 class OktaSeleniumAuth:
     """Selenium-based authentication that bypasses Akamai protection."""
 
-    def __init__(self, username: str, password: str, headless: bool = True):
+    def __init__(self, username: str, password: str, headless: bool = True, proxy_host: str = None, proxy_port: int = None):
         self.username = username
         self.password = password
         self.headless = headless
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
         self.base_url = "https://id.meijer.com"
         self.oauth_authorize_url = f"{self.base_url}/oauth2/default/v1/authorize"
         self.driver = None
@@ -195,6 +197,18 @@ class OktaSeleniumAuth:
                     )
                     options.add_experimental_option("useAutomationExtension", False)
 
+                # Add proxy configuration if specified
+                if self.proxy_host and self.proxy_port:
+                    proxy_string = f"{self.proxy_host}:{self.proxy_port}"
+                    print(f"🌐 Configuring proxy: {proxy_string}")
+                    options.add_argument(f"--proxy-server={proxy_string}")
+                    
+                    # Additional proxy-related options for better compatibility
+                    options.add_argument("--ignore-certificate-errors")  # Handle mitmproxy cert issues
+                    options.add_argument("--ignore-ssl-errors")
+                    options.add_argument("--allow-running-insecure-content")
+                    print("✅ Proxy configuration added")
+
                 options.add_argument("--no-sandbox")
                 options.add_argument("--disable-dev-shm-usage")
                 options.add_argument("--disable-gpu")
@@ -207,7 +221,18 @@ class OktaSeleniumAuth:
                 options.add_experimental_option("excludeSwitches", ["enable-automation"])
                 options.add_experimental_option("useAutomationExtension", False)
 
-                self.driver = webdriver.Chrome(options=options)
+                # Try to use Chromium specifically
+                try:
+                    # First try Chromium
+                    options.binary_location = "/usr/bin/chromium-browser"
+                    self.driver = webdriver.Chrome(options=options)
+                    print("✅ Chromium browser initialized")
+                except Exception as chromium_error:
+                    print(f"⚠️ Chromium failed: {chromium_error}")
+                    # Fallback to regular Chrome
+                    options.binary_location = None
+                    self.driver = webdriver.Chrome(options=options)
+                    print("✅ Chrome browser initialized (fallback)")
 
                 # For debugging: remove automation indicators
                 if not self.headless:
@@ -229,6 +254,24 @@ class OktaSeleniumAuth:
                         # For debugging: make window visible and sized appropriately
                         options.add_argument("--width=1920")
                         options.add_argument("--height=1080")
+
+                    # Add proxy configuration for Firefox if specified
+                    if self.proxy_host and self.proxy_port:
+                        proxy_string = f"{self.proxy_host}:{self.proxy_port}"
+                        print(f"🌐 Configuring Firefox proxy: {proxy_string}")
+                        
+                        # Firefox proxy configuration
+                        options.set_preference("network.proxy.type", 1)  # Manual proxy
+                        options.set_preference("network.proxy.http", self.proxy_host)
+                        options.set_preference("network.proxy.http_port", self.proxy_port)
+                        options.set_preference("network.proxy.ssl", self.proxy_host)
+                        options.set_preference("network.proxy.ssl_port", self.proxy_port)
+                        options.set_preference("network.proxy.share_proxy_settings", True)
+                        
+                        # Handle mitmproxy certificate issues
+                        options.set_preference("security.cert_verification.enabled", False)
+                        options.set_preference("security.enterprise_roots.enabled", True)
+                        print("✅ Firefox proxy configuration added")
 
                     self.driver = webdriver.Firefox(options=options)
 
@@ -597,9 +640,75 @@ class OktaSeleniumAuth:
                 
                 # Look for and click the submit/verify button
                 print("📡 Looking for submit/verify button...")
-                submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"], button:contains("Verify"), button:contains("Submit"), button:contains("Continue")')
-                print("✅ Submit button found - clicking to complete verification...")
-                submit_button.click()
+                
+                # Try multiple selectors for the submit button
+                submit_button = None
+                submit_selectors = [
+                    'button[type="submit"]',
+                    'button:contains("Verify")',
+                    'button:contains("Submit")',
+                    'button:contains("Continue")',
+                    'button:contains("Sign In")',
+                    'button:contains("Log In")',
+                    'input[type="submit"]',
+                    'button[data-se="verify"]',
+                    'button[data-se="submit"]'
+                ]
+                
+                for selector in submit_selectors:
+                    try:
+                        submit_button = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        print(f"✅ Submit button found with selector: {selector}")
+                        break
+                    except:
+                        continue
+                
+                if not submit_button:
+                    # Fallback: find any button that looks like a submit button
+                    buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                    for btn in buttons:
+                        btn_text = btn.text.lower()
+                        if any(word in btn_text for word in ['verify', 'submit', 'continue', 'sign in', 'log in']):
+                            submit_button = btn
+                            print(f"✅ Found submit button with text: {btn.text}")
+                            break
+                
+                if submit_button:
+                    print("✅ Submit button found - clicking to complete verification...")
+                    submit_button.click()
+                    
+                    # Wait for verification to complete and page to load
+                    print("⏳ Waiting for verification to complete...")
+                    time.sleep(5)  # Give more time for the page to process
+                    
+                    # Wait for page to stabilize
+                    try:
+                        WebDriverWait(self.driver, 15).until(
+                            lambda driver: driver.execute_script("return document.readyState === 'complete'")
+                        )
+                    except:
+                        print("⚠️ Page ready state check timed out, continuing anyway...")
+                    
+                    print(f"📄 After verification - URL: {self.driver.current_url}")
+                    print(f"📄 Page title: {self.driver.title}")
+                    
+                    # Take screenshot of completion
+                    self._take_screenshot("verification_completed")
+                    
+                    return True
+                else:
+                    print("❌ Submit button not found after verification code entry")
+                    print("🔍 Available buttons on verification page:")
+                    try:
+                        buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                        for i, btn in enumerate(buttons):
+                            print(f"   Button {i+1}: text='{btn.text}', type={btn.get_attribute('type')}, class={btn.get_attribute('class')}")
+                    except Exception as e:
+                        print(f"   Error listing buttons: {e}")
+                    
+                    # Take screenshot for debugging
+                    self._take_screenshot("submit_button_not_found")
+                    return False
                 
                 # Wait for verification to complete
                 print("⏳ Waiting for verification to complete...")
@@ -750,6 +859,175 @@ class OktaSeleniumAuth:
         except Exception as e:
             print(f"❌ Error polling email: {e}")
             return None
+
+    def _extract_tokens_from_page(self) -> Optional[Dict[str, str]]:
+        """Extract tokens from the current page source."""
+        try:
+            print("🔍 Attempting to extract tokens from page...")
+            
+            # Try to extract tokens from JavaScript variables
+            tokens = {}
+            
+            # Check for common token patterns in JavaScript
+            js_patterns = [
+                r'access_token["\']?\s*[:=]\s*["\']([^"\']+)["\']',
+                r'refresh_token["\']?\s*[:=]\s*["\']([^"\']+)["\']',
+                r'id_token["\']?\s*[:=]\s*["\']([^"\']+)["\']',
+                r'token["\']?\s*[:=]\s*["\']([^"\']+)["\']',
+            ]
+            
+            page_source = self.driver.page_source
+            for pattern in js_patterns:
+                matches = re.findall(pattern, page_source, re.IGNORECASE)
+                if matches:
+                    if 'access_token' in pattern:
+                        tokens['access_token'] = matches[0]
+                    elif 'refresh_token' in pattern:
+                        tokens['refresh_token'] = matches[0]
+                    elif 'id_token' in pattern:
+                        tokens['id_token'] = matches[0]
+                    elif 'token' in pattern:
+                        tokens['token'] = matches[0]
+            
+            # Also try to execute JavaScript to get tokens from localStorage/sessionStorage
+            try:
+                local_storage_tokens = self.driver.execute_script("""
+                    return {
+                        access_token: localStorage.getItem('access_token') || localStorage.getItem('token'),
+                        refresh_token: localStorage.getItem('refresh_token'),
+                        id_token: localStorage.getItem('id_token')
+                    }
+                """)
+                
+                for key, value in local_storage_tokens.items():
+                    if value and key not in tokens:
+                        tokens[key] = value
+                
+                session_storage_tokens = self.driver.execute_script("""
+                    return {
+                        access_token: sessionStorage.getItem('access_token') || sessionStorage.getItem('token'),
+                        refresh_token: sessionStorage.getItem('refresh_token'),
+                        id_token: sessionStorage.getItem('id_token')
+                    }
+                """)
+                
+                for key, value in session_storage_tokens.items():
+                    if value and key not in tokens:
+                        tokens[key] = value
+                        
+            except Exception as e:
+                print(f"⚠️ Could not extract from storage: {e}")
+            
+            if tokens:
+                print(f"✅ Extracted tokens: {list(tokens.keys())}")
+                return tokens
+            else:
+                print("⚠️ No tokens found in page")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Error extracting tokens from page: {e}")
+            return None
+
+    def _extract_tokens_from_storage(self) -> Optional[Dict[str, str]]:
+        """Extract tokens from browser storage (cookies, localStorage, sessionStorage)."""
+        try:
+            print("🔍 Attempting to extract tokens from browser storage...")
+            
+            tokens = {}
+            
+            # Try to get tokens from cookies
+            try:
+                cookies = self.driver.get_cookies()
+                for cookie in cookies:
+                    if 'token' in cookie['name'].lower() or 'auth' in cookie['name'].lower():
+                        tokens[f"cookie_{cookie['name']}"] = cookie['value']
+            except Exception as e:
+                print(f"⚠️ Could not extract cookies: {e}")
+            
+            # Try localStorage and sessionStorage
+            try:
+                local_storage = self.driver.execute_script("""
+                    return {
+                        access_token: localStorage.getItem('access_token') || localStorage.getItem('token'),
+                        refresh_token: localStorage.getItem('refresh_token'),
+                        id_token: localStorage.getItem('id_token'),
+                        meijer_token: localStorage.getItem('meijer_token'),
+                        auth_token: localStorage.getItem('auth_token')
+                    }
+                """)
+                
+                for key, value in local_storage.items():
+                    if value and key not in tokens:
+                        tokens[key] = value
+                        
+                session_storage = self.driver.execute_script("""
+                    return {
+                        access_token: sessionStorage.getItem('access_token') || sessionStorage.getItem('token'),
+                        refresh_token: sessionStorage.getItem('refresh_token'),
+                        id_token: sessionStorage.getItem('id_token'),
+                        meijer_token: sessionStorage.getItem('meijer_token'),
+                        auth_token: sessionStorage.getItem('auth_token')
+                    }
+                """)
+                
+                for key, value in session_storage.items():
+                    if value and key not in tokens:
+                        tokens[key] = value
+                        
+            except Exception as e:
+                print(f"⚠️ Could not extract from storage: {e}")
+            
+            if tokens:
+                print(f"✅ Extracted tokens from storage: {list(tokens.keys())}")
+                return tokens
+            else:
+                print("⚠️ No tokens found in storage")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Error extracting tokens from storage: {e}")
+            return None
+
+    def _save_tokens_to_auth_json(self, tokens: Dict[str, str], auth_code: str = None, state: str = None) -> bool:
+        """Save extracted tokens to auth.json file."""
+        try:
+            import os
+            import json
+            from pathlib import Path
+            
+            print("💾 Saving tokens to auth.json...")
+            
+            # Get the Meijer config directory
+            config_dir = os.path.expanduser("~/.config/meijer")
+            os.makedirs(config_dir, exist_ok=True)
+            
+            auth_file = os.path.join(config_dir, "auth.json")
+            
+            # Prepare the auth data
+            auth_data = {
+                "timestamp": int(time.time()),
+                "username": self.username,
+                "tokens": tokens,
+                "source": "selenium_2fa",
+                "browser_url": self.driver.current_url if self.driver else None
+            }
+            
+            if auth_code:
+                auth_data["authorization_code"] = auth_code
+            if state:
+                auth_data["state"] = state
+            
+            # Save to file
+            with open(auth_file, 'w') as f:
+                json.dump(auth_data, f, indent=2)
+            
+            print(f"✅ Tokens saved to: {auth_file}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error saving tokens to auth.json: {e}")
+            return False
 
     def _read_email_config(self) -> Optional[Dict[str, str]]:
         """Read email configuration from ~/.config/meijer/email.txt."""
@@ -1208,6 +1486,8 @@ class OktaSeleniumAuth:
                 "callback" in page_source.lower(),
                 "access_token" in page_source.lower(),
                 "authorization_code" in page_source.lower(),
+                "meijer.com" in current_url,  # Redirected to Meijer site
+                "signin" in current_url,      # Sign-in callback
             ]
 
             if any(success_indicators):
@@ -1217,22 +1497,68 @@ class OktaSeleniumAuth:
                 if "code=" in current_url:
                     code_match = current_url.split("code=")[1].split("&")[0]
                     print(f"🔑 Found authorization code: {code_match[:20]}...")
-                    return {
+                    
+                    # Extract state parameter if present
+                    state_param = None
+                    if "state=" in current_url:
+                        state_match = current_url.split("state=")[1].split("&")[0]
+                        state_param = state_match
+                        print(f"🔑 Found state parameter: {state_match[:20]}...")
+                    
+                    # Try to extract tokens from the page or cookies
+                    tokens = self._extract_tokens_from_page()
+                    
+                    result = {
                         "success": True,
                         "authorization_code": code_match,
+                        "state": state_param,
                         "url": current_url,
                         "title": page_title,
+                        "tokens": tokens
                     }
+                    
+                    # Save tokens to auth.json if we have them
+                    if tokens:
+                        self._save_tokens_to_auth_json(tokens, code_match, state_param)
+                    
+                    return result
 
                 # Look for tokens in page source
                 if "access_token" in page_source:
                     print("🔑 Found access token in page source")
-                    return {
+                    tokens = self._extract_tokens_from_page()
+                    
+                    result = {
                         "success": True,
                         "has_tokens": True,
+                        "tokens": tokens,
                         "url": current_url,
                         "title": page_title,
                     }
+                    
+                    # Save tokens to auth.json if we have them
+                    if tokens:
+                        self._save_tokens_to_auth_json(tokens)
+                    
+                    return result
+
+                # Check if we're on a successful page but need to extract tokens differently
+                if "meijer.com" in current_url or "signin" in current_url:
+                    print("🔍 On Meijer site - attempting to extract tokens from cookies/localStorage")
+                    tokens = self._extract_tokens_from_storage()
+                    
+                    result = {
+                        "success": True,
+                        "url": current_url,
+                        "title": page_title,
+                        "tokens": tokens
+                    }
+                    
+                    # Save tokens to auth.json if we have them
+                    if tokens:
+                        self._save_tokens_to_auth_json(tokens)
+                    
+                    return result
 
                 return {"success": True, "url": current_url, "title": page_title}
             else:
@@ -1298,7 +1624,8 @@ class OktaSeleniumAuth:
 
 
 def authenticate_with_selenium(
-    username: str, password: str, headless: bool = True, keep_open: bool = False
+    username: str, password: str, headless: bool = True, keep_open: bool = False, 
+    proxy_host: str = None, proxy_port: int = None
 ) -> Optional[Dict[str, Any]]:
     """
     Authenticate using Selenium WebDriver.
@@ -1308,11 +1635,13 @@ def authenticate_with_selenium(
         password: Password for authentication
         headless: Whether to run browser in headless mode
         keep_open: Whether to keep browser open for debugging
+        proxy_host: Proxy host (e.g., "127.0.0.1" for mitmproxy)
+        proxy_port: Proxy port (e.g., 8080 for mitmproxy)
 
     Returns:
         Authentication result dict if successful, None otherwise
     """
-    auth = OktaSeleniumAuth(username, password, headless)
+    auth = OktaSeleniumAuth(username, password, headless, proxy_host, proxy_port)
     
     if keep_open:
         print("🔍 Browser will be kept open for debugging")
@@ -1336,7 +1665,7 @@ def authenticate_with_selenium(
 
 
 def authenticate_with_selenium_and_keep_open(
-    username: str, password: str, headless: bool = False
+    username: str, password: str, headless: bool = False, proxy_host: str = None, proxy_port: int = None
 ) -> Optional[Dict[str, Any]]:
     """
     Authenticate using Selenium WebDriver and keep browser open for debugging.
@@ -1345,11 +1674,13 @@ def authenticate_with_selenium_and_keep_open(
         username: Username/email for authentication
         password: Password for authentication
         headless: Whether to run browser in headless mode (default: False for debugging)
+        proxy_host: Proxy host (e.g., "127.0.0.1" for mitmproxy)
+        proxy_port: Proxy port (e.g., 8080 for mitmproxy)
 
     Returns:
         Authentication result dict if successful, None otherwise
     """
-    return authenticate_with_selenium(username, password, headless, keep_open=True)
+    return authenticate_with_selenium(username, password, headless, keep_open=True, proxy_host=proxy_host, proxy_port=proxy_port)
 
 
 if __name__ == "__main__":
@@ -1357,24 +1688,30 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 3:
-        print("Usage: python okta_selenium_auth.py <username> <password> [headless] [keep_open]")
+        print("Usage: python okta_selenium_auth.py <username> <password> [headless] [keep_open] [proxy_host] [proxy_port]")
         print("  headless: true/false (default: true)")
         print("  keep_open: true/false (default: false)")
+        print("  proxy_host: proxy host (default: none)")
+        print("  proxy_port: proxy port (default: none)")
         sys.exit(1)
 
     username = sys.argv[1]
     password = sys.argv[2]
     headless = len(sys.argv) < 4 or sys.argv[3].lower() != "false"
     keep_open = len(sys.argv) >= 5 and sys.argv[4].lower() == "true"
+    proxy_host = sys.argv[5] if len(sys.argv) > 5 else None
+    proxy_port = int(sys.argv[6]) if len(sys.argv) > 6 else None
 
     print(f"🧪 Testing Selenium authentication for {username}")
     print(f"🔍 Headless: {headless}, Keep open: {keep_open}")
+    if proxy_host and proxy_port:
+        print(f"🌐 Proxy: {proxy_host}:{proxy_port}")
     
     if keep_open:
         print("🔍 Using keep-open mode - browser will stay open for debugging")
-        result = authenticate_with_selenium_and_keep_open(username, password, headless)
+        result = authenticate_with_selenium_and_keep_open(username, password, headless, proxy_host, proxy_port)
     else:
-        result = authenticate_with_selenium(username, password, headless)
+        result = authenticate_with_selenium(username, password, headless, proxy_host=proxy_host, proxy_port=proxy_port)
 
     if result:
         print("🎉 Authentication successful!")

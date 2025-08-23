@@ -2464,6 +2464,12 @@ def login_selenium(headless: bool, keep_open: bool):
 @click.option(
     "--keep-open", is_flag=True, help="Keep browser open for debugging (selenium only)"
 )
+@click.option(
+    "--proxy-host", default="127.0.0.1", help="Proxy host for selenium (default: 127.0.0.1 for mitmproxy)"
+)
+@click.option(
+    "--proxy-port", default=8080, help="Proxy port for selenium (default: 8080 for mitmproxy)"
+)
 def login_command(
     user: Optional[str],
     password: Optional[str],
@@ -2472,6 +2478,8 @@ def login_command(
     method: str,
     headless: bool,
     keep_open: bool,
+    proxy_host: str,
+    proxy_port: int,
 ):
     """Authenticate with Meijer using username/password or fallback credentials."""
     logger = logging.getLogger(__name__)
@@ -2542,6 +2550,13 @@ def login_command(
             # headless is now a boolean flag
             headless_bool = headless
 
+            # Show proxy configuration
+            if proxy_host and proxy_port:
+                click.echo(f"🌐 Proxy configured: {proxy_host}:{proxy_port}")
+                click.echo("📊 All traffic will be logged through mitmproxy for analysis")
+            else:
+                click.echo("🌐 No proxy configured - direct connection")
+
             # Show browser mode and keep-open status
             if keep_open:
                 click.echo(
@@ -2557,7 +2572,7 @@ def login_command(
                     )
 
                     result = authenticate_with_selenium_and_keep_open(
-                        user, password, headless_bool
+                        user, password, headless_bool, proxy_host, proxy_port
                     )
                 except Exception as e:
                     raise click.ClickException(
@@ -2576,11 +2591,11 @@ def login_command(
                             authenticate_with_selenium_and_keep_open,
                         )
                         result = authenticate_with_selenium_and_keep_open(
-                            user, password, headless_bool
+                            user, password, headless_bool, proxy_host, proxy_port
                         )
                     else:
                         from meijer.okta_selenium_auth import authenticate_with_selenium
-                        result = authenticate_with_selenium(user, password, headless_bool)
+                        result = authenticate_with_selenium(user, password, headless_bool, proxy_host=proxy_host, proxy_port=proxy_port)
                 except Exception as e:
                     raise click.ClickException(
                         f"❌ Selenium authentication failed: {e}"
