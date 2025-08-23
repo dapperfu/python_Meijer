@@ -1826,17 +1826,17 @@ def authenticate_with_selenium(
     
     result = auth.authenticate()
     
-            if keep_open:
-                print("🔍 Browser window remains open for debugging")
-                print("💡 Use auth.close_browser() to close it when done")
-                print("📄 Use auth.capture_current_page('step_name') to capture HTML to /tmp/")
-                
-                # Keep the process running indefinitely
-                print("🔒 Process will remain active until you manually close the browser")
-                print("💡 The authentication process is complete - you can inspect the browser")
-                print("⏸️ Waiting for you to close the browser...")
-                while True:
-                    time.sleep(1)  # Keep alive until user closes browser
+    if keep_open:
+        print("🔍 Browser window remains open for debugging")
+        print("💡 Use auth.close_browser() to close it when done")
+        print("📄 Use auth.capture_current_page('step_name') to capture HTML to /tmp/")
+        
+        # Keep the process running indefinitely
+        print("🔒 Process will remain active until you manually close the browser")
+        print("💡 The authentication process is complete - you can inspect the browser")
+        print("⏸️ Waiting for you to close the browser...")
+        while True:
+            time.sleep(1)  # Keep alive until user closes browser
     
     return result
 

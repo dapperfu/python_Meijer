@@ -206,6 +206,10 @@ class Meijer:
 
         # Load authentication
         self._load_auth(auth)
+        
+        # SSL configuration
+        self.ssl_verify = True
+        self.ssl_cert_path = None
 
     def _setup_default_endpoints(self):
         """Setup default Meijer API endpoints."""
@@ -229,6 +233,32 @@ class Meijer:
         
         # Setup local endpoints - redirect all to the local Flask server
         self.api_base_url = f"{base_url}/api/meijer"
+
+    def configure_ssl(self, verify: bool = True, cert_path: Optional[str] = None):
+        """
+        Configure SSL verification settings.
+        
+        Args:
+            verify: Whether to verify SSL certificates (default: True)
+            cert_path: Path to custom SSL certificate (default: None)
+        """
+        self.ssl_verify = verify
+        self.ssl_cert_path = cert_path
+        
+        if verify:
+            if cert_path:
+                self.logger.info(f"🔒 SSL verification enabled with custom certificate: {cert_path}")
+            else:
+                self.logger.info("🔒 SSL verification enabled with system certificates")
+        else:
+            self.logger.warning("⚠️ SSL verification disabled - this may be insecure")
+            
+        # Also set environment variable for requests
+        import os
+        if cert_path and os.path.exists(cert_path):
+            os.environ['MEIJER_SSL_CERT'] = cert_path
+        elif not verify:
+            os.environ['MEIJER_SSL_VERIFY'] = 'false'
         self.id_base_url = f"{base_url}/api/meijer"
         self.digital_base_url = f"{base_url}/api/meijer"
         self.loyalty_base_url = f"{base_url}/api/meijer"
@@ -488,13 +518,28 @@ class Meijer:
     ) -> Any:
         """Make HTTP request with proper error handling."""
         import requests
+        import os
 
         try:
             # Use default headers if none provided
             if headers is None:
                 headers = self._get_api_headers()
 
-            # Make request
+            # SSL verification settings
+            ssl_verify = kwargs.pop('verify', self.ssl_verify)
+            
+            # Check if we're using a proxy (which might have certificate issues)
+            if hasattr(self, 'proxy_host') and self.proxy_host:
+                # When using proxy, we might need to disable SSL verification
+                ssl_verify = False
+                self.logger.info("🔒 Using proxy - SSL verification disabled")
+            
+            # Use client's SSL configuration
+            if self.ssl_cert_path and os.path.exists(self.ssl_cert_path):
+                ssl_verify = self.ssl_cert_path
+                self.logger.info(f"🔒 Using custom SSL certificate: {self.ssl_cert_path}")
+            
+            # Make request with SSL configuration
             response = requests.request(
                 method=method,
                 url=url,
@@ -502,6 +547,7 @@ class Meijer:
                 params=params,
                 json=json_data,
                 timeout=30,
+                verify=ssl_verify,
                 **kwargs,
             )
 
