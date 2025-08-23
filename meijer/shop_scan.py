@@ -2,7 +2,8 @@
 Shop & Scan functionality for Meijer API.
 
 This module provides methods for looking up product information by barcode
-and managing Shop & Scan functionality with BOGO detection and enhanced workflow management.
+and managing Shop & Scan functionality with simplified BOGO detection (1 vs 2 items)
+and enhanced workflow management.
 """
 
 import json
@@ -17,7 +18,7 @@ from .exceptions import ShopScanError
 
 
 class ShopNScan:
-    """Handles Shop & Scan functionality for Meijer API with BOGO detection."""
+    """Handles Shop & Scan functionality for Meijer API with simplified BOGO detection (1 vs 2 items)."""
 
     def __init__(self, meijer_client: "Meijer"):
         self.meijer = meijer_client
@@ -695,32 +696,26 @@ class ShopNScan:
     def detect_bogo_opportunity(
         self, 
         barcode: str, 
-        store_id: Optional[str] = None,
-        test_quantities: Optional[List[int]] = None
+        store_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Detect BOGO (Buy One Get One) opportunities for a product.
         
-        This method scans the product multiple times to detect pricing drops
+        This method tests adding 1 vs 2 items to detect pricing drops
         that indicate BOGO deals.
         
         Args:
             barcode: The barcode/UPC to test for BOGO
             store_id: Optional store ID for store-specific pricing
-            test_quantities: List of quantities to test (default: [1, 2, 10])
             
         Returns:
             Dictionary with BOGO analysis results
         """
-        if test_quantities is None:
-            test_quantities = [1, 2, 10]
-        
         results = {
             "barcode": barcode,
             "bogo_detected": False,
             "bogo_type": None,
             "price_progression": [],
-            "optimal_quantity": None,
             "savings_percentage": 0.0,
             "recommendation": None,
             "test_results": []
@@ -730,87 +725,294 @@ class ShopNScan:
             # Clear cart first to ensure clean testing
             self.clear_cart(store_id)
             
-            # Test each quantity and track price changes
-            previous_price = None
-            price_drops = []
+            # Test 1 item first
+            success = self.add_to_cart(barcode, 1, store_id)
+            if not success:
+                self.logger.warning(f"Failed to add 1 of {barcode} to cart")
+                return results
             
-            for quantity in test_quantities:
-                # Add items to cart
-                success = self.add_to_cart(barcode, quantity, store_id)
-                if not success:
-                    self.logger.warning(f"Failed to add {quantity} of {barcode} to cart")
-                    continue
+            # Get cart total for 1 item
+            cart_data = self.get_cart_detailed(store_id)
+            if not cart_data:
+                return results
+            
+            # Find our item in cart
+            item = self._find_item_in_cart(cart_data, barcode)
+            if not item:
+                return results
+            
+            price_1_item = item.get("totalPrice", {}).get("value", 0)
+            
+            price_info_1 = {
+                "quantity": 1,
+                "total_price": price_1_item,
+                "unit_price": price_1_item,
+                "price_per_item": price_1_item
+            }
+            
+            results["price_progression"].append(price_info_1)
+            results["test_results"].append(price_info_1)
+            
+            # Clear cart and test 2 items
+            self.clear_cart(store_id)
+            
+            success = self.add_to_cart(barcode, 2, store_id)
+            if not success:
+                self.logger.warning(f"Failed to add 2 of {barcode} to cart")
+                return results
+            
+            # Get cart total for 2 items
+            cart_data = self.get_cart_detailed(store_id)
+            if not cart_data:
+                return results
+            
+            # Find our item in cart
+            item = self._find_item_in_cart(cart_data, barcode)
+            if not item:
+                return results
+            
+            price_2_items = item.get("totalPrice", {}).get("value", 0)
+            unit_price_2_items = price_2_items / 2 if price_2_items > 0 else 0
+            
+            price_info_2 = {
+                "quantity": 2,
+                "total_price": price_2_items,
+                "unit_price": unit_price_2_items,
+                "price_per_item": unit_price_2_items
+            }
+            
+            results["price_progression"].append(price_info_2)
+            results["test_results"].append(price_info_2)
+            
+            # Calculate price drop from 1 to 2 items
+            if price_1_item > 0 and unit_price_2_items > 0:
+                price_drop = price_1_item - unit_price_2_items
+                price_drop_percentage = (price_drop / price_1_item) * 100
                 
-                # Get cart total
-                cart_data = self.get_cart_detailed(store_id)
-                if not cart_data:
-                    continue
-                
-                # Find our item in cart
-                item = self._find_item_in_cart(cart_data, barcode)
-                if not item:
-                    continue
-                
-                current_price = item.get("totalPrice", {}).get("value", 0)
-                unit_price = current_price / quantity if quantity > 0 else 0
-                
-                price_info = {
-                    "quantity": quantity,
-                    "total_price": current_price,
-                    "unit_price": unit_price,
-                    "price_per_item": current_price / quantity if quantity > 0 else 0
-                }
-                
-                results["price_progression"].append(price_info)
-                results["test_results"].append(price_info)
-                
-                # Check for price drops (BOGO indicators)
-                if previous_price is not None and quantity > 1:
-                    price_drop = previous_price - unit_price
-                    price_drop_percentage = (price_drop / previous_price) * 100 if previous_price > 0 else 0
-                    
-                    if price_drop_percentage > 5:  # Significant price drop
-                        price_drops.append({
-                            "from_quantity": 1,
-                            "to_quantity": quantity,
-                            "price_drop": price_drop,
-                            "price_drop_percentage": price_drop_percentage
-                        })
-                        
-                        # Determine BOGO type
-                        if price_drop_percentage >= 40:
-                            bogo_type = "BOGO40"
-                        elif price_drop_percentage >= 50:
-                            bogo_type = "BOGO50"
-                        elif price_drop_percentage >= 75:
-                            bogo_type = "BOGO75"
+                # Determine BOGO type based on price drop
+                if price_drop_percentage >= 40:
+                    if price_drop_percentage >= 50:
+                        if price_drop_percentage >= 100:  # Free second item
+                            bogo_type = "BOGO Free"
                         else:
-                            bogo_type = f"BOGO{int(price_drop_percentage)}"
-                        
-                        results["bogo_detected"] = True
-                        results["bogo_type"] = bogo_type
-                        results["savings_percentage"] = price_drop_percentage
-                        results["optimal_quantity"] = quantity
+                            bogo_type = "BOGO 50%"
+                    else:
+                        bogo_type = "BOGO 40%"
+                else:
+                    bogo_type = f"BOGO {int(price_drop_percentage)}%"
                 
-                previous_price = unit_price
+                results["bogo_detected"] = True
+                results["bogo_type"] = bogo_type
+                results["savings_percentage"] = price_drop_percentage
                 
-                # Clear cart for next test
-                self.clear_cart(store_id)
-            
-            # Generate recommendation
-            if results["bogo_detected"]:
-                results["recommendation"] = (
-                    f"BOGO detected! {results['bogo_type']} - "
-                    f"Best value at {results['optimal_quantity']} items "
-                    f"({results['savings_percentage']:.1f}% savings)"
-                )
+                # Generate recommendation
+                if price_drop_percentage >= 100:
+                    results["recommendation"] = f"BOGO Free! Second item is completely free"
+                else:
+                    results["recommendation"] = f"BOGO detected! {bogo_type} - {price_drop_percentage:.1f}% off second item"
             else:
                 results["recommendation"] = "No BOGO detected - standard pricing applies"
+            
+            # Clean up
+            self.clear_cart(store_id)
             
             return results
             
         except Exception as e:
             self.logger.error(f"Error detecting BOGO for {barcode}: {e}")
+            results["error"] = str(e)
+            return results
+
+    def quick_bogo_check(
+        self, 
+        barcode: str, 
+        store_id: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Quick check to see if an item has BOGO pricing.
+        
+        This is a faster alternative to detect_bogo_opportunity() when
+        you just need to know the BOGO type without detailed analysis.
+        
+        Args:
+            barcode: The barcode/UPC to check
+            store_id: Optional store ID for store-specific pricing
+            
+        Returns:
+            BOGO type string (e.g., "BOGO 50%", "BOGO Free") or None if no BOGO
+        """
+        try:
+            # Clear cart first
+            self.clear_cart(store_id)
+            
+            # Add 1 item
+            if not self.add_to_cart(barcode, 1, store_id):
+                return None
+            
+            cart_data = self.get_cart_detailed(store_id)
+            if not cart_data:
+                return None
+            
+            item = self._find_item_in_cart(cart_data, barcode)
+            if not item:
+                return None
+            
+            price_1_item = item.get("totalPrice", {}).get("value", 0)
+            
+            # Clear and add 2 items
+            self.clear_cart(store_id)
+            if not self.add_to_cart(barcode, 2, store_id):
+                return None
+            
+            cart_data = self.get_cart_detailed(store_id)
+            if not cart_data:
+                return None
+            
+            item = self._find_item_in_cart(cart_data, barcode)
+            if not item:
+                return None
+            
+            price_2_items = item.get("totalPrice", {}).get("value", 0)
+            unit_price_2_items = price_2_items / 2 if price_2_items > 0 else 0
+            
+            # Calculate price drop
+            if price_1_item > 0 and unit_price_2_items > 0:
+                price_drop_percentage = ((price_1_item - unit_price_2_items) / price_1_item) * 100
+                
+                # Determine BOGO type
+                if price_drop_percentage >= 40:
+                    if price_drop_percentage >= 50:
+                        if price_drop_percentage >= 100:
+                            return "BOGO Free"
+                        else:
+                            return "BOGO 50%"
+                    else:
+                        return "BOGO 40%"
+                elif price_drop_percentage > 5:  # Any significant discount
+                    return f"BOGO {int(price_drop_percentage)}%"
+            
+            # Clean up
+            self.clear_cart(store_id)
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error in quick BOGO check for {barcode}: {e}")
+            return None
+
+    def check_special_pricing(
+        self, 
+        barcode: str, 
+        store_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Check for any special pricing patterns on an item.
+        
+        This method tests different quantities to identify various pricing patterns
+        including BOGO, bulk discounts, and other special offers.
+        
+        Args:
+            barcode: The barcode/UPC to check
+            store_id: Optional store ID for store-specific pricing
+            
+        Returns:
+            Dictionary with pricing analysis results
+        """
+        results = {
+            "barcode": barcode,
+            "special_pricing_detected": False,
+            "pricing_type": None,
+            "best_quantity": 1,
+            "best_unit_price": 0.0,
+            "savings_percentage": 0.0,
+            "recommendation": None,
+            "price_analysis": []
+        }
+        
+        try:
+            # Test quantities: 1, 2, 3, 4, 6, 8, 10
+            test_quantities = [1, 2, 3, 4, 6, 8, 10]
+            best_deal = None
+            
+            for quantity in test_quantities:
+                # Clear cart and add items
+                self.clear_cart(store_id)
+                if not self.add_to_cart(barcode, quantity, store_id):
+                    continue
+                
+                # Get cart data
+                cart_data = self.get_cart_detailed(store_id)
+                if not cart_data:
+                    continue
+                
+                item = self._find_item_in_cart(cart_data, barcode)
+                if not item:
+                    continue
+                
+                total_price = item.get("totalPrice", {}).get("value", 0)
+                unit_price = total_price / quantity if quantity > 0 else 0
+                
+                price_info = {
+                    "quantity": quantity,
+                    "total_price": total_price,
+                    "unit_price": unit_price,
+                    "price_per_item": unit_price
+                }
+                
+                results["price_analysis"].append(price_info)
+                
+                # Track best deal (lowest unit price)
+                if best_deal is None or unit_price < best_deal["unit_price"]:
+                    best_deal = {
+                        "quantity": quantity,
+                        "unit_price": unit_price,
+                        "total_price": total_price
+                    }
+            
+            # Analyze pricing patterns
+            if len(results["price_analysis"]) >= 2:
+                # Check for BOGO patterns
+                price_1 = next((p["unit_price"] for p in results["price_analysis"] if p["quantity"] == 1), 0)
+                price_2 = next((p["unit_price"] for p in results["price_analysis"] if p["quantity"] == 2), 0)
+                
+                if price_1 > 0 and price_2 > 0:
+                    price_drop = price_1 - price_2
+                    price_drop_percentage = (price_drop / price_1) * 100
+                    
+                    if price_drop_percentage >= 40:
+                        if price_drop_percentage >= 100:
+                            results["pricing_type"] = "BOGO Free"
+                        elif price_drop_percentage >= 50:
+                            results["pricing_type"] = "BOGO 50%"
+                        else:
+                            results["pricing_type"] = "BOGO 40%"
+                        results["special_pricing_detected"] = True
+                        results["savings_percentage"] = price_drop_percentage
+                        results["recommendation"] = f"BOGO deal: {results['pricing_type']}"
+                
+                # Check for bulk discounts
+                if best_deal and best_deal["quantity"] > 1:
+                    base_price = price_1
+                    if base_price > 0:
+                        bulk_savings = ((base_price - best_deal["unit_price"]) / base_price) * 100
+                        if bulk_savings > 5:  # More than 5% savings
+                            if not results["special_pricing_detected"]:
+                                results["pricing_type"] = f"Bulk Discount ({best_deal['quantity']}+ items)"
+                                results["special_pricing_detected"] = True
+                                results["savings_percentage"] = bulk_savings
+                                results["recommendation"] = f"Bulk discount: Buy {best_deal['quantity']}+ for {bulk_savings:.1f}% savings"
+            
+            # Set best quantity and unit price
+            if best_deal:
+                results["best_quantity"] = best_deal["quantity"]
+                results["best_unit_price"] = best_deal["unit_price"]
+            
+            # Clean up
+            self.clear_cart(store_id)
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error checking special pricing for {barcode}: {e}")
             results["error"] = str(e)
             return results
 
