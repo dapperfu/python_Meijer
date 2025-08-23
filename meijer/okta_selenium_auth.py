@@ -53,6 +53,64 @@ class OktaSeleniumAuth:
         except Exception as e:
             print(f"⚠️ Failed to take screenshot: {e}")
 
+    def _capture_html_page(self, step_name: str):
+        """Capture the current HTML page to /tmp/ for analysis."""
+        try:
+            if self.driver:
+                timestamp = int(time.time())
+                current_url = self.driver.current_url
+                page_title = self.driver.title
+                
+                # Create a safe filename
+                safe_title = "".join(c for c in page_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                safe_title = safe_title.replace(' ', '_')[:50]  # Limit length
+                
+                filename = f"/tmp/meijer_auth_{step_name}_{safe_title}_{timestamp}.html"
+                
+                # Get page source
+                page_source = self.driver.page_source
+                
+                # Create HTML with metadata
+                html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{page_title}</title>
+    <meta name="capture_time" content="{timestamp}">
+    <meta name="url" content="{current_url}">
+    <meta name="step" content="{step_name}">
+</head>
+<body>
+    <div style="background: #f0f0f0; padding: 10px; margin: 10px; border: 1px solid #ccc;">
+        <h3>Page Capture Information</h3>
+        <p><strong>Step:</strong> {step_name}</p>
+        <p><strong>Timestamp:</strong> {timestamp}</p>
+        <p><strong>URL:</strong> {current_url}</p>
+        <p><strong>Title:</strong> {page_title}</p>
+        <p><strong>Capture Time:</strong> {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}</p>
+    </div>
+    <hr>
+    {page_source}
+</body>
+</html>"""
+                
+                # Write to file
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                
+                print(f"📄 HTML page captured: {filename}")
+                print(f"   URL: {current_url}")
+                print(f"   Title: {page_title}")
+                
+                return filename
+            else:
+                print("⚠️ No driver available for HTML capture")
+                return None
+                
+        except Exception as e:
+            print(f"⚠️ Failed to capture HTML page: {e}")
+            return None
+
     def _check_for_rate_limiting(self) -> bool:
         """Check if the page shows rate limiting error."""
         try:
@@ -62,7 +120,10 @@ class OktaSeleniumAuth:
                 "unexpected internal error",
                 "rate limit",
                 "too many requests",
-                "try again later"
+                "try again later",
+                "access denied",
+                "forbidden",
+                "403"
             ]
             
             # First check for the exact div structure
@@ -77,12 +138,40 @@ class OktaSeleniumAuth:
             except:
                 pass
             
-            # Fallback to text search
+            # Check page title for rate limiting indicators
+            page_title = self.driver.title.lower()
+            if any(text in page_title for text in ["error", "denied", "forbidden", "rate limit"]):
+                print("🚫 RATE LIMITING DETECTED!")
+                print(f"💡 Page title indicates rate limiting: '{self.driver.title}'")
+                print("⏰ This means you are being rate limited.")
+                print("💡 Please try logging in again in a few hours.")
+                
+                # Capture the rate-limited page for analysis
+                self._capture_html_page("rate_limited")
+                print("📄 Rate-limited page HTML captured to /tmp/ for analysis")
+                
+                return True
+            
+            # Check URL for error indicators
+            current_url = self.driver.current_url.lower()
+            if any(text in current_url for text in ["error", "denied", "forbidden", "403"]):
+                print("🚫 RATE LIMITING DETECTED!")
+                print(f"💡 URL indicates rate limiting: '{self.driver.current_url}'")
+                print("⏰ This means you are being rate limited.")
+                print("💡 Please try logging in again in a few hours.")
+                
+                # Capture the rate-limited page for analysis
+                self._capture_html_page("rate_limited_url")
+                print("📄 Rate-limited page HTML captured to /tmp/ for analysis")
+                
+                return True
+            
+            # Fallback to text search in page source
             page_text = self.driver.page_source.lower()
             for text in rate_limit_texts:
                 if text.lower() in page_text:
                     print("🚫 RATE LIMITING DETECTED!")
-                    print("💡 The page shows: 'There was an unexpected internal error. Please try again.'")
+                    print(f"💡 Page content shows rate limiting indicator: '{text}'")
                     print("⏰ This means you are being rate limited.")
                     print("💡 Please try logging in again in a few hours.")
                     return True
@@ -118,12 +207,14 @@ class OktaSeleniumAuth:
             if not self._load_oauth_page():
                 return None
 
-            # Take screenshot of the OAuth2 page
+            # Take screenshot and capture HTML of the OAuth2 page
             self._take_screenshot("oauth2_page_loaded")
+            self._capture_html_page("oauth2_page_loaded")
             
             # Check for rate limiting errors
             if self._check_for_rate_limiting():
                 print("🚫 Authentication stopped due to rate limiting")
+                print("📄 HTML page captured for analysis in /tmp/")
                 return None
 
             # Step 3: Wait for login form and submit credentials
@@ -131,12 +222,14 @@ class OktaSeleniumAuth:
             if not self._submit_credentials():
                 return None
 
-            # Take screenshot after credential submission
+            # Take screenshot and capture HTML after credential submission
             self._take_screenshot("credentials_submitted")
+            self._capture_html_page("credentials_submitted")
             
             # Check for rate limiting errors after credential submission
             if self._check_for_rate_limiting():
                 print("🚫 Authentication stopped due to rate limiting after login")
+                print("📄 HTML page captured for analysis in /tmp/")
                 return None
 
             # Step 4: Handle email verification if required
@@ -152,23 +245,26 @@ class OktaSeleniumAuth:
                 if mfa_result is False:  # MFA failed
                     return None
 
-            # Take screenshot after MFA handling
+            # Take screenshot and capture HTML after MFA handling
             self._take_screenshot("mfa_handled")
+            self._capture_html_page("mfa_handled")
 
             # Step 5: Extract authentication results
             print("📡 Step 5: Extracting authentication results...")
             auth_result = self._extract_auth_results()
 
-            # Take final screenshot
+            # Take final screenshot and capture HTML
             self._take_screenshot("authentication_complete")
+            self._capture_html_page("authentication_complete")
 
             print("🎉 Selenium authentication completed!")
             return auth_result
 
         except Exception as e:
             print(f"❌ Error in Selenium authentication: {e}")
-            # Take screenshot on error
+            # Take screenshot and capture HTML on error
             self._take_screenshot("error_occurred")
+            self._capture_html_page("error_occurred")
             return None
         finally:
             # Keep browser open for debugging - don't call _cleanup()
@@ -1609,6 +1705,18 @@ class OktaSeleniumAuth:
         print("💡 Use close_browser() method when done")
         return True
 
+    def capture_current_page(self, step_name: str = None):
+        """Capture the current page HTML to /tmp/ for analysis."""
+        if not step_name:
+            step_name = f"manual_capture_{int(time.time())}"
+        
+        filename = self._capture_html_page(step_name)
+        if filename:
+            print(f"📄 Current page HTML captured: {filename}")
+            print(f"   URL: {self.driver.current_url}")
+            print(f"   Title: {self.driver.title}")
+        return filename
+
     def __del__(self):
         """Destructor - only close browser if not keeping it open for debugging."""
         try:
@@ -1650,16 +1758,17 @@ def authenticate_with_selenium(
     
     result = auth.authenticate()
     
-    if keep_open:
-        print("🔍 Browser window remains open for debugging")
-        print("💡 Use auth.close_browser() to close it when done")
-        
-        # Keep the process running indefinitely
-        print("🔒 Process will remain active until you manually close the browser")
-        print("💡 The authentication process is complete - you can inspect the browser")
-        print("⏸️ Waiting for you to close the browser...")
-        while True:
-            time.sleep(1)  # Keep alive until user closes browser
+            if keep_open:
+                print("🔍 Browser window remains open for debugging")
+                print("💡 Use auth.close_browser() to close it when done")
+                print("📄 Use auth.capture_current_page('step_name') to capture HTML to /tmp/")
+                
+                # Keep the process running indefinitely
+                print("🔒 Process will remain active until you manually close the browser")
+                print("💡 The authentication process is complete - you can inspect the browser")
+                print("⏸️ Waiting for you to close the browser...")
+                while True:
+                    time.sleep(1)  # Keep alive until user closes browser
     
     return result
 
