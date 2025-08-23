@@ -2,6 +2,8 @@
 
 This directory contains specialized tools for extracting `api.meijer.com` endpoints from mitmproxy logs and automatically updating the Meijer Flask API server with the latest discovered endpoints.
 
+> **Note**: This directory has been merged with the `scripts/` directory to create a unified `tools/` directory containing both analysis tools and production scripts.
+
 ## 🎯 Overview
 
 These tools provide a complete workflow to:

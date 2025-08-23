@@ -1,17 +1,73 @@
-# Meijer API Analysis Tools Documentation
+# Meijer Tools & Scripts Documentation
 
-This document provides comprehensive documentation for all Python analysis tools in the `tools/` directory. These tools are designed to analyze mitmproxy logs, extract API endpoints, and understand the Meijer mobile application's behavior.
+This document provides comprehensive documentation for all Python tools and scripts in the `tools/` directory. This unified directory contains both analysis tools for understanding the Meijer API and production scripts for operational tasks.
 
 ## Table of Contents
 
-1. [Core Analysis Tools](#core-analysis-tools)
-2. [Authentication & Authorization Tools](#authentication--authorization-tools)
-3. [Cart & Shopping Tools](#cart--shopping-tools)
-4. [Shop & Scan Tools](#shop--scan-tools)
-5. [Coupon & mPerks Tools](#coupon--mperks-tools)
-6. [API Discovery & Endpoint Tools](#api-discovery--endpoint-tools)
-7. [Utility & Helper Tools](#utility--helper-tools)
-8. [Data Analysis & Reporting Tools](#data-analysis--reporting-tools)
+1. [Production Scripts](#production-scripts)
+2. [Core Analysis Tools](#core-analysis-tools)
+3. [Authentication & Authorization Tools](#authentication--authorization-tools)
+4. [Cart & Shopping Tools](#cart--shopping-tools)
+5. [Shop & Scan Tools](#shop--scan-tools)
+6. [Coupon & mPerks Tools](#coupon--mperks-tools)
+7. [API Discovery & Endpoint Tools](#api-discovery--endpoint-tools)
+8. [Utility & Helper Tools](#utility--helper-tools)
+9. [Data Analysis & Reporting Tools](#data-analysis--reporting-tools)
+
+---
+
+## Production Scripts
+
+These scripts are designed for production use, automated execution, and operational tasks.
+
+### `run_price_monitors.py`
+**Purpose**: Automated price monitoring script for cron execution and production monitoring.
+**Key Features**:
+- Runs all configured price monitors automatically
+- Designed for cron job execution
+- Comprehensive logging and error handling
+- Production-ready with proper error recovery
+- Generates execution reports and summaries
+
+**Usage**: `python tools/run_price_monitors.py`
+**Production Use**: Add to crontab for automated price monitoring
+
+### `find_working_upcs.py`
+**Purpose**: Find working UPCs for testing the edge case framework.
+**Key Features**:
+- Searches for common products to find valid UPCs
+- Tests search functionality
+- Identifies clearance and sale items
+- Provides working UPCs for testing
+
+**Usage**: `python tools/find_working_upcs.py`
+
+### `test_upc_edge_cases.py`
+**Purpose**: Test UPC edge cases and validate functionality.
+**Key Features**:
+- Tests specific UPC codes for edge cases
+- Validates search and pricing functionality
+- Helps identify API issues and limitations
+
+**Usage**: `python tools/test_upc_edge_cases.py <upc_code>`
+
+### `shop_n_scan_faker.py`
+**Purpose**: Shop & scan testing and validation.
+**Key Features**:
+- Tests shop'n'scan functionality
+- Validates barcode scanning operations
+- Helps debug scanning-related issues
+
+**Usage**: `python tools/shop_n_scan_faker.py`
+
+### `deploy_docs.sh`
+**Purpose**: Deploy documentation to production servers.
+**Key Features**:
+- Automated documentation deployment
+- Shell script for CI/CD integration
+- Production deployment automation
+
+**Usage**: `bash tools/deploy_docs.sh`
 
 ---
 
