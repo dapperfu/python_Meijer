@@ -32,6 +32,103 @@ from .shopping_list import MeijerList
 from .stores import MeijerStore
 
 
+class StoresInterface:
+    """
+    Interface wrapper for store operations to maintain notebook compatibility.
+    
+    This class provides the interface that notebooks expect while delegating
+    to the main client's store methods.
+    """
+    
+    def __init__(self, client: "Meijer"):
+        """Initialize with reference to main client."""
+        self.client = client
+    
+    def get_nearby(self, latitude: Optional[float] = None, longitude: Optional[float] = None, radius: int = 25) -> List[MeijerStore]:
+        """
+        Get nearby stores.
+        
+        Parameters
+        ----------
+        latitude : float, optional
+            Search latitude (defaults to center of Michigan)
+        longitude : float, optional
+            Search longitude (defaults to center of Michigan)
+        radius : int, optional
+            Search radius in miles (default: 25)
+            
+        Returns
+        -------
+        List[MeijerStore]
+            List of nearby stores
+        """
+        # Use default coordinates if not provided
+        if latitude is None or longitude is None:
+            latitude = 44.3148  # Center of Michigan
+            longitude = -85.6024
+        
+        return self.client.get_stores(latitude=latitude, longitude=longitude, radius=radius)
+    
+    def search_by_location(self, location: str, radius: int = 25) -> List[MeijerStore]:
+        """
+        Search for stores by location string.
+        
+        Parameters
+        ----------
+        location : str
+            Location string (city, state or ZIP code)
+        radius : int, optional
+            Search radius in miles (default: 25)
+            
+        Returns
+        -------
+        List[MeijerStore]
+            List of stores near the location
+        """
+        # Try to parse as city name first
+        if not location.isdigit():
+            return self.client.get_stores(city=location, radius=radius)
+        else:
+            # Treat as ZIP code
+            return self.client.get_stores(zip_code=location, radius=radius)
+    
+    def search_by_proximity(self, lat: float, lng: float, radius: int = 25) -> List[MeijerStore]:
+        """
+        Search for stores by proximity coordinates.
+        
+        Parameters
+        ----------
+        lat : float
+            Latitude
+        lng : float
+            Longitude
+        radius : int, optional
+            Search radius in miles (default: 25)
+            
+        Returns
+        -------
+        List[MeijerStore]
+            List of stores within radius
+        """
+        return self.client.get_stores(latitude=lat, longitude=lng, radius=radius)
+    
+    def get_by_id(self, store_id: str) -> Optional[MeijerStore]:
+        """
+        Get store by ID.
+        
+        Parameters
+        ----------
+        store_id : str
+            Store ID to look up
+            
+        Returns
+        -------
+        MeijerStore, optional
+            Store if found, None otherwise
+        """
+        return self.client.get_store_by_id(store_id)
+
+
 class Meijer:
     """
     Main client for Meijer API interactions.
@@ -99,6 +196,9 @@ class Meijer:
 
         # Add alias for CLI compatibility
         self.list = self.shopping_list
+
+        # Add stores interface wrapper for notebook compatibility
+        self.stores = StoresInterface(self)
 
         # Load authentication
         self._load_auth(auth)
