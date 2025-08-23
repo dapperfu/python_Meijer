@@ -492,6 +492,10 @@ class Search:
                 raw_data=data
             )
             
+            # Ensure price is properly set (bypass the property system for direct initialization)
+            if data.get("price") is not None:
+                item._price = data.get("price")
+            
             # Set additional fields from the multi-UPC response
             if hasattr(item, 'data_ean'):
                 item.data_ean = data.get("ean")
