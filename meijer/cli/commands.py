@@ -2189,7 +2189,6 @@ def auth_log_command():
 @auth_group.command("imap")
 def auth_imap_command():
     """Set up email configuration for 2FA verification codes."""
-    import os
     from meijer.auth import get_meijer_config_path
     
     click.echo("📧 Email Configuration Setup for Meijer 2FA")
@@ -2267,7 +2266,6 @@ def auth_login_command(method: str, keep_open: bool):
     
     try:
         # Read credentials from config file
-        import os
         credentials_file = os.path.expanduser("~/.config/meijer/login.txt")
         if not os.path.exists(credentials_file):
             click.echo("❌ No credentials found!")
@@ -2333,7 +2331,6 @@ def auth_logout_command():
             click.echo("ℹ️ No stored tokens found")
         
         # Also clear any stored credentials if they exist
-        import os
         credentials_file = os.path.expanduser("~/.config/meijer/login.txt")
         if os.path.exists(credentials_file):
             os.remove(credentials_file)
@@ -2493,7 +2490,6 @@ def login_command(
         if clear_credentials:
             try:
                 from meijer.auth import get_meijer_config_path
-                import os
                 login_file = os.path.join(get_meijer_config_path(""), "login.txt")
                 if os.path.exists(login_file):
                     os.remove(login_file)
@@ -2509,8 +2505,6 @@ def login_command(
         fallback_password = None
 
         if not user or not password:
-            import os
-
             from meijer.auth import get_meijer_config_path
 
             login_file = os.path.join(get_meijer_config_path(""), "login.txt")
@@ -2674,6 +2668,7 @@ def login_command(
 
             # Check for email 2FA config
             email_2fa_config = None
+            from meijer.auth import get_meijer_config_path
             email_config_path = os.path.join(get_meijer_config_path(""), "email.txt")
             if os.path.exists(email_config_path):
                 use_email_2fa = click.confirm(
@@ -2720,7 +2715,6 @@ def login_command(
                     if save_credentials:
                         try:
                             from meijer.auth import get_meijer_config_path
-                            import os
                             login_file = os.path.join(get_meijer_config_path(""), "login.txt")
                             with open(login_file, "w") as f:
                                 f.write(f"{user}\n{password}\n")
