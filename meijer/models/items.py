@@ -279,6 +279,19 @@ class MeijerItem:
     data_ismap: Optional[bool] = None
     """Whether product has MAP pricing"""
 
+    # Item state properties
+    _is_favorite: bool = field(default=False, repr=False, compare=False)
+    """Internal favorite state"""
+    
+    _is_in_list: bool = field(default=False, repr=False, compare=False)
+    """Internal list state"""
+    
+    _is_in_cart: bool = field(default=False, repr=False, compare=False)
+    """Internal cart state"""
+    
+    _cart_quantity: int = field(default=0, repr=False, compare=False)
+    """Quantity in cart"""
+
     # Internal fields for async operations
     _meijer_client: Optional["Meijer"] = field(default=None, repr=False, compare=False)
     _async_cache: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
@@ -379,6 +392,163 @@ class MeijerItem:
     def price(self, value: Optional[float]) -> None:
         """Set the price value."""
         self._price = value
+
+    @property
+    def favorite(self) -> bool:
+        """Get whether the item is marked as a favorite."""
+        return self._is_favorite
+
+    @favorite.setter
+    def favorite(self, value: bool) -> None:
+        """
+        Set whether the item is marked as a favorite.
+        
+        Args:
+            value: True to mark as favorite, False to remove from favorites
+        """
+        self._is_favorite = value
+        if self._meijer_client and hasattr(self._meijer_client, 'mperks'):
+            try:
+                if value:
+                    # Add to favorites
+                    self._meijer_client.mperks.add_to_favorites(self.id)
+                else:
+                    # Remove from favorites
+                    self._meijer_client.mperks.remove_from_favorites(self.id)
+            except Exception as e:
+                self.logger.warning(f"Failed to update favorite status: {e}")
+
+    @property
+    def list(self) -> bool:
+        """Get whether the item is in a shopping list."""
+        return self._is_in_list
+
+    @list.setter
+    def list(self, value: bool) -> None:
+        """
+        Set whether the item is in a shopping list.
+        
+        Args:
+            value: True to add to list, False to remove from list
+        """
+        self._is_in_list = value
+        if self._meijer_client and hasattr(self._meijer_client, 'shopping_list'):
+            try:
+                if value:
+                    # Add to shopping list
+                    self._meijer_client.shopping_list.add_item(self.title, quantity=1)
+                else:
+                    # Remove from shopping list
+                    self._meijer_client.shopping_list.remove_item_by_name(self.title)
+            except Exception as e:
+                self.logger.warning(f"Failed to update list status: {e}")
+
+    @property
+    def cart(self) -> bool:
+        """Get whether the item is in the shopping cart."""
+        return self._is_in_cart
+
+    @cart.setter
+    def cart(self, value: bool) -> None:
+        """
+        Set whether the item is in the shopping cart.
+        
+        Args:
+            value: True to add to cart, False to remove from cart
+        """
+        if value and not self._is_in_cart:
+            # Add to cart
+            self._is_in_cart = True
+            self._cart_quantity = 1
+            if self._meijer_client and hasattr(self._meijer_client, 'cart'):
+                try:
+                    self._meijer_client.cart.add_item(self.upc or self.id, quantity=1)
+                except Exception as e:
+                    self.logger.warning(f"Failed to add item to cart: {e}")
+        elif not value and self._is_in_cart:
+            # Remove from cart
+            self._is_in_cart = False
+            self._cart_quantity = 0
+            if self._meijer_client and hasattr(self._meijer_client, 'cart'):
+                try:
+                    # Find and remove the item from cart
+                    cart_items = self._meijer_client.cart.get_items()
+                    for item in cart_items:
+                        if item.upc == self.upc or item.id == self.id:
+                            self._meijer_client.cart.remove_item(item.entry_number)
+                            break
+                except Exception as e:
+                    self.logger.warning(f"Failed to remove item from cart: {e}")
+
+    @property
+    def cart_quantity(self) -> int:
+        """Get the quantity of this item in the cart."""
+        return self._cart_quantity
+
+    @cart_quantity.setter
+    def cart_quantity(self, value: int) -> None:
+        """
+        Set the quantity of this item in the cart.
+        
+        Args:
+            value: Quantity to set (0 removes from cart)
+        """
+        if value <= 0:
+            # Remove from cart
+            self.cart = False
+        else:
+            # Update quantity
+            self._cart_quantity = value
+            if self._meijer_client and hasattr(self._meijer_client, 'cart'):
+                try:
+                    # Find the item in cart and update quantity
+                    cart_items = self._meijer_client.cart.get_items()
+                    for item in cart_items:
+                        if item.upc == self.upc or item.id == self.id:
+                            self._meijer_client.cart.update_item_quantity(item.entry_number, value)
+                            break
+                except Exception as e:
+                    self.logger.warning(f"Failed to update cart quantity: {e}")
+
+    def update_state(self, favorite: Optional[bool] = None, in_list: Optional[bool] = None, 
+                    in_cart: Optional[bool] = None, cart_quantity: Optional[int] = None) -> None:
+        """
+        Update the item state from external sources (e.g., API responses).
+        
+        This method allows updating the item state without triggering API calls,
+        useful when the state is already known from other operations.
+        
+        Args:
+            favorite: Whether item is in favorites
+            in_list: Whether item is in shopping list
+            in_cart: Whether item is in cart
+            cart_quantity: Quantity in cart
+        """
+        if favorite is not None:
+            self._is_favorite = favorite
+        if in_list is not None:
+            self._is_in_list = in_list
+        if in_cart is not None:
+            self._is_in_cart = in_cart
+        if cart_quantity is not None:
+            self._cart_quantity = cart_quantity
+
+    def get_state_summary(self) -> Dict[str, Any]:
+        """
+        Get a summary of the item's current state.
+        
+        Returns:
+            Dictionary with current state information
+        """
+        return {
+            "id": self.id,
+            "title": self.title,
+            "favorite": self._is_favorite,
+            "in_list": self._is_in_list,
+            "in_cart": self._is_in_cart,
+            "cart_quantity": self._cart_quantity,
+            "price": self.price
+        }
 
     @async_property
     async def populated_price(self) -> Optional[float]:
