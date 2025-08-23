@@ -240,6 +240,109 @@ class CouponManager:
         with open(filepath, 'w') as f:
             json.dump(self._coupons_cache.to_list(), f, indent=2, default=str)
     
+    def export_clipped_coupons(self, filepath: str) -> None:
+        """Export only clipped coupons to JSON file."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        self._coupons_cache.export_clipped_coupons(filepath)
+    
+    def export_available_coupons(self, filepath: str) -> None:
+        """Export only available (unclipped) coupons to JSON file."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        self._coupons_cache.export_available_coupons(filepath)
+    
+    def export_by_department(self, department: str, filepath: str) -> None:
+        """Export coupons filtered by department to JSON file."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        self._coupons_cache.export_by_department(department, filepath)
+    
+    def import_from_json(self, filepath: str, overwrite_existing: bool = False) -> int:
+        """Import coupons from JSON file."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.import_from_json(filepath, overwrite_existing)
+    
+    def create_backup(self, filepath: str) -> None:
+        """Create a complete backup of all coupons with their current states."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        self._coupons_cache.create_backup(filepath)
+    
+    def restore_from_backup(self, filepath: str) -> int:
+        """Restore coupons from a backup file."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.restore_from_backup(filepath)
+    
+    def share_clipped_coupons(self, filepath: str, include_metadata: bool = False) -> None:
+        """Export clipped coupons in a shareable format."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        self._coupons_cache.share_clipped_coupons(filepath, include_metadata)
+    
+    def import_shared_coupons(self, filepath: str, auto_clip: bool = True) -> int:
+        """Import coupons from a shared file."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.import_shared_coupons(filepath, auto_clip)
+    
+    def clear_all_clipped(self) -> int:
+        """Clear (unclip) all clipped coupons. Returns count of unclipped."""
+        if not self._coupons_cache:
+            self.refresh()
+        
+        return self._coupons_cache.unclip_all()
+    
+    def backup_and_clear(self, backup_filepath: str) -> int:
+        """
+        Create a backup of all coupons and then clear (unclip) all clipped ones.
+        
+        Args:
+            backup_filepath: Path to save the backup file
+            
+        Returns:
+            Number of coupons that were unclipped
+        """
+        if not self._coupons_cache:
+            self.refresh()
+        
+        # Create backup first
+        self._coupons_cache.create_backup(backup_filepath)
+        
+        # Then clear all clipped
+        return self._coupons_cache.unclip_all()
+    
+    def restore_and_clip(self, backup_filepath: str) -> int:
+        """
+        Restore coupons from backup and automatically clip the ones that were previously clipped.
+        
+        Args:
+            backup_filepath: Path to the backup file
+            
+        Returns:
+            Number of coupons restored and clipped
+        """
+        if not self._coupons_cache:
+            self.refresh()
+        
+        # Restore from backup
+        restored_count = self._coupons_cache.restore_from_backup(backup_filepath)
+        
+        # Count how many were clipped
+        clipped_count = self._coupons_cache.get_clipped_count()
+        
+        return clipped_count
+    
     def create_coupons_from_response(self, response_data: Dict[str, Any]) -> List[Coupon]:
         """Create Coupon objects from API response data (for backward compatibility)."""
         try:

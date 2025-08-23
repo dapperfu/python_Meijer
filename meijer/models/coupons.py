@@ -9,6 +9,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from dataclasses import dataclass, field
 from enum import Enum
+import json
 
 
 class CouponType(Enum):
@@ -266,3 +267,261 @@ class CouponCollection:
         clipped = self.get_clipped_count()
         available = self.get_available_count()
         return f"CouponCollection({total} total, {clipped} clipped, {available} available)"
+
+    def export_to_json(self, filepath: str) -> None:
+        """Export coupons to JSON file."""
+        with open(filepath, 'w') as f:
+            json.dump(self.to_list(), f, indent=2, default=str)
+    
+    def export_clipped_coupons(self, filepath: str) -> None:
+        """Export only clipped coupons to JSON file."""
+        clipped_coupons = self.filter_clipped(True)
+        with open(filepath, 'w') as f:
+            json.dump(clipped_coupons.to_list(), f, indent=2, default=str)
+    
+    def export_available_coupons(self, filepath: str) -> None:
+        """Export only available (unclipped) coupons to JSON file."""
+        available_coupons = self.filter_clipped(False)
+        with open(filepath, 'w') as f:
+            json.dump(available_coupons.to_list(), f, indent=2, default=str)
+    
+    def export_by_department(self, department: str, filepath: str) -> None:
+        """Export coupons filtered by department to JSON file."""
+        dept_coupons = self.filter_by_department(department)
+        with open(filepath, 'w') as f:
+            json.dump(dept_coupons.to_list(), f, indent=2, default=str)
+    
+    def import_from_json(self, filepath: str, overwrite_existing: bool = False) -> int:
+        """
+        Import coupons from JSON file.
+        
+        Args:
+            filepath: Path to JSON file to import from
+            overwrite_existing: If True, replace existing coupons with same ID
+            
+        Returns:
+            Number of coupons imported
+        """
+        try:
+            with open(filepath, 'r') as f:
+                imported_data = json.load(f)
+            
+            if not isinstance(imported_data, list):
+                raise ValueError("JSON file must contain a list of coupons")
+            
+            imported_count = 0
+            
+            for coupon_data in imported_data:
+                try:
+                    # Create coupon from imported data
+                    imported_coupon = Coupon(
+                        id=coupon_data.get('id', ''),
+                        name=coupon_data.get('name', ''),
+                        description=coupon_data.get('description'),
+                        coupon_type=CouponType(coupon_data.get('coupon_type', 'digital')),
+                        status=CouponStatus(coupon_data.get('status', 'active')),
+                        clipped=coupon_data.get('clipped', False),
+                        auto_clipped=coupon_data.get('auto_clipped', False),
+                        discount_amount=coupon_data.get('discount_amount'),
+                        discount_type=coupon_data.get('discount_type'),
+                        minimum_purchase=coupon_data.get('minimum_purchase'),
+                        redeem_amount=coupon_data.get('redeem_amount'),
+                        start_date=coupon_data.get('start_date'),
+                        end_date=coupon_data.get('end_date'),
+                        category=coupon_data.get('category'),
+                        department=coupon_data.get('department'),
+                        brand=coupon_data.get('brand'),
+                        image_url=coupon_data.get('image_url'),
+                        large_image_url=coupon_data.get('large_image_url'),
+                        terms_and_conditions=coupon_data.get('terms_and_conditions'),
+                        restrictions=coupon_data.get('restrictions', []),
+                        metadata=coupon_data.get('metadata', {})
+                    )
+                    
+                    # Check if coupon already exists
+                    existing_coupon = self.get_by_id(imported_coupon.id)
+                    
+                    if existing_coupon:
+                        if overwrite_existing:
+                            # Replace existing coupon
+                            self.remove(existing_coupon.id)
+                            self.add(imported_coupon)
+                            imported_count += 1
+                        else:
+                            # Update clipping state only
+                            existing_coupon.clipped = imported_coupon.clipped
+                            imported_count += 1
+                    else:
+                        # Add new coupon
+                        self.add(imported_coupon)
+                        imported_count += 1
+                        
+                except Exception as e:
+                    print(f"Error importing coupon {coupon_data.get('id', 'unknown')}: {e}")
+                    continue
+            
+            return imported_count
+            
+        except Exception as e:
+            raise ValueError(f"Failed to import coupons from {filepath}: {e}")
+    
+    def create_backup(self, filepath: str) -> None:
+        """Create a complete backup of all coupons with their current states."""
+        backup_data = {
+            'timestamp': datetime.now().isoformat(),
+            'total_coupons': len(self.coupons),
+            'clipped_count': self.get_clipped_count(),
+            'available_count': self.get_available_count(),
+            'coupons': self.to_list()
+        }
+        
+        with open(filepath, 'w') as f:
+            json.dump(backup_data, f, indent=2, default=str)
+    
+    def restore_from_backup(self, filepath: str) -> int:
+        """
+        Restore coupons from a backup file.
+        
+        Returns:
+            Number of coupons restored
+        """
+        try:
+            with open(filepath, 'r') as f:
+                backup_data = json.load(f)
+            
+            if not isinstance(backup_data, dict) or 'coupons' not in backup_data:
+                raise ValueError("Invalid backup file format")
+            
+            # Clear existing coupons
+            self.coupons.clear()
+            
+            # Restore from backup
+            restored_count = 0
+            for coupon_data in backup_data['coupons']:
+                try:
+                    coupon = Coupon(
+                        id=coupon_data.get('id', ''),
+                        name=coupon_data.get('name', ''),
+                        description=coupon_data.get('description'),
+                        coupon_type=CouponType(coupon_data.get('coupon_type', 'digital')),
+                        status=CouponStatus(coupon_data.get('status', 'active')),
+                        clipped=coupon_data.get('clipped', False),
+                        auto_clipped=coupon_data.get('auto_clipped', False),
+                        discount_amount=coupon_data.get('discount_amount'),
+                        discount_type=coupon_data.get('discount_type'),
+                        minimum_purchase=coupon_data.get('minimum_purchase'),
+                        redeem_amount=coupon_data.get('redeem_amount'),
+                        start_date=coupon_data.get('start_date'),
+                        end_date=coupon_data.get('end_date'),
+                        category=coupon_data.get('category'),
+                        department=coupon_data.get('department'),
+                        brand=coupon_data.get('brand'),
+                        image_url=coupon_data.get('image_url'),
+                        large_image_url=coupon_data.get('large_image_url'),
+                        terms_and_conditions=coupon_data.get('terms_and_conditions'),
+                        restrictions=coupon_data.get('restrictions', []),
+                        metadata=coupon_data.get('metadata', {})
+                    )
+                    
+                    self.add(coupon)
+                    restored_count += 1
+                    
+                except Exception as e:
+                    print(f"Error restoring coupon {coupon_data.get('id', 'unknown')}: {e}")
+                    continue
+            
+            return restored_count
+            
+        except Exception as e:
+            raise ValueError(f"Failed to restore from backup {filepath}: {e}")
+    
+    def share_clipped_coupons(self, filepath: str, include_metadata: bool = False) -> None:
+        """
+        Export clipped coupons in a shareable format.
+        
+        Args:
+            filepath: Path to save the shareable file
+            include_metadata: Whether to include full coupon metadata
+        """
+        clipped_coupons = self.filter_clipped(True)
+        
+        if include_metadata:
+            # Full export with all details
+            share_data = {
+                'shared_by': 'Meijer Coupon System',
+                'shared_at': datetime.now().isoformat(),
+                'coupon_count': len(clipped_coupons),
+                'coupons': clipped_coupons.to_list()
+            }
+        else:
+            # Lightweight export for sharing
+            share_data = {
+                'shared_by': 'Meijer Coupon System',
+                'shared_at': datetime.now().isoformat(),
+                'coupon_count': len(clipped_coupons),
+                'coupons': [
+                    {
+                        'id': c.id,
+                        'name': c.name,
+                        'description': c.description,
+                        'discount': c.get_discount_description(),
+                        'department': c.department,
+                        'category': c.category,
+                        'clipped': c.clipped
+                    }
+                    for c in clipped_coupons.coupons
+                ]
+            }
+        
+        with open(filepath, 'w') as f:
+            json.dump(share_data, f, indent=2, default=str)
+    
+    def import_shared_coupons(self, filepath: str, auto_clip: bool = True) -> int:
+        """
+        Import coupons from a shared file.
+        
+        Args:
+            filepath: Path to the shared coupons file
+            auto_clip: Whether to automatically clip imported coupons
+            
+        Returns:
+            Number of coupons imported
+        """
+        try:
+            with open(filepath, 'r') as f:
+                shared_data = json.load(f)
+            
+            if not isinstance(shared_data, dict) or 'coupons' not in shared_data:
+                raise ValueError("Invalid shared coupons file format")
+            
+            imported_count = 0
+            
+            for coupon_data in shared_data['coupons']:
+                try:
+                    # Create coupon from shared data
+                    imported_coupon = Coupon(
+                        id=coupon_data.get('id', ''),
+                        name=coupon_data.get('name', ''),
+                        description=coupon_data.get('description'),
+                        coupon_type=CouponType.DIGITAL,  # Default for shared coupons
+                        status=CouponStatus.ACTIVE,      # Default for shared coupons
+                        clipped=auto_clip,               # Auto-clip if requested
+                        department=coupon_data.get('department'),
+                        category=coupon_data.get('category'),
+                        discount_amount=coupon_data.get('discount_amount'),
+                        discount_type=coupon_data.get('discount_type'),
+                        metadata=coupon_data
+                    )
+                    
+                    # Add to collection
+                    self.add(imported_coupon)
+                    imported_count += 1
+                    
+                except Exception as e:
+                    print(f"Error importing shared coupon {coupon_data.get('id', 'unknown')}: {e}")
+                    continue
+            
+            return imported_count
+            
+        except Exception as e:
+            raise ValueError(f"Failed to import shared coupons from {filepath}: {e}")
