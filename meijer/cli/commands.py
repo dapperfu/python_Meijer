@@ -2069,17 +2069,27 @@ def settings_group():
 def auth_group():
     """Manage Meijer authentication and tokens.
     
-    Two authentication paths available:
+    Multiple authentication methods available:
     
-    1. QUICK TOKEN: meijer auth quick-token
+    1. LOGIN: meijer auth login --method <method>
+       - requests: Pure HTTP requests (fully headless)
+       - hybrid: Minimal browser + HTTP requests
+       - selenium: Full browser automation
+       - headless: Headless browser automation
+    
+    2. QUICK TOKEN: meijer auth quick-token
        - Just use Meijer app briefly, then capture bearer token
        - Fastest way to get API access
        - Tokens expire and cannot be refreshed
     
-    2. FULL LOGIN: meijer auth full-login  
+    3. FULL LOGIN: meijer auth full-login  
        - Complete OAuth2 flow with username/password/2FA
        - Captures all tokens including refresh tokens
        - Tokens can be refreshed automatically
+    
+    4. CONFIG: meijer auth config
+       - View and manage authentication configuration
+       - Edit headers, timing, and other parameters
     
     For automatic detection: meijer auth log
     """
@@ -2347,11 +2357,11 @@ def auth_imap_command():
 
 
 @auth_group.command("login")
-@click.option("--method", "-m", type=click.Choice(["selenium", "headless"]), 
+@click.option("--method", "-m", type=click.Choice(["selenium", "headless", "requests", "hybrid"]), 
                default="selenium", help="Authentication method")
 @click.option("--keep-open", "-k", is_flag=True, help="Keep browser open for debugging")
 def auth_login_command(method: str, keep_open: bool):
-    """Login to Meijer using Selenium authentication."""
+    """Login to Meijer using various authentication methods."""
     click.echo(f"🔐 Meijer Login via {method.upper()}")
     click.echo("=" * 50)
     
@@ -2375,33 +2385,81 @@ def auth_login_command(method: str, keep_open: bool):
         
         click.echo(f"👤 Using credentials for: {username}")
         
-        from ..okta_selenium_auth import authenticate_with_selenium
-        
-        if method == "headless":
-            # Force headless mode
-            result = authenticate_with_selenium(username, password, headless=True, keep_open=False)
-        else:
-            # Selenium mode - always keep open for debugging
-            result = authenticate_with_selenium(username, password, headless=False, keep_open=True)
-        
-        if result:
-            click.echo("✅ Login successful!")
-            click.echo("💡 You can now use other Meijer commands")
+        if method in ["requests", "hybrid"]:
+            # Use the new configuration-based HeadlessAuthClient
+            click.echo(f"🚀 Using {method.upper()} method with configuration-based authentication")
             
-            # Keep the process running if not headless
-            if not method == "headless":
-                click.echo("🔒 Browser will remain open until you close it manually")
-                click.echo("💡 The authentication process is complete - you can inspect the browser")
-                click.echo("⏸️ Waiting for you to close the browser...")
-                import time
-                while True:
-                    time.sleep(1)  # Keep alive until user closes browser
+            from ..headless_auth_client import HeadlessAuthClient
+            
+            # Create client with specified method
+            client = HeadlessAuthClient(method=method, headless=True)
+            
+            # Perform login
+            click.echo("⏳ Starting authentication process...")
+            result = client.login(username, password)
+            
+            if result:
+                click.echo("✅ Login successful!")
+                click.echo("💡 You can now use other Meijer commands")
+                
+                # Show authentication status
+                if client.authenticated:
+                    click.echo("🔐 Authentication status: Authenticated")
+                    
+                    # Show session info
+                    session = client.get_session()
+                    if session:
+                        cookies = session.cookies
+                        click.echo(f"🍪 Session cookies: {len(cookies)}")
+                        
+                        # Show required cookies
+                        required_cookies = client.config['cookies']['required']
+                        present_cookies = [cookie.name for cookie in cookies]
+                        
+                        click.echo("📋 Required cookies status:")
+                        for cookie_name in required_cookies:
+                            if cookie_name in present_cookies:
+                                click.echo(f"  ✅ {cookie_name}")
+                            else:
+                                click.echo(f"  ❌ {cookie_name}")
+                
+                return True
+            else:
+                click.echo("❌ Login failed")
+                click.echo("💡 Check the logs for detailed error information")
+                return False
+                
         else:
-            click.echo("❌ Login failed")
-            click.echo("💡 Check the browser for any error messages")
+            # Use existing Selenium authentication for selenium/headless methods
+            from ..okta_selenium_auth import authenticate_with_selenium
+            
+            if method == "headless":
+                # Force headless mode
+                result = authenticate_with_selenium(username, password, headless=True, keep_open=False)
+            else:
+                # Selenium mode - always keep open for debugging
+                result = authenticate_with_selenium(username, password, headless=False, keep_open=True)
+            
+            if result:
+                click.echo("✅ Login successful!")
+                click.echo("💡 You can now use other Meijer commands")
+                
+                # Keep the process running if not headless
+                if not method == "headless":
+                    click.echo("🔒 Browser will remain open until you close it manually")
+                    click.echo("💡 The authentication process is complete - you can inspect the browser")
+                    click.echo("⏸️ Waiting for you to close the browser...")
+                    import time
+                    while True:
+                        time.sleep(1)  # Keep alive until user closes browser
+            else:
+                click.echo("❌ Login failed")
+                click.echo("💡 Check the browser for any error messages")
+                return False
             
     except Exception as e:
         click.echo(f"❌ Error during login: {e}")
+        return False
 
 
 @auth_group.command("logout")
@@ -2431,6 +2489,67 @@ def auth_logout_command():
         
     except Exception as e:
         click.echo(f"❌ Error during logout: {e}")
+
+
+@auth_group.command("config")
+@click.option("--show-headers", "-h", is_flag=True, help="Show detailed header configuration")
+@click.option("--show-timing", "-t", is_flag=True, help="Show timing configuration")
+@click.option("--edit", "-e", help="Edit a configuration value (format: key.path=value)")
+def auth_config_command(show_headers: bool, show_timing: bool, edit: str):
+    """Show and manage authentication configuration."""
+    click.echo("⚙️ Meijer Authentication Configuration")
+    click.echo("=" * 50)
+    
+    try:
+        from ..headless_auth_client import HeadlessAuthClient
+        
+        # Create client to load configuration
+        client = HeadlessAuthClient()
+        
+        if edit:
+            # Parse edit command
+            if '=' not in edit:
+                click.echo("❌ Invalid edit format! Use: key.path=value")
+                click.echo("Example: oauth2.client_id=new_id")
+                return
+            
+            key_path, value = edit.split('=', 1)
+            click.echo(f"🔧 Updating configuration: {key_path} = {value}")
+            
+            client.update_config(key_path, value)
+            click.echo("✅ Configuration updated successfully!")
+            return
+        
+        # Show configuration overview
+        config = client.config
+        
+        click.echo("📋 Configuration Overview:")
+        click.echo(f"  📁 Config file: {client._get_config_path()}")
+        click.echo(f"  🔑 Client ID: {config['oauth2']['client_id']}")
+        click.echo(f"  🌐 Meijer URL: {config['base_urls']['meijer']}")
+        click.echo(f"  🔐 Okta URL: {config['base_urls']['okta']}")
+        click.echo(f"  👤 User Agent: {config['user_agent'][:50]}...")
+        
+        if show_timing:
+            click.echo("\n⏱️ Timing Configuration:")
+            for step, delay in config['timing'].items():
+                click.echo(f"  {step}: {delay} seconds")
+        
+        if show_headers:
+            click.echo("\n📋 Header Configuration:")
+            for step, headers in config['headers'].items():
+                click.echo(f"  {step}:")
+                for header, value in headers.items():
+                    if len(value) > 60:
+                        value = value[:60] + "..."
+                    click.echo(f"    {header}: {value}")
+        
+        click.echo("\n💡 Use 'meijer auth config --edit key.path=value' to modify configuration")
+        click.echo("💡 Use 'meijer auth config --show-headers --show-timing' for full details")
+        
+    except Exception as e:
+        click.echo(f"❌ Error accessing configuration: {e}")
+        click.echo("💡 Make sure the configuration file exists and is valid")
 
 
 @auth_group.command("status")

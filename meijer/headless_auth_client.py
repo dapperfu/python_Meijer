@@ -19,12 +19,18 @@ import uuid
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 import requests
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
+
+# Conditional selenium imports
+try:
+    from selenium import webdriver
+    from selenium.webdriver.firefox.options import Options
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import TimeoutException, WebDriverException
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
 
 from .exceptions import AuthenticationError, TwoFactorRequiredError
 from .models.base import BaseModel
@@ -56,6 +62,7 @@ class HeadlessAuthClient:
         self.state_handle = None
         self.device_nonce = None
         self.authenticator_id = None
+        self.code_verifier = None
         
         # Load configuration from file
         self.config = self._load_config()
@@ -200,6 +207,9 @@ class HeadlessAuthClient:
     
     def _setup_browser(self):
         """Setup Firefox browser with proper options."""
+        if not SELENIUM_AVAILABLE:
+            raise ImportError("Selenium is not available. Install it with: pip install selenium")
+        
         try:
             options = Options()
             if self.headless:
@@ -232,12 +242,20 @@ class HeadlessAuthClient:
     
     def _generate_oauth_params(self) -> Dict[str, str]:
         """Generate OAuth2 parameters from configuration."""
+        # Generate PKCE parameters
+        self.code_verifier = secrets.token_urlsafe(32)
+        code_challenge = base64.urlsafe_b64encode(
+            hashlib.sha256(self.code_verifier.encode()).digest()
+        ).decode().rstrip('=')
+        
         return {
             'client_id': self.client_id,
             'scope': self.scope,
             'redirect_uri': self.redirect_uri,
             'response_type': self.config['oauth2']['response_type'],
-            'state': uuid.uuid4().hex
+            'state': uuid.uuid4().hex,
+            'code_challenge': code_challenge,
+            'code_challenge_method': 'S256'
         }
     
     def _get_device_fingerprint_headers(self) -> Dict[str, str]:
@@ -775,7 +793,7 @@ class HeadlessAuthClient:
                     return False
                 
                 # Wait as in successful flow analysis
-                wait_time = self.config['timing']['initial_landing']
+                wait_time = int(self.config['timing']['initial_landing'])
                 logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
                 time.sleep(wait_time)
                 
@@ -784,7 +802,7 @@ class HeadlessAuthClient:
                     return False
                 
                 # Wait as in successful flow analysis
-                wait_time = self.config['timing']['oauth2_authorize']
+                wait_time = int(self.config['timing']['oauth2_authorize'])
                 logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
                 time.sleep(wait_time)
                 
@@ -793,7 +811,7 @@ class HeadlessAuthClient:
                     return False
                 
                 # Wait as in successful flow analysis
-                wait_time = self.config['timing']['device_fingerprint']
+                wait_time = int(self.config['timing']['device_fingerprint'])
                 logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
                 time.sleep(wait_time)
                 
@@ -802,7 +820,7 @@ class HeadlessAuthClient:
                     return False
                 
                 # Wait as in successful flow analysis
-                wait_time = self.config['timing']['identify']
+                wait_time = int(self.config['timing']['identify'])
                 logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
                 time.sleep(wait_time)
                 
@@ -810,8 +828,8 @@ class HeadlessAuthClient:
                 if not self._step5_challenge_answer(password):
                     return False
                 
-                # Wait as in successful flow analysis
-                wait_time = self.config['timing']['challenge']
+                # Wait as in successful flow usage
+                wait_time = int(self.config['timing']['challenge'])
                 logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
                 time.sleep(wait_time)
                 
