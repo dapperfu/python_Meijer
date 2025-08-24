@@ -8,8 +8,13 @@ bypassing Akamai protection and handling the complete authentication flow.
 
 import imaplib
 import logging
+import random
 import re
 import time
+import secrets
+import hashlib
+import base64
+import uuid
 from typing import Any, Dict, Optional
 from urllib.parse import urlencode
 
@@ -41,6 +46,10 @@ class OktaSeleniumAuth:
         self.oauth_authorize_url = f"{self.base_url}/oauth2/default/v1/authorize"
         self.driver = None
         self.logger = logging.getLogger(__name__)
+        
+        # Store PKCE parameters
+        self.code_verifier = None
+        self.code_challenge = None
 
     def _take_screenshot(self, step_name: str):
         """Take a screenshot for debugging purposes."""
@@ -110,6 +119,24 @@ class OktaSeleniumAuth:
         except Exception as e:
             print(f"⚠️ Failed to capture HTML page: {e}")
             return None
+
+    def _generate_code_challenge(self) -> str:
+        """Generate PKCE code challenge."""
+        if not self.code_verifier:
+            self.code_verifier = secrets.token_urlsafe(32)
+        if not self.code_challenge:
+            self.code_challenge = base64.urlsafe_b64encode(
+                hashlib.sha256(self.code_verifier.encode()).digest()
+            ).decode().rstrip('=')
+        return self.code_challenge
+
+    def _generate_state(self) -> str:
+        """Generate state parameter."""
+        return uuid.uuid4().hex
+
+    def _generate_nonce(self) -> str:
+        """Generate nonce parameter."""
+        return uuid.uuid4().hex
 
     def _check_for_rate_limiting(self) -> bool:
         """Check if the page shows rate limiting error."""
@@ -334,14 +361,35 @@ class OktaSeleniumAuth:
                 options.add_argument("--no-sandbox")
                 options.add_argument("--disable-dev-shm-usage")
                 options.add_argument("--disable-gpu")
-                # Use a different user agent to avoid rate limiting
+                # Use DuckDuckGo mobile Android user agent from successful flow
                 options.add_argument(
-                    "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+                    "--user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36"
                 )
+                
+                # Comprehensive mobile device emulation
+                options.add_argument("--window-size=375,812")  # iPhone X dimensions
+                options.add_argument("--viewport-size=375,812")
+                
+                # Mobile-specific options
+                options.add_argument("--touch-events=enabled")
+                options.add_argument("--enable-touch-drag-drop")
+                options.add_argument("--disable-features=VizDisplayCompositor")
+                
                 # Additional options to appear more human-like
                 options.add_argument("--disable-blink-features=AutomationControlled")
                 options.add_experimental_option("excludeSwitches", ["enable-automation"])
                 options.add_experimental_option("useAutomationExtension", False)
+                
+                # Mobile device emulation
+                mobile_emulation = {
+                    "deviceMetrics": {
+                        "width": 375,
+                        "height": 812,
+                        "pixelRatio": 3.0
+                    },
+                    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36"
+                }
+                options.add_experimental_option("mobileEmulation", mobile_emulation)
 
                 # Try to use Chromium specifically
                 try:
@@ -356,11 +404,86 @@ class OktaSeleniumAuth:
                     self.driver = webdriver.Chrome(options=options)
                     print("✅ Chrome browser initialized (fallback)")
 
-                # For debugging: remove automation indicators
+                # For debugging: remove automation indicators and add DuckDuckGo headers
                 if not self.headless:
                     self.driver.execute_script(
                         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
                     )
+                
+                # Comprehensive mobile device spoofing
+                self.driver.execute_script("""
+                    // Remove automation indicators
+                    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                    Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                    Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+                    
+                    // Mobile device properties
+                    Object.defineProperty(navigator, 'maxTouchPoints', {get: () => 5});
+                    Object.defineProperty(navigator, 'hardwareConcurrency', {get: () => 8});
+                    Object.defineProperty(navigator, 'deviceMemory', {get: () => 4});
+                    
+                    // Screen properties for mobile
+                    Object.defineProperty(screen, 'width', {get: () => 375});
+                    Object.defineProperty(screen, 'height', {get: () => 812});
+                    Object.defineProperty(screen, 'availWidth', {get: () => 375});
+                    Object.defineProperty(screen, 'availHeight', {get: () => 812});
+                    Object.defineProperty(screen, 'colorDepth', {get: () => 24});
+                    Object.defineProperty(screen, 'pixelDepth', {get: () => 24});
+                    
+                    // Viewport properties
+                    Object.defineProperty(window, 'innerWidth', {get: () => 375});
+                    Object.defineProperty(window, 'innerHeight', {get: () => 812});
+                    Object.defineProperty(window, 'outerWidth', {get: () => 375});
+                    Object.defineProperty(window, 'outerHeight', {get: () => 812});
+                    
+                    // Touch events
+                    window.ontouchstart = null;
+                    window.ontouchmove = null;
+                    window.ontouchend = null;
+                    
+                    // Add DuckDuckGo mobile app headers to avoid bot detection
+                    const originalOpen = XMLHttpRequest.prototype.open;
+                    XMLHttpRequest.prototype.open = function() {
+                        const result = originalOpen.apply(this, arguments);
+                        this.setRequestHeader('X-Requested-With', 'com.duckduckgo.mobile.android');
+                        this.setRequestHeader('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9');
+                        this.setRequestHeader('Accept-Language', 'en-US,en;q=0.9');
+                        this.setRequestHeader('Accept-Encoding', 'gzip, deflate, br');
+                        this.setRequestHeader('DNT', '1');
+                        this.setRequestHeader('Connection', 'keep-alive');
+                        this.setRequestHeader('Upgrade-Insecure-Requests', '1');
+                        return result;
+                    };
+                    
+                    // Override fetch to add DuckDuckGo headers
+                    const originalFetch = window.fetch;
+                    window.fetch = function(url, options = {}) {
+                        if (!options.headers) options.headers = {};
+                        options.headers['X-Requested-With'] = 'com.duckduckgo.mobile.android';
+                        options.headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
+                        options.headers['Accept-Language'] = 'en-US,en;q=0.9';
+                        options.headers['Accept-Encoding'] = 'gzip, deflate, br';
+                        options.headers['DNT'] = '1';
+                        options.headers['Connection'] = 'keep-alive';
+                        options.headers['Upgrade-Insecure-Requests'] = '1';
+                        return originalFetch(url, options);
+                    };
+                    
+                    // Add mobile-specific properties
+                    window.chrome = {
+                        runtime: {},
+                        loadTimes: function() { return {}; },
+                        csi: function() { return {}; }
+                    };
+                    
+                    // Override permissions API
+                    if (navigator.permissions) {
+                        navigator.permissions.query = function() {
+                            return Promise.resolve({state: 'granted'});
+                        };
+                    }
+                """)
+                print("✅ Comprehensive mobile device spoofing configured")
 
                 print("✅ Chrome browser initialized")
                 return True
@@ -416,13 +539,17 @@ class OktaSeleniumAuth:
     def _load_oauth_page(self) -> bool:
         """Load the OAuth2 authorization page."""
         try:
-            # Build the OAuth2 URL with proper parameters
+            # Build the OAuth2 URL with working parameters from exact_login_replication.py
             params = {
+                "login_hint": "",
+                "code_challenge": self._generate_code_challenge(),
+                "code_challenge_method": "S256",
+                "client_id": "0oa1o8g9njWsUvwsx697",  # Working client_id
+                "scope": "openid profile offline_access",  # Working scope
+                "redirect_uri": "com.meijer.mobile.meijer:/login",  # Working redirect_uri
                 "response_type": "code",
-                "client_id": "0oa22cbewuCICOsKz697",
-                "scope": "openid offline_access",
-                "redirect_uri": "https://www.meijer.com/bin/meijer/signin/v3/callback",
-                "state": "https://www.meijer.com/",
+                "state": self._generate_state(),
+                "nonce": self._generate_nonce()
             }
 
             url = f"{self.oauth_authorize_url}?{urlencode(params)}"
@@ -438,16 +565,12 @@ class OktaSeleniumAuth:
             print(f"📥 Page loaded: {self.driver.title}")
             print(f"📄 Current URL: {self.driver.current_url}")
 
-            # Add much longer session warming delay to avoid rate limiting
-            base_delay = 10  # Increased to 10 seconds
-            jitter = random.uniform(2.0, 5.0)  # Increased jitter
-            total_delay = base_delay + jitter
-            print(f"⏸️ Adding {total_delay:.1f} second session warming delay to avoid rate limiting...")
-            time.sleep(total_delay)
+            # Add small human-like delay to avoid appearing robotic
+            print("⏸️ Adding 3 second human-like delay...")
+            time.sleep(3)
             
-            # Perform session warming by making benign requests
-            print("🔥 Warming up session with benign requests...")
-            self._warm_up_session()
+            # Skip session warming - it's causing bot detection issues
+            print("⏭️ Skipping session warming to avoid bot detection")
 
             return True
 
@@ -455,34 +578,7 @@ class OktaSeleniumAuth:
             print(f"❌ Error loading OAuth2 page: {e}")
             return False
 
-    def _warm_up_session(self) -> None:
-        """Perform session warming by making benign requests to avoid rate limiting."""
-        try:
-            print("🔥 Warming up session to avoid rate limiting...")
-            
-            # Make multiple benign requests to warm up the session
-            try:
-                print("🔥 Making benign request to main page...")
-                self.driver.execute_script("window.open('https://www.meijer.com', '_blank');")
-                time.sleep(2)
-                self.driver.switch_to.window(self.driver.window_handles[0])  # Switch back to main window
-                
-                print("🔥 Making benign request to store locator...")
-                self.driver.execute_script("window.open('https://www.meijer.com/store-locator', '_blank');")
-                time.sleep(2)
-                self.driver.switch_to.window(self.driver.window_handles[0])  # Switch back to main window
-                
-                print("🔥 Making benign request to weekly ad...")
-                self.driver.execute_script("window.open('https://www.meijer.com/weekly-ad', '_blank');")
-                time.sleep(2)
-                self.driver.switch_to.window(self.driver.window_handles[0])  # Switch back to main window
-                
-                print("✅ Session warming completed with multiple pages")
-            except Exception as e:
-                print(f"⚠️ Session warming failed: {e}")
-                
-        except Exception as e:
-            print(f"⚠️ Error during session warming: {e}")
+    # Session warming method removed - it was causing bot detection issues
 
     def _submit_credentials(self) -> bool:
         """Submit username and password through the two-step login form."""
@@ -513,6 +609,11 @@ class OktaSeleniumAuth:
             # STEP 1: Fill username field directly - no need to search
             print("📡 Step 1: Filling username field...")
             
+            # Wait for form to be ready for interaction
+            if not self._wait_for_form_ready(["input[name='identifier']", "button[data-se='save']"], timeout=15):
+                print("❌ Form not ready for interaction")
+                return False
+            
             # Direct access to username field
             username_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='identifier']")
             print("✅ Username field found and ready")
@@ -533,12 +634,9 @@ class OktaSeleniumAuth:
             print(f"   Field after send_keys, current value: '{username_field.get_attribute('value')}'")
             print(f"👤 Username entered: {self.username}")
 
-            # Add much longer delay to avoid triggering rate limiting
-            base_delay = 8  # Increased to 8 seconds
-            jitter = random.uniform(2.0, 4.0)  # Increased jitter
-            total_delay = base_delay + jitter
-            print(f"⏸️ Adding {total_delay:.1f} second delay to avoid rate limiting...")
-            time.sleep(total_delay)
+            # Minimal delay to avoid triggering rate limiting
+            print("⏳ Adding minimal delay to avoid rate limiting...")
+            time.sleep(1)  # Reduced from 10+ seconds to just 1 second
 
             # For debugging: pause to see username entered
             if not self.headless:
@@ -602,18 +700,19 @@ class OktaSeleniumAuth:
             print("🚀 Clicking Next/Submit to go to password page...")
             next_button.click()
 
-            # For debugging: wait to see the transition
-            if not self.headless:
-                base_delay = 8  # Increased to 8 seconds
-                jitter = random.uniform(2.0, 4.0)  # Increased jitter
-                total_delay = base_delay + jitter
-                print(f"⏸️ Waiting {total_delay:.1f} seconds to see transition to password page and avoid rate limiting...")
-                time.sleep(total_delay)
-            else:
-                base_delay = 6  # Increased to 6 seconds
-                jitter = random.uniform(1.5, 3.0)  # Increased jitter
-                total_delay = base_delay + jitter
-                time.sleep(total_delay)
+            # Wait for password page to load by checking for password field presence
+            print("⏳ Waiting for password page to load...")
+            try:
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='credentials.passcode']")))
+                print("✅ Password page loaded - password field detected")
+            except TimeoutException:
+                print("⚠️ Password field not found, checking page state...")
+                # Fallback: check if page title changed
+                if "password" in self.driver.title.lower() or "passcode" in self.driver.title.lower():
+                    print("✅ Password page detected by title")
+                else:
+                    print("❌ Password page not detected")
+                    return False
 
             print(f"📄 After Next click - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
@@ -624,14 +723,10 @@ class OktaSeleniumAuth:
             # STEP 3: Fill password field on the second page
             print("📡 Step 3: Filling password field...")
 
-            # Wait for password page to load and stabilize
-            wait.until(lambda driver: driver.execute_script("""
-                return (
-                    document.querySelector('input[name="credentials.passcode"]') !== null &&
-                    document.readyState === 'complete'
-                );
-            """))
-            print("✅ Password field ready")
+            # Wait for password form to be ready
+            if not self._wait_for_form_ready(["input[name='credentials.passcode']", "button[type='submit']"], timeout=15):
+                print("❌ Password form not ready for interaction")
+                return False
 
             # Direct access to password field - we know exactly what it is
             password_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='credentials.passcode']")
@@ -760,7 +855,17 @@ class OktaSeleniumAuth:
                 
                 # Wait for the email confirmation page to load
                 print("📡 Step 6: Waiting for email confirmation page...")
-                time.sleep(3)  # Give the page time to transition
+                try:
+                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-se="save"]')))
+                    print("✅ Email confirmation page loaded - button detected")
+                except TimeoutException:
+                    print("⚠️ Email confirmation button not found, checking page state...")
+                    # Fallback: check if page title indicates confirmation page
+                    if "confirm" in self.driver.title.lower() or "email" in self.driver.title.lower():
+                        print("✅ Email confirmation page detected by title")
+                    else:
+                        print("❌ Email confirmation page not detected")
+                        return False
                 
                 print(f"📄 After Send Email click - URL: {self.driver.current_url}")
                 print(f"📄 Page title: {self.driver.title}")
@@ -951,7 +1056,17 @@ class OktaSeleniumAuth:
                 
                 # Wait for the email verification page to load
                 print("📡 Step 8: Waiting for email verification page...")
-                time.sleep(3)  # Give the page time to transition
+                try:
+                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="text"], input[placeholder*="code"], input[name*="code"]')))
+                    print("✅ Email verification page loaded - code input field detected")
+                except TimeoutException:
+                    print("⚠️ Email verification code field not found, checking page state...")
+                    # Fallback: check if page title indicates verification page
+                    if "verification" in self.driver.title.lower() or "verify" in self.driver.title.lower():
+                        print("✅ Email verification page detected by title")
+                    else:
+                        print("❌ Email verification page not detected")
+                        return False
                 
                 print(f"📄 After confirmation click - URL: {self.driver.current_url}")
                 print(f"📄 Page title: {self.driver.title}")
@@ -1863,6 +1978,183 @@ class OktaSeleniumAuth:
             # Ignore errors during cleanup
             pass
 
+    def _wait_for_page_load(self, expected_elements: list, timeout: int = 15, page_description: str = "page") -> bool:
+        """
+        Wait for page to load by checking multiple indicators.
+        
+        Args:
+            expected_elements: List of CSS selectors to wait for
+            timeout: Maximum time to wait in seconds
+            page_description: Description of the page for logging
+            
+        Returns:
+            True if page loaded successfully, False otherwise
+        """
+        print(f"⏳ Waiting for {page_description} to load...")
+        
+        try:
+            # Wait for page ready state
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script("return document.readyState") == "complete"
+            )
+            print(f"✅ {page_description} - DOM ready state complete")
+            
+            # Wait for expected elements to appear
+            for selector in expected_elements:
+                try:
+                    WebDriverWait(self.driver, timeout).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    print(f"✅ {page_description} - Expected element found: {selector}")
+                except TimeoutException:
+                    print(f"⚠️ {page_description} - Expected element not found: {selector}")
+                    continue
+            
+            # Check if at least one expected element was found
+            found_elements = []
+            for selector in expected_elements:
+                try:
+                    if self.driver.find_element(By.CSS_SELECTOR, selector):
+                        found_elements.append(selector)
+                except:
+                    continue
+            
+            if found_elements:
+                print(f"✅ {page_description} loaded successfully with {len(found_elements)} expected elements")
+                return True
+            else:
+                print(f"❌ {page_description} - No expected elements found")
+                return False
+                
+        except TimeoutException:
+            print(f"❌ {page_description} - Page load timeout after {timeout} seconds")
+            return False
+        except Exception as e:
+            print(f"❌ {page_description} - Error during page load detection: {e}")
+            return False
+
+    def _wait_for_page_transition(self, old_url: str, old_title: str, timeout: int = 10) -> bool:
+        """
+        Wait for page to transition to a new state.
+        
+        Args:
+            old_url: Previous URL to detect change
+            old_title: Previous title to detect change
+            timeout: Maximum time to wait in seconds
+            
+        Returns:
+            True if page transitioned, False otherwise
+        """
+        print("⏳ Waiting for page transition...")
+        
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            current_url = self.driver.current_url
+            current_title = self.driver.title
+            
+            if current_url != old_url or current_title != old_title:
+                print(f"✅ Page transition detected:")
+                print(f"   URL: {old_url} → {current_url}")
+                print(f"   Title: {old_title} → {current_title}")
+                return True
+            
+            time.sleep(0.5)  # Check every 500ms
+        
+        print("❌ Page transition timeout - no change detected")
+        return False
+
+    def _wait_for_form_ready(self, form_selectors: list, timeout: int = 15) -> bool:
+        """
+        Wait for form to be ready for interaction.
+        
+        Args:
+            form_selectors: List of CSS selectors for form elements
+            timeout: Maximum time to wait in seconds
+            
+        Returns:
+            True if form is ready, False otherwise
+        """
+        print("⏳ Waiting for form to be ready for interaction...")
+        
+        try:
+            # Wait for page ready state
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script("return document.readyState") == "complete"
+            )
+            
+            # Wait for form elements to be present and enabled
+            for selector in form_selectors:
+                try:
+                    element = WebDriverWait(self.driver, timeout).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                    )
+                    print(f"✅ Form element ready: {selector}")
+                except TimeoutException:
+                    print(f"⚠️ Form element not ready: {selector}")
+                    continue
+            
+            # Check if at least one form element is ready
+            ready_elements = []
+            for selector in form_selectors:
+                try:
+                    element = self.driver.find_element(By.CSS_SELECTOR, selector)
+                    if element.is_enabled() and element.is_displayed():
+                        ready_elements.append(selector)
+                except:
+                    continue
+            
+            if ready_elements:
+                print(f"✅ Form ready with {len(ready_elements)} interactive elements")
+                return True
+            else:
+                print("❌ Form not ready - no interactive elements found")
+                return False
+                
+        except TimeoutException:
+            print(f"❌ Form ready timeout after {timeout} seconds")
+            return False
+        except Exception as e:
+            print(f"❌ Error during form ready detection: {e}")
+            return False
+
+    def _wait_for_ajax_complete(self, timeout: int = 10) -> bool:
+        """
+        Wait for AJAX requests to complete.
+        
+        Args:
+            timeout: Maximum time to wait in seconds
+            
+        Returns:
+            True if AJAX is complete, False otherwise
+        """
+        print("⏳ Waiting for AJAX requests to complete...")
+        
+        try:
+            # Wait for jQuery AJAX to complete (if jQuery is present)
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script("return typeof jQuery === 'undefined' || jQuery.active === 0")
+            )
+            
+            # Wait for AngularJS to complete (if Angular is present)
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script("return typeof angular === 'undefined' || angular.element(document).injector().get('$http').pendingRequests.length === 0")
+            )
+            
+            # Wait for React to complete (if React is present)
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script("return typeof React === 'undefined' || true")  # React doesn't have a built-in way to check pending requests
+            )
+            
+            print("✅ AJAX requests completed")
+            return True
+            
+        except TimeoutException:
+            print("⚠️ AJAX completion timeout - continuing anyway")
+            return True  # Don't fail on AJAX timeout
+        except Exception as e:
+            print(f"⚠️ Error checking AJAX status: {e}")
+            return True  # Don't fail on AJAX check errors
+
 
 def authenticate_with_selenium(
     username: str, password: str, headless: bool = True, keep_open: bool = False, 
@@ -1947,7 +2239,7 @@ if __name__ == "__main__":
     print(f"🧪 Testing Selenium authentication for {username}")
     print(f"🔍 Headless: {headless}, Keep open: {keep_open}")
     if proxy_host and proxy_port:
-        print(f"🌐 Proxy: {proxy_host}:{proxy_port}")
+        print(f"�� Proxy: {proxy_host}:{proxy_port}")
     
     if keep_open:
         print("🔍 Using keep-open mode - browser will stay open for debugging")

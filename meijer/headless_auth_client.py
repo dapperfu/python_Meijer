@@ -76,6 +76,14 @@ class HeadlessAuthClient:
         self.redirect_uri = self.config['oauth2']['redirect_uri']
         self.scope = self.config['oauth2']['scope']
         
+        # Store the working OAuth2 configuration from analysis
+        self.working_oauth2_config = {
+            'client_id': self.client_id,
+            'scope': 'openid profile offline_access',  # EXACT from analysis
+            'redirect_uri': 'com.meijer.mobile.meijer:/login',  # EXACT from analysis
+            'response_type': 'code'
+        }
+        
         # User agent from config
         self.user_agent = self.config['user_agent']
         
@@ -241,7 +249,7 @@ class HeadlessAuthClient:
         return code_verifier, code_challenge
     
     def _generate_oauth_params(self) -> Dict[str, str]:
-        """Generate OAuth2 parameters from configuration."""
+        """Generate OAuth2 parameters from working configuration."""
         # Generate PKCE parameters
         self.code_verifier = secrets.token_urlsafe(32)
         code_challenge = base64.urlsafe_b64encode(
@@ -249,14 +257,23 @@ class HeadlessAuthClient:
         ).decode().rstrip('=')
         
         return {
-            'client_id': self.client_id,
-            'scope': self.scope,
-            'redirect_uri': self.redirect_uri,
-            'response_type': self.config['oauth2']['response_type'],
+            'client_id': self.working_oauth2_config['client_id'],
+            'scope': self.working_oauth2_config['scope'],
+            'redirect_uri': self.working_oauth2_config['redirect_uri'],
+            'response_type': self.working_oauth2_config['response_type'],
             'state': uuid.uuid4().hex,
             'code_challenge': code_challenge,
             'code_challenge_method': 'S256'
         }
+    
+    def _get_oauth_authorize_headers(self) -> Dict[str, str]:
+        """Get OAuth2 authorization headers - EXACT from analysis."""
+        headers = self.session.headers.copy()
+        headers.update({
+            'Referer': f'{self.meijer_base}/',
+            'Origin': f'{self.meijer_base}'
+        })
+        return headers
     
     def _get_device_fingerprint_headers(self) -> Dict[str, str]:
         """Get device fingerprint headers from configuration."""
@@ -265,19 +282,41 @@ class HeadlessAuthClient:
         return headers
     
     def _get_identify_headers(self) -> Dict[str, str]:
-        """Get identify request headers from configuration."""
-        headers = self.config['headers']['identify'].copy()
-        headers['User-Agent'] = self.user_agent
-        headers['Origin'] = self.okta_base
-        headers['Referer'] = f'{self.okta_base}/'
+        """Get identify request headers - EXACT from working flow."""
+        headers = {
+            'Accept': 'application/json; okta-version=1.0.0',
+            'X-Okta-User-Agent-Extended': 'okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459',
+            'X-Device-Fingerprint': f"{self.device_nonce}|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8" if self.device_nonce else "",
+            'User-Agent': self.user_agent,
+            'Content-Type': 'application/json',
+            'Origin': self.okta_base,
+            'X-Requested-With': 'com.duckduckgo.mobile.android',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Dest': 'empty',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'en-US,en;q=0.9'
+        }
+        
         return headers
     
     def _get_challenge_headers(self) -> Dict[str, str]:
-        """Get challenge request headers from configuration."""
-        headers = self.config['headers']['challenge'].copy()
-        headers['User-Agent'] = self.user_agent
-        headers['Origin'] = self.okta_base
-        headers['Referer'] = f'{self.okta_base}/'
+        """Get challenge request headers - EXACT from working flow."""
+        headers = {
+            'Accept': 'application/json; okta-version=1.0.0',
+            'X-Okta-User-Agent-Extended': 'okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459',
+            'X-Device-Fingerprint': f"{self.device_nonce}|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8" if self.device_nonce else "",
+            'User-Agent': self.user_agent,
+            'Content-Type': 'application/json',
+            'Origin': self.okta_base,
+            'X-Requested-With': 'com.duckduckgo.mobile.android',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Dest': 'empty',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'en-US,en;q=0.9'
+        }
+        
         return headers
     
     def _get_token_exchange_headers(self) -> Dict[str, str]:
@@ -379,47 +418,43 @@ class HeadlessAuthClient:
             logger.error(f"❌ Error updating configuration: {e}")
     
     def _step1_oauth_authorize(self) -> bool:
-        """Step 1: OAuth2 Authorization - EXACT replication."""
-        logger.info("🔐 Step 1: OAuth2 Authorization")
-        
-        # Generate OAuth parameters
-        oauth_params = self._generate_oauth_params()
-        url = f"{self.okta_base}/oauth2/default/v1/authorize"
-        
-        # Headers exactly as in successful flow analysis
-        headers = self.session.headers.copy()
-        headers.update({
-            'Referer': f'{self.meijer_base}/',
-            'Origin': f'{self.meijer_base}'
-        })
-        
+        """Step 1: OAuth2 Authorization - EXACT from analysis."""
         try:
-            response = self.session.get(url, params=oauth_params, headers=headers)
-            logger.info(f"   Status: {response.status_code}")
-            logger.info(f"   Response size: {len(response.content)} bytes")
+            logger.info("🔐 Step 1: OAuth2 Authorization")
+            
+            # Generate OAuth2 parameters
+            oauth_params = self._generate_oauth_params()
+            
+            # Make OAuth2 authorization request
+            response = self.session.get(
+                f"{self.okta_base}/oauth2/default/v1/authorize",
+                params=oauth_params,
+                headers=self._get_oauth_authorize_headers()
+            )
             
             if response.status_code == 200:
-                # Extract state token from response
+                logger.info("✅ OAuth2 authorization successful")
+                
+                # Extract state token from the response
+                import re
                 content = response.text
-                if 'stateToken' in content:
-                    import re
-                    match = re.search(r'stateToken["\']?\s*:\s*["\']([^"\']+)["\']', content)
-                    if match:
-                        self.state_token = match.group(1)
-                        logger.info(f"   ✅ State token extracted: {self.state_token[:50]}...")
-                        return True
-                    else:
-                        logger.error("   ❌ Could not extract state token from response")
-                        return False
+                
+                # Look for stateToken in oktaData
+                state_token_match = re.search(r'"stateToken":"([^"]+)"', content)
+                if state_token_match:
+                    self.state_token = state_token_match.group(1)
+                    logger.info(f"✅ Extracted state token: {self.state_token[:50]}...")
+                    return True
                 else:
-                    logger.error("   ❌ No state token found in response")
+                    logger.error("❌ Could not extract state token from OAuth2 response")
                     return False
             else:
-                logger.error(f"   ❌ OAuth authorization failed: {response.status_code}")
+                logger.error(f"❌ OAuth authorization failed: {response.status_code}")
+                logger.error(f"Response: {response.text}")
                 return False
                 
         except Exception as e:
-            logger.error(f"   ❌ Error in OAuth authorization: {e}")
+            logger.error(f"❌ Error in OAuth2 authorization: {e}")
             return False
     
     def _step2_device_fingerprint(self) -> bool:
@@ -785,8 +820,8 @@ class HeadlessAuthClient:
             logger.info(f"🚀 Starting {self.method.upper()} authentication process...")
             
             if self.method == "requests":
-                # Pure requests method
-                logger.info("📡 Using pure requests method")
+                # Pure requests method - EXACT from analysis
+                logger.info("📡 Using pure requests method - EXACT from analysis")
                 
                 # Step 0: Initial landing to establish cookies
                 if not self._step0_initial_landing():
@@ -797,7 +832,7 @@ class HeadlessAuthClient:
                 logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
                 time.sleep(wait_time)
                 
-                # Step 1: OAuth2 Authorization
+                # Step 1: OAuth2 Authorization - EXACT from analysis
                 if not self._step1_oauth_authorize():
                     return False
                 
