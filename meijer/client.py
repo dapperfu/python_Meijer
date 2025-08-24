@@ -7,9 +7,14 @@ based on actual endpoint analysis from the decompiled APK and network logs.
 
 import json
 import logging
+import os
+import urllib3
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
+# Suppress SSL warnings when using mitmproxy
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from .auth import MeijerAuth, TokenStorage
 from .coupon_operations import CouponOperations
@@ -210,11 +215,17 @@ class Meijer:
         # SSL configuration
         self.ssl_verify = True
         
-        # Auto-detect mitmproxy certificate path
+        # Auto-detect mitmproxy certificate path using Path().home()
         possible_cert_paths = [
-            Path.home() / ".mitmproxy" / "mitmproxy-ca-cert.pem",
-            Path.home() / ".mitmproxy" / "mitmproxy-ca.pem",
+            Path().home() / ".mitmproxy" / "mitmproxy-ca-cert.pem",
+            Path().home() / ".mitmproxy" / "mitmproxy-ca.pem",
         ]
+        
+        # Check for custom certificate path from environment variable
+        custom_cert_path = os.environ.get('MEIJER_MITMPROXY_CERT')
+        if custom_cert_path:
+            possible_cert_paths.insert(0, Path(custom_cert_path))
+            self.logger.info(f"🔒 Using custom mitmproxy certificate path from environment: {custom_cert_path}")
         
         self.ssl_cert_path = None
         for cert_path in possible_cert_paths:
@@ -225,8 +236,8 @@ class Meijer:
         # Auto-configure SSL with mitmproxy certificate if available
         if self.ssl_cert_path:
             self.logger.info(f"🔒 Auto-configuring SSL with mitmproxy certificate: {self.ssl_cert_path}")
-            # When using mitmproxy, we typically need to disable SSL verification
-            # as the proxy intercepts and re-signs certificates
+            # When using mitmproxy, we need to disable SSL verification
+            # because mitmproxy intercepts and re-signs all HTTPS traffic
             self.ssl_verify = False
             self.logger.info("🔒 SSL verification disabled for mitmproxy compatibility")
         else:
@@ -235,6 +246,9 @@ class Meijer:
             for path in possible_cert_paths:
                 self.logger.info(f"   - {path}")
             self.ssl_verify = True  # Fall back to system certificates
+
+        # Detect if mitmproxy is running and configure proxy settings
+        self._detect_mitmproxy()
 
     def _setup_default_endpoints(self):
         """Setup default Meijer API endpoints."""
