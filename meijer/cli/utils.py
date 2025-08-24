@@ -15,9 +15,12 @@ import click
 from ..client import Meijer
 
 
-def get_meijer_client() -> Meijer:
+def get_meijer_client(proxy: str = None) -> Meijer:
     """
     Get an authenticated Meijer client instance.
+
+    Args:
+        proxy: Proxy server address (e.g., "127.0.0.1:8080")
 
     Returns:
         Meijer: Authenticated client instance
@@ -32,6 +35,24 @@ def get_meijer_client() -> Meijer:
         # Use the new token storage system instead of local auth files
         logger.debug("Using token storage system for authentication")
         client = Meijer()
+
+        # Configure proxy if specified
+        if proxy:
+            logger.debug(f"Configuring proxy: {proxy}")
+            try:
+                # Parse proxy address (e.g., "127.0.0.1:8080")
+                if ":" in proxy:
+                    proxy_host, proxy_port_str = proxy.split(":", 1)
+                    proxy_port = int(proxy_port_str)
+                    client.configure_proxy(proxy_host, proxy_port)
+                    logger.info(f"🔒 Proxy configured: {proxy_host}:{proxy_port}")
+                else:
+                    # Default to port 8080 if no port specified
+                    client.configure_proxy(proxy, 8080)
+                    logger.info(f"🔒 Proxy configured: {proxy}:8080")
+            except ValueError as e:
+                logger.warning(f"Invalid proxy format '{proxy}': {e}")
+                logger.info("💡 Expected format: host:port (e.g., 127.0.0.1:8080)")
 
         logger.debug(f"Client authentication status: {client.auth_status.name}")
 

@@ -177,6 +177,36 @@ class Meijer:
         # Initialize token storage
         self.token_storage = TokenStorage()
 
+        # Initialize requests session for HTTP requests
+        import requests
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        
+        self.session = requests.Session()
+        
+        # Configure connection pooling and retries for efficiency
+        adapter = HTTPAdapter(
+            pool_connections=10,      # Number of connection pools to cache
+            pool_maxsize=20,          # Maximum number of connections per pool
+            max_retries=Retry(
+                total=3,              # Total retries
+                backoff_factor=0.5,   # Exponential backoff: 0.5s, 1s, 2s
+                status_forcelist=[429, 500, 502, 503, 504],  # Retry on rate limits and server errors
+                allowed_methods=["GET", "POST", "PUT", "DELETE"]  # Allow retries on all methods
+            )
+        )
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+        
+        # Set reasonable timeouts to avoid hanging connections
+        self.session.timeout = (5, 30)  # (connect_timeout, read_timeout)
+        
+        # Enable keep-alive for connection reuse
+        self.session.headers.update({
+            'Connection': 'keep-alive',
+            'Keep-Alive': 'timeout=30, max=100'
+        })
+        
         # Initialize authentication
         self.auth = MeijerAuth(self.token_storage)
 
@@ -247,8 +277,154 @@ class Meijer:
                 self.logger.info(f"   - {path}")
             self.ssl_verify = True  # Fall back to system certificates
 
-        # Detect if mitmproxy is running and configure proxy settings
-        self._detect_mitmproxy()
+        # Proxy configuration - only set when explicitly configured by user
+        self.proxy_host = None
+        self.proxy_port = None
+        
+        # Rate limiting and caching for API efficiency
+        self._request_cache = {}  # Simple in-memory cache
+        self._last_request_time = {}  # Track last request time per endpoint
+        self._min_request_interval = 0.5  # Minimum seconds between requests to same endpoint
+        
+        # Request deduplication
+        self._pending_requests = {}  # Track in-flight requests to avoid duplicates
+
+    def _rate_limit(self, endpoint: str) -> None:
+        """
+        Implement rate limiting to avoid overwhelming the API.
+        
+        Args:
+            endpoint: API endpoint being called
+        """
+        import time
+        
+        current_time = time.time()
+        last_time = self._last_request_time.get(endpoint, 0)
+        
+        if current_time - last_time < self._min_request_interval:
+            sleep_time = self._min_request_interval - (current_time - last_time)
+            self.logger.debug(f"⏱️ Rate limiting: sleeping {sleep_time:.2f}s for {endpoint}")
+            time.sleep(sleep_time)
+        
+        self._last_request_time[endpoint] = time.time()
+
+    def _get_cache_key(self, method: str, url: str, params: dict = None, json_data: dict = None) -> str:
+        """
+        Generate a cache key for the request.
+        
+        Args:
+            method: HTTP method
+            url: Request URL
+            params: Query parameters
+            json_data: JSON payload
+            
+        Returns:
+            Cache key string
+        """
+        import hashlib
+        
+        # Create a unique key based on request parameters
+        key_parts = [method, url]
+        if params:
+            key_parts.append(str(sorted(params.items())))
+        if json_data:
+            key_parts.append(str(sorted(json_data.items())))
+        
+        key_string = "|".join(key_parts)
+        return hashlib.md5(key_string.encode()).hexdigest()
+
+    def _check_cache(self, cache_key: str, max_age: int = 300) -> dict:
+        """
+        Check if we have a cached response.
+        
+        Args:
+            cache_key: Cache key for the request
+            max_age: Maximum age of cached response in seconds (default: 5 minutes)
+            
+        Returns:
+            Cached response data or None if not found/expired
+        """
+        import time
+        
+        if cache_key in self._request_cache:
+            cached_data, timestamp = self._request_cache[cache_key]
+            if time.time() - timestamp < max_age:
+                self.logger.debug(f"💾 Using cached response for {cache_key}")
+                return cached_data
+            else:
+                # Remove expired cache entry
+                del self._request_cache[cache_key]
+        
+        return None
+
+    def _cache_response(self, cache_key: str, response_data: dict) -> None:
+        """
+        Cache a response for future use.
+        
+        Args:
+            cache_key: Cache key for the request
+            response_data: Response data to cache
+        """
+        import time
+        
+        self._request_cache[cache_key] = (response_data, time.time())
+        self.logger.debug(f"💾 Cached response for {cache_key}")
+
+    def _deduplicate_request(self, cache_key: str) -> bool:
+        """
+        Check if a request is already in flight to avoid duplicates.
+        
+        Args:
+            cache_key: Cache key for the request
+            
+        Returns:
+            True if request is already in flight, False otherwise
+        """
+        import time
+        
+        current_time = time.time()
+        
+        # Clean up old pending requests (older than 30 seconds)
+        self._pending_requests = {
+            k: v for k, v in self._pending_requests.items() 
+            if current_time - v < 30
+        }
+        
+        if cache_key in self._pending_requests:
+            self.logger.debug(f"🔄 Request already in flight for {cache_key}")
+            return True
+        
+        # Mark this request as in flight
+        self._pending_requests[cache_key] = current_time
+        return False
+
+    def clear_cache(self) -> None:
+        """Clear all cached responses."""
+        self._request_cache.clear()
+        self.logger.info("🗑️ Cache cleared")
+
+    def configure_rate_limiting(self, min_interval: float = 0.5) -> None:
+        """
+        Configure rate limiting behavior.
+        
+        Args:
+            min_interval: Minimum seconds between requests to the same endpoint
+        """
+        self._min_request_interval = min_interval
+        self.logger.info(f"⏱️ Rate limiting configured: {min_interval}s minimum interval")
+
+    def get_cache_stats(self) -> dict:
+        """
+        Get cache statistics.
+        
+        Returns:
+            Dictionary with cache statistics
+        """
+        return {
+            'cache_size': len(self._request_cache),
+            'pending_requests': len(self._pending_requests),
+            'rate_limit_interval': self._min_request_interval
+        }
 
     def _setup_default_endpoints(self):
         """Setup default Meijer API endpoints."""
@@ -554,13 +730,56 @@ class Meijer:
         headers: Optional[Dict[str, str]] = None,
         params: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
+        cache: bool = True,
+        cache_max_age: int = 300,
         **kwargs,
     ) -> Any:
-        """Make HTTP request with proper error handling."""
+        """Make HTTP request with proper error handling, caching, and rate limiting."""
         import requests
         import os
 
         try:
+            # Generate cache key for this request
+            cache_key = self._get_cache_key(method, url, params, json_data)
+            
+            # Check cache first (only for GET requests and when caching is enabled)
+            if cache and method.upper() == "GET":
+                cached_response = self._check_cache(cache_key, cache_max_age)
+                if cached_response:
+                    # Return a mock response object with cached data
+                    class CachedResponse:
+                        def __init__(self, data):
+                            self.status_code = 200
+                            self.json_data = data
+                            self.cached = True
+                        
+                        def json(self):
+                            return self.json_data
+                    
+                    return CachedResponse(cached_response)
+            
+            # Check for duplicate requests
+            if self._deduplicate_request(cache_key):
+                # Wait a bit and check cache again
+                import time
+                time.sleep(0.1)
+                cached_response = self._check_cache(cache_key, cache_max_age)
+                if cached_response:
+                    class CachedResponse:
+                        def __init__(self, data):
+                            self.status_code = 200
+                            self.json_data = data
+                            self.cached = True
+                        
+                        def json(self):
+                            return self.json_data
+                    
+                    return CachedResponse(cached_response)
+            
+            # Rate limit requests to avoid overwhelming the API
+            endpoint = url.split('/')[-1] if '/' in url else url
+            self._rate_limit(endpoint)
+            
             # Use default headers if none provided
             if headers is None:
                 headers = self._get_api_headers()
@@ -595,8 +814,8 @@ class Meijer:
                 os.environ['CURL_CA_BUNDLE'] = ''
                 self.logger.info("🔒 Environment variables set to disable SSL verification")
             
-            # Make request with SSL configuration
-            response = requests.request(
+            # Make request with SSL configuration using the session
+            response = self.session.request(
                 method=method,
                 url=url,
                 headers=headers,
@@ -610,9 +829,26 @@ class Meijer:
             # Log request details
             self.logger.debug(f"{method} {url} - Status: {response.status_code}")
 
+            # Cache successful GET responses
+            if cache and method.upper() == "GET" and response.status_code == 200:
+                try:
+                    response_data = response.json()
+                    self._cache_response(cache_key, response_data)
+                except (ValueError, TypeError):
+                    # Response is not JSON, don't cache
+                    pass
+
+            # Remove from pending requests
+            if cache_key in self._pending_requests:
+                del self._pending_requests[cache_key]
+
             return response
 
         except Exception as e:
+            # Remove from pending requests on error
+            if 'cache_key' in locals() and cache_key in self._pending_requests:
+                del self._pending_requests[cache_key]
+            
             self.logger.error(f"Request failed: {e}")
             raise MeijerAPIError(f"Request failed: {e}")
 
@@ -1831,6 +2067,29 @@ class Meijer:
             }
 
         return None
+
+    def configure_proxy(self, proxy_host: str, proxy_port: int = 8080):
+        """
+        Configure proxy settings for the client.
+        
+        Args:
+            proxy_host: Proxy host (e.g., "127.0.0.1")
+            proxy_port: Proxy port (default: 8080)
+        """
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
+        
+        if self.proxy_host and self.proxy_port:
+            # Configure proxy for the session
+            self.session.proxies = {
+                'http': f'http://{self.proxy_host}:{self.proxy_port}',
+                'https': f'http://{self.proxy_host}:{self.proxy_port}'
+            }
+            self.logger.info(f"🔒 Proxy configured: {self.proxy_host}:{self.proxy_port}")
+        else:
+            # Remove proxy configuration
+            self.session.proxies = {}
+            self.logger.info("🔒 Proxy configuration removed")
 
     def _detect_mitmproxy(self) -> bool:
         """

@@ -79,8 +79,13 @@ def setup_logging(verbosity: int) -> None:
     count=True,
     help="Increase verbosity. Use -v for info, -vv for debug, -vvv for detailed debug",
 )
+@click.option(
+    "--proxy",
+    help="Proxy server address (e.g., 127.0.0.1:8080 for mitmproxy)",
+)
 @click.version_option(version="1.0.0", prog_name="meijer")
-def cli(verbose: int):
+@click.pass_context
+def cli(ctx: click.Context, verbose: int, proxy: str):
     """
     🛒 Meijer Shopping List CLI Tool
 
@@ -102,9 +107,15 @@ def cli(verbose: int):
     # Set up logging based on verbosity
     setup_logging(verbose)
 
+    # Store proxy setting in context for commands to access
+    ctx.ensure_object(dict)
+    ctx.obj['proxy'] = proxy
+
     # Log CLI invocation for debugging
     logger = logging.getLogger(__name__)
     logger.debug(f"CLI invoked with verbosity level: {verbose}")
+    if proxy:
+        logger.debug(f"Proxy configured: {proxy}")
     logger.debug("Setting up Meijer CLI environment")
 
 
