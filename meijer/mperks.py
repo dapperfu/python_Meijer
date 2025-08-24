@@ -146,12 +146,99 @@ class MPerksEarnedRewards:
     total_rewards: int = 0
     total_points: int = 0
     rewards: List[EarnedReward] = field(default_factory=list)
+    _history: Optional['MPerksHistory'] = None
+    _mperks_client: Optional['MPerksClient'] = None
     
     def add_reward(self, reward: EarnedReward) -> None:
         """Add a reward to the container."""
         self.rewards.append(reward)
         self.total_rewards += 1
         self.total_points += reward.points_earned
+    
+    def set_mperks_client(self, client: 'MPerksClient') -> None:
+        """Set the mPerks client for accessing history."""
+        self._mperks_client = client
+    
+    @property
+    def history(self) -> 'MPerksHistory':
+        """
+        Get mPerks points history.
+        
+        Returns:
+            MPerksHistory object containing history events
+        """
+        if self._mperks_client:
+            return self._mperks_client.history
+        else:
+            # Return empty history if no client is set
+            return MPerksHistory()
+
+
+@dataclass
+class MPerksHistoryEvent:
+    """Represents a single mPerks history event."""
+    date: datetime
+    points_change: int  # Positive for earnings, negative for redemptions
+    event_type: str  # "Purchase Earnings", "Reward Claimed", etc.
+    description: Optional[str] = None
+    transaction_id: Optional[str] = None
+    store_id: Optional[str] = None
+    order_id: Optional[str] = None
+    
+    def __str__(self) -> str:
+        """String representation of the history event."""
+        points_str = f"+{self.points_change}" if self.points_change >= 0 else str(self.points_change)
+        return f"mPerks<{self.date.strftime('%B %d, %Y')}, {points_str}, {self.event_type}>"
+    
+    def __repr__(self) -> str:
+        """Detailed representation of the history event."""
+        return f"MPerksHistoryEvent(date={self.date}, points_change={self.points_change}, event_type='{self.event_type}')"
+
+
+@dataclass
+class MPerksHistory:
+    """Container for mPerks history data."""
+    events: List[MPerksHistoryEvent] = field(default_factory=list)
+    total_earnings: int = 0
+    total_redemptions: int = 0
+    net_points: int = 0
+    
+    def add_event(self, event: MPerksHistoryEvent) -> None:
+        """Add a history event to the container."""
+        self.events.append(event)
+        
+        if event.points_change > 0:
+            self.total_earnings += event.points_change
+        else:
+            self.total_redemptions += abs(event.points_change)
+        
+        self.net_points = self.total_earnings - self.total_redemptions
+    
+    def get_events_by_type(self, event_type: str) -> List[MPerksHistoryEvent]:
+        """Get all events of a specific type."""
+        return [event for event in self.events if event.event_type == event_type]
+    
+    def get_events_by_date_range(self, start_date: datetime, end_date: datetime) -> List[MPerksHistoryEvent]:
+        """Get events within a date range."""
+        return [event for event in self.events if start_date <= event.date <= end_date]
+    
+    def get_recent_events(self, days: int = 30) -> List[MPerksHistoryEvent]:
+        """Get events from the last N days."""
+        from datetime import timedelta
+        cutoff_date = datetime.now() - timedelta(days=days)
+        return [event for event in self.events if event.date >= cutoff_date]
+    
+    def __len__(self) -> int:
+        """Return the number of history events."""
+        return len(self.events)
+    
+    def __getitem__(self, index: int) -> MPerksHistoryEvent:
+        """Allow indexing into history events."""
+        return self.events[index]
+    
+    def __iter__(self):
+        """Allow iteration over history events."""
+        return iter(self.events)
 
 
 class MPerksClient:
@@ -171,6 +258,9 @@ class MPerksClient:
             'rewards_available': '/digital/mperks40/customer/v1/rewards/available',
             'auto_claim': '/digital/mperks40/customer/v1/autoclaim/available',
             'account': '/digital/mperks40/customer/v1/account',
+            'history': '/loyalty/mPerks/api/points/history',
+            'transactions': '/loyalty/mPerks/api/points/transactions',
+            'activity': '/loyalty/mPerks/api/points/activity',
         }
     
     def set_auth_token(self, token: str) -> None:
@@ -288,6 +378,207 @@ class MPerksClient:
         except Exception as e:
             self.logger.error(f"Failed to fetch account info: {e}")
             return {}
+    
+    def get_history(self) -> MPerksHistory:
+        """
+        Fetch mPerks points history from the API.
+        
+        Returns:
+            MPerksHistory object containing history events
+        """
+        self.logger.info("Fetching mPerks points history from API")
+        
+        try:
+            # Try multiple endpoints to find the one that works
+            history_data = None
+            
+            # Try the history endpoint first
+            try:
+                response = self._make_request(self.endpoints['history'])
+                if response and isinstance(response, dict):
+                    history_data = response
+                    self.logger.info("Successfully fetched history from history endpoint")
+            except Exception as e:
+                self.logger.debug(f"History endpoint failed: {e}")
+            
+            # Try transactions endpoint if history failed
+            if not history_data:
+                try:
+                    response = self._make_request(self.endpoints['transactions'])
+                    if response and isinstance(response, dict):
+                        history_data = response
+                        self.logger.info("Successfully fetched history from transactions endpoint")
+                except Exception as e:
+                    self.logger.debug(f"Transactions endpoint failed: {e}")
+            
+            # Try activity endpoint if both failed
+            if not history_data:
+                try:
+                    response = self._make_request(self.endpoints['activity'])
+                    if response and isinstance(response, dict):
+                        history_data = response
+                        self.logger.info("Successfully fetched history from activity endpoint")
+                except Exception as e:
+                    self.logger.debug(f"Activity endpoint failed: {e}")
+            
+            if not history_data:
+                self.logger.warning("All history endpoints failed, returning empty history")
+                return MPerksHistory()
+            
+            # Parse the history data
+            history = self._parse_history_data(history_data)
+            self.logger.info(f"Successfully parsed {len(history)} history events")
+            return history
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch mPerks history: {e}")
+            return MPerksHistory()
+    
+    def _parse_history_data(self, data: Dict[str, Any]) -> MPerksHistory:
+        """
+        Parse history data from API response.
+        
+        Args:
+            data: Raw history data from the API
+            
+        Returns:
+            MPerksHistory object with parsed events
+        """
+        history = MPerksHistory()
+        
+        try:
+            # Look for common data structures in the response
+            events_data = None
+            
+            # Check for different possible data structures
+            if 'transactions' in data:
+                events_data = data['transactions']
+            elif 'history' in data:
+                events_data = data['history']
+            elif 'activity' in data:
+                events_data = data['activity']
+            elif 'points' in data:
+                events_data = data['points']
+            elif 'events' in data:
+                events_data = data['events']
+            elif 'records' in data:
+                events_data = data['records']
+            elif 'data' in data:
+                events_data = data['data']
+            
+            if not events_data:
+                self.logger.warning("No events data found in response")
+                return history
+            
+            # Handle both list and dict formats
+            if isinstance(events_data, list):
+                for event_data in events_data:
+                    event = self._create_history_event_from_data(event_data)
+                    if event:
+                        history.add_event(event)
+            elif isinstance(events_data, dict):
+                # If it's a dict, it might have pagination or other structure
+                if 'items' in events_data:
+                    for event_data in events_data['items']:
+                        event = self._create_history_event_from_data(event_data)
+                        if event:
+                            history.add_event(event)
+                elif 'results' in events_data:
+                    for event_data in events_data['results']:
+                        event = self._create_history_event_from_data(event_data)
+                        if event:
+                            history.add_event(event)
+                else:
+                    # Try to treat the dict as a single event
+                    event = self._create_history_event_from_data(events_data)
+                    if event:
+                        history.add_event(event)
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing history data: {e}")
+        
+        return history
+    
+    def _create_history_event_from_data(self, event_data: Dict[str, Any]) -> Optional[MPerksHistoryEvent]:
+        """
+        Create a history event from API response data.
+        
+        Args:
+            event_data: Raw event data from the API
+            
+        Returns:
+            MPerksHistoryEvent object or None if creation fails
+        """
+        try:
+            # Extract common fields
+            date_str = event_data.get('date') or event_data.get('transactionDate') or event_data.get('earnDate') or event_data.get('timestamp')
+            points_change = event_data.get('points') or event_data.get('pointsChange') or event_data.get('amount') or 0
+            event_type = event_data.get('type') or event_data.get('eventType') or event_data.get('description') or 'Unknown'
+            description = event_data.get('description') or event_data.get('details') or event_data.get('note')
+            transaction_id = event_data.get('transactionId') or event_data.get('id') or event_data.get('reference')
+            store_id = event_data.get('storeId') or event_data.get('store')
+            order_id = event_data.get('orderId') or event_data.get('order')
+            
+            # Parse date
+            if date_str:
+                try:
+                    # Try different date formats
+                    if 'T' in date_str and 'Z' in date_str:
+                        # ISO format: 2025-01-15T10:30:00Z
+                        date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                    elif 'T' in date_str:
+                        # ISO format without Z: 2025-01-15T10:30:00
+                        date = datetime.fromisoformat(date_str)
+                    else:
+                        # Try common date formats
+                        for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S']:
+                            try:
+                                date = datetime.strptime(date_str, fmt)
+                                break
+                            except ValueError:
+                                continue
+                        else:
+                            # If all formats fail, use current date
+                            date = datetime.now()
+                except Exception as e:
+                    self.logger.debug(f"Failed to parse date '{date_str}': {e}")
+                    date = datetime.now()
+            else:
+                date = datetime.now()
+            
+            # Ensure points_change is an integer
+            try:
+                points_change = int(points_change)
+            except (ValueError, TypeError):
+                points_change = 0
+            
+            # Normalize event type
+            event_type_lower = event_type.lower()
+            if any(word in event_type_lower for word in ['purchase', 'earn', 'earned', 'shopping']):
+                event_type = "Purchase Earnings"
+            elif any(word in event_type_lower for word in ['reward', 'claim', 'claimed', 'redeem', 'redemption']):
+                event_type = "Reward Claimed"
+            elif any(word in event_type_lower for word in ['bonus', 'promotion', 'offer']):
+                event_type = "Bonus Points"
+            elif any(word in event_type_lower for word in ['expire', 'expired', 'forfeit']):
+                event_type = "Points Expired"
+            else:
+                event_type = event_type.title()
+            
+            return MPerksHistoryEvent(
+                date=date,
+                points_change=points_change,
+                event_type=event_type,
+                description=description,
+                transaction_id=transaction_id,
+                store_id=store_id,
+                order_id=order_id
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create history event from data: {e}")
+            self.logger.debug(f"Problematic data: {event_data}")
+            return None
     
     def _create_reward_from_api_data(self, reward_data: Dict[str, Any]) -> Optional[BaseReward]:
         """
@@ -663,6 +954,16 @@ class MPerksClient:
         except Exception as e:
             self.logger.error(f"Failed to fetch all rewards: {e}")
             return {}
+    
+    @property
+    def history(self) -> MPerksHistory:
+        """
+        Get mPerks points history.
+        
+        Returns:
+            MPerksHistory object containing history events
+        """
+        return self.get_history()
     
     def claim_reward(self, reward: BaseReward, customer_points: int) -> bool:
         """

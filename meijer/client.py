@@ -28,6 +28,8 @@ from .mperks import (
     EarnTabData,
     MCardInfo,
     MPerksEarnedRewards,
+    MPerksHistory,
+    MPerksHistoryEvent,
 )
 from .product_operations import ProductOperations
 from .search import Search
@@ -217,7 +219,13 @@ class Meijer:
         self.product_ops = ProductOperations(self)
         self.search = Search(self)
         self.shop_scan = ShopNScan(self)
+        
+        # Initialize mPerks with proper client connection
+        from .mperks import MPerksClient
+        self.mperks_client = MPerksClient()
         self.mperks = MPerksEarnedRewards(self)
+        self.mperks.set_mperks_client(self.mperks_client)
+        
         self.feedback = MeijerFeedback(self)
         self.settings = MeijerSettings(self)
         
@@ -241,6 +249,9 @@ class Meijer:
 
         # Load authentication
         self._load_auth(auth)
+        
+        # Update mPerks client with authentication token
+        self._update_mperks_auth()
         
         # SSL configuration
         self.ssl_verify = True
@@ -448,6 +459,22 @@ class Meijer:
         
         # Setup local endpoints - redirect all to the local Flask server
         self.api_base_url = f"{base_url}/api/meijer"
+        self.id_base_url = f"{base_url}/api/meijer"
+        self.digital_base_url = f"{base_url}/api/meijer"
+        self.loyalty_base_url = f"{base_url}/api/meijer"
+        self.www_base_url = f"{base_url}/api/meijer"
+        self.constructor_base_url = f"{base_url}/api/meijer"
+        self.feedback_base_url = f"{base_url}/api/meijer"
+        
+        self.logger.info(f"🔧 Configured local endpoints:")
+        self.logger.info(f"  API Base: {self.api_base_url}")
+        self.logger.info(f"  ID Base: {self.id_base_url}")
+        self.logger.info(f"  Digital Base: {self.digital_base_url}")
+        self.logger.info(f"  Loyalty Base: {self.loyalty_base_url}")
+        self.logger.info(f"  WWW Base: {self.www_base_url}")
+        self.logger.info(f"  Constructor Base: {self.constructor_base_url}")
+        self.logger.info(f"  Feedback Base: {self.feedback_base_url}")
+        self.logger.info("💡 All API calls will now go through the local Flask server")
 
     def configure_ssl(self, verify: bool = True, cert_path: Optional[str] = None):
         """
@@ -586,6 +613,18 @@ class Meijer:
             self.logger.error(f"❌ Failed to load auth from log: {e}")
             raise
 
+    def _update_mperks_auth(self):
+        """Update mPerks client with current authentication token."""
+        try:
+            tokens = self.token_storage.get_valid_tokens()
+            if tokens and tokens.access_token:
+                self.mperks_client.set_auth_token(tokens.access_token)
+                self.logger.info("✅ Updated mPerks client with authentication token")
+            else:
+                self.logger.debug("No valid tokens available for mPerks client")
+        except Exception as e:
+            self.logger.warning(f"⚠️ Failed to update mPerks client authentication: {e}")
+    
     def _load_auth_from_config(self):
         """Load authentication from cross-platform config directory or token storage."""
         # First check if we already have tokens in storage

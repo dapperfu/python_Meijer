@@ -137,7 +137,8 @@ def list_show(ctx: click.Context, completed: bool, pending: bool):
 
     # Get proxy setting from context
     proxy = ctx.obj.get('proxy') if ctx.obj else None
-    client = get_meijer_client(proxy=proxy)
+    local = ctx.obj.get('local') if ctx.obj else None
+    client = get_meijer_client(proxy=proxy, local=local)
 
     try:
         logger.debug("Fetching shopping list items")

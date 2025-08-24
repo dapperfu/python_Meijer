@@ -83,9 +83,13 @@ def setup_logging(verbosity: int) -> None:
     "--proxy",
     help="Proxy server address (e.g., 127.0.0.1:8080 for mitmproxy)",
 )
+@click.option(
+    "--local",
+    help="Local Flask API backend URL (e.g., http://127.0.0.1:5000 for development/testing)",
+)
 @click.version_option(version="1.0.0", prog_name="meijer")
 @click.pass_context
-def cli(ctx: click.Context, verbose: int, proxy: str):
+def cli(ctx: click.Context, verbose: int, proxy: str, local: bool):
     """
     🛒 Meijer Shopping List CLI Tool
 
@@ -110,12 +114,15 @@ def cli(ctx: click.Context, verbose: int, proxy: str):
     # Store proxy setting in context for commands to access
     ctx.ensure_object(dict)
     ctx.obj['proxy'] = proxy
+    ctx.obj['local'] = local
 
     # Log CLI invocation for debugging
     logger = logging.getLogger(__name__)
     logger.debug(f"CLI invoked with verbosity level: {verbose}")
     if proxy:
         logger.debug(f"Proxy configured: {proxy}")
+    if local:
+        logger.debug(f"Local Flask backend configured: {local}")
     logger.debug("Setting up Meijer CLI environment")
 
 

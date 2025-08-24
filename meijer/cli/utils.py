@@ -15,12 +15,13 @@ import click
 from ..client import Meijer
 
 
-def get_meijer_client(proxy: str = None) -> Meijer:
+def get_meijer_client(proxy: str = None, local: str = None) -> Meijer:
     """
     Get an authenticated Meijer client instance.
 
     Args:
         proxy: Proxy server address (e.g., "127.0.0.1:8080")
+        local: Local Flask backend URL (e.g., "http://127.0.0.1:5000")
 
     Returns:
         Meijer: Authenticated client instance
@@ -34,7 +35,13 @@ def get_meijer_client(proxy: str = None) -> Meijer:
     try:
         # Use the new token storage system instead of local auth files
         logger.debug("Using token storage system for authentication")
-        client = Meijer()
+        
+        # Create client with local backend if specified
+        if local:
+            logger.debug(f"Creating client with local Flask backend: {local}")
+            client = Meijer(base_url=local)
+        else:
+            client = Meijer()
 
         # Configure proxy if specified
         if proxy:
