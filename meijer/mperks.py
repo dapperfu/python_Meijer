@@ -146,7 +146,6 @@ class MPerksEarnedRewards:
     total_rewards: int = 0
     total_points: int = 0
     rewards: List[EarnedReward] = field(default_factory=list)
-    _history: Optional['MPerksHistory'] = None
     _mperks_client: Optional['MPerksClient'] = None
     
     def add_reward(self, reward: EarnedReward) -> None:
@@ -171,6 +170,7 @@ class MPerksEarnedRewards:
             return self._mperks_client.history
         else:
             # Return empty history if no client is set
+            from .mperks import MPerksHistory
             return MPerksHistory()
 
 
