@@ -209,17 +209,31 @@ class Meijer:
         
         # SSL configuration
         self.ssl_verify = True
-        self.ssl_cert_path = "/keg/cursor/.mitmproxy/mitmproxy-ca-cert.pem"
+        
+        # Auto-detect mitmproxy certificate path
+        possible_cert_paths = [
+            Path.home() / ".mitmproxy" / "mitmproxy-ca-cert.pem",
+            Path.home() / ".mitmproxy" / "mitmproxy-ca.pem",
+        ]
+        
+        self.ssl_cert_path = None
+        for cert_path in possible_cert_paths:
+            if cert_path.exists():
+                self.ssl_cert_path = str(cert_path)
+                break
         
         # Auto-configure SSL with mitmproxy certificate if available
-        if Path(self.ssl_cert_path).exists():
+        if self.ssl_cert_path:
             self.logger.info(f"🔒 Auto-configuring SSL with mitmproxy certificate: {self.ssl_cert_path}")
             # When using mitmproxy, we typically need to disable SSL verification
             # as the proxy intercepts and re-signs certificates
             self.ssl_verify = False
             self.logger.info("🔒 SSL verification disabled for mitmproxy compatibility")
         else:
-            self.logger.warning(f"⚠️ Mitmproxy certificate not found: {self.ssl_cert_path}")
+            self.logger.warning("⚠️ Mitmproxy certificate not found in common locations")
+            self.logger.info("💡 Expected locations:")
+            for path in possible_cert_paths:
+                self.logger.info(f"   - {path}")
             self.ssl_verify = True  # Fall back to system certificates
 
     def _setup_default_endpoints(self):
@@ -1803,3 +1817,47 @@ class Meijer:
             }
 
         return None
+
+    def _detect_mitmproxy(self) -> bool:
+        """
+        Detect if mitmproxy is running and configure proxy settings.
+        
+        Returns:
+            bool: True if mitmproxy is detected and configured
+        """
+        import subprocess
+        import socket
+        
+        try:
+            # Check if port 8080 is open (common mitmproxy port)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('127.0.0.1', 8080))
+            sock.close()
+            
+            if result == 0:
+                self.logger.info("🔍 Detected mitmproxy running on 127.0.0.1:8080")
+                self.proxy_host = "127.0.0.1"
+                self.proxy_port = 8080
+                
+                # Configure proxy for requests
+                self.session.proxies = {
+                    'http': f'http://{self.proxy_host}:{self.proxy_port}',
+                    'https': f'http://{self.proxy_host}:{self.proxy_port}'
+                }
+                
+                self.logger.info("🔒 Proxy configured for requests session")
+                return True
+            else:
+                self.logger.debug("🔍 No mitmproxy detected on 127.0.0.1:8080")
+                return False
+                
+        except Exception as e:
+            self.logger.debug(f"🔍 Error detecting mitmproxy: {e}")
+            return False
+
+    def _setup_session_headers(self):
+        """Setup session headers for API requests."""
+        # This method is intentionally empty for now
+        # Headers are set in the constructor and updated as needed
+        pass
