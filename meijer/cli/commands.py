@@ -2063,13 +2063,43 @@ def settings_group():
 # Authentication Commands - Restructured as a group
 @click.group()
 def auth_group():
-    """Manage Meijer authentication and tokens."""
+    """Manage Meijer authentication and tokens.
+    
+    Two authentication paths available:
+    
+    1. QUICK TOKEN: meijer auth quick-token
+       - Just use Meijer app briefly, then capture bearer token
+       - Fastest way to get API access
+       - Tokens expire and cannot be refreshed
+    
+    2. FULL LOGIN: meijer auth full-login  
+       - Complete OAuth2 flow with username/password/2FA
+       - Captures all tokens including refresh tokens
+       - Tokens can be refreshed automatically
+    
+    For automatic detection: meijer auth log
+    """
     pass
 
 
 @auth_group.command("log")
-def auth_log_command():
-    """Authenticate with Meijer API by extracting tokens from mitmproxy logs."""
+@click.option("--mode", "-m", type=click.Choice(["auto", "full", "quick"]), 
+              default="auto", help="Authentication mode: auto (detect), full (complete login), quick (token only)")
+def auth_log_command(mode: str):
+    """Authenticate with Meijer API by extracting tokens from mitmproxy logs.
+    
+    Two authentication modes available:
+    
+    1. FULL LOGIN: Complete OAuth2 flow with refresh tokens
+       - User needs to log out and log back into Meijer app
+       - Captures all tokens (access, refresh, bearer)
+       - Tokens can be refreshed automatically
+    
+    2. QUICK TOKEN: Just capture latest bearer token
+       - User just needs to use Meijer app briefly
+       - Captures only the current bearer token
+       - Tokens cannot be refreshed automatically
+    """
     click.echo("🔐 Meijer Authentication from Logs")
     click.echo("=" * 50)
 
@@ -2100,7 +2130,17 @@ def auth_log_command():
         except Exception as e:
             click.echo(f"❌ Error during token refresh: {e}")
 
-    click.echo("📋 Extracting tokens from mitmproxy logs...")
+    # Determine authentication mode
+    if mode == "auto":
+        click.echo("🔍 Auto-detecting authentication type from logs...")
+    elif mode == "full":
+        click.echo("🔐 FULL LOGIN MODE: Capturing complete OAuth2 flow with refresh tokens")
+        click.echo("💡 This requires a complete login sequence in the Meijer app")
+    elif mode == "quick":
+        click.echo("⚡ QUICK TOKEN MODE: Capturing latest bearer token only")
+        click.echo("💡 Just use the Meijer app briefly to generate some API calls")
+
+    click.echo("\n📋 Extracting tokens from mitmproxy logs...")
 
     # Find the most recent log file
     import glob
@@ -2134,23 +2174,35 @@ def auth_log_command():
         if result.returncode == 0:
             click.echo("\n" + result.stdout)
 
-            # Check if we got OAuth2 tokens with refresh capability
-            if "✅ Tokens can be refreshed automatically!" in result.stdout:
-                click.echo("\n🎉 Success! You now have tokens with refresh capability.")
-                click.echo(
-                    "   These tokens can be refreshed automatically when they expire."
-                )
-            elif (
-                "⚠️ No refresh token - tokens cannot be refreshed automatically"
-                in result.stdout
-            ):
-                click.echo("\n⚠️ Note: These tokens cannot be refreshed automatically.")
-                click.echo(
-                    "   To get refreshable tokens, you need to capture an OAuth2 token exchange."
-                )
-                click.echo(
-                    "   Try logging in to the Meijer app again and capture the authentication flow."
-                )
+            # Analyze the output to determine what was captured
+            output = result.stdout.lower()
+            
+            if "oauth2 token exchange" in output and "refresh token" in output:
+                click.echo("\n🎉 SUCCESS: Full OAuth2 authentication captured!")
+                click.echo("   ✅ Access token with refresh capability")
+                click.echo("   ✅ Tokens can be refreshed automatically")
+                click.echo("   ✅ No need to re-authenticate when tokens expire")
+                
+            elif "bearer token" in output and "no refresh token" in output:
+                click.echo("\n⚠️ PARTIAL SUCCESS: Bearer token captured only")
+                click.echo("   ✅ Current bearer token is working")
+                click.echo("   ❌ No refresh token - cannot refresh automatically")
+                click.echo("   💡 Token will work until it expires")
+                
+                if mode == "full":
+                    click.echo("\n💡 To get refreshable tokens:")
+                    click.echo("   1. Clear current tokens: meijer auth logout")
+                    click.echo("   2. Log out of Meijer app")
+                    click.echo("   3. Start mitmproxy capture")
+                    click.echo("   4. Log back into Meijer app (complete login flow)")
+                    click.echo("   5. Run 'meijer auth log --mode full'")
+                else:
+                    click.echo("\n💡 For quick token capture, this is perfect!")
+                    click.echo("   Just use the Meijer app occasionally to keep tokens fresh")
+                    
+            else:
+                click.echo("\n❓ UNKNOWN: Could not determine token type from output")
+                click.echo("   Check the extraction tool output above")
 
             # Now test the extracted tokens with an API call
             click.echo("\n🧪 Testing extracted tokens with API call...")
@@ -2178,12 +2230,30 @@ def auth_log_command():
             "💡 Make sure the extraction tool is available at tools/extract_bearer_token.py"
         )
 
-    click.echo("\n💡 To get refreshable tokens:")
-    click.echo("   1. Clear your current tokens: rm ~/.config/meijer/meijer_tokens.pkl")
-    click.echo("   2. Log out of the Meijer app")
-    click.echo("   3. Start mitmproxy capture")
-    click.echo("   4. Log back into the Meijer app")
-    click.echo("   5. Run 'meijer auth log' again")
+    # Provide mode-specific guidance
+    if mode == "full":
+        click.echo("\n💡 FULL LOGIN MODE - For refreshable tokens:")
+        click.echo("   1. Clear your current tokens: meijer auth logout")
+        click.echo("   2. Log out of the Meijer app completely")
+        click.echo("   3. Start mitmproxy capture: mitmproxy -w meijer_mitm_$(date +%s).log")
+        click.echo("   4. Log back into the Meijer app (username + password + 2FA)")
+        click.echo("   5. Run 'meijer auth log --mode full' again")
+        click.echo("   6. This will capture the complete OAuth2 flow with refresh tokens")
+        
+    elif mode == "quick":
+        click.echo("\n💡 QUICK TOKEN MODE - For immediate API access:")
+        click.echo("   1. Just use the Meijer app normally (browse, search, etc.)")
+        click.echo("   2. Keep mitmproxy running to capture the API calls")
+        click.echo("   3. Run 'meijer auth log --mode quick' to extract tokens")
+        click.echo("   4. Tokens will work until they expire (usually 1 hour)")
+        click.echo("   5. Re-run when you need fresh tokens")
+        
+    else:  # auto mode
+        click.echo("\n💡 AUTO MODE - The tool will detect the best available tokens:")
+        click.echo("   • If OAuth2 flow found: Full authentication with refresh capability")
+        click.echo("   • If only Bearer tokens: Quick token capture for immediate use")
+        click.echo("   • Run 'meijer auth log --mode full' for refreshable tokens")
+        click.echo("   • Run 'meijer auth log --mode quick' for immediate token capture")
 
 
 @auth_group.command("imap")
@@ -2742,3 +2812,46 @@ def login_command(
     except Exception as e:
         logger.error(f"Failed to authenticate: {e}", exc_info=True)
         raise click.ClickException(f"❌ Authentication failed: {e}")
+
+
+@auth_group.command("quick-token")
+def auth_quick_token_command():
+    """Quick capture of bearer token from recent Meijer app usage.
+    
+    This is the fastest way to get API access:
+    1. Just use the Meijer app normally (browse, search, etc.)
+    2. Keep mitmproxy running to capture API calls
+    3. Run this command to extract the latest bearer token
+    
+    Note: These tokens cannot be refreshed automatically and will expire.
+    For persistent access, use 'meijer auth log --mode full' instead.
+    """
+    click.echo("⚡ Quick Token Capture")
+    click.echo("=" * 30)
+    click.echo("💡 This captures the latest bearer token from your Meijer app usage")
+    click.echo("   No need to log out or re-authenticate!")
+    
+    # Call the main auth_log_command with quick mode
+    auth_log_command("quick")
+
+
+@auth_group.command("full-login")
+def auth_full_login_command():
+    """Complete OAuth2 authentication flow for persistent access.
+    
+    This captures the complete authentication sequence:
+    1. Clear existing tokens
+    2. Log out of Meijer app
+    3. Start mitmproxy capture
+    4. Log back into Meijer app (complete flow)
+    5. Extract all tokens including refresh tokens
+    
+    Result: Tokens that can be refreshed automatically!
+    """
+    click.echo("🔐 Full OAuth2 Authentication Flow")
+    click.echo("=" * 40)
+    click.echo("💡 This captures the complete login sequence for persistent access")
+    click.echo("   Tokens will be automatically refreshable!")
+    
+    # Call the main auth_log_command with full mode
+    auth_log_command("full")

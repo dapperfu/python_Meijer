@@ -108,6 +108,17 @@ class TokenStorage:
         # Token refresh settings
         self.refresh_buffer_seconds = 300  # 5 minutes before expiry
 
+        # Initialize Akamai bypass client if available
+        self.akamai_client = None
+        if AKAMAI_BYPASS_AVAILABLE:
+            try:
+                # Use the OAuth2 base URL for token refresh
+                oauth_base = "https://id.meijer.com"
+                self.akamai_client = AkamaiBypassClient(base_url=oauth_base)
+                self.logger.info("✅ Akamai bypass client initialized for token refresh")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Failed to initialize Akamai bypass client: {e}")
+
     def set_local_base_url(self, base_url: str):
         """
         Set the base URL for local development/testing.
@@ -202,7 +213,7 @@ class TokenStorage:
 
     def refresh_tokens(self, refresh_token: str) -> bool:
         """
-        Refresh access token using refresh token.
+        Refresh access token using refresh token with Akamai bypass.
 
         Args:
             refresh_token: The refresh token to use
@@ -234,12 +245,36 @@ class TokenStorage:
             }
 
             self.logger.info("🔄 Refreshing tokens via OAuth2 endpoint...")
-            response = requests.post(
-                f"{self.oauth_base_url}/token",
-                data=refresh_data,
-                headers=headers,
-                timeout=30,
-            )
+            
+            # Use Akamai bypass client if available, otherwise fall back to regular requests
+            if self.akamai_client:
+                self.logger.info("🛡️ Using Akamai bypass for token refresh...")
+                try:
+                    # Extract the endpoint from the full URL
+                    endpoint = "/oauth2/default/v1/token"
+                    response = self.akamai_client.post(
+                        endpoint,
+                        data=refresh_data,
+                        headers=headers,
+                        timeout=30
+                    )
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Akamai bypass failed, falling back to regular request: {e}")
+                    # Fall back to regular request
+                    response = requests.post(
+                        f"{self.oauth_base_url}/token",
+                        data=refresh_data,
+                        headers=headers,
+                        timeout=30,
+                    )
+            else:
+                self.logger.info("📡 Using regular request for token refresh...")
+                response = requests.post(
+                    f"{self.oauth_base_url}/token",
+                    data=refresh_data,
+                    headers=headers,
+                    timeout=30,
+                )
 
             if response.status_code == 200:
                 token_data = response.json()

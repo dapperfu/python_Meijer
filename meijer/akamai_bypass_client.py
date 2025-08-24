@@ -9,6 +9,7 @@ to bypass Akamai bot detection.
 import random
 import time
 from typing import Dict
+import logging
 
 import requests
 
@@ -23,6 +24,7 @@ class AkamaiBypassClient:
         self.header_spoofer = HeaderSpoofer()
         self.session = create_spoofed_session()
         self.request_count = 0
+        self.logger = logging.getLogger(__name__)
 
         # Configure retry strategy
         self.max_retries = 3
