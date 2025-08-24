@@ -1,0 +1,21 @@
+#!/bin/bash
+# Simple alias script for launching Firefox browser with dual-path options
+# Usage: ./launch_browser [method] [profile_name]
+# Methods: regular, selenium, both (default: both)
+# Profile: defaults to "meijer_automation"
+
+METHOD=${1:-"both"}
+PROFILE_NAME=${2:-"meijer_automation"}
+PROXY_HOST="127.0.0.1"
+PROXY_PORT="8080"
+
+echo "🚀 Firefox Browser Launcher - Dual Path"
+echo "🔧 Method: $METHOD"
+echo "📁 Profile: $PROFILE_NAME"
+echo "🌐 Proxy: $PROXY_HOST:$PROXY_PORT"
+echo ""
+
+python3 "$(dirname "$0")/launch_firefox_browser.py" \
+    --method "$METHOD" \
+    --profile "$PROFILE_NAME" \
+    --proxy "$PROXY_HOST:$PROXY_PORT"
