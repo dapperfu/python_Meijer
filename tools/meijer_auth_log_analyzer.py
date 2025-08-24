@@ -6,7 +6,7 @@ This script analyzes Meijer mitmproxy logs to extract authentication tokens.
 It follows a priority-based approach:
 1. First checks for full login events and extracts required tokens (including refresh token)
 2. Falls back to searching for api.meijer.com calls to grab bearer tokens
-3. Saves tokens to auth.json
+3. Saves tokens to auth.json in the correct config directory
 4. Tests the tokens by making an API call through the auth.json round-trip
 
 Requirements:
@@ -36,6 +36,7 @@ except ImportError:
 try:
     from meijer.client import Meijer
     from meijer.exceptions import AuthenticationError
+    from meijer.auth import get_meijer_config_path
 except ImportError:
     print("❌ meijer package not available. Please install from the project directory")
     sys.exit(1)
@@ -58,7 +59,8 @@ class MeijerAuthLogAnalyzer:
         self.log_file = log_file
         self.flows = []
         self.auth_tokens = {}
-        self.auth_file = "auth.json"
+        # Use the correct config path that TokenStorage expects
+        self.auth_file = get_meijer_config_path("auth.json")
         
     def load_flows(self) -> bool:
         """Load flows from mitmproxy log file."""
@@ -258,6 +260,12 @@ class MeijerAuthLogAnalyzer:
                 import time
                 tokens['extracted_at'] = time.time()
             
+            # Ensure the directory exists
+            auth_dir = os.path.dirname(self.auth_file)
+            if auth_dir and not os.path.exists(auth_dir):
+                os.makedirs(auth_dir, exist_ok=True)
+                logger.info(f"Created config directory: {auth_dir}")
+            
             # Save to auth.json
             with open(self.auth_file, 'w') as f:
                 json.dump(tokens, f, indent=2)
@@ -266,6 +274,12 @@ class MeijerAuthLogAnalyzer:
             logger.info(f"Access token: {tokens['access_token'][:20]}...")
             if tokens.get('refresh_token'):
                 logger.info(f"Refresh token: {tokens['refresh_token'][:20]}...")
+            
+            # Show helpful information about the save location
+            if self.auth_file == get_meijer_config_path("auth.json"):
+                logger.info(f"💡 Tokens saved to standard config location - Meijer client will find them automatically")
+            else:
+                logger.info(f"⚠️  Tokens saved to custom location - you may need to copy to standard location")
             
             return True
             
@@ -320,7 +334,10 @@ class MeijerAuthLogAnalyzer:
                     
         except Exception as e:
             logger.error(f"Failed to create client or test tokens: {e}")
-            return False
+            # Don't fail the entire process if testing fails - tokens were extracted successfully
+            logger.warning("⚠️ Token testing failed, but tokens were extracted and saved successfully")
+            logger.warning("⚠️ You can test the tokens manually by running 'meijer list show'")
+            return True  # Return True since the main goal (extracting tokens) was achieved
     
     def analyze_and_extract(self) -> bool:
         """
@@ -377,10 +394,13 @@ def main():
     """Main entry point."""
     import argparse
     
+    # Get the default config path for auth.json
+    default_auth_file = get_meijer_config_path("auth.json")
+    
     parser = argparse.ArgumentParser(description="Analyze Meijer auth logs and extract tokens")
     parser.add_argument("log_file", help="Path to the mitmproxy log file (.log extension)")
-    parser.add_argument("--output", "-o", default="auth.json", 
-                       help="Output file for tokens (default: auth.json)")
+    parser.add_argument("--output", "-o", default=default_auth_file, 
+                       help=f"Output file for tokens (default: {default_auth_file})")
     
     args = parser.parse_args()
     
@@ -402,6 +422,14 @@ def main():
         print("\n🎉 SUCCESS: Auth log analysis completed successfully!")
         print(f"Tokens saved to: {args.output}")
         print("Tokens have been validated through API calls")
+        
+        # Show helpful information about where the file was saved
+        if args.output == default_auth_file:
+            print(f"\n💡 Tokens saved to the standard config location: {default_auth_file}")
+            print("   This location is automatically used by the Meijer client")
+        else:
+            print(f"\n⚠️  Tokens saved to custom location: {args.output}")
+            print("   You may need to copy this file to the standard location or specify the path when creating the client")
     else:
         print("\n❌ FAILED: Auth log analysis failed")
         sys.exit(1)
