@@ -362,3 +362,75 @@ class MeijerAuthLogAnalyzer:
         
         logger.info("🎉 SUCCESS: Tokens extracted, saved, and validated!")
         return True
+    
+    def analyze_and_extract_full_login(self) -> bool:
+        """
+        Attempt to extract tokens from a complete OAuth2 login flow.
+        
+        Returns:
+            True if full login tokens were found and validated, False otherwise
+        """
+        logger.info("🔐 Attempting Full Login extraction...")
+        
+        # Load flows from log file
+        if not self.load_flows():
+            logger.error("Failed to load flows from log file")
+            return False
+        
+        # Check for full login event
+        full_login_found, login_tokens = self.detect_full_login_event()
+        
+        if full_login_found and login_tokens.get('access_token'):
+            logger.info("🎯 Full login event found - extracting tokens...")
+            self.auth_tokens = login_tokens
+            
+            # Save and validate tokens
+            if not self.save_tokens_to_auth_json(self.auth_tokens):
+                logger.error("Failed to save tokens to auth.json")
+                return False
+            
+            if not self.test_tokens_through_auth_json():
+                logger.error("Token validation failed")
+                return False
+            
+            logger.info("🎉 SUCCESS: Full login tokens extracted, saved, and validated!")
+            return True
+        else:
+            logger.warning("⚠️ Full login event not found")
+            return False
+    
+    def analyze_and_extract_quick_token(self) -> bool:
+        """
+        Extract bearer tokens from API calls (fallback method).
+        
+        Returns:
+            True if bearer tokens were found and validated, False otherwise
+        """
+        logger.info("⚡ Attempting Quick Token extraction...")
+        
+        # Load flows from log file
+        if not self.load_flows():
+            logger.error("Failed to load flows from log file")
+            return False
+        
+        # Search for api.meijer.com calls
+        api_calls_found, api_tokens = self.search_api_meijer_calls()
+        
+        if api_calls_found and api_tokens.get('access_token'):
+            logger.info("🎯 API calls found - extracting bearer token...")
+            self.auth_tokens = api_tokens
+            
+            # Save and validate tokens
+            if not self.save_tokens_to_auth_json(self.auth_tokens):
+                logger.error("Failed to save tokens to auth.json")
+                return False
+            
+            if not self.test_tokens_through_auth_json():
+                logger.error("Token validation failed")
+                return False
+            
+            logger.info("🎉 SUCCESS: Quick token extraction successful!")
+            return True
+        else:
+            logger.warning("⚠️ No API calls found for quick token extraction")
+            return False

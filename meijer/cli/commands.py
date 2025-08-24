@@ -127,14 +127,17 @@ def list_group():
 @list_group.command("show")
 @click.option("--completed", is_flag=True, help="Show only completed items")
 @click.option("--pending", is_flag=True, help="Show only pending items")
-def list_show(completed: bool, pending: bool):
+@click.pass_context
+def list_show(ctx: click.Context, completed: bool, pending: bool):
     """Show shopping list items."""
     logger = logging.getLogger(__name__)
     logger.debug(
         f"List show command called with completed={completed}, pending={pending}"
     )
 
-    client = get_meijer_client()
+    # Get proxy setting from context
+    proxy = ctx.obj.get('proxy') if ctx.obj else None
+    client = get_meijer_client(proxy=proxy)
 
     try:
         logger.debug("Fetching shopping list items")
@@ -2174,11 +2177,43 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
         
         click.echo(f"🔍 Analyzing log file: {target_log}")
         
-        # Create analyzer and run analysis
+        # Create analyzer
         analyzer = MeijerAuthLogAnalyzer(target_log)
         analyzer.auth_file = output
         
-        success = analyzer.analyze_and_extract()
+        # Handle different modes with fallback logic
+        if mode == "full":
+            click.echo("🔐 FULL LOGIN MODE: Attempting complete OAuth2 flow extraction...")
+            success = analyzer.analyze_and_extract_full_login()
+            
+            if not success:
+                click.echo("⚠️ Full login extraction failed, falling back to Quick mode...")
+                click.echo("⚡ QUICK FALLBACK: Extracting bearer tokens from API calls...")
+                success = analyzer.analyze_and_extract_quick_token()
+                
+                if success:
+                    click.echo("✅ Quick fallback successful - extracted bearer token")
+                else:
+                    click.echo("❌ Both Full and Quick modes failed")
+                    return
+            else:
+                click.echo("✅ Full login extraction successful - got refreshable tokens")
+                
+        elif mode == "quick":
+            click.echo("⚡ QUICK TOKEN MODE: Extracting bearer tokens from API calls...")
+            success = analyzer.analyze_and_extract_quick_token()
+            
+            if not success:
+                click.echo("❌ Quick token extraction failed")
+                return
+                
+        else:  # auto mode
+            click.echo("🔍 AUTO MODE: Detecting best available authentication...")
+            success = analyzer.analyze_and_extract()
+            
+            if not success:
+                click.echo("❌ Auto-detection failed")
+                return
         
         if success:
             click.echo(f"\n🎉 SUCCESS: Auth log analysis completed successfully!")
