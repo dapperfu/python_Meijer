@@ -255,7 +255,24 @@ class HeadlessHybridAuthenticator:
             
             # Check if we got blocked
             page_source_lower = page_source.lower()
-            if "access denied" in page_source_lower or "error" in page_source_lower:
+            
+            # Check for specific blocking indicators, not generic "error" words
+            blocking_indicators = [
+                "access denied",
+                "your access to this site has been blocked",
+                "blocked by security policy",
+                "403 forbidden",
+                "unauthorized access"
+            ]
+            
+            is_blocked = False
+            for indicator in blocking_indicators:
+                if indicator in page_source_lower:
+                    logger.error(f"❌ Found blocking indicator: '{indicator}'")
+                    is_blocked = True
+                    break
+            
+            if is_blocked:
                 logger.error("❌ OAuth2 page blocked in Selenium")
                 return False, {}
             

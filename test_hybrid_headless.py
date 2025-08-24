@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Headless Hybrid Authentication for Meijer API
+Headless Hybrid Authentication Test for Meijer API
 
-This script implements a headless hybrid authentication approach using pure Selenium:
+This script tests the headless hybrid authentication approach using pure Selenium:
 1. Selenium (Firefox headless) to bypass Akamai bot detection at the CDN level
 2. Cookie extraction and session state transfer
 3. Fast authentication continuation using requests
@@ -130,8 +130,6 @@ class HeadlessHybridAuth:
         # Disable unnecessary features for faster loading
         options.add_argument("--disable-extensions")
         options.add_argument("--disable-plugins")
-        options.add_argument("--disable-images")  # Skip image loading for speed
-        options.add_argument("--disable-javascript")  # Disable JS for faster page load
         
         # Add proxy configuration for mitmproxy
         logger.info("🌐 Configuring mitmproxy proxy...")
@@ -206,17 +204,67 @@ class HeadlessHybridAuth:
             page_source = driver.page_source
             logger.info(f"📄 Page source length: {len(page_source)} bytes")
             
-            # Check if we got blocked
+            # DEBUG: Let's see what's actually in the page
+            logger.info("🔍 DEBUG: Analyzing page content...")
+            
+            # Check for common success indicators
+            if "meijer" in page_title.lower():
+                logger.info("✅ Page title contains 'Meijer' - this looks good!")
+            
+            # Check for login form elements
+            if "email" in page_source.lower() or "username" in page_source.lower():
+                logger.info("✅ Page contains login form elements - this looks good!")
+            
+            # Check for specific error indicators
             page_source_lower = page_source.lower()
-            if "access denied" in page_source_lower or "error" in page_source_lower:
-                logger.error("❌ OAuth2 page blocked in headless Selenium")
+            error_indicators = ["access denied", "error", "blocked", "forbidden", "unauthorized"]
+            found_errors = []
+            for indicator in error_indicators:
+                if indicator in page_source_lower:
+                    found_errors.append(indicator)
+            
+            if found_errors:
+                logger.warning(f"⚠️ Found potential error indicators: {found_errors}")
+                # Let's see the context around these errors
+                for error in found_errors:
+                    import re
+                    matches = re.finditer(error, page_source_lower)
+                    for match in matches:
+                        start = max(0, match.start() - 100)
+                        end = min(len(page_source), match.end() + 100)
+                        context = page_source[start:end]
+                        logger.info(f"   Context around '{error}': {context}")
+            else:
+                logger.info("✅ No obvious error indicators found")
+            
+            # Check if we got blocked - but be more careful about this
+            
+            # Only consider it blocked if we see very specific error messages
+            blocking_indicators = [
+                "access denied",
+                "your access to this site has been blocked",
+                "blocked by security policy",
+                "403 forbidden",
+                "unauthorized access"
+            ]
+            
+            is_blocked = False
+            for indicator in blocking_indicators:
+                if indicator in page_source_lower:
+                    logger.error(f"❌ Found blocking indicator: '{indicator}'")
+                    is_blocked = True
+                    break
+            
+            if is_blocked:
+                logger.error("❌ OAuth2 page blocked in Selenium")
                 return False, {}
             
+            # If we get here, the page seems to have loaded successfully
             logger.info("✅ OAuth2 page loaded successfully via headless Selenium!")
             
             # Extract cookies and state token
             selenium_cookies = driver.get_cookies()
-            logger.info(f"🍪 Found {len(selenium_cookies)} cookies in headless Selenium")
+            logger.info(f"🍪 Found {len(selenium_cookies)} cookies in Selenium")
             
             # Log cookie details for debugging
             for i, cookie in enumerate(selenium_cookies):
@@ -235,7 +283,7 @@ class HeadlessHybridAuth:
             else:
                 logger.error("❌ No state token found in page")
                 # Log a sample of the page source for debugging
-                logger.info(f"📄 Page source sample: {page_source[:500]}...")
+                logger.info(f"📄 Page source sample: {page_source[:1000]}...")
                 return False, {}
             
             # Prepare data for return
@@ -250,7 +298,7 @@ class HeadlessHybridAuth:
             return True, selenium_data
             
         except Exception as e:
-            logger.error(f"❌ Error in headless Selenium step: {e}")
+            logger.error(f"❌ Error in Selenium step: {e}")
             import traceback
             traceback.print_exc()
             return False, {}

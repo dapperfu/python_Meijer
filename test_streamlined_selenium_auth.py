@@ -214,6 +214,7 @@ def main():
         from selenium.webdriver.support import expected_conditions as EC
         from webdriver_manager.chrome import ChromeDriverManager
         from selenium.webdriver.chrome.service import Service
+        from selenium.common.exceptions import TimeoutException # Added for modal timeout
         print("✅ Selenium and webdriver-manager imported successfully")
         
     except ImportError as e:
@@ -272,30 +273,111 @@ def main():
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     
     try:
-        # Step 1: Load Meijer signin page and wait for render
-        print("📡 Step 1: Loading Meijer signin page...")
+        # Step 1: Load Meijer homepage and wait for render
+        print("📡 Step 1: Loading Meijer homepage...")
         
-        # Start from Meijer signin page instead of going directly to OAuth2
-        # This lets the page handle the OAuth2 flow naturally
-        signin_url = "https://www.meijer.com/signin"
+        # Start from the main Meijer homepage (this is the working flow)
+        homepage_url = "https://www.meijer.com/index.html"
         
-        print(f"🔐 Starting from Meijer signin page:")
-        print(f"   URL: {signin_url}")
-        print(f"   Note: Letting page handle OAuth2 flow naturally")
+        print(f"🔐 Starting from Meijer homepage:")
+        print(f"   URL: {homepage_url}")
+        print(f"   Note: Following the exact working login flow")
         
-        driver.get(signin_url)
+        driver.get(homepage_url)
         
         # Wait for page to be fully rendered
         wait = WebDriverWait(driver, 15)
         wait.until(lambda driver: driver.execute_script("return document.readyState") == "complete")
-        print("✅ Meijer signin page loaded and rendered")
+        print("✅ Meijer homepage loaded and rendered")
         
         # Take screenshot
-        driver.save_screenshot("debug_signin_page_loaded.png")
-        print("📸 Screenshot saved: debug_signin_page_loaded.png")
+        driver.save_screenshot("debug_homepage_loaded.png")
+        print("📸 Screenshot saved: debug_homepage_loaded.png")
         
-        # Step 2: Enter email
-        print("📡 Step 2: Entering email...")
+        # Step 2: Find and click the Account Sign In button
+        print("📡 Step 2: Looking for Account Sign In button...")
+        
+        # Look for the specific button with the SVG icon and "Sign In" text
+        signin_button_selectors = [
+            "button.meijer-header__account-signin-button",
+            "button[class*='meijer-header__account-signin-button']",
+            "button:has(.signin)",
+            "button:has(.ads-icon)"
+        ]
+        
+        signin_button = None
+        for selector in signin_button_selectors:
+            try:
+                signin_button = driver.find_element(By.CSS_SELECTOR, selector)
+                print(f"✅ Sign In button found with selector: {selector}")
+                break
+            except:
+                continue
+        
+        if not signin_button:
+            # Fallback: look for any button with "Sign In" text
+            try:
+                signin_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Sign In')]")
+                print("✅ Sign In button found with text search")
+            except:
+                print("❌ Sign In button not found")
+                return False
+        
+        print("🔍 Sign In button details:")
+        print(f"   Text: '{signin_button.text}'")
+        print(f"   Class: '{signin_button.get_attribute('class')}'")
+        print(f"   Type: '{signin_button.get_attribute('type')}'")
+        
+        # Click the Sign In button to open the modal
+        print("🔄 Clicking Sign In button to open modal...")
+        signin_button.click()
+        
+        # Wait for modal to appear
+        print("⏳ Waiting for signin modal to appear...")
+        try:
+            # Look for the modal with the Sign In button
+            modal_signin_button = wait.until(EC.element_to_be_clickable((
+                By.CSS_SELECTOR, 
+                "button[data-testid='ads-button'][type='submit']"
+            )))
+            print("✅ Modal Sign In button found and ready")
+        except TimeoutException:
+            print("⚠️ Modal Sign In button not found, checking for alternatives...")
+            # Try other selectors for the modal button
+            try:
+                modal_signin_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Sign In') and @type='submit']")
+                print("✅ Modal Sign In button found with alternative search")
+            except:
+                print("❌ Modal Sign In button not found")
+                return False
+        
+        # Click the modal Sign In button to start authentication
+        print("🔄 Clicking modal Sign In button to start authentication...")
+        modal_signin_button.click()
+        
+        # Wait for redirect to id.meijer.com
+        print("⏳ Waiting for redirect to id.meijer.com...")
+        try:
+            wait.until(lambda driver: "id.meijer.com" in driver.current_url)
+            print("✅ Successfully redirected to id.meijer.com")
+        except TimeoutException:
+            print("⚠️ Redirect timeout, checking current URL...")
+            current_url = driver.current_url
+            if "id.meijer.com" in current_url:
+                print("✅ Already on id.meijer.com")
+            else:
+                print(f"❌ Not redirected to id.meijer.com, current URL: {current_url}")
+                return False
+        
+        print(f"📄 Current URL: {driver.current_url}")
+        print(f"📄 Page title: {driver.title}")
+        
+        # Take screenshot of the authentication page
+        driver.save_screenshot("debug_auth_page_loaded.png")
+        print("📸 Screenshot saved: debug_auth_page_loaded.png")
+        
+        # Step 3: Now we're on the authentication page, enter email
+        print("📡 Step 3: Entering email on authentication page...")
         
         # Debug: show what elements are available
         print("🔍 Debugging page elements...")
