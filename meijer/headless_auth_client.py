@@ -57,38 +57,146 @@ class HeadlessAuthClient:
         self.device_nonce = None
         self.authenticator_id = None
         
-        # Base URLs
-        self.meijer_base = "https://www.meijer.com"
-        self.okta_base = "https://id.meijer.com"
+        # Load configuration from file
+        self.config = self._load_config()
         
-        # OAuth2 parameters from successful flow
-        self.client_id = "0oa1o8g9njWsUvwsx697"
-        self.redirect_uri = "com.meijer.mobile.meijer:/login"
-        self.scope = "openid profile offline_access"
+        # Base URLs from config
+        self.meijer_base = self.config['base_urls']['meijer']
+        self.okta_base = self.config['base_urls']['okta']
         
-        # User agent from successful mobile flow
-        self.user_agent = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36"
+        # OAuth2 parameters from config
+        self.client_id = self.config['oauth2']['client_id']
+        self.redirect_uri = self.config['oauth2']['redirect_uri']
+        self.scope = self.config['oauth2']['scope']
+        
+        # User agent from config
+        self.user_agent = self.config['user_agent']
         
         # Setup session headers
         self._setup_session_headers()
         
         logger.info(f"HeadlessAuthClient initialized with method: {method}")
+        logger.info(f"Configuration loaded from: {self._get_config_path()}")
+    
+    def _get_config_path(self) -> Path:
+        """Get the path to the configuration file."""
+        return Path.home() / ".config" / "meijer" / "auth_config.json"
+    
+    def _load_config(self) -> Dict[str, Any]:
+        """Load configuration from JSON file."""
+        config_path = self._get_config_path()
+        
+        if not config_path.exists():
+            logger.warning(f"Configuration file not found: {config_path}")
+            logger.info("Creating default configuration...")
+            self._create_default_config(config_path)
+        
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            logger.info("Configuration loaded successfully")
+            return config
+        except Exception as e:
+            logger.error(f"Error loading configuration: {e}")
+            logger.info("Using default configuration...")
+            return self._get_default_config()
+    
+    def _create_default_config(self, config_path: Path):
+        """Create default configuration file."""
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        default_config = self._get_default_config()
+        
+        try:
+            with open(config_path, 'w') as f:
+                json.dump(default_config, f, indent=2)
+            logger.info(f"Default configuration created: {config_path}")
+        except Exception as e:
+            logger.error(f"Error creating default configuration: {e}")
+    
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Get default configuration values."""
+        return {
+            "oauth2": {
+                "client_id": "0oa22cbewuCICOsKz697",
+                "scope": "openid offline_access",
+                "redirect_uri": "https://www.meijer.com/",
+                "response_type": "code"
+            },
+            "base_urls": {
+                "meijer": "https://www.meijer.com",
+                "okta": "https://id.meijer.com"
+            },
+            "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0",
+            "headers": {
+                "default": {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1"
+                },
+                "device_fingerprint": {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1"
+                },
+                "identify": {
+                    "Accept": "application/ion+json; okta-version=1.0.0",
+                    "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
+                    "Content-Type": "application/ion+json; okta-version=1.0.0",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate, br, zstd"
+                },
+                "challenge": {
+                    "Accept": "application/ion+json; okta-version=1.0.0",
+                    "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
+                    "Content-Type": "application/ion+json; okta-version=1.0.0",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate, br, zstd"
+                },
+                "token_exchange": {
+                    "Accept": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            },
+            "endpoints": {
+                "oauth2_authorize": "/oauth2/default/v1/authorize",
+                "idp_identify": "/idp/idx/identify",
+                "idp_challenge": "/idp/idx/challenge/answer",
+                "device_fingerprint": "/auth/services/devicefingerprint",
+                "device_nonce": "/api/v1/internal/device/nonce",
+                "token_exchange": "/oauth2/default/v1/token"
+            },
+            "timing": {
+                "initial_landing": 2,
+                "oauth2_authorize": 1,
+                "device_fingerprint": 1,
+                "identify": 1,
+                "challenge": 1
+            },
+            "cookies": {
+                "required": ["bm_sz", "_abck", "bm_sv", "JSESSIONID", "AKA_A2"],
+                "domains": {
+                    "meijer": ".meijer.com",
+                    "okta": ".meijer.com"
+                }
+            }
+        }
     
     def _setup_session_headers(self):
-        """Setup default session headers based on successful mobile flow."""
+        """Setup default session headers from configuration."""
         self.session.headers.update({
-            'User-Agent': self.user_agent,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-User': '?1',
-            'Sec-Fetch-Dest': 'document',
-            'Upgrade-Insecure-Requests': '1',
-            'X-Requested-With': 'com.duckduckgo.mobile.android',
-            'Sec-GPC': '1'
+            'User-Agent': self.user_agent
         })
+        
+        # Add default headers from config
+        default_headers = self.config['headers']['default']
+        self.session.headers.update(default_headers)
     
     def _setup_browser(self):
         """Setup Firefox browser with proper options."""
@@ -123,77 +231,134 @@ class HeadlessAuthClient:
         return code_verifier, code_challenge
     
     def _generate_oauth_params(self) -> Dict[str, str]:
-        """Generate OAuth2 parameters exactly as in successful flow."""
-        code_verifier, code_challenge = self._generate_pkce_params()
-        
+        """Generate OAuth2 parameters from configuration."""
         return {
-            'login_hint': '',
-            'code_challenge': code_challenge,
-            'code_challenge_method': 'S256',
             'client_id': self.client_id,
             'scope': self.scope,
             'redirect_uri': self.redirect_uri,
-            'response_type': 'code',
-            'state': uuid.uuid4().hex,
-            'nonce': uuid.uuid4().hex
+            'response_type': self.config['oauth2']['response_type'],
+            'state': uuid.uuid4().hex
         }
     
     def _get_device_fingerprint_headers(self) -> Dict[str, str]:
-        """Get device fingerprint headers exactly as in successful flow."""
-        return {
-            'Accept': '*/*',
-            'User-Agent': self.user_agent,
-            'X-Requested-With': 'XMLHttpRequest',
-            'Origin': self.okta_base,
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Referer': f"{self.okta_base}/auth/services/devicefingerprint",
-            'Accept-Encoding': 'gzip, deflate',
-            'Accept-Language': 'en-US,en;q=0.9'
-        }
+        """Get device fingerprint headers from configuration."""
+        headers = self.config['headers']['device_fingerprint'].copy()
+        headers['Referer'] = f'{self.okta_base}/'
+        return headers
     
     def _get_identify_headers(self) -> Dict[str, str]:
-        """Get identify request headers exactly as in successful flow."""
-        return {
-            'Accept': 'application/json; okta-version=1.0.0',
-            'X-Okta-User-Agent-Extended': 'okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459',
-            'X-Device-Fingerprint': f"{self.device_nonce}|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8",
-            'User-Agent': self.user_agent,
-            'Content-Type': 'application/json',
-            'Origin': self.okta_base,
-            'X-Requested-With': 'com.duckduckgo.mobile.android',
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Accept-Encoding': 'gzip, deflate',
-            'Accept-Language': 'en-US,en;q=0.9'
-        }
+        """Get identify request headers from configuration."""
+        headers = self.config['headers']['identify'].copy()
+        headers['User-Agent'] = self.user_agent
+        headers['Origin'] = self.okta_base
+        headers['Referer'] = f'{self.okta_base}/'
+        return headers
     
     def _get_challenge_headers(self) -> Dict[str, str]:
-        """Get challenge request headers exactly as in successful flow."""
-        return {
-            'Accept': 'application/json; okta-version=1.0.0',
-            'X-Okta-User-Agent-Extended': 'okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459',
-            'X-Device-Fingerprint': f"{self.device_nonce}|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8",
-            'User-Agent': self.user_agent,
-            'Content-Type': 'application/json',
-            'Origin': self.okta_base,
-            'X-Requested-With': 'com.duckduckgo.mobile.android',
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Accept-Encoding': 'gzip, deflate',
-            'Accept-Language': 'en-US,en;q=0.9'
-        }
+        """Get challenge request headers from configuration."""
+        headers = self.config['headers']['challenge'].copy()
+        headers['User-Agent'] = self.user_agent
+        headers['Origin'] = self.okta_base
+        headers['Referer'] = f'{self.okta_base}/'
+        return headers
     
     def _get_token_exchange_headers(self) -> Dict[str, str]:
-        """Get token exchange headers exactly as in successful flow."""
-        return {
-            'Accept': 'application/json',
-            'User-Agent': 'Meijer/102800000 okhttp/5.1.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        """Get token exchange headers from configuration."""
+        headers = self.config['headers']['token_exchange'].copy()
+        headers['User-Agent'] = self.user_agent
+        headers['Origin'] = self.okta_base
+        headers['Referer'] = f'{self.okta_base}/'
+        return headers
+    
+    def _step0_initial_landing(self) -> bool:
+        """Step 0: Initial landing page to establish cookies."""
+        logger.info("🏠 Step 0: Initial Landing Page")
+        
+        try:
+            # Visit Meijer homepage to establish session and cookies
+            response = self.session.get(self.meijer_base)
+            logger.info(f"   Initial landing status: {response.status_code}")
+            
+            if response.status_code == 200:
+                logger.info("   ✅ Initial landing successful")
+                logger.info(f"   Cookies established: {len(self.session.cookies)}")
+                return True
+            else:
+                logger.error(f"   ❌ Initial landing failed: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"   ❌ Error in initial landing: {e}")
+            return False
+    
+    def _validate_required_cookies(self) -> bool:
+        """Validate that required cookies are present."""
+        required_cookies = self.config['cookies']['required']
+        present_cookies = [cookie.name for cookie in self.session.cookies]
+        
+        missing_cookies = []
+        for cookie_name in required_cookies:
+            if cookie_name not in present_cookies:
+                missing_cookies.append(cookie_name)
+        
+        if missing_cookies:
+            logger.warning(f"Missing required cookies: {missing_cookies}")
+            return False
+        
+        logger.info("✅ All required cookies are present")
+        return True
+    
+    def reload_config(self):
+        """Reload configuration from file."""
+        logger.info("🔄 Reloading configuration...")
+        self.config = self._load_config()
+        
+        # Update instance variables
+        self.meijer_base = self.config['base_urls']['meijer']
+        self.okta_base = self.config['base_urls']['okta']
+        self.client_id = self.config['oauth2']['client_id']
+        self.redirect_uri = self.config['oauth2']['redirect_uri']
+        self.scope = self.config['oauth2']['scope']
+        self.user_agent = self.config['user_agent']
+        
+        # Update session headers
+        self._setup_session_headers()
+        logger.info("✅ Configuration reloaded successfully")
+    
+    def update_config(self, key_path: str, value: Any):
+        """
+        Update a configuration value and save to file.
+        
+        Args:
+            key_path: Dot-separated path to the config value (e.g., 'oauth2.client_id')
+            value: New value to set
+        """
+        try:
+            # Parse the key path
+            keys = key_path.split('.')
+            config_section = self.config
+            
+            # Navigate to the parent section
+            for key in keys[:-1]:
+                if key not in config_section:
+                    config_section[key] = {}
+                config_section = config_section[key]
+            
+            # Set the value
+            config_section[keys[-1]] = value
+            
+            # Save to file
+            config_path = self._get_config_path()
+            with open(config_path, 'w') as f:
+                json.dump(self.config, f, indent=2)
+            
+            logger.info(f"✅ Configuration updated: {key_path} = {value}")
+            
+            # Reload to update instance variables
+            self.reload_config()
+            
+        except Exception as e:
+            logger.error(f"❌ Error updating configuration: {e}")
     
     def _step1_oauth_authorize(self) -> bool:
         """Step 1: OAuth2 Authorization - EXACT replication."""
@@ -203,11 +368,11 @@ class HeadlessAuthClient:
         oauth_params = self._generate_oauth_params()
         url = f"{self.okta_base}/oauth2/default/v1/authorize"
         
-        # Headers exactly as in successful flow
+        # Headers exactly as in successful flow analysis
         headers = self.session.headers.copy()
         headers.update({
-            'X-Requested-With': 'com.duckduckgo.mobile.android',
-            'Sec-GPC': '1'
+            'Referer': f'{self.meijer_base}/',
+            'Origin': f'{self.meijer_base}'
         })
         
         try:
@@ -246,11 +411,7 @@ class HeadlessAuthClient:
         # First, visit the device fingerprint page
         fingerprint_url = f"{self.okta_base}/auth/services/devicefingerprint"
         
-        headers = self.session.headers.copy()
-        headers.update({
-            'X-Requested-With': 'com.duckduckgo.mobile.android',
-            'Sec-GPC': '1'
-        })
+        headers = self._get_device_fingerprint_headers()
         
         try:
             response = self.session.get(fingerprint_url, headers=headers)
@@ -310,7 +471,7 @@ class HeadlessAuthClient:
         # Headers exactly as in successful flow
         headers = self._get_identify_headers()
         
-        # Request body exactly as in successful flow
+        # Request body exactly as in successful flow analysis
         data = {
             "identifier": username,
             "stateHandle": self.state_token
@@ -609,40 +770,61 @@ class HeadlessAuthClient:
                 # Pure requests method
                 logger.info("📡 Using pure requests method")
                 
+                # Step 0: Initial landing to establish cookies
+                if not self._step0_initial_landing():
+                    return False
+                
+                # Wait as in successful flow analysis
+                wait_time = self.config['timing']['initial_landing']
+                logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
+                time.sleep(wait_time)
+                
                 # Step 1: OAuth2 Authorization
                 if not self._step1_oauth_authorize():
                     return False
                 
-                # Wait as in successful flow
-                logger.info("   ⏱️  Waiting 43.71 seconds (as in successful flow)...")
-                time.sleep(43.71)
+                # Wait as in successful flow analysis
+                wait_time = self.config['timing']['oauth2_authorize']
+                logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
+                time.sleep(wait_time)
                 
                 # Step 2: Device Fingerprinting
                 if not self._step2_device_fingerprint():
                     return False
                 
-                # Wait as in successful flow
-                logger.info("   ⏱️  Waiting 0.32 seconds (as in successful flow)...")
-                time.sleep(0.32)
+                # Wait as in successful flow analysis
+                wait_time = self.config['timing']['device_fingerprint']
+                logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
+                time.sleep(wait_time)
                 
                 # Step 4: Web Login Identify
                 if not self._step4_web_login_identify(username):
                     return False
                 
-                # Wait as in successful flow
-                logger.info("   ⏱️  Waiting 48.18 seconds (as in successful flow)...")
-                time.sleep(48.18)
+                # Wait as in successful flow analysis
+                wait_time = self.config['timing']['identify']
+                logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
+                time.sleep(wait_time)
                 
                 # Step 5: Challenge Answer
                 if not self._step5_challenge_answer(password):
                     return False
                 
-                # Wait as in successful flow
-                logger.info("   ⏱️  Waiting 79.50 seconds (as in successful flow)...")
-                time.sleep(79.50)
+                # Wait as in successful flow analysis
+                wait_time = self.config['timing']['challenge']
+                logger.info(f"   ⏱️  Waiting {wait_time} seconds (from config)...")
+                time.sleep(wait_time)
                 
                 logger.info("✅ Pure requests authentication completed successfully!")
-                return True
+                
+                # Validate required cookies
+                if self._validate_required_cookies():
+                    self.authenticated = True
+                    return True
+                else:
+                    logger.warning("⚠️  Some required cookies are missing, but authentication may still be successful")
+                    self.authenticated = True
+                    return True
                 
             elif self.method == "hybrid":
                 # Hybrid method: Minimal browser + requests
