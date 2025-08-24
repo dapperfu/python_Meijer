@@ -16,6 +16,13 @@ from requests.auth import AuthBase
 
 from .models import AuthTokens
 
+# Try to import Akamai bypass functionality
+try:
+    from .akamai_bypass_client import AkamaiBypassClient
+    AKAMAI_BYPASS_AVAILABLE = True
+except ImportError:
+    AKAMAI_BYPASS_AVAILABLE = False
+
 
 def get_meijer_config_path(filename: str) -> str:
     """
