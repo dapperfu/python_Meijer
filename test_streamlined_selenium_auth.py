@@ -272,38 +272,27 @@ def main():
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     
     try:
-        # Step 1: Load OAuth2 page and wait for render
-        print("📡 Step 1: Loading OAuth2 authorization page...")
+        # Step 1: Load Meijer signin page and wait for render
+        print("📡 Step 1: Loading Meijer signin page...")
         
-        # Generate PKCE challenge codes (same as working flow)
-        import secrets
-        import hashlib
-        import base64
+        # Start from Meijer signin page instead of going directly to OAuth2
+        # This lets the page handle the OAuth2 flow naturally
+        signin_url = "https://www.meijer.com/signin"
         
-        code_verifier = secrets.token_urlsafe(32)
-        code_challenge = base64.urlsafe_b64encode(
-            hashlib.sha256(code_verifier.encode()).digest()
-        ).decode().rstrip('=')
+        print(f"🔐 Starting from Meijer signin page:")
+        print(f"   URL: {signin_url}")
+        print(f"   Note: Letting page handle OAuth2 flow naturally")
         
-        # Use exact same working parameters from successful flow
-        oauth_url = f"https://id.meijer.com/oauth2/default/v1/authorize?login_hint=&code_challenge={code_challenge}&code_challenge_method=S256&client_id=0oa1o8j9njWsUvwsx697&scope=openid+profile+offline_access&redirect_uri=com.meijer.mobile.meijer%3A%2Flogin&response_type=code&state={secrets.token_urlsafe(16)}&nonce={secrets.token_urlsafe(16)}"
-        
-        print(f"🔐 Using working OAuth2 parameters:")
-        print(f"   Client ID: 0oa1o8j9njWsUvwsx697")
-        print(f"   Scope: openid profile offline_access")
-        print(f"   Redirect URI: com.meijer.mobile.meijer:/login")
-        print(f"   PKCE Challenge: {code_challenge[:20]}...")
-        
-        driver.get(oauth_url)
+        driver.get(signin_url)
         
         # Wait for page to be fully rendered
         wait = WebDriverWait(driver, 15)
         wait.until(lambda driver: driver.execute_script("return document.readyState") == "complete")
-        print("✅ OAuth2 page loaded and rendered")
+        print("✅ Meijer signin page loaded and rendered")
         
         # Take screenshot
-        driver.save_screenshot("debug_oauth2_page_loaded.png")
-        print("📸 Screenshot saved: debug_oauth2_page_loaded.png")
+        driver.save_screenshot("debug_signin_page_loaded.png")
+        print("📸 Screenshot saved: debug_signin_page_loaded.png")
         
         # Step 2: Enter email
         print("📡 Step 2: Entering email...")
