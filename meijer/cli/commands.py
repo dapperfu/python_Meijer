@@ -2085,7 +2085,9 @@ def auth_group():
 @auth_group.command("log")
 @click.option("--mode", "-m", type=click.Choice(["auto", "full", "quick"]), 
               default="auto", help="Authentication mode: auto (detect), full (complete login), quick (token only)")
-def auth_log_command(mode: str):
+@click.option("--log-file", "-f", help="Specific mitmproxy log file to analyze (default: auto-detect)")
+@click.option("--output", "-o", default="auth.json", help="Output file for tokens (default: auth.json)")
+def auth_log_command(mode: str, log_file: Optional[str], output: str):
     """Authenticate with Meijer API by extracting tokens from mitmproxy logs.
     
     Two authentication modes available:
@@ -2142,93 +2144,76 @@ def auth_log_command(mode: str):
 
     click.echo("\n📋 Extracting tokens from mitmproxy logs...")
 
-    # Find the most recent log file
-    import glob
+    # Find the log file to analyze
+    if log_file:
+        if not os.path.exists(log_file):
+            click.echo(f"❌ Specified log file not found: {log_file}")
+            return
+        target_log = log_file
+        click.echo(f"📁 Using specified log file: {target_log}")
+    else:
+        # Auto-detect the most recent log file
+        import glob
+        log_files = glob.glob("meijer_mitm_*.log")
+        if not log_files:
+            click.echo("❌ No meijer mitmproxy log files found!")
+            click.echo(
+                "💡 Make sure you have captured authentication traffic with mitmproxy"
+            )
+            click.echo("💡 Or specify a log file with --log-file")
+            return
 
-    log_files = glob.glob("meijer_mitm_*.log")
-    if not log_files:
-        click.echo("❌ No meijer mitmproxy log files found!")
-        click.echo(
-            "💡 Make sure you have captured authentication traffic with mitmproxy"
-        )
-        return
+        # Sort by modification time, newest first
+        log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        target_log = log_files[0]
+        click.echo(f"📁 Using auto-detected log file: {target_log}")
 
-    # Sort by modification time, newest first
-    log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-    latest_log = log_files[0]
-    click.echo(f"📁 Using log file: {latest_log}")
-
-    # Run the enhanced token extraction
-    import subprocess
-    import sys
-
+    # Run the integrated auth log analyzer
     try:
-        # Run the enhanced extraction tool
-        result = subprocess.run(
-            [sys.executable, "tools/extract_bearer_token.py", latest_log],
-            capture_output=True,
-            text=True,
-            cwd=os.getcwd(),
-        )
-
-        if result.returncode == 0:
-            click.echo("\n" + result.stdout)
-
-            # Analyze the output to determine what was captured
-            output = result.stdout.lower()
+        from ..auth_log_analyzer import MeijerAuthLogAnalyzer
+        
+        click.echo(f"🔍 Analyzing log file: {target_log}")
+        
+        # Create analyzer and run analysis
+        analyzer = MeijerAuthLogAnalyzer(target_log)
+        analyzer.auth_file = output
+        
+        success = analyzer.analyze_and_extract()
+        
+        if success:
+            click.echo(f"\n🎉 SUCCESS: Auth log analysis completed successfully!")
+            click.echo(f"Tokens saved to: {output}")
+            click.echo("Tokens have been validated through API calls")
             
-            if "oauth2 token exchange" in output and "refresh token" in output:
-                click.echo("\n🎉 SUCCESS: Full OAuth2 authentication captured!")
-                click.echo("   ✅ Access token with refresh capability")
-                click.echo("   ✅ Tokens can be refreshed automatically")
-                click.echo("   ✅ No need to re-authenticate when tokens expire")
+            # Show token summary
+            if os.path.exists(output):
+                import json
+                with open(output, 'r') as f:
+                    token_data = json.load(f)
                 
-            elif "bearer token" in output and "no refresh token" in output:
-                click.echo("\n⚠️ PARTIAL SUCCESS: Bearer token captured only")
-                click.echo("   ✅ Current bearer token is working")
-                click.echo("   ❌ No refresh token - cannot refresh automatically")
-                click.echo("   💡 Token will work until it expires")
-                
-                if mode == "full":
-                    click.echo("\n💡 To get refreshable tokens:")
-                    click.echo("   1. Clear current tokens: meijer auth logout")
-                    click.echo("   2. Log out of Meijer app")
-                    click.echo("   3. Start mitmproxy capture")
-                    click.echo("   4. Log back into Meijer app (complete login flow)")
-                    click.echo("   5. Run 'meijer auth log --mode full'")
+                click.echo(f"\n🔑 Token Summary:")
+                click.echo(f"   Access Token: {token_data.get('access_token', 'None')[:30]}...")
+                if token_data.get('refresh_token'):
+                    click.echo(f"   Refresh Token: {token_data.get('refresh_token', 'None')[:30]}...")
+                    click.echo(f"   ✅ Tokens can be refreshed automatically")
                 else:
-                    click.echo("\n💡 For quick token capture, this is perfect!")
-                    click.echo("   Just use the Meijer app occasionally to keep tokens fresh")
-                    
-            else:
-                click.echo("\n❓ UNKNOWN: Could not determine token type from output")
-                click.echo("   Check the extraction tool output above")
-
-            # Now test the extracted tokens with an API call
-            click.echo("\n🧪 Testing extracted tokens with API call...")
-            try:
-                # Create a temporary client to test the tokens
-                from ..client import Meijer
-
-                test_client = Meijer()
-
-                # Try to get the shopping list to verify tokens work
-                items = test_client.list.get()
-                click.echo("✅ API call successful! Extracted tokens are working.")
-                click.echo(f"📋 Found {len(items)} items in shopping list")
-
-            except Exception as e:
-                click.echo(f"❌ API call failed: {e}")
-                click.echo("💡 The extracted tokens may be expired or invalid")
-
+                    click.echo(f"   ❌ No refresh token - tokens cannot be refreshed")
+                
+                click.echo(f"   Source: {token_data.get('source', 'Unknown')}")
+                click.echo(f"   Expires In: {token_data.get('expires_in', 'Unknown')} seconds")
+                
         else:
-            click.echo(f"❌ Token extraction failed: {result.stderr}")
+            click.echo(f"\n❌ FAILED: Auth log analysis failed")
+            click.echo("No tokens could be extracted from the log file")
+            return
 
+    except ImportError as e:
+        click.echo(f"❌ Auth log analyzer not available: {e}")
+        click.echo("💡 This feature requires the auth_log_analyzer module")
+        return
     except Exception as e:
-        click.echo(f"❌ Error running token extraction: {e}")
-        click.echo(
-            "💡 Make sure the extraction tool is available at tools/extract_bearer_token.py"
-        )
+        click.echo(f"❌ Error during auth log analysis: {e}")
+        return
 
     # Provide mode-specific guidance
     if mode == "full":
