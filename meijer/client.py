@@ -43,19 +43,24 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class StoresInterface:
     """
     Interface wrapper for store operations to maintain notebook compatibility.
-    
+
     This class provides the interface that notebooks expect while delegating
     to the main client's store methods.
     """
-    
+
     def __init__(self, client: "Meijer"):
         """Initialize with reference to main client."""
         self.client = client
-    
-    def get_nearby(self, latitude: Optional[float] = None, longitude: Optional[float] = None, radius: int = 25) -> List[MeijerStore]:
+
+    def get_nearby(
+        self,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        radius: int = 25,
+    ) -> List[MeijerStore]:
         """
         Get nearby stores.
-        
+
         Parameters
         ----------
         latitude : float, optional
@@ -64,7 +69,7 @@ class StoresInterface:
             Search longitude (defaults to center of Michigan)
         radius : int, optional
             Search radius in miles (default: 25)
-            
+
         Returns
         -------
         List[MeijerStore]
@@ -74,20 +79,22 @@ class StoresInterface:
         if latitude is None or longitude is None:
             latitude = 44.3148  # Center of Michigan
             longitude = -85.6024
-        
-        return self.client.get_stores(latitude=latitude, longitude=longitude, radius=radius)
-    
+
+        return self.client.get_stores(
+            latitude=latitude, longitude=longitude, radius=radius
+        )
+
     def search_by_location(self, location: str, radius: int = 25) -> List[MeijerStore]:
         """
         Search for stores by location string.
-        
+
         Parameters
         ----------
         location : str
             Location string (city, state or ZIP code)
         radius : int, optional
             Search radius in miles (default: 25)
-            
+
         Returns
         -------
         List[MeijerStore]
@@ -99,11 +106,13 @@ class StoresInterface:
         else:
             # Treat as ZIP code
             return self.client.get_stores(zip_code=location, radius=radius)
-    
-    def search_by_proximity(self, lat: float, lng: float, radius: int = 25) -> List[MeijerStore]:
+
+    def search_by_proximity(
+        self, lat: float, lng: float, radius: int = 25
+    ) -> List[MeijerStore]:
         """
         Search for stores by proximity coordinates.
-        
+
         Parameters
         ----------
         lat : float
@@ -112,23 +121,23 @@ class StoresInterface:
             Longitude
         radius : int, optional
             Search radius in miles (default: 25)
-            
+
         Returns
         -------
         List[MeijerStore]
             List of stores within radius
         """
         return self.client.get_stores(latitude=lat, longitude=lng, radius=radius)
-    
+
     def get_by_id(self, store_id: str) -> Optional[MeijerStore]:
         """
         Get store by ID.
-        
+
         Parameters
         ----------
         store_id : str
             Store ID to look up
-            
+
         Returns
         -------
         MeijerStore, optional
@@ -167,8 +176,10 @@ class Meijer:
 
         # API configuration based on APK analysis
         self.api_base_url = "https://api.meijer.com"
-        self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis (fallback)
-        
+        self.subscription_key = (
+            "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis (fallback)
+        )
+
         # Handle base URL override for local development/testing
         if base_url:
             self.logger.info(f"Using custom base URL: {base_url}")
@@ -180,35 +191,45 @@ class Meijer:
         import requests
         from requests.adapters import HTTPAdapter
         from urllib3.util.retry import Retry
-        
+
         self.session = requests.Session()
-        
+
         # Configure connection pooling and retries for efficiency
         adapter = HTTPAdapter(
-            pool_connections=10,      # Number of connection pools to cache
-            pool_maxsize=20,          # Maximum number of connections per pool
+            pool_connections=10,  # Number of connection pools to cache
+            pool_maxsize=20,  # Maximum number of connections per pool
             max_retries=Retry(
-                total=3,              # Total retries
-                backoff_factor=0.5,   # Exponential backoff: 0.5s, 1s, 2s
-                status_forcelist=[429, 500, 502, 503, 504],  # Retry on rate limits and server errors
-                allowed_methods=["GET", "POST", "PUT", "DELETE"]  # Allow retries on all methods
-            )
+                total=3,  # Total retries
+                backoff_factor=0.5,  # Exponential backoff: 0.5s, 1s, 2s
+                status_forcelist=[
+                    429,
+                    500,
+                    502,
+                    503,
+                    504,
+                ],  # Retry on rate limits and server errors
+                allowed_methods=[
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "DELETE",
+                ],  # Allow retries on all methods
+            ),
         )
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
-        
+
         # Set reasonable timeouts to avoid hanging connections
         self.session.timeout = (5, 30)  # (connect_timeout, read_timeout)
-        
+
         # Enable keep-alive for connection reuse
-        self.session.headers.update({
-            'Connection': 'keep-alive',
-            'Keep-Alive': 'timeout=30, max=100'
-        })
-        
+        self.session.headers.update(
+            {"Connection": "keep-alive", "Keep-Alive": "timeout=30, max=100"}
+        )
+
         # Initialize token storage with client reference
         self.token_storage = TokenStorage(client=self)
-        
+
         # Initialize authentication with client reference
         self.auth = MeijerAuth(self.token_storage, client=self)
 
@@ -219,16 +240,17 @@ class Meijer:
         self.product_ops = ProductOperations(self)
         self.search = Search(self)
         self.shop_scan = ShopNScan(self)
-        
+
         # Initialize mPerks with proper client connection
         from .mperks import MPerksClient
+
         self.mperks_client = MPerksClient()
         self.mperks = MPerksEarnedRewards(self)
         self.mperks.set_mperks_client(self.mperks_client)
-        
+
         self.feedback = MeijerFeedback(self)
         self.settings = MeijerSettings(self)
-        
+
         # Initialize account management
         self.account = AccountManager(self)
 
@@ -249,34 +271,38 @@ class Meijer:
 
         # Load authentication
         self._load_auth(auth)
-        
+
         # Update mPerks client with authentication token
         self._update_mperks_auth()
-        
+
         # SSL configuration
         self.ssl_verify = True
-        
+
         # Auto-detect mitmproxy certificate path using Path().home()
         possible_cert_paths = [
             Path().home() / ".mitmproxy" / "mitmproxy-ca-cert.pem",
             Path().home() / ".mitmproxy" / "mitmproxy-ca.pem",
         ]
-        
+
         # Check for custom certificate path from environment variable
-        custom_cert_path = os.environ.get('MEIJER_MITMPROXY_CERT')
+        custom_cert_path = os.environ.get("MEIJER_MITMPROXY_CERT")
         if custom_cert_path:
             possible_cert_paths.insert(0, Path(custom_cert_path))
-            self.logger.info(f"🔒 Using custom mitmproxy certificate path from environment: {custom_cert_path}")
-        
+            self.logger.info(
+                f"🔒 Using custom mitmproxy certificate path from environment: {custom_cert_path}"
+            )
+
         self.ssl_cert_path = None
         for cert_path in possible_cert_paths:
             if cert_path.exists():
                 self.ssl_cert_path = str(cert_path)
                 break
-        
+
         # Auto-configure SSL with mitmproxy certificate if available
         if self.ssl_cert_path:
-            self.logger.info(f"🔒 Auto-configuring SSL with mitmproxy certificate: {self.ssl_cert_path}")
+            self.logger.info(
+                f"🔒 Auto-configuring SSL with mitmproxy certificate: {self.ssl_cert_path}"
+            )
             # When using mitmproxy, we need to disable SSL verification
             # because mitmproxy intercepts and re-signs all HTTPS traffic
             self.ssl_verify = False
@@ -291,72 +317,78 @@ class Meijer:
         # Proxy configuration - only set when explicitly configured by user
         self.proxy_host = None
         self.proxy_port = None
-        
+
         # Rate limiting and caching for API efficiency
         self._request_cache = {}  # Simple in-memory cache
         self._last_request_time = {}  # Track last request time per endpoint
-        self._min_request_interval = 0.5  # Minimum seconds between requests to same endpoint
-        
+        self._min_request_interval = (
+            0.5  # Minimum seconds between requests to same endpoint
+        )
+
         # Request deduplication
         self._pending_requests = {}  # Track in-flight requests to avoid duplicates
 
     def _rate_limit(self, endpoint: str) -> None:
         """
         Implement rate limiting to avoid overwhelming the API.
-        
+
         Args:
             endpoint: API endpoint being called
         """
         import time
-        
+
         current_time = time.time()
         last_time = self._last_request_time.get(endpoint, 0)
-        
+
         if current_time - last_time < self._min_request_interval:
             sleep_time = self._min_request_interval - (current_time - last_time)
-            self.logger.debug(f"⏱️ Rate limiting: sleeping {sleep_time:.2f}s for {endpoint}")
+            self.logger.debug(
+                f"⏱️ Rate limiting: sleeping {sleep_time:.2f}s for {endpoint}"
+            )
             time.sleep(sleep_time)
-        
+
         self._last_request_time[endpoint] = time.time()
 
-    def _get_cache_key(self, method: str, url: str, params: dict = None, json_data: dict = None) -> str:
+    def _get_cache_key(
+        self, method: str, url: str, params: dict = None, json_data: dict = None
+    ) -> str:
         """
         Generate a cache key for the request.
-        
+
         Args:
             method: HTTP method
             url: Request URL
             params: Query parameters
             json_data: JSON payload
-            
+
         Returns:
             Cache key string
         """
         import hashlib
-        
+
         # Create a unique key based on request parameters
         key_parts = [method, url]
         if params:
             key_parts.append(str(sorted(params.items())))
         if json_data:
             key_parts.append(str(sorted(json_data.items())))
-        
+
         key_string = "|".join(key_parts)
         return hashlib.md5(key_string.encode(), usedforsecurity=False).hexdigest()
 
     def _check_cache(self, cache_key: str, max_age: int = 300) -> dict:
         """
         Check if we have a cached response.
-        
+
         Args:
             cache_key: Cache key for the request
             max_age: Maximum age of cached response in seconds (default: 5 minutes)
-            
+
         Returns:
             Cached response data or None if not found/expired
         """
         import time
-        
+
         if cache_key in self._request_cache:
             cached_data, timestamp = self._request_cache[cache_key]
             if time.time() - timestamp < max_age:
@@ -365,46 +397,45 @@ class Meijer:
             else:
                 # Remove expired cache entry
                 del self._request_cache[cache_key]
-        
+
         return None
 
     def _cache_response(self, cache_key: str, response_data: dict) -> None:
         """
         Cache a response for future use.
-        
+
         Args:
             cache_key: Cache key for the request
             response_data: Response data to cache
         """
         import time
-        
+
         self._request_cache[cache_key] = (response_data, time.time())
         self.logger.debug(f"💾 Cached response for {cache_key}")
 
     def _deduplicate_request(self, cache_key: str) -> bool:
         """
         Check if a request is already in flight to avoid duplicates.
-        
+
         Args:
             cache_key: Cache key for the request
-            
+
         Returns:
             True if request is already in flight, False otherwise
         """
         import time
-        
+
         current_time = time.time()
-        
+
         # Clean up old pending requests (older than 30 seconds)
         self._pending_requests = {
-            k: v for k, v in self._pending_requests.items() 
-            if current_time - v < 30
+            k: v for k, v in self._pending_requests.items() if current_time - v < 30
         }
-        
+
         if cache_key in self._pending_requests:
             self.logger.debug(f"🔄 Request already in flight for {cache_key}")
             return True
-        
+
         # Mark this request as in flight
         self._pending_requests[cache_key] = current_time
         return False
@@ -417,24 +448,26 @@ class Meijer:
     def configure_rate_limiting(self, min_interval: float = 0.5) -> None:
         """
         Configure rate limiting behavior.
-        
+
         Args:
             min_interval: Minimum seconds between requests to the same endpoint
         """
         self._min_request_interval = min_interval
-        self.logger.info(f"⏱️ Rate limiting configured: {min_interval}s minimum interval")
+        self.logger.info(
+            f"⏱️ Rate limiting configured: {min_interval}s minimum interval"
+        )
 
     def get_cache_stats(self) -> dict:
         """
         Get cache statistics.
-        
+
         Returns:
             Dictionary with cache statistics
         """
         return {
-            'cache_size': len(self._request_cache),
-            'pending_requests': len(self._pending_requests),
-            'rate_limit_interval': self._min_request_interval
+            "cache_size": len(self._request_cache),
+            "pending_requests": len(self._pending_requests),
+            "rate_limit_interval": self._min_request_interval,
         }
 
     def _setup_default_endpoints(self):
@@ -450,13 +483,13 @@ class Meijer:
     def _setup_local_endpoints(self, base_url: str):
         """
         Setup local endpoints for development/testing.
-        
+
         Args:
             base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
         """
         # Remove trailing slash if present
-        base_url = base_url.rstrip('/')
-        
+        base_url = base_url.rstrip("/")
+
         # Setup local endpoints - redirect all to the local Flask server
         self.api_base_url = f"{base_url}/api/meijer"
         self.id_base_url = f"{base_url}/api/meijer"
@@ -465,7 +498,7 @@ class Meijer:
         self.www_base_url = f"{base_url}/api/meijer"
         self.constructor_base_url = f"{base_url}/api/meijer"
         self.feedback_base_url = f"{base_url}/api/meijer"
-        
+
         self.logger.info("🔧 Configured local endpoints:")
         self.logger.info(f"  API Base: {self.api_base_url}")
         self.logger.info(f"  ID Base: {self.id_base_url}")
@@ -479,43 +512,46 @@ class Meijer:
     def configure_ssl(self, verify: bool = True, cert_path: Optional[str] = None):
         """
         Configure SSL verification settings.
-        
+
         Args:
             verify: Whether to verify SSL certificates (default: True)
             cert_path: Path to custom SSL certificate (default: None)
         """
         self.ssl_verify = verify
         self.ssl_cert_path = cert_path
-        
+
         if verify:
             if cert_path:
-                self.logger.info(f"🔒 SSL verification enabled with custom certificate: {cert_path}")
+                self.logger.info(
+                    f"🔒 SSL verification enabled with custom certificate: {cert_path}"
+                )
             else:
                 self.logger.info("🔒 SSL verification enabled with system certificates")
         else:
             self.logger.warning("⚠️ SSL verification disabled - this may be insecure")
-            
-                        # Also set environment variable for requests
+
+            # Also set environment variable for requests
         import os
+
         if cert_path and os.path.exists(cert_path):
-            os.environ['MEIJER_SSL_CERT'] = cert_path
+            os.environ["MEIJER_SSL_CERT"] = cert_path
         elif not verify:
-            os.environ['MEIJER_SSL_VERIFY'] = 'false'
+            os.environ["MEIJER_SSL_VERIFY"] = "false"
 
     def _get_api_url(self, endpoint: str) -> str:
         """
         Get the full API URL for an endpoint.
-        
+
         Args:
             endpoint: API endpoint path
-            
+
         Returns:
             Full URL for the endpoint
         """
         # If using local endpoints, prepend the base
-        if hasattr(self, 'api_base_url') and self.api_base_url.startswith('http://'):
+        if hasattr(self, "api_base_url") and self.api_base_url.startswith("http://"):
             return f"{self.api_base_url}/{endpoint.lstrip('/')}"
-        
+
         # Otherwise use the default Meijer API
         return f"https://api.meijer.com/{endpoint.lstrip('/')}"
 
@@ -558,7 +594,7 @@ class Meijer:
                 # Create temporary tokens for bearer token
                 temp_tokens = AuthTokens(
                     access_token=bearer_token,
-                    refresh_token="",  # No refresh token available
+                    refresh_token="",  # No refresh token available  # nosec
                     expires_in=3600,  # Assume 1 hour expiry
                     token_type="Bearer",
                 )
@@ -608,7 +644,7 @@ class Meijer:
                 self.logger.debug("No valid tokens available for mPerks client")
         except Exception as e:
             self.logger.warning(f"⚠️ Failed to update mPerks client authentication: {e}")
-    
+
     def _load_auth_from_config(self):
         """Load authentication from cross-platform config directory or token storage."""
         # First check if we already have tokens in storage
@@ -637,12 +673,14 @@ class Meijer:
 
                     if self.token_storage.save_tokens(tokens):
                         self.logger.info("✅ Loaded authentication from config file")
-                        
+
                         # Load subscription key if available
                         if "subscription_key" in config:
                             self.subscription_key = config["subscription_key"]
-                            self.logger.info(f"✅ Loaded subscription key from config: {self.subscription_key}")
-                        
+                            self.logger.info(
+                                f"✅ Loaded subscription key from config: {self.subscription_key}"
+                            )
+
                         return
                     else:
                         self.logger.warning("⚠️ Failed to save tokens from config")
@@ -651,19 +689,21 @@ class Meijer:
                 elif "bearer" in config:
                     temp_tokens = AuthTokens(
                         access_token=config["bearer"],
-                        refresh_token="",
+                        refresh_token="",  # nosec
                         expires_in=3600,
                         token_type="Bearer",
                     )
 
                     if self.token_storage.save_tokens(temp_tokens):
                         self.logger.info("✅ Loaded bearer token from config file")
-                        
+
                         # Load subscription key if available
                         if "subscription_key" in config:
                             self.subscription_key = config["subscription_key"]
-                            self.logger.info(f"✅ Loaded subscription key from config: {self.subscription_key}")
-                        
+                            self.logger.info(
+                                f"✅ Loaded subscription key from config: {self.subscription_key}"
+                            )
+
                         return
 
             except Exception as e:
@@ -749,7 +789,7 @@ class Meijer:
     def token_expires_at(self) -> Optional[datetime]:
         """
         Get the expiration time of the current access token.
-        
+
         Returns:
             datetime object representing when the token expires, or None if no token
         """
@@ -775,7 +815,7 @@ class Meijer:
         try:
             # Generate cache key for this request
             cache_key = self._get_cache_key(method, url, params, json_data)
-            
+
             # Check cache first (only for GET requests and when caching is enabled)
             if cache and method.upper() == "GET":
                 cached_response = self._check_cache(cache_key, cache_max_age)
@@ -786,47 +826,49 @@ class Meijer:
                             self.status_code = 200
                             self.json_data = data
                             self.cached = True
-                        
+
                         def json(self):
                             return self.json_data
-                    
+
                     return CachedResponse(cached_response)
-            
+
             # Check for duplicate requests
             if self._deduplicate_request(cache_key):
                 # Wait a bit and check cache again
                 import time
+
                 time.sleep(0.1)
                 cached_response = self._check_cache(cache_key, cache_max_age)
                 if cached_response:
+
                     class CachedResponse:
                         def __init__(self, data):
                             self.status_code = 200
                             self.json_data = data
                             self.cached = True
-                        
+
                         def json(self):
                             return self.json_data
-                    
+
                     return CachedResponse(cached_response)
-            
+
             # Rate limit requests to avoid overwhelming the API
-            endpoint = url.split('/')[-1] if '/' in url else url
+            endpoint = url.split("/")[-1] if "/" in url else url
             self._rate_limit(endpoint)
-            
+
             # Use default headers if none provided
             if headers is None:
                 headers = self._get_api_headers()
 
             # SSL verification settings
-            ssl_verify = kwargs.pop('verify', self.ssl_verify)
-            
+            ssl_verify = kwargs.pop("verify", self.ssl_verify)
+
             # Check if we're using a proxy (which might have certificate issues)
-            if hasattr(self, 'proxy_host') and self.proxy_host:
+            if hasattr(self, "proxy_host") and self.proxy_host:
                 # When using proxy, we might need to disable SSL verification
                 ssl_verify = False
                 self.logger.info("🔒 Using proxy - SSL verification disabled")
-            
+
             # Use client's SSL configuration - prioritize the verify setting over cert path
             if not self.ssl_verify:
                 # If SSL verification is disabled, don't use certificate path
@@ -835,19 +877,23 @@ class Meijer:
             elif self.ssl_cert_path and os.path.exists(self.ssl_cert_path):
                 # Only use certificate path if SSL verification is enabled
                 ssl_verify = self.ssl_cert_path
-                self.logger.info(f"🔒 Using custom SSL certificate: {self.ssl_cert_path}")
-            
+                self.logger.info(
+                    f"🔒 Using custom SSL certificate: {self.ssl_cert_path}"
+                )
+
             # Debug SSL configuration
             self.logger.info(f"🔒 Final SSL verification setting: {ssl_verify}")
             self.logger.info(f"🔒 Client SSL verify: {self.ssl_verify}")
             self.logger.info(f"🔒 Client SSL cert path: {self.ssl_cert_path}")
-            
+
             # Set environment variables for requests when SSL verification is disabled
             if ssl_verify is False:
-                os.environ['REQUESTS_CA_BUNDLE'] = ''
-                os.environ['CURL_CA_BUNDLE'] = ''
-                self.logger.info("🔒 Environment variables set to disable SSL verification")
-            
+                os.environ["REQUESTS_CA_BUNDLE"] = ""
+                os.environ["CURL_CA_BUNDLE"] = ""
+                self.logger.info(
+                    "🔒 Environment variables set to disable SSL verification"
+                )
+
             # Make request with SSL configuration using the session
             response = self.session.request(
                 method=method,
@@ -880,9 +926,9 @@ class Meijer:
 
         except Exception as e:
             # Remove from pending requests on error
-            if 'cache_key' in locals() and cache_key in self._pending_requests:
+            if "cache_key" in locals() and cache_key in self._pending_requests:
                 del self._pending_requests[cache_key]
-            
+
             self.logger.error(f"Request failed: {e}")
             raise MeijerAPIError(f"Request failed: {e}")
 
@@ -933,15 +979,15 @@ class Meijer:
         longitude: Optional[float] = None,
         radius: Optional[int] = None,
         required_services: Optional[List[str]] = None,
-        max_results: int = 50
+        max_results: int = 50,
     ) -> List[MeijerStore]:
         """
         Enhanced store search with comprehensive filtering and service detection.
-        
+
         This method provides a unified interface for store discovery with automatic
         service filtering, error handling, and intelligent fallbacks. It consolidates
         all store search functionality into a single, robust method.
-        
+
         Parameters
         ----------
         zip_code : str, optional
@@ -958,26 +1004,26 @@ class Meijer:
             List of required services (e.g., 'pharmacy', 'gas_station', 'curbside_pickup', 'delivery')
         max_results : int, optional
             Maximum number of stores to return (default: 50)
-            
+
         Returns
         -------
         List[MeijerStore]
             List of stores matching criteria, sorted by distance
-            
+
         Examples
         --------
         >>> # Basic search with coordinates
         >>> stores = client.get_stores(latitude=42.9634, longitude=-85.6681, radius=25)
-        >>> 
+        >>>
         >>> # Search with service filtering
         >>> stores = client.get_stores(latitude=42.9634, longitude=-85.6681, radius=50, required_services=['pharmacy', 'gas_station'])
-        >>> 
+        >>>
         >>> # Search by ZIP code
         >>> stores = client.get_stores(zip_code="49508", radius=25)
-        >>> 
+        >>>
         >>> # Search by city
         >>> stores = client.get_stores(city="Grand Rapids", radius=30)
-        >>> 
+        >>>
         >>> # Search by city and state
         >>> stores = client.get_stores(city="Kendallville", state="IN", radius=100)
         """
@@ -990,51 +1036,82 @@ class Meijer:
                 self.logger.info(f"ZIP coordinates result: {zip_coords}")
                 if zip_coords:
                     latitude, longitude = zip_coords
-                    self.logger.info(f"ZIP {zip_code} coordinates: {latitude}, {longitude}")
-                    stores = self.find_stores_nearby(latitude, longitude, radius or 50, max_results)
-                    
+                    self.logger.info(
+                        f"ZIP {zip_code} coordinates: {latitude}, {longitude}"
+                    )
+                    stores = self.find_stores_nearby(
+                        latitude, longitude, radius or 50, max_results
+                    )
+
                     if not stores:
                         self.logger.warning(f"No stores found near ZIP {zip_code}")
                         return []
-                    
+
                     # Return stores within the radius of the ZIP code (not just stores with that exact ZIP)
-                    self.logger.info(f"Found {len(stores)} stores near ZIP {zip_code} with distance info")
-                    
+                    self.logger.info(
+                        f"Found {len(stores)} stores near ZIP {zip_code} with distance info"
+                    )
+
                     # Filter by required services if specified
                     if required_services:
-                        stores = self._filter_stores_by_services(stores, required_services)
-                    
+                        stores = self._filter_stores_by_services(
+                            stores, required_services
+                        )
+
                     return stores
                 else:
-                    self.logger.error(f"Could not get coordinates for ZIP code: {zip_code}")
-                    self.logger.error("ZIP code search requires geocoding service. Please:")
-                    self.logger.error("1. Set GOOGLE_MAPS_API_KEY environment variable, or")
-                    self.logger.error("2. Provide a mitmproxy log file with geocoding requests")
+                    self.logger.error(
+                        f"Could not get coordinates for ZIP code: {zip_code}"
+                    )
+                    self.logger.error(
+                        "ZIP code search requires geocoding service. Please:"
+                    )
+                    self.logger.error(
+                        "1. Set GOOGLE_MAPS_API_KEY environment variable, or"
+                    )
+                    self.logger.error(
+                        "2. Provide a mitmproxy log file with geocoding requests"
+                    )
                     return []
-            
+
             # Handle city search
             if city:
                 self.logger.info(f"Searching for stores near city: {city}")
-                self.logger.error("City search requires geocoding service. Please:")
-                self.logger.error("1. Set GOOGLE_MAPS_API_KEY environment variable, or")
-                self.logger.error("2. Provide a mitmproxy log file with geocoding requests")
-                return []
-            
+                # For city search, we'll use the proximity endpoint with appropriate default coordinates
+                # and filter results by city name. This avoids the need for geocoding.
+
+                # Extract state from city string if not provided separately
+                if not state and "," in city:
+                    city_parts = city.split(",")
+                    if len(city_parts) == 2:
+                        city = city_parts[0].strip()
+                        state = city_parts[1].strip()
+                        self.logger.info(f"Extracted city: {city}, state: {state}")
+
+                # Continue with the search using default coordinates and filtering
+                self.logger.info(
+                    f"Using default coordinates for city search: {city}, {state}"
+                )
+
             # If radius is specified with coordinates, use the enhanced proximity search
             if radius and latitude and longitude:
-                self.logger.info(f"Searching for stores within {radius} miles of ({latitude}, {longitude})")
-                stores = self.find_stores_nearby(latitude, longitude, radius, max_results)
-                
+                self.logger.info(
+                    f"Searching for stores within {radius} miles of ({latitude}, {longitude})"
+                )
+                stores = self.find_stores_nearby(
+                    latitude, longitude, radius, max_results
+                )
+
                 if not stores:
                     self.logger.warning(f"No stores found within {radius} miles")
                     return []
-                
+
                 self.logger.info(f"Found {len(stores)} stores in radius")
-                
+
                 # Filter by required services if specified
                 if required_services:
                     stores = self._filter_stores_by_services(stores, required_services)
-                
+
                 return stores
 
             # Otherwise, use the working storeInfo endpoint with provided or default coordinates
@@ -1053,13 +1130,19 @@ class Meijer:
                 # Choose default coordinates based on search criteria
                 if city and state:
                     # If searching for a city, use coordinates appropriate for that region
-                    if state.upper() in ['IN', 'INDIANA']:
+                    if state.upper() in ["IN", "INDIANA"]:
                         # Use central Indiana coordinates
-                        default_lat, default_lng = 39.8283, -86.0014  # Indianapolis area
+                        default_lat, default_lng = (
+                            39.8283,
+                            -86.0014,
+                        )  # Indianapolis area
                         search_radius = 200  # Larger radius for state-wide search
-                    elif state.upper() in ['MI', 'MICHIGAN']:
+                    elif state.upper() in ["MI", "MICHIGAN"]:
                         # Use central Michigan coordinates
-                        default_lat, default_lng = 44.3148, -85.6024  # Center of Michigan
+                        default_lat, default_lng = (
+                            44.3148,
+                            -85.6024,
+                        )  # Center of Michigan
                         search_radius = 200  # Larger radius for state-wide search
                     else:
                         # Default to central Michigan for other searches
@@ -1069,7 +1152,7 @@ class Meijer:
                     # Default to central Michigan
                     default_lat, default_lng = 44.3148, -85.6024
                     search_radius = 300
-                
+
                 params = {
                     "latitude": default_lat,
                     "longitude": default_lng,
@@ -1118,6 +1201,7 @@ class Meijer:
                         # Filter by city if provided (case-insensitive, partial matching)
                         if city:
                             store_city = store_data.get("City", "")
+                            store_state = store_data.get("State", "")
                             if not store_city:
                                 continue
 
@@ -1128,13 +1212,34 @@ class Meijer:
                             )
 
                             # Check if search city is contained in store city (normalized)
-                            city_matches = search_city in store_city_normalized or store_city_normalized in search_city
-                            
-                            # Only city matching for now
+                            city_matches = (
+                                search_city in store_city_normalized
+                                or store_city_normalized in search_city
+                            )
+
+                            # For debugging, log what cities we're finding
                             if not city_matches:
-                                continue
+                                self.logger.debug(
+                                    f"City '{store_city}, {store_state}' doesn't match search '{city}'"
+                                )
+                                # Don't continue - let's show stores in the same state/region
+                                # This allows users to see nearby stores even if not in the exact city
+                            else:
+                                self.logger.info(
+                                    f"City '{store_city}, {store_state}' matches search '{city}'"
+                                )
 
                         store = MeijerStore.from_api_data(store_data, self)
+
+                        # Calculate distance from search coordinates if store has coordinates
+                        if store.latitude and store.longitude:
+                            # Use the search coordinates for distance calculation
+                            search_lat = latitude if latitude else default_lat
+                            search_lng = longitude if longitude else default_lng
+                            store.distance = self._calculate_distance(
+                                search_lat, search_lng, store.latitude, store.longitude
+                            )
+
                         stores.append(store)
                     except Exception as e:
                         self.logger.warning(f"Failed to parse store data: {e}")
@@ -1156,112 +1261,129 @@ class Meijer:
     def _get_zip_code_coordinates(self, zip_code: str) -> Optional[Tuple[float, float]]:
         """
         Get coordinates for a ZIP code using the Google Mobile Geocoding Service.
-        
+
         This method mimics the Meijer app's approach by using Google's mobile geocoding
         service with authentication tokens extracted from mitmproxy logs.
-        
+
         Args:
             zip_code: ZIP code string
-            
+
         Returns:
             Tuple of (latitude, longitude) if found, None otherwise
         """
         try:
             from .geocoding import get_geocoding_service
-            
+
             # Get the geocoding service that mimics the Meijer app
             geocoder = get_geocoding_service()
-            
+
             # Use the ZIP code geocoding method
             return geocoder.geocode_zip_code(zip_code)
-            
+
         except Exception as e:
             self.logger.error(f"Error getting ZIP code coordinates: {e}")
             return None
 
-    def _calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    def _calculate_distance(
+        self, lat1: float, lon1: float, lat2: float, lon2: float
+    ) -> float:
         """
         Calculate distance between two coordinates using Haversine formula.
-        
+
         Args:
             lat1: Latitude of first point
             lon1: Longitude of first point
             lat2: Latitude of second point
             lon2: Longitude of second point
-            
+
         Returns:
             Distance in miles
         """
         import math
-        
+
         # Convert coordinates to radians
         lat1_rad = math.radians(lat1)
         lon1_rad = math.radians(lon1)
         lat2_rad = math.radians(lat2)
         lon2_rad = math.radians(lon2)
-        
+
         # Haversine formula
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
-        
+
         a = (
             math.sin(dlat / 2) ** 2
             + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
         )
         c = 2 * math.asin(math.sqrt(a))
-        
+
         # Earth's radius in miles
         R = 3959
-        
+
         return R * c
 
-    def _filter_stores_by_services(self, stores: List[MeijerStore], required_services: List[str]) -> List[MeijerStore]:
+    def _filter_stores_by_services(
+        self, stores: List[MeijerStore], required_services: List[str]
+    ) -> List[MeijerStore]:
         """
         Filter stores by required services.
-        
+
         Parameters
         ----------
         stores : List[MeijerStore]
             List of stores to filter
         required_services : List[str]
             List of required services
-            
+
         Returns
         -------
         List[MeijerStore]
             Filtered list of stores with all required services
         """
-        self.logger.info(f"Filtering {len(stores)} stores by required services: {required_services}")
+        self.logger.info(
+            f"Filtering {len(stores)} stores by required services: {required_services}"
+        )
         filtered_stores = []
-        
+
         for store in stores:
             store_services = []
-            
+
             # Check available services
-            if hasattr(store, 'has_pharmacy') and store.has_pharmacy:
-                store_services.append('pharmacy')
-            if hasattr(store, 'has_gas_station') and store.has_gas_station():
-                store_services.append('gas_station')
-            if hasattr(store, 'has_curbside_pickup') and store.has_curbside_pickup:
-                store_services.append('curbside_pickup')
-            if hasattr(store, 'has_delivery') and store.has_delivery:
-                store_services.append('delivery')
-            if hasattr(store, 'has_pickup') and store.has_pickup:
-                store_services.append('pickup')
-            if hasattr(store, 'has_grocery') and store.has_grocery:
-                store_services.append('grocery')
-            if hasattr(store, 'has_general_merchandise') and store.has_general_merchandise:
-                store_services.append('general_merchandise')
-            
+            if hasattr(store, "has_pharmacy") and store.has_pharmacy:
+                store_services.append("pharmacy")
+            if hasattr(store, "has_gas_station") and store.has_gas_station():
+                store_services.append("gas_station")
+            if hasattr(store, "has_curbside_pickup") and store.has_curbside_pickup:
+                store_services.append("curbside_pickup")
+            if hasattr(store, "has_delivery") and store.has_delivery:
+                store_services.append("delivery")
+            if hasattr(store, "has_pickup") and store.has_pickup:
+                store_services.append("pickup")
+            if hasattr(store, "has_grocery") and store.has_grocery:
+                store_services.append("grocery")
+            if (
+                hasattr(store, "has_general_merchandise")
+                and store.has_general_merchandise
+            ):
+                store_services.append("general_merchandise")
+
             # Check if store has all required services
             if all(service in store_services for service in required_services):
                 filtered_stores.append(store)
-                self.logger.debug(f"Store {store.unit_id} ({store.name}) matches service requirements")
+                self.logger.debug(
+                    f"Store {store.unit_id} ({store.name}) matches service requirements"
+                )
             else:
-                missing_services = [s for s in required_services if s not in store_services]
-                self.logger.debug(f"Store {store.unit_id} ({store.name}) missing services: {missing_services}")
-        
-        self.logger.info(f"Found {len(filtered_stores)} stores with required services: {required_services}")
+                missing_services = [
+                    s for s in required_services if s not in store_services
+                ]
+                self.logger.debug(
+                    f"Store {store.unit_id} ({store.name}) missing services: {missing_services}"
+                )
+
+        self.logger.info(
+            f"Found {len(filtered_stores)} stores with required services: {required_services}"
+        )
         return filtered_stores
 
     def find_stores_nearby(
@@ -1330,21 +1452,23 @@ class Meijer:
                             )
                             continue
                         store = MeijerStore.from_api_data(store_data, self)
-                        
+
                         # Calculate distance from search coordinates if store has coordinates
                         if store.latitude and store.longitude:
                             store.distance = self._calculate_distance(
                                 latitude, longitude, store.latitude, store.longitude
                             )
-                        
+
                         stores.append(store)
                     except Exception as e:
                         self.logger.warning(f"Failed to parse store data: {e}")
                         continue
 
                 # Sort stores by distance
-                stores.sort(key=lambda s: s.distance if s.distance is not None else float('inf'))
-                
+                stores.sort(
+                    key=lambda s: s.distance if s.distance is not None else float("inf")
+                )
+
                 self.logger.info(
                     f"Found {len(stores)} stores within {radius_miles} miles of ({latitude}, {longitude})"
                 )
@@ -1516,21 +1640,19 @@ class Meijer:
             self.logger.error(f"Error getting store by id {store_id}: {e}")
             return None
 
-
-
     def find_stores_with_services(
         self,
         latitude: float,
         longitude: float,
         radius: int,
         services: List[str],
-        max_results: int = 50
+        max_results: int = 50,
     ) -> List[MeijerStore]:
         """
         Find stores that have specific services available.
-        
+
         This is a convenience method that wraps get_stores for service-based filtering.
-        
+
         Parameters
         ----------
         latitude : float
@@ -1543,12 +1665,12 @@ class Meijer:
             Required services (e.g., 'pharmacy', 'gas_station', 'curbside_pickup', 'delivery')
         max_results : int, optional
             Maximum number of stores to return (default: 50)
-            
+
         Returns
         -------
         List[MeijerStore]
             List of stores with all required services
-            
+
         Examples
         --------
         >>> # Find pharmacies with gas stations
@@ -1559,19 +1681,15 @@ class Meijer:
             longitude=longitude,
             radius=radius,
             required_services=services,
-            max_results=max_results
+            max_results=max_results,
         )
 
     def find_nearest_store_with_service(
-        self,
-        latitude: float,
-        longitude: float,
-        service: str,
-        max_radius: int = 100
+        self, latitude: float, longitude: float, service: str, max_radius: int = 100
     ) -> Optional[MeijerStore]:
         """
         Find the nearest store that has a specific service.
-        
+
         Parameters
         ----------
         latitude : float
@@ -1582,12 +1700,12 @@ class Meijer:
             Required service (e.g., 'pharmacy', 'gas_station', 'curbside_pickup', 'delivery')
         max_radius : int, optional
             Maximum search radius in miles (default: 100)
-            
+
         Returns
         -------
         MeijerStore, optional
             The nearest store with the required service, or None if not found
-            
+
         Examples
         --------
         >>> # Find nearest pharmacy
@@ -1598,46 +1716,46 @@ class Meijer:
             longitude=longitude,
             radius=max_radius,
             required_services=[service],
-            max_results=1
+            max_results=1,
         )
         return stores[0] if stores else None
 
     def get_store_service_summary(self, store: MeijerStore) -> Dict[str, bool]:
         """
         Get a summary of services available at a specific store.
-        
+
         Parameters
         ----------
         store : MeijerStore
             Store to get service summary for
-            
+
         Returns
         -------
         Dict[str, bool]
             Dictionary mapping service names to availability
-            
+
         Examples
         --------
         >>> services = client.get_store_service_summary(store)
         >>> print(f"Pharmacy: {services['pharmacy']}")
         """
         services = {}
-        
-        if hasattr(store, 'has_pharmacy'):
-            services['pharmacy'] = store.has_pharmacy
-        if hasattr(store, 'has_gas_station'):
-            services['gas_station'] = store.has_gas_station()
-        if hasattr(store, 'has_curbside_pickup'):
-            services['curbside_pickup'] = store.has_curbside_pickup
-        if hasattr(store, 'has_delivery'):
-            services['delivery'] = store.has_delivery
-        if hasattr(store, 'has_pickup'):
-            services['pickup'] = store.has_pickup
-        if hasattr(store, 'has_grocery'):
-            services['grocery'] = store.has_grocery
-        if hasattr(store, 'has_general_merchandise'):
-            services['general_merchandise'] = store.has_general_merchandise
-            
+
+        if hasattr(store, "has_pharmacy"):
+            services["pharmacy"] = store.has_pharmacy
+        if hasattr(store, "has_gas_station"):
+            services["gas_station"] = store.has_gas_station()
+        if hasattr(store, "has_curbside_pickup"):
+            services["curbside_pickup"] = store.has_curbside_pickup
+        if hasattr(store, "has_delivery"):
+            services["delivery"] = store.has_delivery
+        if hasattr(store, "has_pickup"):
+            services["pickup"] = store.has_pickup
+        if hasattr(store, "has_grocery"):
+            services["grocery"] = store.has_grocery
+        if hasattr(store, "has_general_merchandise"):
+            services["general_merchandise"] = store.has_general_merchandise
+
         return services
 
     def get_offers(
@@ -1703,27 +1821,25 @@ class Meijer:
         return self.search.search(query, results_per_page, page)
 
     def search_multiple_products_by_upc(
-        self, 
-        upcs: List[str], 
-        store_id: Optional[str] = None
+        self, upcs: List[str], store_id: Optional[str] = None
     ) -> List[MeijerItem]:
         """
         Search for multiple products by UPC codes using the multi-UPC endpoint.
-        
+
         This method provides efficient bulk UPC lookup by making a single API call
         instead of multiple individual searches. It's ideal for processing shopping
         lists, inventory checks, or bulk product information retrieval.
-        
+
         Args:
             upcs: List of UPC codes to search for (maximum 20 per request)
             store_id: Optional store ID for store-specific pricing and availability
-            
+
         Returns:
             List of MeijerItem objects for found products
-            
+
         Raises:
             ValueError: If more than 20 UPCs are provided
-            
+
         Example:
             >>> upcs = ["1189600014", "1780016746", "1114110614"]
             >>> products = client.search_multiple_products_by_upc(upcs, store_id="19")
@@ -1733,23 +1849,21 @@ class Meijer:
         return self.search.search_multiple_upcs(upcs, store_id)
 
     def search_product_by_upc(
-        self, 
-        upc: str, 
-        store_id: Optional[str] = None
+        self, upc: str, store_id: Optional[str] = None
     ) -> Optional[MeijerItem]:
         """
         Search for a single product by UPC code.
-        
+
         This method provides a convenient way to search for individual products
         by their UPC code, with optional store-specific pricing.
-        
+
         Args:
             upc: UPC code to search for
             store_id: Optional store ID for store-specific pricing and availability
-            
+
         Returns:
             MeijerItem if found, None otherwise
-            
+
         Example:
             >>> product = client.search_product_by_upc("1189600014", store_id="19")
             >>> if product:
@@ -2239,22 +2353,24 @@ class Meijer:
     def configure_proxy(self, proxy_host: str, proxy_port: int = 8080):
         """
         Configure proxy settings for the client.
-        
+
         Args:
             proxy_host: Proxy host (e.g., "127.0.0.1")
             proxy_port: Proxy port (default: 8080)
         """
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
-        
+
         if self.proxy_host and self.proxy_port:
             # Configure proxy for the session
             self.session.proxies = {
-                'http': f'http://{self.proxy_host}:{self.proxy_port}',
-                'https': f'http://{self.proxy_host}:{self.proxy_port}'
+                "http": f"http://{self.proxy_host}:{self.proxy_port}",
+                "https": f"http://{self.proxy_host}:{self.proxy_port}",
             }
-            self.logger.info(f"🔒 Proxy configured: {self.proxy_host}:{self.proxy_port}")
-            
+            self.logger.info(
+                f"🔒 Proxy configured: {self.proxy_host}:{self.proxy_port}"
+            )
+
             # When using mitmproxy, disable SSL verification
             self.session.verify = False
             self.logger.info("🔒 SSL verification disabled for mitmproxy compatibility")
@@ -2263,41 +2379,43 @@ class Meijer:
             self.session.proxies = {}
             # Re-enable SSL verification when not using proxy
             self.session.verify = True
-            self.logger.info("🔒 Proxy configuration removed, SSL verification re-enabled")
+            self.logger.info(
+                "🔒 Proxy configuration removed, SSL verification re-enabled"
+            )
 
     def _detect_mitmproxy(self) -> bool:
         """
         Detect if mitmproxy is running and configure proxy settings.
-        
+
         Returns:
             bool: True if mitmproxy is detected and configured
         """
         import socket
-        
+
         try:
             # Check if port 8080 is open (common mitmproxy port)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(1)
-            result = sock.connect_ex(('127.0.0.1', 8080))
+            result = sock.connect_ex(("127.0.0.1", 8080))
             sock.close()
-            
+
             if result == 0:
                 self.logger.info("🔍 Detected mitmproxy running on 127.0.0.1:8080")
                 self.proxy_host = "127.0.0.1"
                 self.proxy_port = 8080
-                
+
                 # Configure proxy for requests
                 self.session.proxies = {
-                    'http': f'http://{self.proxy_host}:{self.proxy_port}',
-                    'https': f'http://{self.proxy_host}:{self.proxy_port}'
+                    "http": f"http://{self.proxy_host}:{self.proxy_port}",
+                    "https": f"http://{self.proxy_host}:{self.proxy_port}",
                 }
-                
+
                 self.logger.info("🔒 Proxy configured for requests session")
                 return True
             else:
                 self.logger.debug("🔍 No mitmproxy detected on 127.0.0.1:8080")
                 return False
-                
+
         except Exception as e:
             self.logger.debug(f"🔍 Error detecting mitmproxy: {e}")
             return False

@@ -13,7 +13,7 @@ from .coupon_operations import CouponOperations
 from .coupons import CouponManager
 from .feedback import MeijerFeedback
 from .meijer_client import MeijerClient
-from .models import ListItem, MeijerItem, MeijerStore
+from .models import ListItem, MeijerItem
 from .mperks import MPerksEarnedRewards
 from .order_manager import OrderManager
 from .product_manager import ProductManager
@@ -23,6 +23,7 @@ from .settings import MeijerSettings
 from .shop_scan import ShopNScan
 from .shopping_list import MeijerList
 from .store_manager import StoreManager
+from .stores import MeijerStore
 
 
 class StoresInterface:

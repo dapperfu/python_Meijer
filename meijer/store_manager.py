@@ -9,7 +9,7 @@ import logging
 import math
 from typing import Dict, List, Optional, Tuple
 
-from .models import MeijerStore
+from .stores import MeijerStore
 
 
 class StoreManager:
