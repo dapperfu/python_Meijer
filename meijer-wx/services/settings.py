@@ -4,7 +4,7 @@ Settings service for managing application configuration.
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import platformdirs
 
@@ -26,7 +26,7 @@ class SettingsService:
         self.config_file = self.config_dir / "config.toml"
 
         # Default settings
-        self._settings: Dict[str, Any] = {
+        self._settings: dict[str, Any] = {
             "proxy": {"host": None, "port": None},
             "backend": {"local_url": None},
             "export": {
@@ -106,7 +106,7 @@ class SettingsService:
         target[keys[-1]] = value
         self.logger.debug(f"Set {key} = {value}")
 
-    def get_proxy(self) -> Optional[str]:
+    def get_proxy(self) -> str | None:
         """Get proxy configuration as host:port string."""
         host = self.get("proxy.host")
         port = self.get("proxy.port")
@@ -120,7 +120,7 @@ class SettingsService:
         self.set("proxy.host", host)
         self.set("proxy.port", port)
 
-    def get_local_backend(self) -> Optional[str]:
+    def get_local_backend(self) -> str | None:
         """Get local backend URL."""
         return self.get("backend.local_url")
 
@@ -128,7 +128,7 @@ class SettingsService:
         """Set local backend URL."""
         self.set("backend.local_url", url)
 
-    def get_export_defaults(self) -> Dict[str, str]:
+    def get_export_defaults(self) -> dict[str, str]:
         """Get export default settings."""
         return {
             "format": self.get("export.default_format", "csv"),

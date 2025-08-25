@@ -3,7 +3,7 @@ Client service for managing Meijer API interactions.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from services.settings import SettingsService
 
@@ -88,7 +88,7 @@ class MeijerClientService:
             return False
 
         try:
-            result = self._meijer_client.authenticate(username, password)
+            self._meijer_client.authenticate(username, password)
             self.logger.info("Authentication successful")
             return True
         except Exception as e:
@@ -329,11 +329,11 @@ class MeijerClientService:
             self.logger.error(f"Failed to search products: {e}")
             return []
 
-    def get_proxy_config(self) -> Optional[str]:
+    def get_proxy_config(self) -> str | None:
         """Get current proxy configuration."""
         return self.settings_service.get_proxy()
 
-    def get_local_backend_url(self) -> Optional[str]:
+    def get_local_backend_url(self) -> str | None:
         """Get current local backend URL."""
         return self.settings_service.get_local_backend()
 
@@ -503,7 +503,7 @@ class MeijerClientService:
             return []
 
     def add_cart_item(
-        self, upc: str, quantity: int = 1, store_id: Optional[str] = None
+        self, upc: str, quantity: int = 1, store_id: str | None = None
     ) -> bool:
         """
         Add item to shopping cart.
@@ -751,11 +751,11 @@ class MeijerClientService:
     def add_price_watch(
         self,
         identifier: str,
-        id_type: Optional[str] = None,
-        store_id: Optional[str] = None,
-        desired_price: Optional[float] = None,
+        id_type: str | None = None,
+        store_id: str | None = None,
+        desired_price: float | None = None,
         only_when: str = "any_drop",
-        note: Optional[str] = None,
+        note: str | None = None,
     ) -> bool:
         """
         Add a new price watch.
@@ -893,7 +893,7 @@ class MeijerClientService:
 
     # Ads Methods
     def get_ads_items(
-        self, ad_type: str = "weekly", store_id: Optional[str] = None
+        self, ad_type: str = "weekly", store_id: str | None = None
     ) -> list[dict[str, Any]]:
         """
         Get weekly ads items.

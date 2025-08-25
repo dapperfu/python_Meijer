@@ -294,7 +294,7 @@ class AdsPanel(wx.Panel):
         except Exception as e:
             wx.MessageBox(f"Error refreshing ads: {e}", "Error", wx.OK | wx.ICON_ERROR)
 
-    def _apply_filters(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_filters(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Apply search and category filters."""
         filtered_items = items
 
@@ -333,7 +333,7 @@ class AdsPanel(wx.Panel):
 
         return filtered_items
 
-    def _sort_items(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _sort_items(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Sort items based on current sort choice."""
         sort_choice = self.sort_choice.GetSelection()
 
@@ -354,7 +354,7 @@ class AdsPanel(wx.Panel):
 
         return items
 
-    def _get_selected_store_id(self) -> Optional[str]:
+    def _get_selected_store_id(self) -> str | None:
         """Get the selected store ID."""
         if self.store_choice.GetSelection() == 1:  # Current Store
             # This would get the current store from settings or client
@@ -526,7 +526,7 @@ class AdsPanel(wx.Panel):
             item = self.ads_items[item_index]
             self._show_item_dialog(item)
 
-    def _show_item_dialog(self, item: Dict[str, Any]) -> None:
+    def _show_item_dialog(self, item: dict[str, Any]) -> None:
         """Show dialog for ads item actions."""
         # Create action dialog
         dialog = wx.SingleChoiceDialog(
@@ -574,7 +574,7 @@ class AdsPanel(wx.Panel):
 
         dialog.Destroy()
 
-    def _show_item_details(self, item: Dict[str, Any]) -> None:
+    def _show_item_details(self, item: dict[str, Any]) -> None:
         """Show detailed information about an ads item."""
         details = f"""
 Product Details:

@@ -374,7 +374,7 @@ class CartPanel(wx.Panel):
             item = self.cart_items[item_index]
             self._show_item_dialog(item)
 
-    def _show_item_dialog(self, item: Dict[str, Any]) -> None:
+    def _show_item_dialog(self, item: dict[str, Any]) -> None:
         """Show dialog for cart item actions."""
         if not self.client_service.is_authenticated():
             wx.MessageBox(
@@ -413,7 +413,7 @@ class CartPanel(wx.Panel):
 
         dialog.Destroy()
 
-    def _update_item_quantity(self, item: Dict[str, Any]) -> None:
+    def _update_item_quantity(self, item: dict[str, Any]) -> None:
         """Update item quantity dialog."""
         current_qty = item.get("quantity", 1)
 

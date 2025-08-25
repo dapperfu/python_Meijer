@@ -37,7 +37,7 @@ class CouponsPanel(wx.Panel):
 
         self.settings_service = settings_service
         self.client_service = client_service
-        self.coupons: List[Dict[str, Any]] = []
+        self.coupons: list[dict[str, Any]] = []
 
         # Create UI
         self._create_ui()
@@ -207,7 +207,8 @@ class CouponsPanel(wx.Panel):
 
                             if expires_date <= cutoff_date:
                                 expiring_soon.append(coupon)
-                        except Exception:
+                        except (ValueError, TypeError):
+                            # Skip items with invalid date formats
                             continue
                 return expiring_soon
             except Exception:
