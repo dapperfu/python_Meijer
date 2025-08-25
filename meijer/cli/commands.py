@@ -584,16 +584,20 @@ def list_clearall():
     "--item-id",
     help="Specific item ID to clear notes from (clears all if not specified)",
 )
-@click.confirmation_option(
-    prompt="⚠️  Are you sure you want to clear notes? This cannot be undone!"
-)
-def list_clear_notes(item_id: Optional[str]):
+@click.option("--confirm", "-y", is_flag=True, help="Skip confirmation prompt")
+def list_clear_notes(item_id: Optional[str], confirm: bool):
     """Clear notes from shopping list items (removes location data)."""
     client = get_meijer_client()
 
     try:
         if item_id:
             # Clear notes from specific item
+            if not confirm:
+                click.echo(f"⚠️  This will clear notes from item {item_id}.")
+                if not click.confirm("Are you sure you want to continue?"):
+                    click.echo("❌ Operation cancelled")
+                    return
+
             click.echo(f"🗑️  Clearing notes from item {item_id}...")
             success = client.list.clear_notes(item_id)
 
@@ -615,6 +619,14 @@ def list_clear_notes(item_id: Optional[str]):
             if not items_with_notes:
                 click.echo("📝 No items have notes to clear!")
                 return
+
+            if not confirm:
+                click.echo(
+                    f"⚠️  This will clear notes from {len(items_with_notes)} items."
+                )
+                if not click.confirm("Are you sure you want to continue?"):
+                    click.echo("❌ Operation cancelled")
+                    return
 
             click.echo(f"🗑️  Clearing notes from {len(items_with_notes)} items...")
             success = client.list.clear_notes()
