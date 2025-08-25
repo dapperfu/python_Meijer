@@ -617,13 +617,23 @@ def list_defrag(store_id: Optional[str], reverse: bool, zig: bool, show: bool):
                 "🔄 Using zig-zag B aisle sorting (B1 ascending, B2 descending, etc.)"
             )
 
-        success = client.list.defrag(store_id=store_id, reverse=reverse, zig=zig)
+        result = client.list.defrag(store_id=store_id, reverse=reverse, zig=zig)
 
-        if success:
+        if result.get("success"):
             click.echo("🎉 Defrag completed successfully!")
             click.echo(
                 "📋 Your shopping list is now organized by aisle for efficient shopping!"
             )
+            
+            # Show defrag statistics
+            total_items = result.get("total_items", 0)
+            organized_count = sum(len(group.get("items", [])) for group in result.get("organized_by_aisle", []))
+            efficiency_gain = result.get("efficiency_gain", 0.0)
+            
+            click.echo(f"📊 Defrag Statistics:")
+            click.echo(f"   Total items: {total_items}")
+            click.echo(f"   Organized by aisle: {organized_count}")
+            click.echo(f"   Efficiency gain: {efficiency_gain:.1f}%")
             
             # Show items after defrag if requested
             if show:
@@ -635,18 +645,37 @@ def list_defrag(store_id: Optional[str], reverse: bool, zig: bool, show: bool):
                 else:
                     click.echo("📝 Shopping list is empty after defrag")
         else:
-            raise click.ClickException("❌ Defrag failed!")
+            error_msg = result.get("error", "Unknown error")
+            raise click.ClickException(f"❌ Defrag failed: {error_msg}")
     except Exception as e:
         raise click.ClickException(f"❌ Defrag failed: {e}")
 
 
 @list_group.command("export")
 @click.argument("filename", type=click.Path(), default="shopping_list.txt")
-def list_export(filename: str):
+@click.option("--defrag", "-d", is_flag=True, help="Export with defragmented organization by aisle")
+@click.option("--store-id", "-s", help="Store ID for location lookup (required for defrag)")
+def list_export(filename: str, defrag: bool, store_id: Optional[str]):
     """Export shopping list to a file with full details for round-trip import."""
     client = get_meijer_client()
 
     try:
+        # If defrag is requested, use the defragmented export
+        if defrag:
+            if not store_id:
+                raise click.ClickException("❌ --store-id is required when using --defrag")
+            
+            click.echo("🔧 Exporting defragmented shopping list...")
+            click.echo("⏳ This will organize items by aisle and export the results...")
+            
+            # Use the export_defragmented method
+            client.list.export_defragmented(store_id=store_id, output_path=filename)
+            
+            click.echo(f"✅ Exported defragmented list to {filename}")
+            click.echo(f"📁 File saved to: {Path(filename).absolute()}")
+            return
+
+        # Regular export
         items = client.list.get()
 
         if not items:
@@ -685,25 +714,7 @@ def list_export(filename: str):
         raise click.ClickException(f"❌ Export failed: {e}")
 
 
-@list_group.command("export-defragmented")
-@click.option("--store-id", "-s", help="Store ID for location lookup")
-@click.option("--output", "-o", type=click.Path(), help="Output file path (default: defragmented_shopping_list.json)")
-def list_export_defragmented(store_id: Optional[str], output: Optional[str]):
-    """Export defragmented shopping list to JSON with organized aisle groups."""
-    client = get_meijer_client()
 
-    try:
-        click.echo("🔧 Exporting defragmented shopping list...")
-        click.echo("⏳ This will run defrag and export the organized results...")
-        
-        # Use the new export_defragmented method
-        client.list.export_defragmented(store_id=store_id, output_path=output)
-        
-        output_path = output or "defragmented_shopping_list.json"
-        click.echo(f"📁 File saved to: {Path(output_path).absolute()}")
-        
-    except Exception as e:
-        raise click.ClickException(f"❌ Export defragmented failed: {e}")
 
 
 @list_group.command("import")

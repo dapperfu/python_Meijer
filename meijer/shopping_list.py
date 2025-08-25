@@ -536,8 +536,8 @@ class MeijerList:
             return False
 
     def defrag(
-        self, store_id: Optional[str] = None, reverse: bool = False, zig: bool = False
-    ) -> bool:
+        self, store_id: Optional[str] = None, reverse: bool = False, zig: bool = False, noreorganize: bool = False
+    ) -> Dict[str, Any]:
         """
         Defrag the shopping list by organizing items by aisle/location.
 
@@ -545,9 +545,10 @@ class MeijerList:
             store_id: Store ID to use for location lookup (defaults to current store)
             reverse: If True, sort items in reverse order (descending)
             zig: If True, alternate B aisle sorting (B1 ascending, B2 descending, etc.)
+            noreorganize: If True, don't reorganize the actual list (just return organized data)
 
         Returns:
-            bool: True if defrag was successful, False otherwise
+            Dict containing organized data structure with aisle groups and statistics
         """
         if not store_id:
             # Try to get store ID from current context
@@ -568,11 +569,24 @@ class MeijerList:
             items = self.get()
         except Exception as e:
             self.logger.error(f"❌ Failed to get list items: {e}")
-            return False
+            return {
+                "success": False,
+                "error": str(e),
+                "organized_by_aisle": [],
+                "unorganized_items": [],
+                "efficiency_gain": 0.0,
+                "total_items": 0
+            }
 
         if not items:
             self.logger.info("ℹ️  No items to defrag")
-            return True
+            return {
+                "success": True,
+                "organized_by_aisle": [],
+                "unorganized_items": [],
+                "efficiency_gain": 0.0,
+                "total_items": 0
+            }
 
         self.logger.info("⏳ This may take a moment to search for product locations...")
 
@@ -1109,6 +1123,55 @@ class MeijerList:
         if reverse:
             sorted_items = list(reversed(sorted_items))
 
+        # Build organized data structure for return
+        organized_by_aisle = []
+        unorganized_items = []
+        
+        # Group items by aisle
+        aisle_groups = {}
+        for item_data in sorted_items:
+            location = item_data.get("location", {})
+            aisle = location.get("aisle", "Unknown")
+            
+            if aisle not in aisle_groups:
+                aisle_groups[aisle] = {
+                    "aisle": aisle,
+                    "section": location.get("section", ""),
+                    "zone": location.get("zone", ""),
+                    "zone_code": location.get("zone_code", ""),
+                    "items": []
+                }
+            
+            # Add item to aisle group
+            item_info = {
+                "name": item_data["item"].name,
+                "quantity": item_data["item"].quantity,
+                "notes": item_data["item"].notes,
+                "location": location,
+                "match_confidence": item_data.get("match_confidence", "Unknown"),
+                "matched_product": item_data.get("matched_product", {})
+            }
+            aisle_groups[aisle]["items"].append(item_info)
+        
+        # Convert to list and sort by aisle
+        for aisle in sorted(aisle_groups.keys()):
+            organized_by_aisle.append(aisle_groups[aisle])
+        
+        # Calculate efficiency gain (simplified - could be enhanced)
+        total_items = len(sorted_items)
+        organized_count = sum(len(group["items"]) for group in organized_by_aisle)
+        efficiency_gain = (organized_count / total_items * 100) if total_items > 0 else 0.0
+        
+        # If noreorganize is True, return the organized data without modifying the list
+        if noreorganize:
+            return {
+                "success": True,
+                "organized_by_aisle": organized_by_aisle,
+                "unorganized_items": unorganized_items,
+                "efficiency_gain": efficiency_gain,
+                "total_items": total_items
+            }
+
         # Clear the current list
         self.logger.info("🗑️  Clearing current shopping list...")
         self.clear_list()
@@ -1267,7 +1330,14 @@ class MeijerList:
         for confidence, count in confidence_counts.items():
             self.logger.info(f"   {confidence}: {count} item(s)")
 
-        return added_count > 0
+        # Return the organized data structure
+        return {
+            "success": True,
+            "organized_by_aisle": organized_by_aisle,
+            "unorganized_items": unorganized_items,
+            "efficiency_gain": efficiency_gain,
+            "total_items": total_items
+        }
 
     # ============================================================================
     # Jupyter Notebook Rich Representations
@@ -1788,8 +1858,8 @@ Unable to load shopping list: `{str(e)}`
         from datetime import datetime, timezone
         import json
         
-        # Run defrag to get organized results
-        defrag_result = self.defrag(store_id=store_id)
+        # Run defrag to get organized results (without reorganizing the list)
+        defrag_result = self.defrag(store_id=store_id, noreorganize=True)
         
         output_path = output_path or "defragmented_shopping_list.json"
         self.logger.info(f"📤 Exporting defragmented list to: {output_path}")
@@ -1798,7 +1868,7 @@ Unable to load shopping list: `{str(e)}`
         export_data = {
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "defrag_stats": {
-                "total_items": len(self.get()),
+                "total_items": defrag_result.get("total_items", 0),
                 "organized_count": sum(len(group.get("items", [])) for group in defrag_result.get("organized_by_aisle", [])),
                 "unorganized_count": len(defrag_result.get("unorganized_items", [])),
                 "efficiency_gain": defrag_result.get("efficiency_gain", 0.0)

@@ -27,6 +27,8 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 
 import toml
 
@@ -158,6 +160,34 @@ class EmailConfig:
             }
         }
         
+        # Try to load existing email auth if available
+        try:
+            from ...email_2fa import get_meijer_config_path
+            email_auth_path = get_meijer_config_path("email.txt")
+            if email_auth_path.exists():
+                import configparser
+                config = configparser.ConfigParser()
+                config.read(email_auth_path)
+                
+                if 'email' in config:
+                    email_section = config['email']
+                    if 'username' in email_section and 'password' in email_section:
+                        # Use existing email auth
+                        username = email_section['username']
+                        password = email_section['password']
+                        
+                        # Update template with existing credentials
+                        template_config['smtp']['username'] = username
+                        template_config['smtp']['password'] = password
+                        template_config['smtp']['from'] = username
+                        template_config['smtp']['to'] = username
+                        template_config['imap']['username'] = username
+                        template_config['imap']['password'] = password
+                        
+                        self.logger.info("Loaded existing email credentials from email.txt")
+        except Exception as e:
+            self.logger.debug(f"Could not load existing email auth: {e}")
+        
         self.config = template_config
         self.save_config()
         
@@ -253,11 +283,12 @@ class EmailSender:
         self,
         to_email: str,
         subject: str,
-        body: str,
+        html_body: str,
+        plain_text_body: str,
         from_email: Optional[str] = None
     ) -> Optional[str]:
         """
-        Send a price alert email.
+        Send a price alert email with both HTML and plain text versions.
         
         Parameters
         ----------
@@ -265,8 +296,10 @@ class EmailSender:
             Recipient email address
         subject : str
             Email subject
-        body : str
+        html_body : str
             Email body (HTML)
+        plain_text_body : str
+            Email body (plain text)
         from_email : str, optional
             Sender email address. If None, uses config default.
         
@@ -282,14 +315,18 @@ class EmailSender:
         smtp_config = self.config.get_smtp_config()
         
         try:
-            # Create message
+            # Create message with both HTML and plain text
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
             msg['From'] = from_email or smtp_config['from']
             msg['To'] = to_email
             
+            # Add plain text body first (fallback)
+            text_part = MIMEText(plain_text_body, 'plain', 'utf-8')
+            msg.attach(text_part)
+            
             # Add HTML body
-            html_part = MIMEText(body, 'html')
+            html_part = MIMEText(html_body, 'html', 'utf-8')
             msg.attach(html_part)
             
             # Connect to SMTP server

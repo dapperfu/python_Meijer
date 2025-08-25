@@ -5,7 +5,7 @@ This package provides a comprehensive client for interacting with Meijer's APIs,
 including shopping lists, coupons, product search, and Shop & Scan functionality.
 """
 
-__version__ = "3.3.0"
+__version__ = "0.0.0"  # Version managed by Hatch from git tags
 __author__ = "Meijer API Client Contributors"
 
 # Import main client
