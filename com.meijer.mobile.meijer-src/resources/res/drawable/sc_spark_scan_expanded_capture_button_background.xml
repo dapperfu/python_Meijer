@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:color="#ffffff">
-    <item android:id="@+id/expanded_button_background">
-        <shape android:shape="oval"/>
-    </item>
-</layer-list>

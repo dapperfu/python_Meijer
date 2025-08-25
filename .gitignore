@@ -77,6 +77,7 @@ targeted_endpoints_report.json
 *_decompiled/
 *_decompiled2/
 *_decompiled3/
+com.meijer.mobile.meijer-src/
 
 # Binary and compiled files
 *.exe
@@ -87,14 +88,7 @@ targeted_endpoints_report.json
 *.class
 
 # Debug screenshots and test artifacts - NEVER COMMIT THESE!
-debug_*.png
-*_error_*.png
-*_page_*.png
-*_test_*.png
-weekly_ad_test_*.png
-oauth2_*.png
-meijer_*.png
-upc_barcodes.png
+*.png
 
 # IDE
 .vscode/

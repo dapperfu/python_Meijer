@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="back_button_text">Close</string>
-    <string name="error_message_description_text">There was an issue getting more details about this ad</string>
-    <string name="error_message_text">Something went wrong</string>
-    <string name="fallback_image_content_descriptor">Why this ad?</string>
-</resources>

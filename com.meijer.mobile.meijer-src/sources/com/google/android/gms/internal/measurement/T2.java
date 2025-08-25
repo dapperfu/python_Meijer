@@ -1,8 +1,0 @@
-package com.google.android.gms.internal.measurement;
-
-/* loaded from: classes6.dex */
-public final class T2 extends C10485a5 implements L5 {
-    /* synthetic */ T2(byte[] bArr) {
-        super(U2.zzg);
-    }
-}

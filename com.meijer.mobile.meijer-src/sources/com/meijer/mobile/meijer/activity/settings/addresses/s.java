@@ -1,6 +1,0 @@
-package com.meijer.mobile.meijer.activity.settings.addresses;
-
-/* loaded from: classes10.dex */
-public interface s {
-    void K0(AddressSearchActivity addressSearchActivity);
-}

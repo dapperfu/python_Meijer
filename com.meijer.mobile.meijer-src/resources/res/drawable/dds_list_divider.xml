@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:tint="?attr/colorDivider">
-    <solid android:color="?attr/opacityDivider"/>
-    <size
-        android:height="?attr/dividerSize"
-        android:width="?attr/dividerSize"/>
-</shape>
