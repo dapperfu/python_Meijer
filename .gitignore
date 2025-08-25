@@ -86,6 +86,16 @@ targeted_endpoints_report.json
 *.o
 *.class
 
+# Debug screenshots and test artifacts - NEVER COMMIT THESE!
+debug_*.png
+*_error_*.png
+*_page_*.png
+*_test_*.png
+weekly_ad_test_*.png
+oauth2_*.png
+meijer_*.png
+upc_barcodes.png
+
 # IDE
 .vscode/
 .idea/
