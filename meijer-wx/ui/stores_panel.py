@@ -204,7 +204,6 @@ class StoresPanel(wx.Panel):
     def _update_button_states(self) -> None:
         """Update button states based on current data."""
 
-
         self.refresh_btn.Enable(True)
         self.search_btn.Enable(True)
         self.current_location_btn.Enable(True)

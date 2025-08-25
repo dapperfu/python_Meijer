@@ -63,15 +63,29 @@ class ListPanel(wx.Panel):
         name_sizer.Add(self.item_name, 1, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
         add_sizer.Add(name_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
-        # Quantity input
+        # Quantity and notes input
+        input_row = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Quantity
         qty_sizer = wx.BoxSizer(wx.HORIZONTAL)
         qty_sizer.Add(
             wx.StaticText(self, label="Quantity:"), 0, wx.ALIGN_CENTER_VERTICAL
         )
         self.item_quantity = wx.SpinCtrl(self, min=1, max=99, initial=1, size=(80, -1))
         qty_sizer.Add(self.item_quantity, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
-        qty_sizer.AddStretchSpacer()
-        add_sizer.Add(qty_sizer, 0, wx.EXPAND | wx.ALL, 5)
+        input_row.Add(qty_sizer, 0, wx.ALL, 5)
+
+        # Notes
+        notes_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        notes_sizer.Add(
+            wx.StaticText(self, label="Notes:"), 0, wx.ALIGN_CENTER_VERTICAL
+        )
+        self.item_notes = wx.TextCtrl(self, size=(200, -1))
+        notes_sizer.Add(self.item_notes, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
+        input_row.Add(notes_sizer, 0, wx.ALL, 5)
+
+        input_row.AddStretchSpacer()
+        add_sizer.Add(input_row, 0, wx.EXPAND | wx.ALL, 5)
 
         # Add button
         self.add_btn = wx.Button(self, label="Add Item")
@@ -95,7 +109,31 @@ class ListPanel(wx.Panel):
         self.clear_completed_btn.Bind(wx.EVT_BUTTON, self._on_clear_completed)
         controls_sizer.Add(self.clear_completed_btn, 0, wx.ALL, 5)
 
+        self.estimate_btn = wx.Button(self, label="Estimate Cost")
+        self.estimate_btn.Bind(wx.EVT_BUTTON, self._on_estimate_cost)
+        controls_sizer.Add(self.estimate_btn, 0, wx.ALL, 5)
+
+        self.defrag_btn = wx.Button(self, label="Defrag List")
+        self.defrag_btn.Bind(wx.EVT_BUTTON, self._on_defrag_list)
+        controls_sizer.Add(self.defrag_btn, 0, wx.ALL, 5)
+
         controls_sizer.AddStretchSpacer()
+
+        # Import/Export section
+        import_export_label = wx.StaticText(self, label="Import/Export:")
+        controls_sizer.Add(import_export_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        self.import_btn = wx.Button(self, label="Import CSV")
+        self.import_btn.Bind(wx.EVT_BUTTON, self._on_import_csv)
+        controls_sizer.Add(self.import_btn, 0, wx.ALL, 5)
+
+        self.export_csv_btn = wx.Button(self, label="Export CSV")
+        self.export_csv_btn.Bind(wx.EVT_BUTTON, self._on_export_csv)
+        controls_sizer.Add(self.export_csv_btn, 0, wx.ALL, 5)
+
+        self.export_excel_btn = wx.Button(self, label="Export Excel")
+        self.export_excel_btn.Bind(wx.EVT_BUTTON, self._on_export_excel)
+        controls_sizer.Add(self.export_excel_btn, 0, wx.ALL, 5)
 
         list_sizer.Add(controls_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
@@ -105,17 +143,41 @@ class ListPanel(wx.Panel):
         )
 
         # Add columns
-        self.list_ctrl.InsertColumn(0, "Item", width=300)
+        self.list_ctrl.InsertColumn(0, "Item", width=250)
         self.list_ctrl.InsertColumn(1, "Qty", width=60)
-        self.list_ctrl.InsertColumn(2, "Status", width=100)
-        self.list_ctrl.InsertColumn(3, "Actions", width=150)
+        self.list_ctrl.InsertColumn(2, "Status", width=80)
+        self.list_ctrl.InsertColumn(3, "Notes", width=150)
+        self.list_ctrl.InsertColumn(4, "Actions", width=120)
 
         list_sizer.Add(self.list_ctrl, 1, wx.EXPAND | wx.ALL, 5)
+
+        # Summary section
+        summary_box = wx.StaticBox(self, label="Summary")
+        summary_sizer = wx.StaticBoxSizer(summary_box, wx.HORIZONTAL)
+
+        self.total_items_text = wx.StaticText(self, label="Total Items: 0")
+        summary_sizer.Add(self.total_items_text, 0, wx.ALL, 5)
+
+        self.completed_items_text = wx.StaticText(self, label="Completed: 0")
+        summary_sizer.Add(self.completed_items_text, 0, wx.ALL, 5)
+
+        self.pending_items_text = wx.StaticText(self, label="Pending: 0")
+        summary_sizer.Add(self.pending_items_text, 0, wx.ALL, 5)
+
+        summary_sizer.AddStretchSpacer()
+
+        self.estimated_cost_text = wx.StaticText(self, label="Estimated Cost: N/A")
+        summary_sizer.Add(self.estimated_cost_text, 0, wx.ALL, 5)
+
+        list_sizer.Add(summary_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         main_sizer.Add(list_sizer, 1, wx.EXPAND | wx.ALL, 10)
 
         # Set main sizer
         self.SetSizer(main_sizer)
+
+        # Bind events
+        self._bind_events()
 
     def refresh(self) -> None:
         """Refresh the shopping list display."""
@@ -138,14 +200,21 @@ class ListPanel(wx.Panel):
                 status = "Completed" if item.get("completed", False) else "Pending"
                 self.list_ctrl.SetItem(i, 2, status)
 
+                # Notes
+                notes = item.get("notes", "")
+                self.list_ctrl.SetItem(
+                    i, 3, notes[:50] + "..." if len(notes) > 50 else notes
+                )
+
                 # Actions
                 actions = "Toggle | Remove"
-                self.list_ctrl.SetItem(i, 3, actions)
+                self.list_ctrl.SetItem(i, 4, actions)
 
                 # Store item data
                 self.list_ctrl.SetItemData(i, i)
 
-            # Update button states
+            # Update summary and button states
+            self._update_summary()
             self._update_button_states()
 
         except Exception as e:
@@ -153,22 +222,42 @@ class ListPanel(wx.Panel):
                 f"Error refreshing shopping list: {e}", "Error", wx.OK | wx.ICON_ERROR
             )
 
+    def _update_summary(self) -> None:
+        """Update the summary display."""
+        total_items = len(self.shopping_list)
+        completed_items = sum(
+            1 for item in self.shopping_list if item.get("completed", False)
+        )
+        pending_items = total_items - completed_items
+
+        self.total_items_text.SetLabel(f"Total Items: {total_items}")
+        self.completed_items_text.SetLabel(f"Completed: {completed_items}")
+        self.pending_items_text.SetLabel(f"Pending: {pending_items}")
+
     def _update_button_states(self) -> None:
         """Update button states based on current data."""
+        has_items = len(self.shopping_list) > 0
         has_completed = any(item.get("completed", False) for item in self.shopping_list)
+        is_authenticated = self.client_service.is_authenticated()
 
-        self.clear_completed_btn.Enable(has_completed)
+        self.clear_completed_btn.Enable(has_completed and is_authenticated)
+        self.estimate_btn.Enable(has_items and is_authenticated)
+        self.defrag_btn.Enable(has_items and is_authenticated)
+        self.export_csv_btn.Enable(has_items)
+        self.export_excel_btn.Enable(has_items)
 
         # Enable/disable add functionality based on authentication
-        is_authenticated = self.client_service.is_authenticated()
         self.add_btn.Enable(is_authenticated)
         self.item_name.Enable(is_authenticated)
         self.item_quantity.Enable(is_authenticated)
+        self.item_notes.Enable(is_authenticated)
+        self.import_btn.Enable(is_authenticated)
 
     def _on_add_item(self, event: wx.CommandEvent) -> None:
         """Handle add item button click."""
         name = self.item_name.GetValue().strip()
         quantity = self.item_quantity.GetValue()
+        notes = self.item_notes.GetValue().strip()
 
         if not name:
             wx.MessageBox("Please enter an item name", "Error", wx.OK | wx.ICON_ERROR)
@@ -183,7 +272,7 @@ class ListPanel(wx.Panel):
             return
 
         try:
-            if self.client_service.add_shopping_list_item(name, quantity):
+            if self.client_service.add_shopping_list_item(name, quantity, notes):
                 wx.MessageBox(
                     f"Added {name} to shopping list",
                     "Success",
@@ -191,6 +280,7 @@ class ListPanel(wx.Panel):
                 )
                 self.item_name.SetValue("")
                 self.item_quantity.SetValue(1)
+                self.item_notes.SetValue("")
                 self.refresh()
             else:
                 wx.MessageBox(
@@ -249,6 +339,173 @@ class ListPanel(wx.Panel):
                     "Error",
                     wx.OK | wx.ICON_ERROR,
                 )
+
+    def _on_estimate_cost(self, event: wx.CommandEvent) -> None:
+        """Handle estimate cost button click."""
+        if not self.client_service.is_authenticated():
+            wx.MessageBox(
+                "Please login to estimate shopping list cost",
+                "Error",
+                wx.OK | wx.ICON_ERROR,
+            )
+            return
+
+        try:
+            result = self.client_service.estimate_shopping_list_cost()
+
+            if "error" in result:
+                wx.MessageBox(
+                    f"Error estimating cost: {result['error']}",
+                    "Error",
+                    wx.OK | wx.ICON_ERROR,
+                )
+            else:
+                message = f"Total Items: {result['total_items']}\n"
+                if result.get("estimated_total"):
+                    message += f"Estimated Total: ${result['estimated_total']:.2f}\n"
+                else:
+                    message += f"Message: {result.get('message', 'N/A')}"
+
+                wx.MessageBox(
+                    message,
+                    "Cost Estimation",
+                    wx.OK | wx.ICON_INFORMATION,
+                )
+        except Exception as e:
+            wx.MessageBox(f"Error estimating cost: {e}", "Error", wx.OK | wx.ICON_ERROR)
+
+    def _on_defrag_list(self, event: wx.CommandEvent) -> None:
+        """Handle defrag list button click."""
+        if not self.client_service.is_authenticated():
+            wx.MessageBox(
+                "Please login to defragment your shopping list",
+                "Error",
+                wx.OK | wx.ICON_ERROR,
+            )
+            return
+
+        try:
+            if self.client_service.defrag_shopping_list():
+                wx.MessageBox(
+                    "Shopping list defragmentation completed",
+                    "Success",
+                    wx.OK | wx.ICON_INFORMATION,
+                )
+                self.refresh()
+            else:
+                wx.MessageBox(
+                    "Failed to defragment shopping list",
+                    "Error",
+                    wx.OK | wx.ICON_ERROR,
+                )
+        except Exception as e:
+            wx.MessageBox(
+                f"Error defragmenting list: {e}", "Error", wx.OK | wx.ICON_ERROR
+            )
+
+    def _on_import_csv(self, event: wx.CommandEvent) -> None:
+        """Handle import CSV button click."""
+        if not self.client_service.is_authenticated():
+            wx.MessageBox(
+                "Please login to import shopping list items",
+                "Error",
+                wx.OK | wx.ICON_ERROR,
+            )
+            return
+
+        try:
+            with wx.FileDialog(
+                self,
+                "Import Shopping List from CSV",
+                wildcard="CSV files (*.csv)|*.csv",
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_OK:
+                    filepath = fileDialog.GetPath()
+
+                    if self.client_service.import_shopping_list_from_csv(filepath):
+                        wx.MessageBox(
+                            f"Shopping list imported from {filepath}",
+                            "Success",
+                            wx.OK | wx.ICON_INFORMATION,
+                        )
+                        self.refresh()
+                    else:
+                        wx.MessageBox(
+                            "Failed to import shopping list",
+                            "Error",
+                            wx.OK | wx.ICON_ERROR,
+                        )
+        except Exception as e:
+            wx.MessageBox(f"Error importing CSV: {e}", "Error", wx.OK | wx.ICON_ERROR)
+
+    def _on_export_csv(self, event: wx.CommandEvent) -> None:
+        """Handle export CSV button click."""
+        if not self.shopping_list:
+            wx.MessageBox(
+                "No shopping list items to export", "Info", wx.OK | wx.ICON_INFORMATION
+            )
+            return
+
+        try:
+            with wx.FileDialog(
+                self,
+                "Export Shopping List to CSV",
+                wildcard="CSV files (*.csv)|*.csv",
+                defaultFile="meijer_shopping_list.csv",
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_OK:
+                    filepath = fileDialog.GetPath()
+
+                    if self.client_service.export_shopping_list_to_csv(filepath):
+                        wx.MessageBox(
+                            f"Shopping list exported to {filepath}",
+                            "Success",
+                            wx.OK | wx.ICON_INFORMATION,
+                        )
+                    else:
+                        wx.MessageBox(
+                            "Failed to export shopping list",
+                            "Error",
+                            wx.OK | wx.ICON_ERROR,
+                        )
+        except Exception as e:
+            wx.MessageBox(f"Error exporting CSV: {e}", "Error", wx.OK | wx.ICON_ERROR)
+
+    def _on_export_excel(self, event: wx.CommandEvent) -> None:
+        """Handle export Excel button click."""
+        if not self.shopping_list:
+            wx.MessageBox(
+                "No shopping list items to export", "Info", wx.OK | wx.ICON_INFORMATION
+            )
+            return
+
+        try:
+            with wx.FileDialog(
+                self,
+                "Export Shopping List to Excel",
+                wildcard="Excel files (*.xlsx)|*.xlsx",
+                defaultFile="meijer_shopping_list.xlsx",
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_OK:
+                    filepath = fileDialog.GetPath()
+
+                    if self.client_service.export_shopping_list_to_excel(filepath):
+                        wx.MessageBox(
+                            f"Shopping list exported to {filepath}",
+                            "Success",
+                            wx.OK | wx.ICON_INFORMATION,
+                        )
+                    else:
+                        wx.MessageBox(
+                            "Failed to export shopping list",
+                            "Error",
+                            wx.OK | wx.ICON_ERROR,
+                        )
+        except Exception as e:
+            wx.MessageBox(f"Error exporting Excel: {e}", "Error", wx.OK | wx.ICON_ERROR)
 
     def _on_list_item_activated(self, event: wx.ListEvent) -> None:
         """Handle list item activation (double-click)."""

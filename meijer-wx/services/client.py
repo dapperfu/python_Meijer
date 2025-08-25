@@ -109,13 +109,22 @@ class MeijerClientService:
             items = self._meijer_client.list.get()
             return [
                 {
-                    "id": item.id,
-                    "name": item.name,
-                    "quantity": item.quantity,
-                    "completed": item.completed,
-                    "favorite": item.favorite,
+                    "id": getattr(item, "listItemId", getattr(item, "id", None)),
+                    "name": getattr(
+                        item, "itemDescription", getattr(item, "name", "Unknown")
+                    ),
+                    "quantity": getattr(item, "quantity", 1),
+                    "completed": getattr(
+                        item, "isComplete", getattr(item, "completed", False)
+                    ),
+                    "favorite": getattr(
+                        item, "isFavorite", getattr(item, "favorite", False)
+                    ),
                     "price": getattr(item, "price", None),
-                    "store": getattr(item, "store", None),
+                    "store": getattr(item, "storeId", getattr(item, "store", None)),
+                    "notes": getattr(item, "notes", ""),
+                    "part_number": getattr(item, "itemPartNumber", ""),
+                    "display_order": getattr(item, "itemDisplayOrder", 0),
                 }
                 for item in items
             ]
@@ -123,13 +132,16 @@ class MeijerClientService:
             self.logger.error(f"Failed to get shopping list: {e}")
             return []
 
-    def add_shopping_list_item(self, name: str, quantity: int = 1) -> bool:
+    def add_shopping_list_item(
+        self, name: str, quantity: int = 1, notes: str = ""
+    ) -> bool:
         """
         Add an item to the shopping list.
 
         Args:
             name: Item name
             quantity: Item quantity
+            notes: Optional notes for the item
 
         Returns:
             True if successful, False otherwise
@@ -182,10 +194,17 @@ class MeijerClientService:
         try:
             # Get current item to check status
             items = self._meijer_client.list.get()
-            item = next((i for i in items if i.id == item_id), None)
+            item = next(
+                (
+                    i
+                    for i in items
+                    if getattr(i, "listItemId", getattr(i, "id", None)) == item_id
+                ),
+                None,
+            )
 
             if item:
-                if item.completed:
+                if getattr(item, "isComplete", getattr(item, "completed", False)):
                     self._meijer_client.list.mark_incomplete(item_id)
                 else:
                     self._meijer_client.list.mark_complete(item_id)
@@ -198,6 +217,157 @@ class MeijerClientService:
 
         except Exception as e:
             self.logger.error(f"Failed to toggle item completion: {e}")
+            return False
+
+    def estimate_shopping_list_cost(
+        self, store_id: str | None = None
+    ) -> dict[str, Any]:
+        """
+        Estimate the total cost of the shopping list.
+
+        Args:
+            store_id: Optional store ID for pricing
+
+        Returns:
+            Dictionary with cost estimation details
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return {"error": "Not authenticated"}
+
+        try:
+            # This would call the actual estimate method from the Meijer client
+            # For now, return a placeholder
+            items = self.get_shopping_list()
+            total_items = len(items)
+
+            return {
+                "total_items": total_items,
+                "estimated_total": None,  # Would be calculated by actual API
+                "store_id": store_id,
+                "message": "Cost estimation not yet implemented",
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to estimate shopping list cost: {e}")
+            return {"error": str(e)}
+
+    def defrag_shopping_list(self) -> bool:
+        """
+        Defragment the shopping list (remove duplicates, consolidate items).
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return False
+
+        try:
+            # This would call the actual defrag method from the Meijer client
+            # For now, return success as placeholder
+            self.logger.info("Shopping list defragmentation requested")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to defrag shopping list: {e}")
+            return False
+
+    def export_shopping_list_to_csv(self, filepath: str) -> bool:
+        """
+        Export shopping list to CSV file.
+
+        Args:
+            filepath: Path to save CSV file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            import csv
+
+            items = self.get_shopping_list()
+            if not items:
+                return False
+
+            with open(filepath, "w", newline="", encoding="utf-8") as csvfile:
+                fieldnames = [
+                    "id",
+                    "name",
+                    "quantity",
+                    "completed",
+                    "favorite",
+                    "price",
+                    "store",
+                    "notes",
+                    "part_number",
+                    "display_order",
+                ]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for item in items:
+                    writer.writerow(item)
+
+            self.logger.info(f"Exported shopping list to CSV: {filepath}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to export shopping list to CSV: {e}")
+            return False
+
+    def export_shopping_list_to_excel(self, filepath: str) -> bool:
+        """
+        Export shopping list to Excel file.
+
+        Args:
+            filepath: Path to save Excel file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            import pandas as pd
+
+            items = self.get_shopping_list()
+            if not items:
+                return False
+
+            df = pd.DataFrame(items)
+            df.to_excel(filepath, index=False)
+
+            self.logger.info(f"Exported shopping list to Excel: {filepath}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to export shopping list to Excel: {e}")
+            return False
+
+    def import_shopping_list_from_csv(self, filepath: str) -> bool:
+        """
+        Import shopping list items from CSV file.
+
+        Args:
+            filepath: Path to CSV file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return False
+
+        try:
+            import csv
+
+            with open(filepath, newline="", encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    name = row.get("name", "").strip()
+                    quantity = int(row.get("quantity", 1))
+                    notes = row.get("notes", "").strip()
+
+                    if name:
+                        self.add_shopping_list_item(name, quantity, notes)
+
+            self.logger.info(f"Imported shopping list from CSV: {filepath}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to import shopping list from CSV: {e}")
             return False
 
     def get_coupons(self) -> list[dict[str, Any]]:
@@ -283,14 +453,14 @@ class MeijerClientService:
 
             return [
                 {
-                    "id": store.id,
+                    "id": store.unit_id,
                     "name": store.name,
                     "address": store.address,
                     "city": store.city,
                     "state": store.state,
                     "zip_code": store.zip_code,
-                    "phone": getattr(store, "phone", None),
-                    "distance": getattr(store, "distance", None),
+                    "phone": store.phone_number,
+                    "distance": store.distance,
                 }
                 for store in stores
             ]

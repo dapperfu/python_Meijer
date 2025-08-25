@@ -53,7 +53,11 @@ class SettingsService:
             self.logger.warning(f"Failed to load settings: {e}")
 
     def save(self) -> None:
-        """Save current settings to configuration file."""
+        """
+        Save current settings to configuration file.
+
+        This is a placeholder for future TOML implementation.
+        """
         try:
             # Ensure config directory exists
             self.config_dir.mkdir(parents=True, exist_ok=True)
@@ -69,20 +73,25 @@ class SettingsService:
         Get a setting value by key.
 
         Args:
-            key: Setting key (e.g., 'proxy.host')
+            key: Setting key (supports dot notation like 'proxy.host')
             default: Default value if key not found
 
         Returns:
             Setting value or default
         """
-        keys = key.split(".")
-        value = self._settings
-
         try:
+            keys = key.split(".")
+            value = self._settings
+
             for k in keys:
-                value = value[k]
+                if isinstance(value, dict) and k in value:
+                    value = value[k]
+                else:
+                    return default
+
             return value
-        except (KeyError, TypeError):
+        except Exception as e:
+            self.logger.error(f"Error getting setting {key}: {e}")
             return default
 
     def set(self, key: str, value: Any) -> None:
@@ -90,21 +99,25 @@ class SettingsService:
         Set a setting value by key.
 
         Args:
-            key: Setting key (e.g., 'proxy.host')
+            key: Setting key (supports dot notation like 'proxy.host')
             value: Value to set
         """
-        keys = key.split(".")
-        target = self._settings
+        try:
+            keys = key.split(".")
+            current = self._settings
 
-        # Navigate to the parent of the target key
-        for k in keys[:-1]:
-            if k not in target:
-                target[k] = {}
-            target = target[k]
+            # Navigate to the parent of the target key
+            for k in keys[:-1]:
+                if k not in current:
+                    current[k] = {}
+                current = current[k]
 
-        # Set the final value
-        target[keys[-1]] = value
-        self.logger.debug(f"Set {key} = {value}")
+            # Set the final value
+            current[keys[-1]] = value
+            self.logger.debug(f"Set {key} = {value}")
+
+        except Exception as e:
+            self.logger.error(f"Error setting {key}: {e}")
 
     def get_proxy(self) -> str | None:
         """Get proxy configuration as host:port string."""
