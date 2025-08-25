@@ -158,12 +158,38 @@ class MeijerAuthLogAnalyzer:
                 })
                 
                 # Extract bearer token from request headers
-                if not token_data.get('access_token'):
-                    auth_header = flow.request.headers.get('Authorization', '')
-                    if auth_header.startswith('Bearer '):
-                        token_data['access_token'] = auth_header[7:]  # Remove 'Bearer ' prefix
-                        token_data['source'] = 'api_call_header'
-                        logger.info("✅ Found bearer token in API call headers")
+                auth_header = flow.request.headers.get('Authorization', '')
+                if auth_header.startswith('Bearer '):
+                    # Store all bearer tokens found, we'll use the most recent one
+                    if 'bearer_tokens' not in token_data:
+                        token_data['bearer_tokens'] = []
+                    token_data['bearer_tokens'].append({
+                        'token': auth_header[7:],  # Remove 'Bearer ' prefix
+                        'timestamp': timestamp,
+                        'url': url,
+                        'method': method
+                    })
+                    logger.info("✅ Found bearer token in API call headers")
+        
+        # If we found bearer tokens, use the most recent one
+        if token_data.get('bearer_tokens'):
+            bearer_tokens = token_data['bearer_tokens']
+            # Sort by timestamp (newest first)
+            bearer_tokens.sort(key=lambda x: x['timestamp'], reverse=True)
+            latest_bearer = bearer_tokens[0]
+            
+            token_data['access_token'] = latest_bearer['token']
+            token_data['source'] = 'api_call_header'
+            token_data['extracted_at'] = latest_bearer['timestamp']
+            token_data['url'] = latest_bearer['url']
+            token_data['method'] = latest_bearer['method']
+            
+            logger.info(f"✅ Using most recent Bearer token from: {latest_bearer['url']}")
+            logger.info(f"   Timestamp: {latest_bearer['timestamp']}")
+            logger.info(f"   Method: {latest_bearer['method']}")
+            
+            # Clean up the temporary list
+            del token_data['bearer_tokens']
         
         # Determine if full login occurred
         full_login = (
@@ -193,6 +219,7 @@ class MeijerAuthLogAnalyzer:
         
         token_data = {}
         api_calls = []
+        bearer_requests = []
         
         for flow in self.flows:
             url = flow.request.pretty_url
@@ -208,19 +235,39 @@ class MeijerAuthLogAnalyzer:
                 
                 # Extract bearer token from Authorization header
                 auth_header = flow.request.headers.get('Authorization', '')
-                if auth_header.startswith('Bearer ') and not token_data.get('access_token'):
-                    token_data.update({
-                        'access_token': auth_header[7:],  # Remove 'Bearer ' prefix
-                        'source': 'api_call_header',
-                        'extracted_at': timestamp
+                if auth_header.startswith('Bearer '):
+                    bearer_requests.append({
+                        'bearer_token': auth_header[7:],  # Remove 'Bearer ' prefix
+                        'timestamp': timestamp,
+                        'url': url,
+                        'method': method
                     })
-                    logger.info("✅ Found bearer token in API call")
-                    break
         
         if api_calls:
             logger.info(f"Found {len(api_calls)} API calls to api.meijer.com")
         else:
             logger.info("No API calls to api.meijer.com found")
+        
+        if bearer_requests:
+            logger.info(f"Found {len(bearer_requests)} API calls with Bearer tokens")
+            
+            # Sort by timestamp (newest first) and use the most recent
+            bearer_requests.sort(key=lambda x: x['timestamp'], reverse=True)
+            latest = bearer_requests[0]
+            
+            token_data.update({
+                'access_token': latest['bearer_token'],
+                'source': 'api_call_header',
+                'extracted_at': latest['timestamp'],
+                'url': latest['url'],
+                'method': latest['method']
+            })
+            
+            logger.info(f"✅ Using Bearer token from most recent API call: {latest['url']}")
+            logger.info(f"   Timestamp: {latest['timestamp']}")
+            logger.info(f"   Method: {latest['method']}")
+        else:
+            logger.info("No API calls with Bearer tokens found")
         
         return bool(token_data), token_data
     
