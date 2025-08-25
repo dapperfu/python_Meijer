@@ -488,9 +488,9 @@ completion-test:
 version:
 	@echo "📋 Current version information:"
 	@echo "================================="
-	@echo "pyproject.toml: $(shell grep '^version =' pyproject.toml | sed 's/version = //' | tr -d '"')"
 	@echo "meijer/__init__.py: $(shell grep '__version__' meijer/__init__.py | sed 's/__version__ = //' | tr -d '"')"
-	@echo "hatch.toml: $(shell grep '^version =' hatch.toml | sed 's/version = //' | tr -d '"')"
+	@echo "pyproject.toml: dynamic (managed by Hatch)"
+	@echo "hatch.toml: not set"
 	@echo ""
 	@echo "💡 Use 'make version-bump TYPE=patch|minor|major' to bump version"
 
@@ -505,10 +505,8 @@ version-bump:
 		exit 1; \
 	fi; \
 	echo "🚀 Bumping version $(TYPE)..."; \
-	${VENV}/bin/hatch version $(TYPE); \
+	${VENV}/bin/python version_bump.py $(TYPE); \
 	echo "✅ Version bumped successfully!"; \
-	echo "🔄 Synchronizing versions across all files..."; \
-	${VENV}/bin/python hatch_build_hook.py; \
 	echo "📋 New version information:"; \
 	$(MAKE) version
 
