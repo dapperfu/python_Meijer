@@ -34,7 +34,6 @@ from .commands import (
     gas_command,
     list_group,
     settings_group,
-    status_command,
     stores_group,
 )
 
@@ -102,7 +101,6 @@ def cli(ctx: click.Context, verbose: int, proxy: str, local: bool):
     • settings - Manage account settings and preferences
     • email-2fa - Manage email 2FA configuration and testing
     • auth - Manage authentication (login, logout, status, log extraction, email setup)
-    • status - Show authentication status
     • ads - Browse weekly ad items
     • gas - Show gas station information
     """
@@ -134,7 +132,6 @@ cli.add_command(email_2fa_group, name="email-2fa")
 
 # Add individual commands with cleaner names
 cli.add_command(auth_group, name="auth")
-cli.add_command(status_command, name="status")
 cli.add_command(ad_command, name="ads")
 cli.add_command(gas_command, name="gas")
 

@@ -529,50 +529,7 @@ def list_clear():
         raise click.ClickException(f"❌ Failed to clear completed items: {e}")
 
 
-@list_group.command("clearall")
-@click.confirmation_option(
-    prompt="⚠️  Are you sure you want to clear ALL items? This cannot be undone!"
-)
-def list_clearall():
-    """Clear all items from shopping list (completed and pending)."""
-    client = get_meijer_client()
 
-    try:
-        items = client.list.get()
-        if not items:
-            click.echo("📝 Shopping list is already empty!")
-            return
-
-        click.echo(f"🗑️  Clearing ALL {len(items)} items...")
-
-        # Mark everything as complete first, then clear
-        click.echo("📝 Marking all items as complete...")
-        completed_count = 0
-        for item in items:
-            if not item.checked:
-                if client.list.complete_item(str(item.list_item_id)):
-                    completed_count += 1
-                    click.echo(f"  ✅ Marked complete: {item.name}")
-                else:
-                    click.echo(f"  ❌ Failed to mark complete: {item.name}")
-
-        click.echo(f"📊 Marked {completed_count} items as complete")
-
-        # Now clear all completed items
-        click.echo("🗑️  Clearing all completed items...")
-        all_items = client.list.get()  # Get updated list
-        deleted_count = 0
-        for item in all_items:
-            if client.list.delete_item(str(item.list_item_id)):
-                deleted_count += 1
-                click.echo(f"  ✅ Deleted: {item.name}")
-            else:
-                click.echo(f"  ❌ Failed to delete: {item.name}")
-
-        click.echo(f"\n📊 Cleared {deleted_count} items total")
-
-    except Exception as e:
-        raise click.ClickException(f"❌ Failed to clear all items: {e}")
 
 
 @list_group.command("defrag")
@@ -892,59 +849,6 @@ def gas_command():
     except Exception as e:
         raise click.ClickException(f"❌ Failed to get gas information: {e}")
 
-
-@click.command()
-def status_command():
-    """Show authentication status."""
-    logger = logging.getLogger(__name__)
-    logger.debug("Status command called")
-
-    try:
-        logger.debug("Getting Meijer client for status check")
-        client = get_meijer_client()
-
-        logger.debug(f"Client authentication status: {client.auth_status.name}")
-        logger.debug(f"User ID: {client.user_id}")
-        logger.debug(f"Home store ID: {client.home_store_id}")
-
-        click.echo(f"🔐 Authentication Status: {client.auth_status.name}")
-        click.echo(f"👤 User ID: {client.user_id}")
-        click.echo(f"🏪 Home Store: {client.home_store_id}")
-
-        # Check token expiry
-        if hasattr(client, "token_expires_at") and client.token_expires_at:
-            from datetime import datetime
-
-            now = datetime.now()
-            expires = client.token_expires_at
-            logger.debug(f"Token expires at: {expires}")
-
-            if isinstance(expires, str):
-                try:
-                    expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
-                    logger.debug(f"Parsed expiry time: {expires}")
-                except Exception as parse_error:
-                    logger.warning(f"Failed to parse expiry time: {parse_error}")
-                    expires = None
-
-            if expires:
-                if expires > now:
-                    time_left = expires - now
-                    logger.debug(f"Token expires in: {time_left}")
-                    click.echo(f"⏰ Token expires in: {time_left}")
-                else:
-                    logger.warning("Token has expired")
-                    click.echo("⚠️  Token has expired!")
-            else:
-                logger.debug("Token expiry time unknown")
-                click.echo("⏰ Token expiry: Unknown")
-        else:
-            logger.debug("Token expiry information not available")
-            click.echo("⏰ Token expiry: Not available")
-
-    except Exception as e:
-        logger.error(f"Failed to get status: {e}", exc_info=True)
-        raise click.ClickException(f"❌ Failed to get status: {e}")
 
 
 @click.command()
@@ -2069,29 +1973,28 @@ def settings_group():
 def auth_group():
     """Manage Meijer authentication and tokens.
     
-    Multiple authentication methods available:
+    Authentication methods available:
     
-    1. LOGIN: meijer auth login --method <method>
-       - requests: Pure HTTP requests (fully headless)
-       - hybrid: Minimal browser + HTTP requests
-       - selenium: Full browser automation
-       - headless: Headless browser automation
+    1. LOG EXTRACTION: meijer auth log --mode <mode>
+       - auto: Automatically detect best available authentication
+       - full: Complete OAuth2 flow with refresh tokens (recommended)
+       - quick: Quick bearer token capture for immediate use
     
-    2. QUICK TOKEN: meijer auth quick-token
-       - Just use Meijer app briefly, then capture bearer token
-       - Fastest way to get API access
-       - Tokens expire and cannot be refreshed
-    
-    3. FULL LOGIN: meijer auth full-login  
-       - Complete OAuth2 flow with username/password/2FA
-       - Captures all tokens including refresh tokens
-       - Tokens can be refreshed automatically
-    
-    4. CONFIG: meijer auth config
+    2. CONFIG: meijer auth config
        - View and manage authentication configuration
        - Edit headers, timing, and other parameters
     
-    For automatic detection: meijer auth log
+    3. STATUS: meijer auth status
+       - Show current authentication status and token information
+    
+    4. LOGOUT: meijer auth logout
+       - Clear stored tokens and logout
+    
+    5. IMAP: meijer auth imap
+       - Set up email configuration for 2FA verification codes
+    
+    For persistent authentication: meijer auth log --mode full
+    For immediate access: meijer auth log --mode quick
     """
     pass
 
@@ -2356,111 +2259,6 @@ def auth_imap_command():
         click.echo(f"❌ Error setting up email configuration: {e}")
 
 
-@auth_group.command("login")
-@click.option("--method", "-m", type=click.Choice(["selenium", "headless", "requests", "hybrid"]), 
-               default="selenium", help="Authentication method")
-@click.option("--keep-open", "-k", is_flag=True, help="Keep browser open for debugging")
-def auth_login_command(method: str, keep_open: bool):
-    """Login to Meijer using various authentication methods."""
-    click.echo(f"🔐 Meijer Login via {method.upper()}")
-    click.echo("=" * 50)
-    
-    try:
-        # Read credentials from config file
-        credentials_file = os.path.expanduser("~/.config/meijer/login.txt")
-        if not os.path.exists(credentials_file):
-            click.echo("❌ No credentials found!")
-            click.echo("💡 Please create ~/.config/meijer/login.txt with your credentials")
-            return
-        
-        with open(credentials_file, 'r') as f:
-            lines = f.readlines()
-            if len(lines) < 2:
-                click.echo("❌ Invalid credentials file format!")
-                click.echo("💡 File should contain username on line 1, password on line 2")
-                return
-            
-            username = lines[0].strip()
-            password = lines[1].strip()
-        
-        click.echo(f"👤 Using credentials for: {username}")
-        
-        if method in ["requests", "hybrid"]:
-            # Use the new configuration-based HeadlessAuthClient
-            click.echo(f"🚀 Using {method.upper()} method with configuration-based authentication")
-            
-            from ..headless_auth_client import HeadlessAuthClient
-            
-            # Create client with specified method
-            client = HeadlessAuthClient(method=method, headless=True)
-            
-            # Perform login
-            click.echo("⏳ Starting authentication process...")
-            result = client.login(username, password)
-            
-            if result:
-                click.echo("✅ Login successful!")
-                click.echo("💡 You can now use other Meijer commands")
-                
-                # Show authentication status
-                if client.authenticated:
-                    click.echo("🔐 Authentication status: Authenticated")
-                    
-                    # Show session info
-                    session = client.get_session()
-                    if session:
-                        cookies = session.cookies
-                        click.echo(f"🍪 Session cookies: {len(cookies)}")
-                        
-                        # Show required cookies
-                        required_cookies = client.config['cookies']['required']
-                        present_cookies = [cookie.name for cookie in cookies]
-                        
-                        click.echo("📋 Required cookies status:")
-                        for cookie_name in required_cookies:
-                            if cookie_name in present_cookies:
-                                click.echo(f"  ✅ {cookie_name}")
-                            else:
-                                click.echo(f"  ❌ {cookie_name}")
-                
-                return True
-            else:
-                click.echo("❌ Login failed")
-                click.echo("💡 Check the logs for detailed error information")
-                return False
-                
-        else:
-            # Use existing Selenium authentication for selenium/headless methods
-            from ..okta_selenium_auth import authenticate_with_selenium
-            
-            if method == "headless":
-                # Force headless mode
-                result = authenticate_with_selenium(username, password, headless=True, keep_open=False)
-            else:
-                # Selenium mode - always keep open for debugging
-                result = authenticate_with_selenium(username, password, headless=False, keep_open=True)
-            
-            if result:
-                click.echo("✅ Login successful!")
-                click.echo("💡 You can now use other Meijer commands")
-                
-                # Keep the process running if not headless
-                if not method == "headless":
-                    click.echo("🔒 Browser will remain open until you close it manually")
-                    click.echo("💡 The authentication process is complete - you can inspect the browser")
-                    click.echo("⏸️ Waiting for you to close the browser...")
-                    import time
-                    while True:
-                        time.sleep(1)  # Keep alive until user closes browser
-            else:
-                click.echo("❌ Login failed")
-                click.echo("💡 Check the browser for any error messages")
-                return False
-            
-    except Exception as e:
-        click.echo(f"❌ Error during login: {e}")
-        return False
-
 
 @auth_group.command("logout")
 def auth_logout_command():
@@ -2645,44 +2443,4 @@ def login_selenium(headless: bool, keep_open: bool):
 
 
 
-@auth_group.command("quick-token")
-def auth_quick_token_command():
-    """Quick capture of bearer token from recent Meijer app usage.
-    
-    This is the fastest way to get API access:
-    1. Just use the Meijer app normally (browse, search, etc.)
-    2. Keep mitmproxy running to capture API calls
-    3. Run this command to extract the latest bearer token
-    
-    Note: These tokens cannot be refreshed automatically and will expire.
-    For persistent access, use 'meijer auth log --mode full' instead.
-    """
-    click.echo("⚡ Quick Token Capture")
-    click.echo("=" * 30)
-    click.echo("💡 This captures the latest bearer token from your Meijer app usage")
-    click.echo("   No need to log out or re-authenticate!")
-    
-    # Call the main auth_log_command with quick mode
-    auth_log_command("quick")
 
-
-@auth_group.command("full-login")
-def auth_full_login_command():
-    """Complete OAuth2 authentication flow for persistent access.
-    
-    This captures the complete authentication sequence:
-    1. Clear existing tokens
-    2. Log out of Meijer app
-    3. Start mitmproxy capture
-    4. Log back into Meijer app (complete flow)
-    5. Extract all tokens including refresh tokens
-    
-    Result: Tokens that can be refreshed automatically!
-    """
-    click.echo("🔐 Full OAuth2 Authentication Flow")
-    click.echo("=" * 40)
-    click.echo("💡 This captures the complete login sequence for persistent access")
-    click.echo("   Tokens will be automatically refreshable!")
-    
-    # Call the main auth_log_command with full mode
-    auth_log_command("full")
