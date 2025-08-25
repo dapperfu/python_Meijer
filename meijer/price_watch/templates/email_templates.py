@@ -20,7 +20,8 @@ This module provides Jinja2 templates for both HTML and plain text email notific
 """
 
 from typing import Dict, Any, List
-from jinja2 import Template
+from jinja2 import Template, Environment
+from datetime import datetime
 
 
 # HTML Email Template
@@ -208,7 +209,7 @@ HTML_TEMPLATE = """
                 <div class="store-details">
                     Price Type: {{ alert.price_type|title }}<br>
                     Source: {{ alert.source|title }}<br>
-                    Observed: {{ alert.observed_at|strftime('%Y-%m-%d %H:%M:%S') }}
+                    Observed: {{ alert.observed_at }}
                 </div>
             </div>
         </div>
@@ -220,7 +221,7 @@ HTML_TEMPLATE = """
         </div>
         
         <div class="timestamp">
-            Generated on {{ generated_at|strftime('%Y-%m-%d %H:%M:%S UTC') }}
+            Generated on {{ generated_at }}
         </div>
         
         <div class="footer">
@@ -250,7 +251,7 @@ Change: {% if alert.delta_amount < 0 %}-{% else %}+{% endif %}${{ "%.2f"|format(
 
 Price Type: {{ alert.price_type|title }}
 Source: {{ alert.source|title }}
-Observed: {{ alert.observed_at|strftime('%Y-%m-%d %H:%M:%S') }}
+                    Observed: {{ alert.observed_at }}
 
 ---
 {% endfor %}
@@ -258,7 +259,7 @@ Observed: {{ alert.observed_at|strftime('%Y-%m-%d %H:%M:%S') }}
 To stop receiving these alerts, run:
 meijer watch rm {{ alerts[0].product_identifier if alerts else '<identifier>' }}
 
-Generated on {{ generated_at|strftime('%Y-%m-%d %H:%M:%S UTC') }}
+        Generated on {{ generated_at }}
 
 This email was sent by the Meijer Price Watch system.
 For support, please check the project documentation.
@@ -372,7 +373,7 @@ TEST_EMAIL_HTML_TEMPLATE = """
             </div>
             <div class="detail-row">
                 <span class="detail-label">Test Time:</span>
-                <span class="detail-value">{{ test_time|strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
+                <span class="detail-value">{{ test_time }}</span>
             </div>
         </div>
         
@@ -398,7 +399,7 @@ Test Type: Email Configuration Test
 Product Used: {{ product_name }} ({{ product_identifier }})
 Store: {{ store_name }}
 Current Price: ${{ "%.2f"|format(current_price) }}
-Test Time: {{ test_time|strftime('%Y-%m-%d %H:%M:%S UTC') }}
+        Test Time: {{ test_time }}
 
 This is a test email to verify your Meijer Price Watch email configuration.
 If you received this, your email setup is working correctly!
@@ -414,10 +415,30 @@ class EmailTemplateManager:
     
     def __init__(self):
         """Initialize the template manager."""
-        self.html_template = Template(HTML_TEMPLATE)
-        self.plain_text_template = Template(PLAIN_TEXT_TEMPLATE)
-        self.test_html_template = Template(TEST_EMAIL_HTML_TEMPLATE)
-        self.test_plain_text_template = Template(TEST_EMAIL_PLAIN_TEXT_TEMPLATE)
+        # Create Jinja2 environment with custom filters
+        env = Environment()
+        
+        # Add custom strftime filter
+        def strftime_filter(value, format_string):
+            """Custom filter to format datetime objects using strftime."""
+            if hasattr(value, 'strftime'):
+                return value.strftime(format_string)
+            elif isinstance(value, str):
+                # If it's already a string, try to parse it as datetime
+                try:
+                    dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                    return dt.strftime(format_string)
+                except ValueError:
+                    return value
+            return str(value)
+        
+        env.filters['strftime'] = strftime_filter
+        
+        # Create templates with the custom environment
+        self.html_template = env.from_string(HTML_TEMPLATE)
+        self.plain_text_template = env.from_string(PLAIN_TEXT_TEMPLATE)
+        self.test_html_template = env.from_string(TEST_EMAIL_HTML_TEMPLATE)
+        self.test_plain_text_template = env.from_string(TEST_EMAIL_PLAIN_TEXT_TEMPLATE)
     
     def render_price_alert_email(
         self,

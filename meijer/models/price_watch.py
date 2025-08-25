@@ -25,7 +25,11 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional, List
 
-from pony.orm import Entity, PrimaryKey, Required, Optional, Set, composite_key, index
+from pony.orm import *
+from datetime import datetime
+
+# Database binding - will be set by the database manager
+db = Database()
 
 
 class PriceType(str, Enum):
@@ -59,7 +63,7 @@ class AlertReason(str, Enum):
     CLEARANCE_DETECTED = "clearance_detected"
 
 
-class Product(Entity):
+class Product(db.Entity):
     """
     Product entity representing a sellable item at Meijer.
     
@@ -91,14 +95,13 @@ class Product(Entity):
     
     # Indexes
     composite_key(identifier, id_type)
-    index(brand, name)
     
     def __str__(self) -> str:
         """String representation of the product."""
         return f"{self.brand or 'Unknown'} {self.name or 'Unknown'} ({self.identifier})"
 
 
-class Store(Entity):
+class Store(db.Entity):
     """
     Store entity representing a physical Meijer store location.
     """
@@ -134,7 +137,7 @@ class Store(Entity):
             return f"Store {self.store_code}"
 
 
-class PriceHistory(Entity):
+class PriceHistory(db.Entity):
     """
     Price history entity tracking observed prices for products at stores.
     """
@@ -171,14 +174,13 @@ class PriceHistory(Entity):
     alert_events = Set("AlertEvent")
     
     # Indexes
-    index(product, store, observed_at, reverse=True)
     
     def __str__(self) -> str:
         """String representation of the price history entry."""
         return f"{self.product} at {self.store}: ${self.price} ({self.price_type}) on {self.observed_at}"
 
 
-class Watch(Entity):
+class Watch(db.Entity):
     """
     Watch entity representing user intent to track a specific product.
     """
