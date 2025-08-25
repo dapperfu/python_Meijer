@@ -5,7 +5,7 @@ This package provides a comprehensive client for interacting with Meijer's APIs,
 including shopping lists, coupons, product search, and Shop & Scan functionality.
 """
 
-__version__ = "2.2.0"
+__version__ = "3.2.0"
 __author__ = "Meijer API Client Contributors"
 
 # Import main client
