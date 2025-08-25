@@ -310,62 +310,12 @@ class MeijerAuthLogAnalyzer:
             logger.error(f"Failed to save tokens: {e}")
             return False
     
-    def test_tokens_through_auth_json(self) -> bool:
-        """
-        Test the tokens by making an API call through the auth.json round-trip.
-        This ensures the tokens are properly loaded and working.
-        
-        Returns:
-            True if successful, False otherwise
-        """
-        logger.info("🧪 Testing tokens through auth.json round-trip...")
-        
-        try:
-            # Create Meijer client (will load from auth.json)
-            from .client import Meijer
-            client = Meijer()
-            
-            # Verify tokens were loaded correctly
-            if hasattr(client, 'auth') and client.auth:
-                logger.info("✅ Meijer client created successfully with authentication")
-                
-                # Check if tokens are loaded
-                if hasattr(client, 'token_storage'):
-                    tokens = client.token_storage.load_tokens()
-                    if tokens:
-                        logger.info("✅ Tokens loaded successfully from auth.json")
-                        logger.info(f"Access token: {tokens.access_token[:20]}...")
-                        if hasattr(tokens, 'refresh_token') and tokens.refresh_token:
-                            logger.info(f"Refresh token: {tokens.refresh_token[:20]}...")
-                        
-                        # Check token expiration
-                        if hasattr(tokens, 'is_expired'):
-                            if tokens.is_expired():
-                                logger.warning("⚠️ Access token is expired")
-                            else:
-                                logger.info("✅ Access token is still valid")
-                        
-                        return True
-                    else:
-                        logger.error("❌ No tokens found in client")
-                        return False
-                else:
-                    logger.error("❌ No token storage found in client")
-                    return False
-            else:
-                logger.error("❌ Client created but no authentication found")
-                return False
-                    
-        except Exception as e:
-            logger.error(f"Failed to create client or test tokens: {e}")
-            return False
-    
     def analyze_and_extract(self) -> bool:
         """
         Main analysis method that follows the priority-based approach.
         
         Returns:
-            True if tokens were found and tested successfully, False otherwise
+            True if tokens were found and saved successfully, False otherwise
         """
         logger.info("🚀 Starting Meijer Auth Log Analysis")
         logger.info("=" * 50)
@@ -402,12 +352,7 @@ class MeijerAuthLogAnalyzer:
             logger.error("Failed to save tokens to auth.json")
             return False
         
-        # Step 4: Test tokens through auth.json round-trip
-        if not self.test_tokens_through_auth_json():
-            logger.error("Token validation failed")
-            return False
-        
-        logger.info("🎉 SUCCESS: Tokens extracted, saved, and validated!")
+        logger.info("🎉 SUCCESS: Tokens extracted and saved successfully!")
         return True
     
     def analyze_and_extract_full_login(self) -> bool:
@@ -415,7 +360,7 @@ class MeijerAuthLogAnalyzer:
         Attempt to extract tokens from a complete OAuth2 login flow.
         
         Returns:
-            True if full login tokens were found and validated, False otherwise
+            True if full login tokens were found and saved, False otherwise
         """
         logger.info("🔐 Attempting Full Login extraction...")
         
@@ -431,16 +376,12 @@ class MeijerAuthLogAnalyzer:
             logger.info("🎯 Full login event found - extracting tokens...")
             self.auth_tokens = login_tokens
             
-            # Save and validate tokens
+            # Save tokens
             if not self.save_tokens_to_auth_json(self.auth_tokens):
                 logger.error("Failed to save tokens to auth.json")
                 return False
             
-            if not self.test_tokens_through_auth_json():
-                logger.error("Token validation failed")
-                return False
-            
-            logger.info("🎉 SUCCESS: Full login tokens extracted, saved, and validated!")
+            logger.info("🎉 SUCCESS: Full login tokens extracted and saved!")
             return True
         else:
             logger.warning("⚠️ Full login event not found")
@@ -451,7 +392,7 @@ class MeijerAuthLogAnalyzer:
         Extract bearer tokens from API calls (fallback method).
         
         Returns:
-            True if bearer tokens were found and validated, False otherwise
+            True if bearer tokens were found and saved, False otherwise
         """
         logger.info("⚡ Attempting Quick Token extraction...")
         
@@ -467,13 +408,9 @@ class MeijerAuthLogAnalyzer:
             logger.info("🎯 API calls found - extracting bearer token...")
             self.auth_tokens = api_tokens
             
-            # Save and validate tokens
+            # Save tokens
             if not self.save_tokens_to_auth_json(self.auth_tokens):
                 logger.error("Failed to save tokens to auth.json")
-                return False
-            
-            if not self.test_tokens_through_auth_json():
-                logger.error("Token validation failed")
                 return False
             
             logger.info("🎉 SUCCESS: Quick token extraction successful!")

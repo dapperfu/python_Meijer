@@ -2189,7 +2189,7 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
         if success:
             click.echo(f"\n🎉 SUCCESS: Auth log analysis completed successfully!")
             click.echo(f"Tokens saved to: {output}")
-            click.echo("Tokens have been validated through API calls")
+            click.echo("Tokens extracted from log files - no API calls made")
             
             # Show token summary
             if os.path.exists(output):
@@ -2206,8 +2206,14 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
                     click.echo(f"   ❌ No refresh token - tokens cannot be refreshed")
                 
                 click.echo(f"   Source: {token_data.get('source', 'Unknown')}")
-                click.echo(f"   Expires In: {token_data.get('expires_in', 'Unknown')} seconds")
+                click.echo(f"   Extracted At: {token_data.get('extracted_at', 'Unknown')}")
                 
+                # Add note about testing tokens
+                click.echo(f"\n💡 To test the extracted tokens, run:")
+                click.echo(f"   meijer list show")
+                click.echo(f"   meijer search 'test'")
+                click.echo(f"   meijer stores")
+        
         else:
             click.echo(f"\n❌ FAILED: Auth log analysis failed")
             click.echo("No tokens could be extracted from the log file")
