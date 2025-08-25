@@ -2103,7 +2103,12 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
     else:
         # Auto-detect the most recent log file
         import glob
+        # Look in current directory first, then in logs/ subdirectory
         log_files = glob.glob("meijer_mitm_*.log")
+        if not log_files:
+            # Try logs/ subdirectory
+            log_files = glob.glob("logs/meijer_mitm_*.log")
+            
         if not log_files:
             click.echo("❌ No meijer mitmproxy log files found!")
             click.echo(
@@ -2114,7 +2119,15 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
 
         # Sort by modification time, newest first
         log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-        target_log = log_files[0]
+        
+        # Filter out empty log files
+        valid_log_files = [f for f in log_files if os.path.getsize(f) > 0]
+        if not valid_log_files:
+            click.echo("❌ No valid (non-empty) meijer mitmproxy log files found!")
+            click.echo("💡 All found log files are empty (0 bytes)")
+            return
+            
+        target_log = valid_log_files[0]
         click.echo(f"📁 Using auto-detected log file: {target_log}")
 
     # Run the integrated auth log analyzer
