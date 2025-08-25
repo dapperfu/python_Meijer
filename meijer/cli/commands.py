@@ -2079,32 +2079,7 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
     click.echo("🔐 Meijer Authentication from Logs")
     click.echo("=" * 50)
 
-    # First check if we have existing tokens and try to refresh them
-    from ..auth import TokenStorage
-
-    token_storage = TokenStorage()
-    if token_storage.has_tokens():
-        click.echo("🔍 Found existing tokens, testing refresh...")
-        try:
-            tokens = token_storage.get_valid_tokens()
-            if tokens and tokens.refresh_token and tokens.refresh_token.strip():
-                if token_storage.refresh_tokens(tokens.refresh_token):
-                    click.echo(
-                        "✅ Token refresh successful! No need to extract from logs."
-                    )
-                    click.echo(f"🔑 Access token: {tokens.access_token[:30]}...")
-                    click.echo(f"🔄 Refresh token: {tokens.refresh_token[:30]}...")
-                    click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
-                    click.echo("\n🎉 Your tokens are fresh and ready to use!")
-                    return
-                else:
-                    click.echo("❌ Token refresh failed")
-            else:
-                click.echo(
-                    "⚠️ No refresh token available - tokens cannot be refreshed automatically"
-                )
-        except Exception as e:
-            click.echo(f"❌ Error during token refresh: {e}")
+    # Note: This command extracts tokens from log files only - no network calls made
 
     # Determine authentication mode
     if mode == "auto":

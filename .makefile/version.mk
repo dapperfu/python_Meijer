@@ -25,14 +25,5 @@ version-tag:
 		exit 1; \
 	fi; \
 	echo "🚀 Creating new version tag..."; \
-	$(eval CURRENT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")) \
-	$(eval MAJOR := $(shell echo $(CURRENT_TAG) | cut -d. -f1 | sed 's/v//')) \
-	$(eval MINOR := $(shell echo $(CURRENT_TAG) | cut -d. -f2)) \
-	$(eval PATCH := $(shell echo $(CURRENT_TAG) | cut -d. -f3)) \
-	$(eval NEW_TAG := $(shell case $(TYPE) in \
-		patch) echo "v$${MAJOR}.$${MINOR}.$$(($${PATCH}+1))" ;; \
-		minor) echo "v$${MAJOR}.$$(($${MINOR}+1)).0" ;; \
-		major) echo "v$$(($${MAJOR}+1)).0.0" ;; \
-	esac)) \
-	echo "📋 Version: $(CURRENT_TAG) → $(NEW_TAG)"; \
-	echo "💡 Run: git tag $(NEW_TAG) && git push --tags"
+	echo "💡 Current tag: $(shell git describe --tags --abbrev=0 2>/dev/null || echo "No tags found")"; \
+	echo "💡 To create new tag, run: git tag vX.Y.Z && git push --tags"
