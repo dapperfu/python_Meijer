@@ -516,6 +516,11 @@ def list_clear():
             click.echo("📝 No completed items to clear!")
             return
 
+        click.echo(f"⚠️  This will clear {len(completed_items)} completed items.")
+        if not click.confirm("Are you sure you want to continue?"):
+            click.echo("❌ Operation cancelled")
+            return
+
         click.echo(f"🗑️  Clearing {len(completed_items)} completed items...")
 
         # Delete completed items
@@ -534,9 +539,6 @@ def list_clear():
 
 
 @list_group.command("clearall")
-@click.confirmation_option(
-    prompt="⚠️  Are you sure you want to clear ALL items? This cannot be undone!"
-)
 def list_clearall():
     """Clear all items from shopping list (completed and pending)."""
     client = get_meijer_client()
@@ -545,6 +547,15 @@ def list_clearall():
         items = client.list.get()
         if not items:
             click.echo("📝 Shopping list is already empty!")
+            return
+
+        click.echo(
+            f"⚠️  This will clear ALL {len(items)} items from your shopping list."
+        )
+        if not click.confirm(
+            "Are you sure you want to continue? This cannot be undone!"
+        ):
+            click.echo("❌ Operation cancelled")
             return
 
         click.echo(f"🗑️  Clearing ALL {len(items)} items...")
@@ -584,19 +595,17 @@ def list_clearall():
     "--item-id",
     help="Specific item ID to clear notes from (clears all if not specified)",
 )
-@click.option("--confirm", "-y", is_flag=True, help="Skip confirmation prompt")
-def list_clear_notes(item_id: Optional[str], confirm: bool):
+def list_clear_notes(item_id: Optional[str]):
     """Clear notes from shopping list items (removes location data)."""
     client = get_meijer_client()
 
     try:
         if item_id:
             # Clear notes from specific item
-            if not confirm:
-                click.echo(f"⚠️  This will clear notes from item {item_id}.")
-                if not click.confirm("Are you sure you want to continue?"):
-                    click.echo("❌ Operation cancelled")
-                    return
+            click.echo(f"⚠️  This will clear notes from item {item_id}.")
+            if not click.confirm("Are you sure you want to continue?"):
+                click.echo("❌ Operation cancelled")
+                return
 
             click.echo(f"🗑️  Clearing notes from item {item_id}...")
             success = client.list.clear_notes(item_id)
@@ -620,13 +629,10 @@ def list_clear_notes(item_id: Optional[str], confirm: bool):
                 click.echo("📝 No items have notes to clear!")
                 return
 
-            if not confirm:
-                click.echo(
-                    f"⚠️  This will clear notes from {len(items_with_notes)} items."
-                )
-                if not click.confirm("Are you sure you want to continue?"):
-                    click.echo("❌ Operation cancelled")
-                    return
+            click.echo(f"⚠️  This will clear notes from {len(items_with_notes)} items.")
+            if not click.confirm("Are you sure you want to continue?"):
+                click.echo("❌ Operation cancelled")
+                return
 
             click.echo(f"🗑️  Clearing notes from {len(items_with_notes)} items...")
             success = client.list.clear_notes()
@@ -1912,8 +1918,7 @@ def cart_remove(item_index: int, quantity: Optional[int]):
 
 
 @cart_group.command("clear")
-@click.option("--confirm", "-y", is_flag=True, help="Skip confirmation prompt")
-def cart_clear(confirm: bool):
+def cart_clear():
     """Clear all items from the shopping cart."""
     logger = logging.getLogger(__name__)
     logger.debug("Cart clear command called")
@@ -1932,11 +1937,10 @@ def cart_clear(confirm: bool):
             click.echo("🛒 Your shopping cart is already empty!")
             return
 
-        if not confirm:
-            click.echo(f"⚠️ This will remove {len(cart_items)} items from your cart.")
-            if not click.confirm("Are you sure you want to continue?"):
-                click.echo("❌ Operation cancelled")
-                return
+        click.echo(f"⚠️  This will remove {len(cart_items)} items from your cart.")
+        if not click.confirm("Are you sure you want to continue?"):
+            click.echo("❌ Operation cancelled")
+            return
 
         click.echo(f"🗑️ Clearing {len(cart_items)} items from cart...")
 
