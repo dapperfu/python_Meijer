@@ -151,6 +151,22 @@ class ListPanel(wx.Panel):
 
         list_sizer.Add(self.list_ctrl, 1, wx.EXPAND | wx.ALL, 5)
 
+        # Status section
+        status_box = wx.StaticBox(self, label="Status")
+        status_sizer = wx.StaticBoxSizer(status_box, wx.HORIZONTAL)
+
+        self.status_text = wx.StaticText(self, label="Ready")
+        self.status_text.SetForegroundColour(wx.Colour(0, 128, 0))  # Green
+        status_sizer.Add(self.status_text, 0, wx.ALL, 5)
+
+        status_sizer.AddStretchSpacer()
+
+        # Last refresh time
+        self.last_refresh_text = wx.StaticText(self, label="Last refresh: Never")
+        status_sizer.Add(self.last_refresh_text, 0, wx.ALL, 5)
+
+        list_sizer.Add(status_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
         # Summary section
         summary_box = wx.StaticBox(self, label="Summary")
         summary_sizer = wx.StaticBoxSizer(summary_box, wx.HORIZONTAL)
@@ -188,6 +204,10 @@ class ListPanel(wx.Panel):
             # Get shopping list from service
             self.shopping_list = self.client_service.get_shopping_list()
 
+            # Debug logging
+            print(f"DEBUG: Refresh called, got {len(self.shopping_list)} items")
+            print(f"DEBUG: Shopping list data: {self.shopping_list}")
+
             # Populate list control
             for i, item in enumerate(self.shopping_list):
                 # Item name
@@ -217,7 +237,20 @@ class ListPanel(wx.Panel):
             self._update_summary()
             self._update_button_states()
 
+            # Update status and last refresh time
+            from datetime import datetime
+
+            current_time = datetime.now().strftime("%H:%M:%S")
+            self.status_text.SetLabel("Ready")
+            self.status_text.SetForegroundColour(wx.Colour(0, 128, 0))  # Green
+            self.last_refresh_text.SetLabel(f"Last refresh: {current_time}")
+
+            print(
+                f"DEBUG: Refresh completed, list control now has {self.list_ctrl.GetItemCount()} items"
+            )
+
         except Exception as e:
+            print(f"DEBUG: Error in refresh: {e}")
             wx.MessageBox(
                 f"Error refreshing shopping list: {e}", "Error", wx.OK | wx.ICON_ERROR
             )
@@ -293,7 +326,31 @@ class ListPanel(wx.Panel):
 
     def _on_refresh(self, event: wx.CommandEvent) -> None:
         """Handle refresh button click."""
-        self.refresh()
+        print("DEBUG: Refresh button clicked")
+
+        # Update status to show refreshing
+        self.status_text.SetLabel("Refreshing...")
+        self.status_text.SetForegroundColour(wx.Colour(255, 165, 0))  # Orange
+
+        # Temporarily disable button to show it's working
+        self.refresh_btn.Disable()
+        self.refresh_btn.SetLabel("Refreshing...")
+
+        # Force UI update
+        wx.Yield()
+
+        try:
+            self.refresh()
+            print("DEBUG: Refresh completed successfully")
+        except Exception as e:
+            print(f"DEBUG: Error during refresh: {e}")
+            # Update status to show error
+            self.status_text.SetLabel("Error")
+            self.status_text.SetForegroundColour(wx.Colour(255, 0, 0))  # Red
+        finally:
+            # Re-enable button
+            self.refresh_btn.Enable()
+            self.refresh_btn.SetLabel("Refresh")
 
     def _on_clear_completed(self, event: wx.CommandEvent) -> None:
         """Handle clear completed button click."""

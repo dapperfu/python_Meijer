@@ -142,12 +142,12 @@ class StoresPanel(wx.Panel):
 
             # Populate list control
             for i, store in enumerate(self.stores):
-                # Store name
+                # Store name - InsertItem creates the row
                 self.stores_list.InsertItem(i, store.get("name", "Unknown"))
 
-                # Address
+                # Address - SetItem for subsequent columns
                 address = store.get("address", "N/A")
-                self.stores_list.InsertItem(i, 1, address)
+                self.stores_list.SetItem(i, 1, address)
 
                 # City/State
                 city = store.get("city", "")
@@ -283,12 +283,12 @@ class StoresPanel(wx.Panel):
 
             # Populate list control
             for i, store in enumerate(self.stores):
-                # Store name
+                # Store name - InsertItem creates the row
                 self.stores_list.InsertItem(i, store.get("name", "Unknown"))
 
-                # Address
+                # Address - SetItem for subsequent columns
                 address = store.get("address", "N/A")
-                self.stores_list.InsertItem(i, 1, address)
+                self.stores_list.SetItem(i, 1, address)
 
                 # City/State
                 city = store.get("city", "")

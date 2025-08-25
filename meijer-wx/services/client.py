@@ -109,22 +109,16 @@ class MeijerClientService:
             items = self._meijer_client.list.get()
             return [
                 {
-                    "id": getattr(item, "listItemId", getattr(item, "id", None)),
-                    "name": getattr(
-                        item, "itemDescription", getattr(item, "name", "Unknown")
-                    ),
-                    "quantity": getattr(item, "quantity", 1),
-                    "completed": getattr(
-                        item, "isComplete", getattr(item, "completed", False)
-                    ),
-                    "favorite": getattr(
-                        item, "isFavorite", getattr(item, "favorite", False)
-                    ),
-                    "price": getattr(item, "price", None),
-                    "store": getattr(item, "storeId", getattr(item, "store", None)),
-                    "notes": getattr(item, "notes", ""),
-                    "part_number": getattr(item, "itemPartNumber", ""),
-                    "display_order": getattr(item, "itemDisplayOrder", 0),
+                    "id": item.list_item_id,
+                    "name": item.item_description,
+                    "quantity": item.quantity,
+                    "completed": item.is_complete,
+                    "favorite": item.is_favorite,
+                    "price": None,  # Not available in ListItem
+                    "store": item.store_id,
+                    "notes": item.notes or "",
+                    "part_number": item.item_part_number or "",
+                    "display_order": item.item_display_order,
                 }
                 for item in items
             ]
@@ -195,16 +189,12 @@ class MeijerClientService:
             # Get current item to check status
             items = self._meijer_client.list.get()
             item = next(
-                (
-                    i
-                    for i in items
-                    if getattr(i, "listItemId", getattr(i, "id", None)) == item_id
-                ),
+                (i for i in items if i.list_item_id == item_id),
                 None,
             )
 
             if item:
-                if getattr(item, "isComplete", getattr(item, "completed", False)):
+                if item.is_complete:
                     self._meijer_client.list.mark_incomplete(item_id)
                 else:
                     self._meijer_client.list.mark_complete(item_id)
@@ -1167,4 +1157,597 @@ class MeijerClientService:
             return True
         except Exception as e:
             self.logger.error(f"Failed to export ads to CSV: {e}")
+            return False
+
+    def get_favorites(self) -> list[dict[str, Any]]:
+        """
+        Get user's favorite items.
+
+        Returns:
+            List of favorite items
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return []
+
+        try:
+            favorites = self._meijer_client.get_favorites()
+            return [
+                {
+                    "id": item.list_item_id,
+                    "name": item.item_description,
+                    "quantity": item.quantity,
+                    "notes": item.notes or "",
+                    "part_number": item.item_part_number or "",
+                    "display_order": item.item_display_order,
+                }
+                for item in favorites
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to get favorites: {e}")
+            return []
+
+    def add_to_favorites(self, name: str, notes: str = "") -> bool:
+        """
+        Add an item to favorites.
+
+        Args:
+            name: Item name
+            notes: Optional notes
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return False
+
+        try:
+            self._meijer_client.add_to_favorites(name, notes)
+            self.logger.info(f"Added item to favorites: {name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to add item to favorites: {e}")
+            return False
+
+    def remove_from_favorites(self, item_id: str) -> bool:
+        """
+        Remove an item from favorites.
+
+        Args:
+            item_id: Item ID to remove
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return False
+
+        try:
+            self._meijer_client.remove_from_favorites(item_id)
+            self.logger.info(f"Removed item from favorites: {item_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to remove item from favorites: {e}")
+            return False
+
+    def get_earn_offers(self) -> list[dict[str, Any]]:
+        """
+        Get earn offers.
+
+        Returns:
+            List of earn offers
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return []
+
+        try:
+            offers = self._meijer_client.get_earn_offers()
+            return [
+                {
+                    "id": getattr(offer, "id", ""),
+                    "name": getattr(offer, "name", ""),
+                    "description": getattr(offer, "description", ""),
+                    "points": getattr(offer, "points", 0),
+                    "status": getattr(offer, "status", ""),
+                }
+                for offer in offers
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to get earn offers: {e}")
+            return []
+
+    def get_earned_rewards(self) -> list[dict[str, Any]]:
+        """
+        Get earned rewards.
+
+        Returns:
+            List of earned rewards
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return []
+
+        try:
+            rewards = self._meijer_client.get_earned_rewards()
+            return [
+                {
+                    "id": getattr(reward, "id", ""),
+                    "name": getattr(reward, "name", ""),
+                    "points": getattr(reward, "points", 0),
+                    "status": getattr(reward, "status", ""),
+                }
+                for reward in rewards
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to get earned rewards: {e}")
+            return []
+
+    def get_mcard_info(self) -> dict[str, Any]:
+        """
+        Get mCard information.
+
+        Returns:
+            mCard information
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return {}
+
+        try:
+            info = self._meijer_client.get_mcard_info()
+            return {
+                "number": getattr(info, "number", ""),
+                "balance": getattr(info, "balance", 0),
+                "status": getattr(info, "status", ""),
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get mCard info: {e}")
+            return {}
+
+    def get_order_history(self) -> list[dict[str, Any]]:
+        """
+        Get order history.
+
+        Returns:
+            List of orders
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return []
+
+        try:
+            orders = self._meijer_client.get_order_history()
+            return [
+                {
+                    "id": getattr(order, "id", ""),
+                    "date": getattr(order, "date", ""),
+                    "total": getattr(order, "total", 0),
+                    "status": getattr(order, "status", ""),
+                }
+                for order in orders
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to get order history: {e}")
+            return []
+
+    def get_product_detail(self, product_id: str) -> dict[str, Any]:
+        """
+        Get detailed product information.
+
+        Args:
+            product_id: Product ID
+
+        Returns:
+            Product details
+        """
+        if not self._meijer_client:
+            return {}
+
+        try:
+            product = self._meijer_client.get_product_detail(product_id)
+            return {
+                "id": getattr(product, "sku", ""),
+                "name": getattr(product, "description", ""),
+                "price": getattr(product, "price", 0),
+                "brand": getattr(product, "brand", ""),
+                "category": getattr(product, "category", ""),
+                "upc": getattr(product, "upc", ""),
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get product detail: {e}")
+            return {}
+
+    def lookup_barcode_price(self, barcode: str) -> dict[str, Any]:
+        """
+        Look up price by barcode.
+
+        Args:
+            barcode: Product barcode
+
+        Returns:
+            Product information
+        """
+        if not self._meijer_client:
+            return {}
+
+        try:
+            product = self._meijer_client.lookup_barcode_price(barcode)
+            return {
+                "id": getattr(product, "sku", ""),
+                "name": getattr(product, "description", ""),
+                "price": getattr(product, "price", 0),
+                "brand": getattr(product, "brand", ""),
+                "category": getattr(product, "category", ""),
+                "upc": getattr(product, "upc", ""),
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to lookup barcode price: {e}")
+            return {}
+
+    def search_product_by_upc(self, upc: str) -> dict[str, Any]:
+        """
+        Search for product by UPC.
+
+        Args:
+            upc: Product UPC
+
+        Returns:
+            Product information
+        """
+        if not self._meijer_client:
+            return {}
+
+        try:
+            product = self._meijer_client.search_product_by_upc(upc)
+            return {
+                "id": getattr(product, "sku", ""),
+                "name": getattr(product, "description", ""),
+                "price": getattr(product, "price", 0),
+                "brand": getattr(product, "brand", ""),
+                "category": getattr(product, "category", ""),
+                "upc": getattr(product, "upc", ""),
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to search product by UPC: {e}")
+            return {}
+
+    def search_multiple_products_by_upc(self, upcs: list[str]) -> list[dict[str, Any]]:
+        """
+        Search for multiple products by UPC.
+
+        Args:
+            upcs: List of product UPCs
+
+        Returns:
+            List of product information
+        """
+        if not self._meijer_client:
+            return []
+
+        try:
+            products = self._meijer_client.search_multiple_products_by_upc(upcs)
+            return [
+                {
+                    "id": getattr(product, "sku", ""),
+                    "name": getattr(product, "description", ""),
+                    "price": getattr(product, "price", 0),
+                    "brand": getattr(product, "brand", ""),
+                    "category": getattr(product, "category", ""),
+                    "upc": getattr(product, "upc", ""),
+                }
+                for product in products
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to search multiple products by UPC: {e}")
+            return []
+
+    def bulk_lookup_barcodes(self, barcodes: list[str]) -> list[dict[str, Any]]:
+        """
+        Bulk lookup prices by barcodes.
+
+        Args:
+            barcodes: List of product barcodes
+
+        Returns:
+            List of product information
+        """
+        if not self._meijer_client:
+            return []
+
+        try:
+            products = self._meijer_client.bulk_lookup_barcodes(barcodes)
+            return [
+                {
+                    "id": getattr(product, "sku", ""),
+                    "name": getattr(product, "description", ""),
+                    "price": getattr(product, "price", 0),
+                    "brand": getattr(product, "brand", ""),
+                    "category": getattr(product, "category", ""),
+                    "upc": getattr(product, "upc", ""),
+                }
+                for product in products
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to bulk lookup barcodes: {e}")
+            return []
+
+    def get_cache_stats(self) -> dict[str, Any]:
+        """
+        Get cache statistics.
+
+        Returns:
+            Cache statistics
+        """
+        if not self._meijer_client:
+            return {}
+
+        try:
+            stats = self._meijer_client.get_cache_stats()
+            return stats
+        except Exception as e:
+            self.logger.error(f"Failed to get cache stats: {e}")
+            return {}
+
+    def clear_cache(self) -> bool:
+        """
+        Clear the cache.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client:
+            return False
+
+        try:
+            self._meijer_client.clear_cache()
+            self.logger.info("Cache cleared successfully")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to clear cache: {e}")
+            return False
+
+    def configure_rate_limiting(self, requests_per_second: int = 10) -> bool:
+        """
+        Configure rate limiting.
+
+        Args:
+            requests_per_second: Maximum requests per second
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client:
+            return False
+
+        try:
+            self._meijer_client.configure_rate_limiting(requests_per_second)
+            self.logger.info(f"Rate limiting configured: {requests_per_second} req/s")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to configure rate limiting: {e}")
+            return False
+
+    def configure_ssl(self, verify: bool = True, cert_path: str = None) -> bool:
+        """
+        Configure SSL settings.
+
+        Args:
+            verify: Whether to verify SSL certificates
+            cert_path: Path to SSL certificate
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client:
+            return False
+
+        try:
+            self._meijer_client.configure_ssl(verify, cert_path)
+            self.logger.info(f"SSL configured: verify={verify}, cert_path={cert_path}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to configure SSL: {e}")
+            return False
+
+    def find_nearest_store_with_service(
+        self, service: str, location: str = None
+    ) -> dict[str, Any]:
+        """
+        Find nearest store with specific service.
+
+        Args:
+            service: Service to look for
+            location: Location to search from
+
+        Returns:
+            Store information
+        """
+        if not self._meijer_client:
+            return {}
+
+        try:
+            store = self._meijer_client.find_nearest_store_with_service(
+                service, location
+            )
+            if store:
+                return {
+                    "id": store.unit_id,
+                    "name": store.name,
+                    "address": store.address,
+                    "city": store.city,
+                    "state": store.state,
+                    "zip_code": store.zip_code,
+                    "phone": store.phone_number,
+                    "distance": store.distance,
+                }
+            return {}
+        except Exception as e:
+            self.logger.error(f"Failed to find nearest store with service: {e}")
+            return {}
+
+    def find_stores_with_services(
+        self, services: list[str], location: str = None
+    ) -> list[dict[str, Any]]:
+        """
+        Find stores with specific services.
+
+        Args:
+            services: List of services to look for
+            location: Location to search from
+
+        Returns:
+            List of stores
+        """
+        if not self._meijer_client:
+            return []
+
+        try:
+            stores = self._meijer_client.find_stores_with_services(services, location)
+            return [
+                {
+                    "id": store.unit_id,
+                    "name": store.name,
+                    "address": store.address,
+                    "city": store.city,
+                    "state": store.state,
+                    "zip_code": store.zip_code,
+                    "phone": store.phone_number,
+                    "distance": store.distance,
+                }
+                for store in stores
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to find stores with services: {e}")
+            return []
+
+    def get_store_by_id(self, store_id: str) -> dict[str, Any]:
+        """
+        Get store by ID.
+
+        Args:
+            store_id: Store ID
+
+        Returns:
+            Store information
+        """
+        if not self._meijer_client:
+            return {}
+
+        try:
+            store = self._meijer_client.get_store_by_id(store_id)
+            if store:
+                return {
+                    "id": store.unit_id,
+                    "name": store.name,
+                    "address": store.address,
+                    "city": store.city,
+                    "state": store.state,
+                    "zip_code": store.zip_code,
+                    "phone": store.phone_number,
+                    "distance": store.distance,
+                }
+            return {}
+        except Exception as e:
+            self.logger.error(f"Failed to get store by ID: {e}")
+            return {}
+
+    def get_store_service_summary(self, store_id: str) -> dict[str, Any]:
+        """
+        Get store service summary.
+
+        Args:
+            store_id: Store ID
+
+        Returns:
+            Service summary
+        """
+        if not self._meijer_client:
+            return {}
+
+        try:
+            summary = self._meijer_client.get_store_service_summary(store_id)
+            return summary
+        except Exception as e:
+            self.logger.error(f"Failed to get store service summary: {e}")
+            return {}
+
+    def get_offers(self) -> list[dict[str, Any]]:
+        """
+        Get available offers.
+
+        Returns:
+            List of offers
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return []
+
+        try:
+            offers = self._meijer_client.get_offers()
+            return [
+                {
+                    "id": getattr(offer, "id", ""),
+                    "name": getattr(offer, "name", ""),
+                    "description": getattr(offer, "description", ""),
+                    "type": getattr(offer, "type", ""),
+                }
+                for offer in offers
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to get offers: {e}")
+            return []
+
+    def get_reward_categories(self) -> list[dict[str, Any]]:
+        """
+        Get reward categories.
+
+        Returns:
+            List of reward categories
+        """
+        if not self._meijer_client or not self.is_authenticated():
+            return []
+
+        try:
+            categories = self._meijer_client.get_reward_categories()
+            return [
+                {
+                    "id": getattr(category, "id", ""),
+                    "name": getattr(category, "name", ""),
+                    "description": getattr(category, "description", ""),
+                }
+                for category in categories
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to get reward categories: {e}")
+            return []
+
+    def reset_refresh_token_warning(self) -> bool:
+        """
+        Reset refresh token warning.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client:
+            return False
+
+        try:
+            self._meijer_client.reset_refresh_token_warning()
+            self.logger.info("Refresh token warning reset")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to reset refresh token warning: {e}")
+            return False
+
+    def save_tokens(self) -> bool:
+        """
+        Save authentication tokens.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._meijer_client:
+            return False
+
+        try:
+            self._meijer_client.save_tokens()
+            self.logger.info("Tokens saved successfully")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to save tokens: {e}")
             return False
