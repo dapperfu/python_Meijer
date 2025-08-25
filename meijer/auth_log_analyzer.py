@@ -160,16 +160,22 @@ class MeijerAuthLogAnalyzer:
                 # Extract bearer token from request headers
                 auth_header = flow.request.headers.get('Authorization', '')
                 if auth_header.startswith('Bearer '):
+                    # Extract subscription key from ocp-apim-subscription-key header
+                    subscription_key = flow.request.headers.get('ocp-apim-subscription-key', '')
+                    
                     # Store all bearer tokens found, we'll use the most recent one
                     if 'bearer_tokens' not in token_data:
                         token_data['bearer_tokens'] = []
                     token_data['bearer_tokens'].append({
                         'token': auth_header[7:],  # Remove 'Bearer ' prefix
+                        'subscription_key': subscription_key,
                         'timestamp': timestamp,
                         'url': url,
                         'method': method
                     })
                     logger.info("✅ Found bearer token in API call headers")
+                    if subscription_key:
+                        logger.info(f"   Subscription key: {subscription_key}")
         
         # If we found bearer tokens, use the most recent one
         if token_data.get('bearer_tokens'):
@@ -179,6 +185,7 @@ class MeijerAuthLogAnalyzer:
             latest_bearer = bearer_tokens[0]
             
             token_data['access_token'] = latest_bearer['token']
+            token_data['subscription_key'] = latest_bearer.get('subscription_key', '')
             token_data['source'] = 'api_call_header'
             token_data['extracted_at'] = latest_bearer['timestamp']
             token_data['url'] = latest_bearer['url']
@@ -210,7 +217,7 @@ class MeijerAuthLogAnalyzer:
     
     def search_api_meijer_calls(self) -> Tuple[bool, Dict[str, Any]]:
         """
-        Search for api.meijer.com calls to extract bearer tokens.
+        Search for api.meijer.com calls to extract bearer tokens and subscription keys.
         
         Returns:
             Tuple of (found, token_data)
@@ -236,8 +243,12 @@ class MeijerAuthLogAnalyzer:
                 # Extract bearer token from Authorization header
                 auth_header = flow.request.headers.get('Authorization', '')
                 if auth_header.startswith('Bearer '):
+                    # Extract subscription key from ocp-apim-subscription-key header
+                    subscription_key = flow.request.headers.get('ocp-apim-subscription-key', '')
+                    
                     bearer_requests.append({
                         'bearer_token': auth_header[7:],  # Remove 'Bearer ' prefix
+                        'subscription_key': subscription_key,
                         'timestamp': timestamp,
                         'url': url,
                         'method': method
@@ -257,6 +268,7 @@ class MeijerAuthLogAnalyzer:
             
             token_data.update({
                 'access_token': latest['bearer_token'],
+                'subscription_key': latest['subscription_key'],
                 'source': 'api_call_header',
                 'extracted_at': latest['timestamp'],
                 'url': latest['url'],
@@ -266,6 +278,8 @@ class MeijerAuthLogAnalyzer:
             logger.info(f"✅ Using Bearer token from most recent API call: {latest['url']}")
             logger.info(f"   Timestamp: {latest['timestamp']}")
             logger.info(f"   Method: {latest['method']}")
+            if latest['subscription_key']:
+                logger.info(f"   Subscription key: {latest['subscription_key']}")
         else:
             logger.info("No API calls with Bearer tokens found")
         
@@ -299,6 +313,14 @@ class MeijerAuthLogAnalyzer:
             if 'bearer' not in tokens and tokens.get('access_token'):
                 tokens['bearer'] = tokens['access_token']
                 logger.info("✅ Added token in simple 'bearer' format for compatibility")
+            
+            # Add subscription key if found
+            if 'subscription_key' in tokens and tokens.get('subscription_key'):
+                logger.info(f"✅ Found subscription key: {tokens['subscription_key']}")
+            else:
+                # Fallback to hardcoded key if not found in logs
+                tokens['subscription_key'] = 'a10bc58ac484478d9b3958b1742c3a03'
+                logger.info("ℹ️ Using hardcoded subscription key as fallback")
             
             # Save to auth.json
             with open(self.auth_file, 'w') as f:

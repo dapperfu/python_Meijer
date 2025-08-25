@@ -78,7 +78,8 @@ class EmailConfig:
             # Default to ~/.config
             config_dir = Path.home() / ".config"
         
-        return str(config_dir / "meijer" / "email.toml")
+        # Always use consolidated config
+        return str(config_dir / "meijer" / "meijer.toml")
     
     def load_config(self) -> None:
         """Load email configuration from the TOML file."""
@@ -138,6 +139,9 @@ class EmailConfig:
         
         # Create template configuration
         template_config = {
+            'auth': {
+                'username': 'your_email@gmail.com'
+            },
             'smtp': {
                 'host': 'smtp.gmail.com',
                 'port': 587,
@@ -154,9 +158,21 @@ class EmailConfig:
                 'password': 'your_app_password',
                 'use_ssl': True
             },
-            'email': {
+            'email_preferences': {
                 'subject_prefix': 'Meijer price alert:',
                 'unsubscribe_hint': True
+            },
+            'verification': {
+                'search_subject': 'verification',
+                'search_sender': 'meijer',
+                'code_pattern': '\\b\\d{6}\\b',
+                'max_wait_time': 300,
+                'check_interval': 10
+            },
+            'cli': {
+                'verbosity': 0,
+                'output_format': 'table',
+                'color_output': True
             }
         }
         
@@ -216,9 +232,19 @@ class EmailConfig:
         force : bool, optional
             Whether to overwrite existing file, by default False
         """
-        if self.config_path.exists() and not force:
-            self.logger.info(f"Email configuration file already exists: {self.config_path}")
+        # Always create consolidated config in meijer.toml
+        from meijer.auth import get_meijer_config_path
+        consolidated_path = Path(get_meijer_config_path("meijer.toml"))
+        
+        if consolidated_path.exists() and not force:
+            self.logger.info(f"Consolidated configuration file already exists: {consolidated_path}")
             return
+        
+        # Update config path to use consolidated file
+        self.config_path = consolidated_path
+        
+        # Ensure directory exists
+        self.config_path.parent.mkdir(parents=True, exist_ok=True)
         
         print("\n📧 Meijer Price Watch Email Configuration Setup")
         print("=" * 50)
@@ -226,43 +252,72 @@ class EmailConfig:
         # Try to load existing credentials first
         existing_credentials = self._load_existing_credentials()
         
-        # SMTP Configuration
-        print("\n🔧 SMTP Server Configuration")
-        print("-" * 30)
+        # Email credentials first (needed for provider detection)
+        print(f"\n📧 Email Account Details")
+        print("-" * 25)
         
-        # Email provider selection
-        print("\nSelect your email provider:")
-        print("1. Gmail")
-        print("2. DreamHost")
-        print("3. Custom SMTP")
-        
-        while True:
-            try:
-                choice = input("\nEnter choice (1-3): ").strip()
-                if choice in ['1', '2', '3']:
-                    break
-                print("Please enter 1, 2, or 3")
-            except (EOFError, KeyboardInterrupt):
-                print("\nSetup cancelled.")
+        username = input(f"Email address: ").strip()
+        if not username:
+            if existing_credentials and existing_credentials.get('username'):
+                username = existing_credentials['username']
+                print(f"Using existing username: {username}")
+            else:
+                print("Email address is required!")
                 return
         
-        if choice == '1':  # Gmail
+        password = input("Password/App Password: ").strip()
+        if not password:
+            if existing_credentials and existing_credentials.get('password'):
+                password = existing_credentials['password']
+                print("Using existing password from meijer.toml")
+            else:
+                print("Password is required!")
+                return
+        
+        # Auto-detect email provider from domain
+        print(f"\n🔧 Auto-detecting email provider from {username}...")
+        
+        domain = username.split('@')[-1].lower()
+        
+        # Get server settings from email provider database
+        smtp_config, imap_config = self._get_email_provider_settings(domain)
+        
+        if smtp_config and imap_config:
+            print(f"✅ Auto-configured {domain} email settings")
+        else:
+            print(f"⚠️ Could not auto-detect settings for {domain}")
+            print("Please enter server details manually:")
+            
+            smtp_host = input("SMTP Host: ").strip()
+            if not smtp_host:
+                smtp_host = f"smtp.{domain}"
+                print(f"Using default: {smtp_host}")
+            
+            smtp_port = input("SMTP Port (default 587): ").strip()
+            smtp_port = int(smtp_port) if smtp_port else 587
+            
+            smtp_use_tls = input("Use TLS? (y/n, default y): ").strip().lower() != 'n'
+            
             smtp_config = {
-                'host': 'smtp.gmail.com',
-                'port': 587,
-                'use_tls': True
+                'host': smtp_host,
+                'port': smtp_port,
+                'use_tls': smtp_use_tls
             }
-        elif choice == '2':  # DreamHost
-            smtp_config = {
-                'host': 'smtp.dreamhost.com',
-                'port': 587,
-                'use_tls': True
-            }
-        else:  # Custom
-            smtp_config = {
-                'host': input("SMTP Host: ").strip() or 'smtp.example.com',
-                'port': int(input("SMTP Port (default 587): ").strip() or '587'),
-                'use_tls': input("Use TLS? (y/n, default y): ").strip().lower() != 'n'
+            
+            imap_host = input("IMAP Host: ").strip()
+            if not imap_host:
+                imap_host = f"imap.{domain}"
+                print(f"Using default: {imap_host}")
+            
+            imap_port = input("IMAP Port (default 993): ").strip()
+            imap_port = int(imap_port) if imap_port else 993
+            
+            imap_use_ssl = input("Use SSL? (y/n, default y): ").strip().lower() != 'n'
+            
+            imap_config = {
+                'host': imap_host,
+                'port': imap_port,
+                'use_ssl': imap_use_ssl
             }
         
         # Email credentials
@@ -282,36 +337,13 @@ class EmailConfig:
         if not password:
             if existing_credentials and existing_credentials.get('password'):
                 password = existing_credentials['password']
-                print("Using existing password from email.txt")
+                print("Using existing password from meijer.toml")
             else:
                 print("Password is required!")
                 return
         
         # Recipient email
         recipient = input(f"Send alerts to (default: {username}): ").strip() or username
-        
-        # IMAP Configuration
-        print(f"\n📥 IMAP Configuration (for email verification)")
-        print("-" * 45)
-        
-        if choice == '1':  # Gmail
-            imap_config = {
-                'host': 'imap.gmail.com',
-                'port': 993,
-                'use_ssl': True
-            }
-        elif choice == '2':  # DreamHost
-            imap_config = {
-                'host': 'imap.dreamhost.com',
-                'port': 993,
-                'use_ssl': True
-            }
-        else:  # Custom
-            imap_config = {
-                'host': input("IMAP Host: ").strip() or 'imap.example.com',
-                'port': int(input("IMAP Port (default 993): ").strip() or '993'),
-                'use_ssl': input("Use SSL? (y/n, default y): ").strip().lower() != 'n'
-            }
         
         # Email preferences
         print(f"\n⚙️ Email Preferences")
@@ -320,8 +352,21 @@ class EmailConfig:
         subject_prefix = input("Email subject prefix (default: 'Meijer price alert:'): ").strip() or 'Meijer price alert:'
         unsubscribe_hint = input("Include unsubscribe instructions? (y/n, default y): ").strip().lower() != 'n'
         
+        # Verification settings for 2FA
+        print(f"\n🔐 Email Verification Settings (for 2FA)")
+        print("-" * 40)
+        
+        search_subject = input("Search subject for verification emails (default: 'verification'): ").strip() or 'verification'
+        search_sender = input("Search sender for verification emails (default: 'meijer'): ").strip() or 'meijer'
+        code_pattern = input("Code pattern regex (default: '\\b\\d{6}\\b'): ").strip() or '\\b\\d{6}\\b'
+        max_wait_time = int(input("Max wait time in seconds (default: 300): ").strip() or '300')
+        check_interval = int(input("Check interval in seconds (default: 10): ").strip() or '10')
+        
         # Build configuration
         config = {
+            'auth': {
+                'username': username
+            },
             'smtp': {
                 'host': smtp_config['host'],
                 'port': smtp_config['port'],
@@ -338,9 +383,21 @@ class EmailConfig:
                 'password': password,
                 'use_ssl': imap_config['use_ssl']
             },
-            'email': {
+            'email_preferences': {
                 'subject_prefix': subject_prefix,
                 'unsubscribe_hint': unsubscribe_hint
+            },
+            'verification': {
+                'search_subject': search_subject,
+                'search_sender': search_sender,
+                'code_pattern': code_pattern,
+                'max_wait_time': max_wait_time,
+                'check_interval': check_interval
+            },
+            'cli': {
+                'verbosity': 0,
+                'output_format': 'table',
+                'color_output': True
             }
         }
         
@@ -348,7 +405,8 @@ class EmailConfig:
         self.config = config
         self.save_config()
         
-        print(f"\n✅ Email configuration saved to: {self.config_path}")
+        print(f"\n✅ Consolidated configuration saved to: {self.config_path}")
+        print(f"   This file contains all your Meijer CLI settings!")
         print(f"\n📝 Next steps:")
         print(f"1. Test your configuration: meijer watch test-email")
         print(f"2. Add your first product watch: meijer watch add <UPC>")
@@ -365,6 +423,23 @@ class EmailConfig:
         """
         try:
             from meijer.auth import get_meijer_config_path
+            # First try to load from email.toml if it exists
+            email_toml_path = Path(get_meijer_config_path("email.toml"))
+            if email_toml_path.exists():
+                try:
+                    import toml
+                    with open(email_toml_path, 'r') as f:
+                        config = toml.load(f)
+                    
+                    if 'smtp' in config and 'username' in config['smtp'] and 'password' in config['smtp']:
+                        return {
+                            'username': config['smtp']['username'],
+                            'password': config['smtp']['password']
+                        }
+                except Exception as e:
+                    self.logger.debug(f"Could not parse email.toml: {e}")
+            
+            # Fallback to email.txt if TOML doesn't work
             email_auth_path = Path(get_meijer_config_path("email.txt"))
             if email_auth_path.exists():
                 with open(email_auth_path, 'r') as f:
@@ -386,6 +461,147 @@ class EmailConfig:
             self.logger.debug(f"Could not load existing email auth: {e}")
         
         return None
+    
+    def _get_email_provider_settings(self, domain: str) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+        """
+        Get SMTP and IMAP settings for a given email domain.
+        
+        Parameters
+        ----------
+        domain : str
+            Email domain (e.g., 'gmail.com', 'outlook.com')
+            
+        Returns
+        -------
+        tuple
+            (smtp_config, imap_config) or (None, None) if not found
+        """
+        # Comprehensive email provider database
+        providers = {
+            # Gmail
+            'gmail.com': {
+                'smtp': {'host': 'smtp.gmail.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.gmail.com', 'port': 993, 'use_ssl': True}
+            },
+            # Microsoft
+            'outlook.com': {
+                'smtp': {'host': 'smtp-mail.outlook.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'outlook.office365.com', 'port': 993, 'use_ssl': True}
+            },
+            'hotmail.com': {
+                'smtp': {'host': 'smtp-mail.outlook.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'outlook.office365.com', 'port': 993, 'use_ssl': True}
+            },
+            'live.com': {
+                'smtp': {'host': 'smtp-mail.outlook.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'outlook.office365.com', 'port': 993, 'use_ssl': True}
+            },
+            'msn.com': {
+                'smtp': {'host': 'smtp-mail.outlook.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'outlook.office365.com', 'port': 993, 'use_ssl': True}
+            },
+            # Yahoo
+            'yahoo.com': {
+                'smtp': {'host': 'smtp.mail.yahoo.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.mail.yahoo.com', 'port': 993, 'use_ssl': True}
+            },
+            'ymail.com': {
+                'smtp': {'host': 'smtp.mail.yahoo.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.mail.yahoo.com', 'port': 993, 'use_ssl': True}
+            },
+            # Apple
+            'icloud.com': {
+                'smtp': {'host': 'smtp.mail.me.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.mail.me.com', 'port': 993, 'use_ssl': True}
+            },
+            'me.com': {
+                'smtp': {'host': 'smtp.mail.me.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.mail.me.com', 'port': 993, 'use_ssl': True}
+            },
+            'mac.com': {
+                'smtp': {'host': 'smtp.mail.me.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.mail.me.com', 'port': 993, 'use_ssl': True}
+            },
+            # ProtonMail
+            'protonmail.com': {
+                'smtp': {'host': '127.0.0.1', 'port': 1025, 'use_tls': False},  # Bridge required
+                'imap': {'host': '127.0.0.1', 'port': 1143, 'use_ssl': False}   # Bridge required
+            },
+            'proton.me': {
+                'smtp': {'host': '127.0.0.1', 'port': 1025, 'use_tls': False},  # Bridge required
+                'imap': {'host': '127.0.0.1', 'port': 1143, 'use_ssl': False}   # Bridge required
+            },
+            # Zoho
+            'zoho.com': {
+                'smtp': {'host': 'smtp.zoho.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.zoho.com', 'port': 993, 'use_ssl': True}
+            },
+            # Fastmail
+            'fastmail.com': {
+                'smtp': {'host': 'smtp.fastmail.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.fastmail.com', 'port': 993, 'use_ssl': True}
+            },
+            'fastmail.fm': {
+                'smtp': {'host': 'smtp.fastmail.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.fastmail.com', 'port': 993, 'use_ssl': True}
+            },
+            # DreamHost
+            'dreamhost.com': {
+                'smtp': {'host': 'smtp.dreamhost.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.dreamhost.com', 'port': 993, 'use_ssl': True}
+            },
+            'eabi.xyz': {
+                'smtp': {'host': 'smtp.dreamhost.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.dreamhost.com', 'port': 993, 'use_ssl': True}
+            },
+            # AOL
+            'aol.com': {
+                'smtp': {'host': 'smtp.aol.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.aol.com', 'port': 993, 'use_ssl': True}
+            },
+            # GMX
+            'gmx.com': {
+                'smtp': {'host': 'smtp.gmx.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.gmx.com', 'port': 993, 'use_ssl': True}
+            },
+            'gmx.de': {
+                'smtp': {'host': 'smtp.gmx.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.gmx.com', 'port': 993, 'use_ssl': True}
+            },
+            # Yandex
+            'yandex.com': {
+                'smtp': {'host': 'smtp.yandex.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.yandex.com', 'port': 993, 'use_ssl': True}
+            },
+            'yandex.ru': {
+                'smtp': {'host': 'smtp.yandex.com', 'port': 587, 'use_tls': True},
+                'imap': {'host': 'imap.yandex.com', 'port': 993, 'use_ssl': True}
+            }
+        }
+        
+        # Check for exact domain match
+        if domain in providers:
+            provider = providers[domain]
+            return provider['smtp'], provider['imap']
+        
+        # Check for subdomain matches (e.g., user@company.gmail.com)
+        for provider_domain, settings in providers.items():
+            if domain.endswith('.' + provider_domain):
+                return settings['smtp'], settings['imap']
+        
+        # Check for common patterns
+        if 'google' in domain or 'gmail' in domain:
+            return providers['gmail.com']['smtp'], providers['gmail.com']['imap']
+        elif 'microsoft' in domain or 'office' in domain or 'live' in domain:
+            return providers['outlook.com']['smtp'], providers['outlook.com']['imap']
+        elif 'yahoo' in domain:
+            return providers['yahoo.com']['smtp'], providers['yahoo.com']['imap']
+        elif 'apple' in domain or 'icloud' in domain:
+            return providers['icloud.com']['smtp'], providers['icloud.com']['imap']
+        elif 'dreamhost' in domain:
+            return providers['dreamhost.com']['smtp'], providers['dreamhost.com']['imap']
+        
+        return None, None
     
     def validate_config(self) -> bool:
         """
@@ -431,7 +647,13 @@ class EmailConfig:
         Dict[str, Any]
             SMTP configuration dictionary
         """
-        return self.config.get('smtp', {})
+        # Handle both consolidated and legacy config structures
+        if 'smtp' in self.config:
+            return self.config.get('smtp', {})
+        elif 'email' in self.config and 'smtp' in self.config['email']:
+            return self.config['email']['smtp']
+        else:
+            return {}
     
     def get_imap_config(self) -> Dict[str, Any]:
         """
@@ -442,7 +664,13 @@ class EmailConfig:
         Dict[str, Any]
             IMAP configuration dictionary
         """
-        return self.config.get('imap', {})
+        # Handle both consolidated and legacy config structures
+        if 'imap' in self.config:
+            return self.config.get('imap', {})
+        elif 'email' in self.config and 'imap' in self.config['email']:
+            return self.config['email']['imap']
+        else:
+            return {}
     
     def get_email_config(self) -> Dict[str, Any]:
         """
@@ -453,7 +681,17 @@ class EmailConfig:
         Dict[str, Any]
             Email configuration dictionary
         """
-        return self.config.get('email', {})
+        # Handle both consolidated and legacy config structures
+        if 'email' in self.config:
+            if isinstance(self.config['email'], dict) and 'subject_prefix' in self.config['email']:
+                return self.config['email']
+            else:
+                # Legacy structure
+                return {}
+        elif 'email_preferences' in self.config:
+            return self.config['email_preferences']
+        else:
+            return {}
 
 
 class EmailSender:

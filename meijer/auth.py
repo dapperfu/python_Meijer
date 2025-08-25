@@ -490,32 +490,51 @@ class TokenStorage:
 
     def load_credentials_from_file(self) -> Optional[Tuple[str, str]]:
         """
-        Load username and password from login.txt file as fallback.
+        Load username and password from meijer.toml file as fallback.
         
         Returns:
             Tuple of (username, password) or None if file doesn't exist
         """
         try:
+            # Try consolidated config first
+            config_file = get_meijer_config_path("meijer.toml")
+            if os.path.exists(config_file):
+                try:
+                    import toml
+                    with open(config_file, "r") as f:
+                        config = toml.load(f)
+                    
+                    if 'auth' in config and 'username' in config['auth']:
+                        # Password is stored in email section for security
+                        if 'smtp' in config and 'password' in config['smtp']:
+                            username = config['auth']['username']
+                            password = config['smtp']['password']
+                            self.logger.info("✅ Loaded credentials from meijer.toml")
+                            return username, password
+                except Exception as e:
+                    self.logger.debug(f"Could not parse meijer.toml: {e}")
+            
+            # Fallback to legacy login.txt if it exists
             login_file = get_meijer_config_path("login.txt")
-            if not os.path.exists(login_file):
+            if os.path.exists(login_file):
+                with open(login_file, "r") as f:
+                    lines = f.readlines()
+                    
+                if len(lines) >= 2:
+                    username = lines[0].strip()
+                    password = lines[1].strip()
+                    
+                    if username and password:
+                        self.logger.info("✅ Loaded credentials from login.txt fallback file")
+                        return username, password
+                        
+                self.logger.warning("⚠️ login.txt file exists but format is invalid (need 2 lines: username, password)")
                 return None
                 
-            with open(login_file, "r") as f:
-                lines = f.readlines()
-                
-            if len(lines) >= 2:
-                username = lines[0].strip()
-                password = lines[1].strip()
-                
-                if username and password:
-                    self.logger.info("✅ Loaded credentials from login.txt fallback file")
-                    return username, password
-                    
-            self.logger.warning("⚠️ login.txt file exists but format is invalid (need 2 lines: username, password)")
             return None
             
         except Exception as e:
-            self.logger.error(f"❌ Failed to load credentials from login.txt: {e}")
+            self.logger.error(f"❌ Failed to load credentials from config files: {e}")
             return None
 
     def save_credentials_to_file(self, username: str, password: str) -> bool:

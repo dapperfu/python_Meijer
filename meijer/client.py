@@ -167,7 +167,7 @@ class Meijer:
 
         # API configuration based on APK analysis
         self.api_base_url = "https://api.meijer.com"
-        self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis
+        self.subscription_key = "a10bc58ac484478d9b3958b1742c3a03"  # From APK analysis (fallback)
         
         # Handle base URL override for local development/testing
         if base_url:
@@ -653,6 +653,12 @@ class Meijer:
 
                     if self.token_storage.save_tokens(tokens):
                         self.logger.info("✅ Loaded authentication from config file")
+                        
+                        # Load subscription key if available
+                        if "subscription_key" in config:
+                            self.subscription_key = config["subscription_key"]
+                            self.logger.info(f"✅ Loaded subscription key from config: {self.subscription_key}")
+                        
                         return
                     else:
                         self.logger.warning("⚠️ Failed to save tokens from config")
@@ -668,6 +674,12 @@ class Meijer:
 
                     if self.token_storage.save_tokens(temp_tokens):
                         self.logger.info("✅ Loaded bearer token from config file")
+                        
+                        # Load subscription key if available
+                        if "subscription_key" in config:
+                            self.subscription_key = config["subscription_key"]
+                            self.logger.info(f"✅ Loaded subscription key from config: {self.subscription_key}")
+                        
                         return
 
             except Exception as e:

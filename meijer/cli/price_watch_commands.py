@@ -550,50 +550,30 @@ def export_watches(file_path: Path, active_only: bool):
     is_flag=True,
     help="Overwrite existing configuration"
 )
-@click.option(
-    "--template",
-    "-t",
-    is_flag=True,
-    help="Create template file instead of interactive setup"
-)
-def setup_email_config(force: bool, template: bool):
+def setup_email_config(force: bool):
     """
-    Create email configuration for price alerts.
+    Create consolidated configuration for Meijer CLI.
     
-    By default, runs interactive setup to collect all required information.
-    Use --template to create a template file instead.
+    Runs interactive setup to collect all required information and creates
+    a single meijer.toml file with all settings.
     
     Examples:
-        meijer watch setup                    # Interactive setup
-        meijer watch setup --template         # Create template file
-        meijer watch setup --force            # Overwrite existing config
+        meijer watch setup              # Interactive setup
+        meijer watch setup --force      # Overwrite existing config
     """
     try:
-        if template:
-            if force:
-                console.print("🔄 [yellow]Creating email configuration template (overwriting existing)...[/yellow]")
-            else:
-                console.print("📧 [blue]Creating email configuration template...[/blue]")
-            
-            create_email_config_template(force=force)
-            
-            console.print("\n📝 [green]Next steps:[/green]")
-            console.print("1. Edit the created email.toml file with your server details")
-            console.print("2. For Gmail, generate an 'App Password' in your Google Account settings")
-            console.print("3. Test the configuration with: meijer watch test-email")
+        if force:
+            console.print("🔄 [yellow]Running interactive configuration setup (overwriting existing)...[/yellow]")
         else:
-            if force:
-                console.print("🔄 [yellow]Running interactive email setup (overwriting existing)...[/yellow]")
-            else:
-                console.print("📧 [blue]Running interactive email setup...[/blue]")
-            
-            # Import and run interactive setup
-            from ..price_watch.email_config import EmailConfig
-            email_config = EmailConfig()
-            email_config.create_interactive_config(force=force)
+            console.print("📧 [blue]Running interactive configuration setup...[/blue]")
+        
+        # Import and run interactive setup
+        from ..price_watch.email_config import EmailConfig
+        email_config = EmailConfig()
+        email_config.create_interactive_config(force=force)
         
     except Exception as e:
-        console.print(f"❌ [red]Failed to create email configuration: {e}[/red]")
+        console.print(f"❌ [red]Failed to create configuration: {e}[/red]")
         raise click.ClickException(str(e))
 
 
