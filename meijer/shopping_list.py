@@ -6,7 +6,7 @@ adding/removing items, managing favorites, and list operations.
 """
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 try:
@@ -535,14 +535,29 @@ class MeijerList:
             self.logger.error(f"Error removing item from favorites: {e}")
             return False
 
+    def _normalize_store_id(self, store_id: Optional[Union[str, int]]) -> Optional[str]:
+        """
+        Normalize store_id to string format, accepting both string and integer inputs.
+        
+        Args:
+            store_id: Store ID as string, integer, or None
+            
+        Returns:
+            Store ID as string, or None if not provided
+        """
+        if store_id is None:
+            return None
+        return str(store_id)
+
     def defrag(
-        self, store_id: Optional[str] = None, reverse: bool = False, zig: bool = False, noreorganize: bool = False
+        self, store_id: Optional[Union[str, int]] = None, reverse: bool = False, zig: bool = False, noreorganize: bool = False
     ) -> Dict[str, Any]:
         """
         Defrag the shopping list by organizing items by aisle/location.
 
         Args:
-            store_id: Store ID to use for location lookup (defaults to current store)
+            store_id: Store ID to use for location lookup (defaults to current store). 
+                      Accepts both string and integer formats.
             reverse: If True, sort items in reverse order (descending)
             zig: If True, alternate B aisle sorting (B1 ascending, B2 descending, etc.)
             noreorganize: If True, don't reorganize the actual list (just return organized data)
@@ -550,6 +565,9 @@ class MeijerList:
         Returns:
             Dict containing organized data structure with aisle groups and statistics
         """
+        # Normalize store_id to string format
+        store_id = self._normalize_store_id(store_id)
+        
         if not store_id:
             # Try to get store ID from current context
             try:
@@ -1843,7 +1861,7 @@ Unable to load shopping list: `{str(e)}`
         return None
 
     def export_defragmented(
-        self, store_id: Optional[str] = None, output_path: Optional[str] = None
+        self, store_id: Optional[Union[str, int]] = None, output_path: Optional[str] = None
     ) -> None:
         """
         Export defragmented list to a structured format.
@@ -1852,11 +1870,14 @@ Unable to load shopping list: `{str(e)}`
         the defragmented shopping list with organized aisle groups and statistics.
         
         Args:
-            store_id: Store ID for location lookup
+            store_id: Store ID for location lookup. Accepts both string and integer formats.
             output_path: Output file path (defaults to "defragmented_shopping_list.json")
         """
         from datetime import datetime, timezone
         import json
+        
+        # Normalize store_id to string format
+        store_id = self._normalize_store_id(store_id)
         
         # Run defrag to get organized results (without reorganizing the list)
         defrag_result = self.defrag(store_id=store_id, noreorganize=True)

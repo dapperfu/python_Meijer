@@ -312,6 +312,8 @@ meijer watch price 012345678905 -s 217 --no-store
 
 The system uses TOML configuration files for email settings. The default location is `~/.config/meijer/email.toml`.
 
+**Integration with Existing Email Auth**: The system automatically tries to load existing email credentials from `~/.config/meijer/email.txt` if available, making it easy to reuse your existing Meijer email configuration.
+
 **Example Configuration:**
 ```toml
 [smtp]
@@ -414,6 +416,21 @@ meijer watch export current_watches.csv
 
 # Test email configuration
 meijer watch notify --dry-run
+```
+
+### Testing Email Configuration
+
+Before setting up automated notifications, test your email configuration:
+
+```bash
+# Send test email using default settings
+meijer watch test-email
+
+# Test with specific product
+meijer watch test-email -i 012345678905
+
+# Test to specific email address
+meijer watch test-email -t test@example.com
 ```
 
 ### Cron Job Example
