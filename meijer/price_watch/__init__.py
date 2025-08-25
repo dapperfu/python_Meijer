@@ -34,6 +34,7 @@ from .email_config import (
     create_email_config_template,
     get_email_config
 )
+from .templates.email_templates import EmailTemplateManager, template_manager
 
 from .models.price_watch import (
     Product,
@@ -64,6 +65,8 @@ __all__ = [
     'EmailSender',
     'create_email_config_template',
     'get_email_config',
+    'EmailTemplateManager',
+    'template_manager',
     
     # Models
     'Product',

@@ -357,7 +357,7 @@ class EmailSender:
         to_email: Optional[str] = None
     ) -> Optional[str]:
         """
-        Send a consolidated email with multiple price alerts.
+        Send a consolidated email with multiple price alerts using Jinja2 templates.
         
         Parameters
         ----------
@@ -385,10 +385,29 @@ class EmailSender:
         else:
             subject = f"Meijer price alerts: {len(alerts)} items updated"
         
-        # Create consolidated body
-        body = self._create_consolidated_body(alerts)
-        
-        return self.send_price_alert(to_email, subject, body)
+        # Use Jinja2 templates
+        try:
+            from .templates.email_templates import template_manager
+            from datetime import datetime
+            
+            # Render email using templates
+            email_content = template_manager.render_price_alert_email(
+                alerts=alerts,
+                generated_at=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+            )
+            
+            return self.send_price_alert(
+                to_email=to_email,
+                subject=subject,
+                html_body=email_content['html'],
+                plain_text_body=email_content['plain_text']
+            )
+            
+        except ImportError:
+            # Fallback to old method if templates not available
+            self.logger.warning("Jinja2 templates not available, using fallback method")
+            body = self._create_consolidated_body(alerts)
+            return self.send_price_alert(to_email, subject, body, body)
     
     def _create_consolidated_body(self, alerts: List[Dict[str, Any]]) -> str:
         """
@@ -461,6 +480,98 @@ class EmailSender:
         ])
         
         return "\n".join(html_parts)
+    
+    def send_test_email(
+        self,
+        to_email: Optional[str] = None,
+        product_info: Optional[Dict[str, Any]] = None
+    ) -> Optional[str]:
+        """
+        Send a test email to verify email configuration.
+        
+        Parameters
+        ----------
+        to_email : str, optional
+            Recipient email address. If None, uses config default.
+        product_info : Dict[str, Any], optional
+            Product information for the test email. If None, uses default test data.
+        
+        Returns
+        -------
+        str, optional
+            Message ID if successful, None otherwise
+        """
+        if not self.config.validate_config():
+            self.logger.error("Invalid email configuration")
+            return None
+        
+        smtp_config = self.config.get_smtp_config()
+        to_email = to_email or smtp_config['to']
+        
+        # Use provided product info or default test data
+        if product_info is None:
+            product_info = {
+                'product_name': 'Test Product',
+                'product_identifier': '123456789012',
+                'store_name': 'Test Store',
+                'current_price': 9.99
+            }
+        
+        subject = "Meijer Price Watch - Test Email"
+        
+        try:
+            from .templates.email_templates import template_manager
+            from datetime import datetime
+            
+            # Render test email using templates
+            email_content = template_manager.render_test_email(
+                product_name=product_info['product_name'],
+                product_identifier=product_info['product_identifier'],
+                store_name=product_info['store_name'],
+                current_price=product_info['current_price'],
+                test_time=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+            )
+            
+            return self.send_price_alert(
+                to_email=to_email,
+                subject=subject,
+                html_body=email_content['html'],
+                plain_text_body=email_content['plain_text']
+            )
+            
+        except ImportError:
+            # Fallback to simple test email if templates not available
+            self.logger.warning("Jinja2 templates not available, using fallback test email")
+            
+            html_body = f"""
+            <html>
+            <body>
+                <h1>Meijer Price Watch - Test Email</h1>
+                <p>✅ Email configuration is working correctly!</p>
+                <p>This is a test email to verify your email setup.</p>
+                <p>Product: {product_info['product_name']} (${product_info['current_price']})</p>
+                <p>Store: {product_info['store_name']}</p>
+            </body>
+            </html>
+            """
+            
+            plain_text_body = f"""
+            Meijer Price Watch - Test Email
+            ===============================
+            
+            ✅ Email configuration is working correctly!
+            
+            This is a test email to verify your email setup.
+            Product: {product_info['product_name']} (${product_info['current_price']})
+            Store: {product_info['store_name']}
+            """
+            
+            return self.send_price_alert(
+                to_email=to_email,
+                subject=subject,
+                html_body=html_body,
+                plain_text_body=plain_text_body
+            )
 
 
 def create_email_config_template(config_path: Optional[str] = None, force: bool = False) -> None:

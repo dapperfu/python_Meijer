@@ -1,5 +1,6 @@
 [tool.hatch.version]
-source = "git"
+source = "file"
+path = "meijer/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["meijer"]

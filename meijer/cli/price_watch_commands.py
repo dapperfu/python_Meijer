@@ -569,10 +569,148 @@ def setup_email_config(force: bool):
         console.print("\n📝 [green]Next steps:[/green]")
         console.print("1. Edit the created email.toml file with your server details")
         console.print("2. For Gmail, generate an 'App Password' in your Google Account settings")
-        console.print("3. Test the configuration with: meijer watch notify --dry-run")
+        console.print("3. Test the configuration with: meijer watch test-email")
         
     except Exception as e:
         console.print(f"❌ [red]Failed to create email configuration: {e}[/red]")
+        raise click.ClickException(str(e))
+
+
+@price_watch_group.command("test-email")
+@click.option(
+    "--identifier",
+    "-i",
+    type=str,
+    help="Use specific product identifier for test (UPC or PLU)"
+)
+@click.option(
+    "--store-id",
+    "-s",
+    type=str,
+    help="Use specific store for test"
+)
+@click.option(
+    "--to",
+    "-t",
+    type=str,
+    help="Send test email to specific address (overrides config)"
+)
+def test_email(identifier: Optional[str], store_id: Optional[str], to: Optional[str]):
+    """
+    Send a test email to verify email configuration.
+    
+    Examples:
+        meijer watch test-email
+        meijer watch test-email -i 012345678905
+        meijer watch test-email -s 217
+        meijer watch test-email -t test@example.com
+    """
+    try:
+        # Initialize database and manager
+        db_manager = ensure_database_exists()
+        manager = PriceWatchManager(db_manager)
+        
+        # Get email configuration
+        email_config = get_email_config()
+        
+        if not email_config.validate_config():
+            console.print("❌ [red]Invalid email configuration![/red]")
+            console.print("💡 Run 'meijer watch setup' to create email configuration")
+            raise click.ClickException("Email configuration invalid")
+        
+        # Get product information for test
+        product_info = None
+        
+        if identifier:
+            # Use specified product
+            console.print(f"🔍 [blue]Looking up product {identifier}...[/blue]")
+            
+            from ..models.price_watch import Product
+            from pony.orm import db_session
+            
+            with db_session:
+                product = Product.get(identifier=identifier)
+                if not product:
+                    console.print(f"❌ [red]Product not found: {identifier}[/red]")
+                    raise click.ClickException("Product not found")
+                
+                # Get current price
+                current_price = manager._get_current_price(product, None)
+                if current_price:
+                    product_info = {
+                        'product_name': product.name or 'Unknown Product',
+                        'product_identifier': product.identifier,
+                        'store_name': 'Any Store',
+                        'current_price': float(current_price['price'])
+                    }
+                else:
+                    # Use product info without price
+                    product_info = {
+                        'product_name': product.name or 'Unknown Product',
+                        'product_identifier': product.identifier,
+                        'store_name': 'Any Store',
+                        'current_price': 0.00
+                    }
+        else:
+            # Find a product in the database
+            console.print("🔍 [blue]Looking for a product in the database...[/blue]")
+            
+            from ..models.price_watch import Product
+            from pony.orm import db_session
+            
+            with db_session:
+                product = Product.select().first()
+                if product:
+                    # Get current price
+                    current_price = manager._get_current_price(product, None)
+                    if current_price:
+                        product_info = {
+                            'product_name': product.name or 'Unknown Product',
+                            'product_identifier': product.identifier,
+                            'store_name': 'Any Store',
+                            'current_price': float(current_price['price'])
+                        }
+                    else:
+                        product_info = {
+                            'product_name': product.name or 'Unknown Product',
+                            'product_identifier': product.identifier,
+                            'store_name': 'Any Store',
+                            'current_price': 0.00
+                        }
+                else:
+                    console.print("📝 [yellow]No products found in database, using default test data[/yellow]")
+                    product_info = None
+        
+        if product_info:
+            console.print(f"✅ [green]Using product: {product_info['product_name']} ({product_info['product_identifier']})[/green]")
+            console.print(f"   Store: {product_info['store_name']}")
+            console.print(f"   Price: ${product_info['current_price']:.2f}")
+        
+        # Send test email
+        console.print("📧 [blue]Sending test email...[/blue]")
+        
+        email_sender = EmailSender(email_config)
+        message_id = email_sender.send_test_email(
+            to_email=to,
+            product_info=product_info
+        )
+        
+        if message_id:
+            console.print("✅ [green]Test email sent successfully![/green]")
+            console.print(f"   Message ID: {message_id}")
+            if to:
+                console.print(f"   Sent to: {to}")
+            else:
+                console.print(f"   Sent to: {email_config.get_smtp_config()['to']}")
+            
+            console.print("\n📝 [blue]Check your email inbox for the test message.[/blue]")
+            console.print("   If you don't receive it, check your spam folder and email configuration.")
+        else:
+            console.print("❌ [red]Failed to send test email[/red]")
+            raise click.ClickException("Email sending failed")
+        
+    except Exception as e:
+        console.print(f"❌ [red]Failed to send test email: {e}[/red]")
         raise click.ClickException(str(e))
 
 

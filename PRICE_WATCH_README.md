@@ -19,6 +19,7 @@ The Price Watch system allows you to:
 - **Price History**: Maintain complete price observation history with timestamps
 - **Change Detection**: Automatically detect price drops, sales, and clearance events
 - **Email Alerts**: Receive consolidated email notifications for price changes
+- **Jinja2 Templating**: Professional email templates with both HTML and plain text versions
 - **Flexible Conditions**: Configure when alerts should trigger (any drop, sales only, etc.)
 
 ### Data Management
@@ -42,7 +43,7 @@ The Price Watch system is integrated into the main Meijer CLI. Ensure you have t
 pip install -e .
 
 # Or install dependencies manually
-pip install pony toml
+pip install pony toml jinja2
 ```
 
 ## Quick Start
@@ -56,6 +57,8 @@ meijer watch setup
 ```
 
 This creates a template email configuration file at `~/.config/meijer/email.toml`. Edit it with your SMTP server details.
+
+**Note:** The system will automatically try to load existing email credentials from `~/.config/meijer/email.txt` if available.
 
 ### 2. Add Your First Watch
 
@@ -112,7 +115,20 @@ meijer watch report --since 2025-01-01
 meijer watch report --format csv
 ```
 
-### 6. Send Notifications
+### 6. Test Email Configuration
+
+```bash
+# Send a test email to verify your setup
+meijer watch test-email
+
+# Test with specific product
+meijer watch test-email -i 012345678905
+
+# Test to specific email address
+meijer watch test-email -t test@example.com
+```
+
+### 7. Send Notifications
 
 ```bash
 # Dry run (see what would be sent)
@@ -255,6 +271,23 @@ Create email configuration template for price alerts.
 ```bash
 meijer watch setup
 meijer watch setup --force
+```
+
+### `meijer watch test-email [OPTIONS]`
+
+Send a test email to verify email configuration.
+
+**Options:**
+- `--identifier, -i TEXT`: Use specific product identifier for test (UPC or PLU)
+- `--store-id, -s TEXT`: Use specific store for test
+- `--to, -t TEXT`: Send test email to specific address (overrides config)
+
+**Examples:**
+```bash
+meijer watch test-email
+meijer watch test-email -i 012345678905
+meijer watch test-email -s 217
+meijer watch test-email -t test@example.com
 ```
 
 ### `meijer watch price <IDENTIFIER> [OPTIONS]`
