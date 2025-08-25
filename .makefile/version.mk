@@ -5,14 +5,14 @@
 version:
 	@echo "📋 Current version information:"
 	@echo "================================="
+	@echo "Versioneer version: $(shell ${VENV}/bin/python -c "import meijer; print(meijer.__version__)" 2>/dev/null || echo "Not available")"
 	@echo "Git tags: $(shell git describe --tags --abbrev=0 2>/dev/null || echo "No tags found")"
 	@echo "Current commit: $(shell git rev-parse --short HEAD)"
-	@echo "Hatch version: $(shell ${VENV}/bin/hatch version 2>/dev/null || echo "Not available")"
 	@echo ""
 	@echo "💡 To bump version:"
 	@echo "   1. git tag vX.Y.Z"
 	@echo "   2. git push --tags"
-	@echo "   3. Hatch will automatically use the new version"
+	@echo "   3. Versioneer will automatically use the new version"
 
 .PHONY: version-tag
 version-tag:

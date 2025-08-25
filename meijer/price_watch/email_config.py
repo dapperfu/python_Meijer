@@ -207,6 +207,186 @@ class EmailConfig:
         
         self.logger.info(f"Created email configuration template: {self.config_path}")
     
+    def create_interactive_config(self, force: bool = False) -> None:
+        """
+        Create email configuration interactively by prompting the user.
+        
+        Parameters
+        ----------
+        force : bool, optional
+            Whether to overwrite existing file, by default False
+        """
+        if self.config_path.exists() and not force:
+            self.logger.info(f"Email configuration file already exists: {self.config_path}")
+            return
+        
+        print("\n📧 Meijer Price Watch Email Configuration Setup")
+        print("=" * 50)
+        
+        # Try to load existing credentials first
+        existing_credentials = self._load_existing_credentials()
+        
+        # SMTP Configuration
+        print("\n🔧 SMTP Server Configuration")
+        print("-" * 30)
+        
+        # Email provider selection
+        print("\nSelect your email provider:")
+        print("1. Gmail")
+        print("2. DreamHost")
+        print("3. Custom SMTP")
+        
+        while True:
+            try:
+                choice = input("\nEnter choice (1-3): ").strip()
+                if choice in ['1', '2', '3']:
+                    break
+                print("Please enter 1, 2, or 3")
+            except (EOFError, KeyboardInterrupt):
+                print("\nSetup cancelled.")
+                return
+        
+        if choice == '1':  # Gmail
+            smtp_config = {
+                'host': 'smtp.gmail.com',
+                'port': 587,
+                'use_tls': True
+            }
+        elif choice == '2':  # DreamHost
+            smtp_config = {
+                'host': 'smtp.dreamhost.com',
+                'port': 587,
+                'use_tls': True
+            }
+        else:  # Custom
+            smtp_config = {
+                'host': input("SMTP Host: ").strip() or 'smtp.example.com',
+                'port': int(input("SMTP Port (default 587): ").strip() or '587'),
+                'use_tls': input("Use TLS? (y/n, default y): ").strip().lower() != 'n'
+            }
+        
+        # Email credentials
+        print(f"\n📧 Email Account Details")
+        print("-" * 25)
+        
+        username = input(f"Email address: ").strip()
+        if not username:
+            if existing_credentials and existing_credentials.get('username'):
+                username = existing_credentials['username']
+                print(f"Using existing username: {username}")
+            else:
+                print("Email address is required!")
+                return
+        
+        password = input("Password/App Password: ").strip()
+        if not password:
+            if existing_credentials and existing_credentials.get('password'):
+                password = existing_credentials['password']
+                print("Using existing password from email.txt")
+            else:
+                print("Password is required!")
+                return
+        
+        # Recipient email
+        recipient = input(f"Send alerts to (default: {username}): ").strip() or username
+        
+        # IMAP Configuration
+        print(f"\n📥 IMAP Configuration (for email verification)")
+        print("-" * 45)
+        
+        if choice == '1':  # Gmail
+            imap_config = {
+                'host': 'imap.gmail.com',
+                'port': 993,
+                'use_ssl': True
+            }
+        elif choice == '2':  # DreamHost
+            imap_config = {
+                'host': 'imap.dreamhost.com',
+                'port': 993,
+                'use_ssl': True
+            }
+        else:  # Custom
+            imap_config = {
+                'host': input("IMAP Host: ").strip() or 'imap.example.com',
+                'port': int(input("IMAP Port (default 993): ").strip() or '993'),
+                'use_ssl': input("Use SSL? (y/n, default y): ").strip().lower() != 'n'
+            }
+        
+        # Email preferences
+        print(f"\n⚙️ Email Preferences")
+        print("-" * 20)
+        
+        subject_prefix = input("Email subject prefix (default: 'Meijer price alert:'): ").strip() or 'Meijer price alert:'
+        unsubscribe_hint = input("Include unsubscribe instructions? (y/n, default y): ").strip().lower() != 'n'
+        
+        # Build configuration
+        config = {
+            'smtp': {
+                'host': smtp_config['host'],
+                'port': smtp_config['port'],
+                'username': username,
+                'password': password,
+                'use_tls': smtp_config['use_tls'],
+                'from': username,
+                'to': recipient
+            },
+            'imap': {
+                'host': imap_config['host'],
+                'port': imap_config['port'],
+                'username': username,
+                'password': password,
+                'use_ssl': imap_config['use_ssl']
+            },
+            'email': {
+                'subject_prefix': subject_prefix,
+                'unsubscribe_hint': unsubscribe_hint
+            }
+        }
+        
+        # Save configuration
+        self.config = config
+        self.save_config()
+        
+        print(f"\n✅ Email configuration saved to: {self.config_path}")
+        print(f"\n📝 Next steps:")
+        print(f"1. Test your configuration: meijer watch test-email")
+        print(f"2. Add your first product watch: meijer watch add <UPC>")
+        print(f"3. Start monitoring prices: meijer watch refresh")
+    
+    def _load_existing_credentials(self) -> Optional[Dict[str, str]]:
+        """
+        Load existing email credentials if available.
+        
+        Returns
+        -------
+        Optional[Dict[str, str]]
+            Dictionary with username and password, or None if not available
+        """
+        try:
+            from meijer.auth import get_meijer_config_path
+            email_auth_path = Path(get_meijer_config_path("email.txt"))
+            if email_auth_path.exists():
+                with open(email_auth_path, 'r') as f:
+                    content = f.read()
+                
+                username = None
+                password = None
+                
+                for line in content.split('\n'):
+                    line = line.strip()
+                    if line.startswith('username='):
+                        username = line.split('=', 1)[1]
+                    elif line.startswith('password='):
+                        password = line.split('=', 1)[1]
+                
+                if username and password:
+                    return {'username': username, 'password': password}
+        except Exception as e:
+            self.logger.debug(f"Could not load existing email auth: {e}")
+        
+        return None
+    
     def validate_config(self) -> bool:
         """
         Validate the email configuration.

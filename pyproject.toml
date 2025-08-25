@@ -67,6 +67,14 @@ where = ["."]
 [tool.setuptools.exclude-package-data]
 "*" = ["*.pyc", "*.pyo", "__pycache__", "*.egg-info", ".git*", ".vscode*", "venv*", "tests*", "examples*", "demos*", "tools*", "notebooks*", "htmlcov*", ".pytest_cache*", ".mypy_cache*", ".coverage*"]
 
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "meijer/_version.py"
+versionfile_build = "meijer/_version.py"
+tag_prefix = "v"
+parentdir_prefix = "meijer-"
+
 
 
 

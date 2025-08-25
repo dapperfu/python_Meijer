@@ -550,26 +550,47 @@ def export_watches(file_path: Path, active_only: bool):
     is_flag=True,
     help="Overwrite existing configuration"
 )
-def setup_email_config(force: bool):
+@click.option(
+    "--template",
+    "-t",
+    is_flag=True,
+    help="Create template file instead of interactive setup"
+)
+def setup_email_config(force: bool, template: bool):
     """
-    Create email configuration template for price alerts.
+    Create email configuration for price alerts.
+    
+    By default, runs interactive setup to collect all required information.
+    Use --template to create a template file instead.
     
     Examples:
-        meijer watch setup
-        meijer watch setup --force
+        meijer watch setup                    # Interactive setup
+        meijer watch setup --template         # Create template file
+        meijer watch setup --force            # Overwrite existing config
     """
     try:
-        if force:
-            console.print("🔄 [yellow]Creating email configuration template (overwriting existing)...[/yellow]")
+        if template:
+            if force:
+                console.print("🔄 [yellow]Creating email configuration template (overwriting existing)...[/yellow]")
+            else:
+                console.print("📧 [blue]Creating email configuration template...[/blue]")
+            
+            create_email_config_template(force=force)
+            
+            console.print("\n📝 [green]Next steps:[/green]")
+            console.print("1. Edit the created email.toml file with your server details")
+            console.print("2. For Gmail, generate an 'App Password' in your Google Account settings")
+            console.print("3. Test the configuration with: meijer watch test-email")
         else:
-            console.print("📧 [blue]Creating email configuration template...[/blue]")
-        
-        create_email_config_template(force=force)
-        
-        console.print("\n📝 [green]Next steps:[/green]")
-        console.print("1. Edit the created email.toml file with your server details")
-        console.print("2. For Gmail, generate an 'App Password' in your Google Account settings")
-        console.print("3. Test the configuration with: meijer watch test-email")
+            if force:
+                console.print("🔄 [yellow]Running interactive email setup (overwriting existing)...[/yellow]")
+            else:
+                console.print("📧 [blue]Running interactive email setup...[/blue]")
+            
+            # Import and run interactive setup
+            from ..price_watch.email_config import EmailConfig
+            email_config = EmailConfig()
+            email_config.create_interactive_config(force=force)
         
     except Exception as e:
         console.print(f"❌ [red]Failed to create email configuration: {e}[/red]")

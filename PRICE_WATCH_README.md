@@ -56,9 +56,11 @@ First, set up email notifications:
 meijer watch setup
 ```
 
-This creates a template email configuration file at `~/.config/meijer/email.toml`. Edit it with your SMTP server details.
+This runs an interactive setup that prompts for all required information and creates a complete configuration file at `~/.config/meijer/email.toml`.
 
 **Note:** The system will automatically try to load existing email credentials from `~/.config/meijer/email.txt` if available.
+
+**Alternative:** Use `meijer watch setup --template` to create a template file that you can edit manually.
 
 ### 2. Add Your First Watch
 
@@ -262,16 +264,26 @@ meijer watch export all_watches.csv --no-active-only
 
 ### `meijer watch setup [OPTIONS]`
 
-Create email configuration template for price alerts.
+Create email configuration for price alerts.
 
 **Options:**
 - `--force, -f`: Overwrite existing configuration
+- `--template, -t`: Create template file instead of interactive setup
 
 **Examples:**
 ```bash
-meijer watch setup
-meijer watch setup --force
+meijer watch setup                    # Interactive setup (default)
+meijer watch setup --template         # Create template file
+meijer watch setup --force            # Overwrite existing config
 ```
+
+**Interactive Setup:**
+The interactive setup will prompt you for:
+- Email provider (Gmail, DreamHost, or Custom SMTP)
+- Email address and password
+- Recipient email for alerts
+- Email preferences (subject prefix, unsubscribe hints)
+- Automatically loads existing credentials from `~/.config/meijer/email.txt` if available
 
 ### `meijer watch test-email [OPTIONS]`
 
