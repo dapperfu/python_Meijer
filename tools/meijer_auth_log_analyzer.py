@@ -307,6 +307,11 @@ class MeijerAuthLogAnalyzer:
                 import time
                 tokens['extracted_at'] = time.time()
             
+            # Add the token in the simple format the client expects
+            if 'bearer' not in tokens and tokens.get('access_token'):
+                tokens['bearer'] = tokens['access_token']
+                logger.info("✅ Added token in simple 'bearer' format for compatibility")
+            
             # Ensure the directory exists
             auth_dir = os.path.dirname(self.auth_file)
             if auth_dir and not os.path.exists(auth_dir):

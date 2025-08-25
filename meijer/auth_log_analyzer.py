@@ -295,6 +295,11 @@ class MeijerAuthLogAnalyzer:
                 import time
                 tokens['extracted_at'] = time.time()
             
+            # Add the token in the simple format the client expects
+            if 'bearer' not in tokens and tokens.get('access_token'):
+                tokens['bearer'] = tokens['access_token']
+                logger.info("✅ Added token in simple 'bearer' format for compatibility")
+            
             # Save to auth.json
             with open(self.auth_file, 'w') as f:
                 json.dump(tokens, f, indent=2)
