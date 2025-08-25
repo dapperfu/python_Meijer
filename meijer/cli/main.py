@@ -36,6 +36,7 @@ from .commands import (
     settings_group,
     stores_group,
 )
+from .price_watch_commands import price_watch_group
 
 
 def setup_logging(verbosity: int) -> None:
@@ -101,6 +102,7 @@ def cli(ctx: click.Context, verbose: int, proxy: str, local: bool):
     • settings - Manage account settings and preferences
     • email-2fa - Manage email 2FA configuration and testing
     • auth - Manage authentication (login, logout, status, log extraction, email setup)
+    • watch - Manage price watches and alerts
     • ads - Browse weekly ad items
     • gas - Show gas station information
     """
@@ -129,6 +131,7 @@ cli.add_command(cart_group, name="cart")
 cli.add_command(stores_group, name="stores")
 cli.add_command(settings_group, name="settings")
 cli.add_command(email_2fa_group, name="email-2fa")
+cli.add_command(price_watch_group, name="watch")
 
 # Add individual commands with cleaner names
 cli.add_command(auth_group, name="auth")

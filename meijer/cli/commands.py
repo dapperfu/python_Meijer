@@ -529,6 +529,52 @@ def list_clear():
         raise click.ClickException(f"❌ Failed to clear completed items: {e}")
 
 
+@list_group.command("clearall")
+@click.confirmation_option(
+    prompt="⚠️  Are you sure you want to clear ALL items? This cannot be undone!"
+)
+def list_clearall():
+    """Clear all items from shopping list (completed and pending)."""
+    client = get_meijer_client()
+
+    try:
+        items = client.list.get()
+        if not items:
+            click.echo("📝 Shopping list is already empty!")
+            return
+
+        click.echo(f"🗑️  Clearing ALL {len(items)} items...")
+
+        # Mark everything as complete first, then clear
+        click.echo("📝 Marking all items as complete...")
+        completed_count = 0
+        for item in items:
+            if not item.checked:
+                if client.list.complete_item(str(item.list_item_id)):
+                    completed_count += 1
+                    click.echo(f"  ✅ Marked complete: {item.name}")
+                else:
+                    click.echo(f"  ❌ Failed to mark complete: {item.name}")
+
+        click.echo(f"📊 Marked {completed_count} items as complete")
+
+        # Now clear all completed items
+        click.echo("🗑️  Clearing all completed items...")
+        all_items = client.list.get()  # Get updated list
+        deleted_count = 0
+        for item in all_items:
+            if client.list.delete_item(str(item.list_item_id)):
+                deleted_count += 1
+                click.echo(f"  ✅ Deleted: {item.name}")
+            else:
+                click.echo(f"  ❌ Failed to delete: {item.name}")
+
+        click.echo(f"\n📊 Cleared {deleted_count} items total")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to clear all items: {e}")
+
+
 
 
 
