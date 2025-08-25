@@ -8,7 +8,6 @@ and helps identify why GET requests are being made instead of POST.
 
 import sys
 import requests
-import json
 from pathlib import Path
 
 # Add the meijer package to the path

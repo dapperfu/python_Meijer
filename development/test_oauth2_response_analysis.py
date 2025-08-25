@@ -137,7 +137,7 @@ def analyze_oauth2_response():
         # Save the response for manual inspection
         with open('oauth2_response.html', 'w') as f:
             f.write(content)
-        print(f"\n💾 OAuth2 response saved to oauth2_response.html for manual inspection")
+        print("\n💾 OAuth2 response saved to oauth2_response.html for manual inspection")
         
     else:
         print(f"   ❌ OAuth2 request failed: {oauth_response.status_code}")

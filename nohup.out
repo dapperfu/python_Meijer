@@ -127,3 +127,8 @@ ATTENTION: default value of option mesa_glthread overridden by environment.
 [90m[main 2025-08-25T15:50:24.970Z][0m update#setState checking for updates
 [90m[main 2025-08-25T15:50:25.135Z][0m update#setState idle
 [93m[main 2025-08-25T16:25:30.024Z][0m No ptyHost heartbeat after 6 seconds
+[90m[main 2025-08-25T16:50:24.972Z][0m update#setState checking for updates
+[90m[main 2025-08-25T16:50:25.151Z][0m update#setState idle
+[90m[main 2025-08-25T17:50:24.975Z][0m update#setState checking for updates
+[90m[main 2025-08-25T17:50:25.133Z][0m update#setState idle
+ATTENTION: default value of option mesa_glthread overridden by environment.

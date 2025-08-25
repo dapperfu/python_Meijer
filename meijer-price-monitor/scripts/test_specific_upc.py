@@ -214,7 +214,7 @@ def test_backup_and_export():
     backup_result = monitor.create_backup()
     
     if backup_result['status'] == 'success':
-        print(f"   ✅ Backup created successfully!")
+        print("   ✅ Backup created successfully!")
         print(f"   📁 Backup directory: {backup_result['backup_directory']}")
         print(f"   📊 Backup size: {backup_result['backup_size_mb']:.2f} MB")
         print(f"   ⏰ Timestamp: {backup_result['backup_timestamp']}")
@@ -226,7 +226,7 @@ def test_backup_and_export():
     export_result = monitor.export_data("price_drops", {"min_drop_percent": 5.0, "days": 7})
     
     if export_result['export_file']:
-        print(f"   ✅ Data exported successfully!")
+        print("   ✅ Data exported successfully!")
         print(f"   📁 Export file: {export_result['export_file']}")
         print(f"   📊 Records exported: {export_result['records_exported']}")
         print(f"   ⏰ Timestamp: {export_result['timestamp']}")
@@ -268,8 +268,8 @@ def main():
         print("\n📋 Test Summary:")
         print(f"  • Enhanced search: ✅ {len(search_results) if search_results else 0} products found")
         print(f"  • Price verification: ✅ Tested across {len(verification_results)} stores")
-        print(f"  • Storage statistics: ✅ Retrieved successfully")
-        print(f"  • Database operations: ✅ All operations completed")
+        print("  • Storage statistics: ✅ Retrieved successfully")
+        print("  • Database operations: ✅ All operations completed")
         print(f"  • Backup creation: ✅ {'Success' if backup_result['status'] == 'success' else 'Failed'}")
         print(f"  • Data export: ✅ {'Success' if export_result['export_file'] else 'Failed'}")
         

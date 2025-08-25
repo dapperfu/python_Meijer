@@ -3,11 +3,8 @@
 Test script that starts with Meijer homepage to establish session before OAuth2.
 """
 
-import json
 import time
 import re
-from urllib.parse import urlparse, parse_qs
-from typing import Dict, Any, Optional
 import requests
 import logging
 

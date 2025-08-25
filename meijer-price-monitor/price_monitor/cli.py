@@ -35,7 +35,6 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Prompt, Confirm
-from rich.text import Text
 
 from .core import PriceMonitor
 
@@ -179,7 +178,7 @@ def init(data_dir: Optional[str]):
         )
         
         # Confirm setup
-        console.print(f"\n[bold]Configuration Summary:[/bold]")
+        console.print("\n[bold]Configuration Summary:[/bold]")
         console.print(f"  • Search: {search_query}")
         console.print(f"  • Location: {location}")
         console.print(f"  • Radius: {radius_int} miles")
@@ -432,7 +431,7 @@ def verify_prices(upcs: str, store_id: str, data_dir: Optional[str], verbose: in
         console.print(table)
         console.print(f"\n✅ Price verification completed for {len(upc_list)} products")
     else:
-        console.print(f"❌ No verification results returned")
+        console.print("❌ No verification results returned")
 
 
 @cli.command()
@@ -495,7 +494,7 @@ def backup(data_dir: Optional[str], verbose: int):
         backup_result = monitor.create_backup()
     
     if backup_result['status'] == 'success':
-        console.print(f"✅ Backup created successfully!")
+        console.print("✅ Backup created successfully!")
         console.print(f"📁 Backup directory: {backup_result['backup_directory']}")
         console.print(f"📊 Backup size: {backup_result['backup_size_mb']:.2f} MB")
         console.print(f"⏰ Timestamp: {backup_result['backup_timestamp']}")
@@ -549,7 +548,7 @@ def export(data_dir: Optional[str], verbose: int):
         export_result = monitor.export_data(export_type, filters, "json")
     
     if export_result['export_file']:
-        console.print(f"✅ Data exported successfully!")
+        console.print("✅ Data exported successfully!")
         console.print(f"📁 Export file: {export_result['export_file']}")
         console.print(f"📊 Records exported: {export_result['records_exported']}")
         console.print(f"⏰ Timestamp: {export_result['timestamp']}")
@@ -881,7 +880,7 @@ def analyze(min_drop: float, sort_by: str):
         total_savings = sum(drop.price_drop for drop in price_drops)
         avg_drop_percent = sum(drop.price_drop_percent for drop in price_drops) / len(price_drops)
         
-        console.print(f"\n[bold]Summary:[/bold]")
+        console.print("\n[bold]Summary:[/bold]")
         console.print(f"  • Total potential savings: [bold green]${total_savings:.2f}[/bold green]")
         console.print(f"  • Average price drop: [bold red]{avg_drop_percent:.1f}%[/bold red]")
         console.print(f"  • Products on clearance: [bold yellow]{sum(1 for d in price_drops if d.is_clearance)}[/bold yellow]")
@@ -907,7 +906,7 @@ def verify(upc: str, store_id: str, expected_price: Optional[float]):
             console.print(f"\n[bold red]Failed to verify price for UPC {upc} at store {store_id}[/bold red]")
             return
         
-        console.print(f"\n[bold green]✅ Price Verification Complete[/bold green]")
+        console.print("\n[bold green]✅ Price Verification Complete[/bold green]")
         console.print(f"UPC: [bold]{upc}[/bold]")
         console.print(f"Store: [bold]{store_id}[/bold]")
         
@@ -936,12 +935,12 @@ def verify(upc: str, store_id: str, expected_price: Optional[float]):
             price_diff = verification.current_price - expected_price
             price_diff_percent = (price_diff / expected_price) * 100
             
-            console.print(f"\n[bold]Price Comparison:[/bold]")
+            console.print("\n[bold]Price Comparison:[/bold]")
             console.print(f"Expected: [bold]${expected_price:.2f}[/bold]")
             console.print(f"Actual: [bold]${verification.current_price:.2f}[/bold]")
             
             if price_diff == 0:
-                console.print(f"Difference: [bold green]No change[/bold green]")
+                console.print("Difference: [bold green]No change[/bold green]")
             elif price_diff < 0:
                 console.print(f"Difference: [bold green]${abs(price_diff):.2f} lower ({abs(price_diff_percent):.1f}% savings)[/bold green]")
             else:
@@ -1042,18 +1041,18 @@ def run_initial_scan(price_monitor: PriceMonitor, monitor_id: str) -> None:
 
 def display_scan_results(results: dict) -> None:
     """Display the results of a price monitoring scan."""
-    console.print(f"\n[bold green]✅ Scan completed successfully![/bold green]")
+    console.print("\n[bold green]✅ Scan completed successfully![/bold green]")
     console.print(f"Products found: [bold]{results['products_found']}[/bold]")
     console.print(f"Stores scanned: [bold]{results['stores_scanned']}[/bold]")
     
     if results['errors']:
-        console.print(f"\n[bold red]Errors encountered:[/bold red]")
+        console.print("\n[bold red]Errors encountered:[/bold red]")
         for error in results['errors']:
             console.print(f"  • {error}")
     
     if results['price_records']:
         # Show sample of products found
-        console.print(f"\n[bold]Sample products found:[/bold]")
+        console.print("\n[bold]Sample products found:[/bold]")
         
         table = Table(title="Sample Products")
         table.add_column("Product Name", style="cyan", no_wrap=True)

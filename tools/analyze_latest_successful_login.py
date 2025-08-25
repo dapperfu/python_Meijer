@@ -5,9 +5,7 @@ This script will extract the complete workflow including all headers, cookies, a
 """
 
 import json
-import os
 from pathlib import Path
-from typing import List, Dict, Any, Optional
 
 def analyze_latest_log():
     """Analyze the latest log file for successful login/logout events."""

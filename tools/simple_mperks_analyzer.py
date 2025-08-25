@@ -5,10 +5,9 @@ Simple analyzer for mPerks history flows in mitmproxy logs.
 This script directly reads the log file and searches for mPerks-related flows.
 """
 
-import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 
 def analyze_mperks_flows(log_file_path: str) -> List[Dict[str, Any]]:

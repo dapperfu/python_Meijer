@@ -7,7 +7,7 @@ This tool focuses on finding the email-based 2FA authentication sequence.
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 
 def find_2fa_email_flow():

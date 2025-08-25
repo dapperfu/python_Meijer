@@ -10,9 +10,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meijer.client import Meijer
-from meijer.shop_scan import ShopNScan
-from meijer.cart import MeijerCart, CartItem
+from meijer.cart import CartItem
 
 
 def demo_bogo_detection():

@@ -18,9 +18,7 @@ Context: Demo script for dual-path Firefox launcher
 
 import os
 import sys
-import time
 import logging
-from pathlib import Path
 
 # Add the tools directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -142,7 +140,7 @@ def demo_profile_sharing():
         for key, value in profile_info.items():
             print(f"  {key}: {value}")
         
-        print(f"\n💡 Both regular Firefox and Selenium will use this profile:")
+        print("\n💡 Both regular Firefox and Selenium will use this profile:")
         print(f"   {profile_manager.get_profile_path()}")
         print("\n🔑 This means:")
         print("  • Login sessions are shared between both methods")

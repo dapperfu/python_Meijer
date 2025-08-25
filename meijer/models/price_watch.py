@@ -23,10 +23,9 @@ The database tracks products, stores, price history, watches, alerts, and notifi
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, List
+from typing import Optional
 
 from pony.orm import *
-from datetime import datetime
 
 # Database binding - will be set by the database manager
 db = Database()

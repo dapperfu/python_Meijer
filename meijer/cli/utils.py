@@ -5,7 +5,6 @@ This module contains helper functions used across the CLI commands.
 """
 
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TextIO

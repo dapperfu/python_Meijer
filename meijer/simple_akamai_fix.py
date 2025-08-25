@@ -6,7 +6,7 @@ This module provides a minimal solution that only fixes the Akamai blocking
 on the /idp/idx/identify endpoint during login, without affecting other API calls.
 """
 
-from typing import Dict, Optional
+from typing import Dict
 import requests
 
 
@@ -92,6 +92,6 @@ if __name__ == "__main__":
     
     # Test the headers
     headers = get_mobile_app_headers()
-    print(f"\n📋 Mobile App Headers:")
+    print("\n📋 Mobile App Headers:")
     for key, value in headers.items():
         print(f"  {key}: {value[:60]}{'...' if len(value) > 60 else ''}")

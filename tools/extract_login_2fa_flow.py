@@ -7,8 +7,7 @@ This tool focuses on finding the complete authentication workflow.
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from collections import defaultdict
+from typing import Dict, Any
 
 
 def extract_login_2fa_flow():

@@ -27,8 +27,6 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 
 import toml
 
@@ -253,10 +251,10 @@ class EmailConfig:
         existing_credentials = self._load_existing_credentials()
         
         # Email credentials first (needed for provider detection)
-        print(f"\n📧 Email Account Details")
+        print("\n📧 Email Account Details")
         print("-" * 25)
         
-        username = input(f"Email address: ").strip()
+        username = input("Email address: ").strip()
         if not username:
             if existing_credentials and existing_credentials.get('username'):
                 username = existing_credentials['username']
@@ -321,10 +319,10 @@ class EmailConfig:
             }
         
         # Email credentials
-        print(f"\n📧 Email Account Details")
+        print("\n📧 Email Account Details")
         print("-" * 25)
         
-        username = input(f"Email address: ").strip()
+        username = input("Email address: ").strip()
         if not username:
             if existing_credentials and existing_credentials.get('username'):
                 username = existing_credentials['username']
@@ -346,14 +344,14 @@ class EmailConfig:
         recipient = input(f"Send alerts to (default: {username}): ").strip() or username
         
         # Email preferences
-        print(f"\n⚙️ Email Preferences")
+        print("\n⚙️ Email Preferences")
         print("-" * 20)
         
         subject_prefix = input("Email subject prefix (default: 'Meijer price alert:'): ").strip() or 'Meijer price alert:'
         unsubscribe_hint = input("Include unsubscribe instructions? (y/n, default y): ").strip().lower() != 'n'
         
         # Verification settings for 2FA
-        print(f"\n🔐 Email Verification Settings (for 2FA)")
+        print("\n🔐 Email Verification Settings (for 2FA)")
         print("-" * 40)
         
         search_subject = input("Search subject for verification emails (default: 'verification'): ").strip() or 'verification'
@@ -406,11 +404,11 @@ class EmailConfig:
         self.save_config()
         
         print(f"\n✅ Consolidated configuration saved to: {self.config_path}")
-        print(f"   This file contains all your Meijer CLI settings!")
-        print(f"\n📝 Next steps:")
-        print(f"1. Test your configuration: meijer watch test-email")
-        print(f"2. Add your first product watch: meijer watch add <UPC>")
-        print(f"3. Start monitoring prices: meijer watch refresh")
+        print("   This file contains all your Meijer CLI settings!")
+        print("\n📝 Next steps:")
+        print("1. Test your configuration: meijer watch test-email")
+        print("2. Add your first product watch: meijer watch add <UPC>")
+        print("3. Start monitoring prices: meijer watch refresh")
     
     def _load_existing_credentials(self) -> Optional[Dict[str, str]]:
         """
@@ -892,18 +890,18 @@ class EmailSender:
             
             html_parts.extend([
                 "<div class='alert'>",
-                f"<div class='product-info'>",
+                "<div class='product-info'>",
                 f"<strong>{alert.get('product_name', 'Unknown Product')}</strong>",
                 f"<br>Identifier: {alert.get('identifier', 'Unknown')} ({alert.get('id_type', 'Unknown')})",
                 "</div>",
-                f"<div class='price'>",
+                "<div class='price'>",
                 f"New Price: ${alert.get('new_price', '0.00')}",
                 "</div>",
                 f"<div class='delta {delta_class}'>",
                 f"Change: {delta_sign}${alert.get('delta_amount', '0.00')}",
                 f" ({alert.get('reason', 'Unknown')})",
                 "</div>",
-                f"<div class='store-info'>",
+                "<div class='store-info'>",
                 f"Store: {alert.get('store_name', 'Unknown')}",
                 f"<br>Observed: {alert.get('observed_at', 'Unknown')}",
                 f"<br>Source: {alert.get('source', 'Unknown')}",

@@ -12,9 +12,9 @@ import base64
 import hashlib
 import secrets
 from urllib.parse import urlencode
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -282,7 +282,7 @@ class AkamaiBotDetectionAnalysis:
             }
         }
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Duration: {end_time - start_time:.3f}s")
         logger.info(f"   Cookies: {len(self.session.cookies)}")
@@ -325,7 +325,7 @@ class AkamaiBotDetectionAnalysis:
             }
         }
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Duration: {end_time - start_time:.3f}s")
         logger.info(f"   Cookies: {len(self.session.cookies)}")
@@ -393,7 +393,7 @@ class AkamaiBotDetectionAnalysis:
             logger.error(f"❌ Nonce request failed: {response.status_code}")
             analysis['error_response'] = response.text[:500]
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Duration: {end_time - start_time:.3f}s")
         logger.info(f"   Content Length: {len(response.content)}")
@@ -455,7 +455,7 @@ class AkamaiBotDetectionAnalysis:
             }
         }
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Duration: {end_time - start_time:.3f}s")
         logger.info(f"   Content Length: {len(response.content)}")
@@ -540,7 +540,7 @@ class AkamaiBotDetectionAnalysis:
         timing = bot_analysis.get('timing_patterns', {})
         if 'suspicious_patterns' in timing:
             sp = timing['suspicious_patterns']
-            logger.info(f"⏱️ Timing Analysis:")
+            logger.info("⏱️ Timing Analysis:")
             logger.info(f"   Regular intervals: {sp.get('too_regular_intervals', 0)}/{sp.get('total_transitions', 0)}")
             logger.info(f"   Regularity: {sp.get('regularity_percentage', 0):.1f}%")
             if sp.get('regularity_percentage', 0) > 50:
@@ -549,12 +549,12 @@ class AkamaiBotDetectionAnalysis:
         # Session context
         session = bot_analysis.get('session_context', {})
         if 'risk_factors' in session:
-            logger.info(f"🚨 Risk Factors:")
+            logger.info("🚨 Risk Factors:")
             for risk in session.get('risk_factors', []):
                 logger.warning(f"   ⚠️ {risk}")
         
         if 'recommendations' in session:
-            logger.info(f"💡 Recommendations:")
+            logger.info("💡 Recommendations:")
             for rec in session.get('recommendations', []):
                 logger.info(f"   💡 {rec}")
     

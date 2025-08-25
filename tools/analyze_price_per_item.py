@@ -10,7 +10,7 @@ import sys
 import re
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 def extract_cart_progression(content: str, upc: str) -> List[Dict[str, Any]]:
@@ -106,7 +106,7 @@ def analyze_price_per_item_changes(log_file_path: str, target_upcs: List[str]) -
                 results[upc] = {'cart_steps': cart_steps}
                 
                 if cart_steps:
-                    print(f"\n📊 CART PROGRESSION WITH PRICE PER ITEM:")
+                    print("\n📊 CART PROGRESSION WITH PRICE PER ITEM:")
                     print(f"{'Step':<4} {'Cart Total':<12} {'Items Added':<12} {'Price/Item':<12} {'Total Items':<12}")
                     print("-" * 70)
                     
@@ -114,7 +114,7 @@ def analyze_price_per_item_changes(log_file_path: str, target_upcs: List[str]) -
                         print(f"{step['step']:<4} ${step['cart_now']:<11.2f} ${step['items_added']:<11.2f} ${step['price_per_item']:<11.2f} {step['total_items']:<12}")
                     
                     # Analyze price per item changes
-                    print(f"\n💰 PRICE PER ITEM ANALYSIS:")
+                    print("\n💰 PRICE PER ITEM ANALYSIS:")
                     
                     if len(cart_steps) > 1:
                         for i in range(1, len(cart_steps)):
@@ -138,17 +138,17 @@ def analyze_price_per_item_changes(log_file_path: str, target_upcs: List[str]) -
                                     
                                     # Check for specific pricing thresholds
                                     if total_items == 5 and price_per_item == 2.99:
-                                        print(f"    → BINGO! Hit 5-item threshold - price dropped to $2.99!")
+                                        print("    → BINGO! Hit 5-item threshold - price dropped to $2.99!")
                                     elif total_items == 4 and price_per_item < 3.99:
-                                        print(f"    → Hit 4-item threshold - price dropped!")
+                                        print("    → Hit 4-item threshold - price dropped!")
                                     elif total_items == 2 and price_per_item < 3.99:
-                                        print(f"    → Hit 2-item threshold - price dropped!")
+                                        print("    → Hit 2-item threshold - price dropped!")
                 
                 # Look for quantity patterns in the content
                 quantity_matches = re.findall(r'"quantityWeight":([\d.]+).*?"pricingText":"([^"]+)"', content_str)
                 
                 if quantity_matches:
-                    print(f"\n📦 QUANTITY PATTERNS FOUND:")
+                    print("\n📦 QUANTITY PATTERNS FOUND:")
                     for qty, pricing in quantity_matches:
                         print(f"  Quantity: {qty} - {pricing}")
                 
@@ -205,11 +205,11 @@ def generate_price_summary(results: Dict[str, Dict[str, Any]]) -> None:
                     
                     # Classify the drop
                     if drop['total_items'] == 5 and drop['new_price'] == 2.99:
-                        print(f"    → This is the 5-item threshold drop for LPC LITTLE REDS!")
+                        print("    → This is the 5-item threshold drop for LPC LITTLE REDS!")
                     elif drop['total_items'] == 4:
-                        print(f"    → 4-item threshold pricing drop")
+                        print("    → 4-item threshold pricing drop")
                     elif drop['total_items'] == 2:
-                        print(f"    → 2-item threshold pricing drop")
+                        print("    → 2-item threshold pricing drop")
             else:
                 print("No clear pricing drops found in cart progression")
 
@@ -226,7 +226,7 @@ def main():
         "070896523112", "713733252843", "016000275263", "046100001899"
     ]
     
-    print(f"Price Per Item Analysis")
+    print("Price Per Item Analysis")
     print(f"Log file: {log_file}")
     print(f"Target UPCs: {', '.join(target_upcs)}")
     

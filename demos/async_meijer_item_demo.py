@@ -13,7 +13,6 @@ The demo shows both the factory function and class method approaches.
 
 import asyncio
 import logging
-from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -86,7 +85,7 @@ async def demo_async_meijer_item():
         # Combine all items
         all_items = items_factory + items_class + items_direct
         
-        print(f"\n3. 🔍 Testing async data population...")
+        print("\n3. 🔍 Testing async data population...")
         
         # Test async price population
         for i, item in enumerate(all_items):
@@ -106,13 +105,13 @@ async def demo_async_meijer_item():
             except Exception as e:
                 print(f"      ❌ Population failed: {e}")
         
-        print(f"\n4. 📊 Summary")
+        print("\n4. 📊 Summary")
         print(f"   Total items created: {len(all_items)}")
         print(f"   Items with prices: {sum(1 for item in all_items if item.price is not None)}")
         print(f"   Items with brands: {sum(1 for item in all_items if item.brand is not None)}")
         
         # Demonstrate the fallback strategy
-        print(f"\n5. 🔄 Fallback Strategy Demo")
+        print("\n5. 🔄 Fallback Strategy Demo")
         print("   The system automatically tries:")
         print("   1. Search API (fastest)")
         print("   2. Shop'n'Scan (medium speed)")
@@ -216,7 +215,7 @@ price = await item.populated_price  # Triggers fallback strategy
     for i, example in enumerate(examples, 1):
         print(f"\n{i}. {example['title']}")
         print(f"   {example['description']}")
-        print(f"   Code:")
+        print("   Code:")
         print(f"   {example['code']}")
 
 

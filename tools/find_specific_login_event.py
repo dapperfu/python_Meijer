@@ -7,8 +7,7 @@ This tool filters out all other traffic to focus on just the authentication sequ
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from collections import defaultdict
+from typing import Dict, Any
 
 
 def find_specific_login_event():
@@ -227,7 +226,7 @@ def display_login_sequence(login_sequence: Dict[str, Any]) -> None:
         else:
             found_stages.append(f"{stage}: NOT FOUND")
     
-    print(f"\n📊 Login sequence status:")
+    print("\n📊 Login sequence status:")
     for stage in found_stages:
         print(f"   • {stage}")
     

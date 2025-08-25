@@ -34,7 +34,7 @@ def demo_import_export():
         print(f"Initial state: {stats['clipped']} clipped, {stats['available']} available")
         
         # Demo 1: Export clipped coupons
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 1: EXPORT CLIPPED COUPONS")
         print("="*50)
         
@@ -43,7 +43,7 @@ def demo_import_export():
         print(f"✓ Exported {stats['clipped']} clipped coupons to {clipped_file}")
         
         # Demo 2: Create a complete backup
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 2: CREATE COMPLETE BACKUP")
         print("="*50)
         
@@ -52,7 +52,7 @@ def demo_import_export():
         print(f"✓ Created complete backup: {backup_file}")
         
         # Demo 3: Share coupons with friends (lightweight format)
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 3: SHARE COUPONS WITH FRIENDS")
         print("="*50)
         
@@ -66,7 +66,7 @@ def demo_import_export():
         print(f"✓ Created full metadata share file: {share_file_full}")
         
         # Demo 4: Clear all clipped coupons
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 4: CLEAR ALL CLIPPED COUPONS")
         print("="*50)
         
@@ -82,7 +82,7 @@ def demo_import_export():
         print(f"New state: {new_stats['clipped']} clipped, {new_stats['available']} available")
         
         # Demo 5: Restore from backup
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 5: RESTORE FROM BACKUP")
         print("="*50)
         
@@ -94,7 +94,7 @@ def demo_import_export():
         print(f"Restored state: {restored_stats['clipped']} clipped, {restored_stats['available']} available")
         
         # Demo 6: Import shared coupons
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 6: IMPORT SHARED COUPONS")
         print("="*50)
         
@@ -107,7 +107,7 @@ def demo_import_export():
         print(f"Final state: {final_stats['clipped']} clipped, {final_stats['available']} available")
         
         # Demo 7: Department-specific exports
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 7: DEPARTMENT-SPECIFIC EXPORTS")
         print("="*50)
         
@@ -130,7 +130,7 @@ def demo_import_export():
         print(f"✓ Exported {len(baby_coupons)} Baby coupons to {baby_file}")
         
         # Demo 8: File management
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("DEMO 8: FILE MANAGEMENT")
         print("="*50)
         
@@ -149,27 +149,27 @@ def demo_import_export():
                 print(f"  ✗ {file} (not found)")
         
         # Summary
-        print(f"\n" + "="*70)
+        print("\n" + "="*70)
         print("IMPORT/EXPORT DEMO COMPLETE!")
         print("="*70)
         
-        print(f"\nWhat you can now do:")
-        print(f"  1. Share your clipped coupons with friends using the share files")
-        print(f"  2. Clear all clipped coupons and start fresh")
-        print(f"  3. Restore your previous coupon selections from backups")
-        print(f"  4. Import coupons shared by others")
-        print(f"  5. Export specific departments for focused shopping")
+        print("\nWhat you can now do:")
+        print("  1. Share your clipped coupons with friends using the share files")
+        print("  2. Clear all clipped coupons and start fresh")
+        print("  3. Restore your previous coupon selections from backups")
+        print("  4. Import coupons shared by others")
+        print("  5. Export specific departments for focused shopping")
         
-        print(f"\nKey methods available:")
-        print(f"  - client.coupons.export_clipped_coupons('file.json')")
-        print(f"  - client.coupons.backup_and_clear('backup.json')")
-        print(f"  - client.coupons.restore_from_backup('backup.json')")
-        print(f"  - client.coupons.share_clipped_coupons('share.json')")
-        print(f"  - client.coupons.import_shared_coupons('share.json')")
+        print("\nKey methods available:")
+        print("  - client.coupons.export_clipped_coupons('file.json')")
+        print("  - client.coupons.backup_and_clear('backup.json')")
+        print("  - client.coupons.restore_from_backup('backup.json')")
+        print("  - client.coupons.share_clipped_coupons('share.json')")
+        print("  - client.coupons.import_shared_coupons('share.json')")
         
     except Exception as e:
         print(f"Error during demo: {e}")
-        print(f"Make sure you're authenticated with the Meijer client")
+        print("Make sure you're authenticated with the Meijer client")
 
 
 def cleanup_demo_files():
@@ -190,7 +190,7 @@ def cleanup_demo_files():
     
     all_files = demo_files + backup_files
     
-    print(f"\nCleaning up demo files...")
+    print("\nCleaning up demo files...")
     for file in all_files:
         if os.path.exists(file):
             try:
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     demo_import_export()
     
     # Ask if user wants to clean up
-    print(f"\n" + "="*50)
+    print("\n" + "="*50)
     cleanup = input("Clean up demo files? (y/n): ").lower().strip()
     if cleanup in ['y', 'yes']:
         cleanup_demo_files()

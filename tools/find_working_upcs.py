@@ -84,7 +84,7 @@ def find_working_upcs():
                 else:
                     print(f"    ${product['price']}")
             
-            print(f"\n💡 You can now test these UPCs with:")
+            print("\n💡 You can now test these UPCs with:")
             print(f"   python scripts/test_upc_edge_cases.py {working_products[0]['upc']}")
             
         else:

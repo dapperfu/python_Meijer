@@ -8,10 +8,8 @@ endpoints from mitmproxy log files.
 
 import json
 import subprocess
-import sys
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from collections import defaultdict
+from typing import Dict, Any
 
 
 def create_mitmdump_script() -> str:
@@ -164,7 +162,7 @@ def analyze_log_file(log_file: str) -> Dict[str, Any]:
             results['log_file'] = log_file
             return results
         except FileNotFoundError:
-            print(f"   ❌ No results file generated")
+            print("   ❌ No results file generated")
             return {}
             
     except Exception as e:
@@ -194,7 +192,7 @@ def main():
             all_results[log_file.name] = results
             print(f"   ✅ Found {results.get('summary', {}).get('total_unique_endpoints', 0)} endpoints")
         else:
-            print(f"   ❌ Failed to analyze")
+            print("   ❌ Failed to analyze")
     
     # Generate comprehensive report
     print("\n📊 Generating comprehensive report...")
@@ -232,8 +230,8 @@ def main():
     with open("proper_shop_scan_analysis.json", "w") as f:
         json.dump(comprehensive_report, f, indent=2, default=str)
     
-    print(f"\n✅ Analysis complete!")
-    print(f"📄 Comprehensive report saved to: proper_shop_scan_analysis.json")
+    print("\n✅ Analysis complete!")
+    print("📄 Comprehensive report saved to: proper_shop_scan_analysis.json")
     print(f"🔍 Found {len(comprehensive_report['analysis_summary']['total_unique_endpoints'])} unique endpoints")
     print(f"🏪 Found {comprehensive_report['analysis_summary']['total_shop_scan_endpoints']} total shop/scan endpoint calls")
     

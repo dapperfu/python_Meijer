@@ -22,7 +22,6 @@ import json
 import imaplib
 import email
 from typing import Dict, Any, Optional
-from urllib.parse import urlparse
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -184,7 +183,7 @@ def capture_auth_data(driver) -> Dict[str, Any]:
         except Exception as e:
             print(f"⚠️ Error extracting tokens: {e}")
         
-        print(f"✅ Authentication data captured:")
+        print("✅ Authentication data captured:")
         print(f"   Cookies: {len(cookie_dict)}")
         print(f"   URL: {current_url}")
         print(f"   Title: {page_title}")
@@ -224,7 +223,7 @@ def main():
     
     # Read credentials
     username, password = read_credentials()
-    print(f"🔐 Using credentials:")
+    print("🔐 Using credentials:")
     print(f"   Username: {username}")
     print(f"   Password: {'*' * len(password)}")
     print()
@@ -279,9 +278,9 @@ def main():
         # Start from the main Meijer homepage (this is the working flow)
         homepage_url = "https://www.meijer.com/index.html"
         
-        print(f"🔐 Starting from Meijer homepage:")
+        print("🔐 Starting from Meijer homepage:")
         print(f"   URL: {homepage_url}")
-        print(f"   Note: Following the exact working login flow")
+        print("   Note: Following the exact working login flow")
         
         driver.get(homepage_url)
         
@@ -581,7 +580,7 @@ def main():
         # Final status
         final_url = driver.current_url
         final_title = driver.title
-        print(f"🎉 Authentication flow completed!")
+        print("🎉 Authentication flow completed!")
         print(f"📄 Final URL: {final_url}")
         print(f"📄 Final title: {final_title}")
         

@@ -31,13 +31,11 @@ Based on the actual cart API endpoints found in mitmproxy logs.
 import sys
 import os
 import logging
-from typing import Optional
 
 # Add the project root to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from meijer.client import Meijer
-from meijer.exceptions import CartError, MeijerError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -75,7 +73,7 @@ def demo_cart_basic_operations(client: Meijer) -> None:
 
 def demo_add_item_to_cart(client: Meijer, upc: str, quantity: int = 1) -> None:
     """Demonstrate adding an item to cart."""
-    print(f"\n➕ === ADD ITEM TO CART DEMO ===")
+    print("\n➕ === ADD ITEM TO CART DEMO ===")
     print(f"Adding UPC: {upc}, Quantity: {quantity}")
     
     try:
@@ -115,7 +113,7 @@ def demo_add_item_to_cart(client: Meijer, upc: str, quantity: int = 1) -> None:
 
 def demo_update_item_quantity(client: Meijer, item_index: int, new_quantity: int) -> None:
     """Demonstrate updating item quantity."""
-    print(f"\n🔄 === UPDATE ITEM QUANTITY DEMO ===")
+    print("\n🔄 === UPDATE ITEM QUANTITY DEMO ===")
     print(f"Updating item {item_index} to quantity {new_quantity}")
     
     try:
@@ -163,7 +161,7 @@ def demo_update_item_quantity(client: Meijer, item_index: int, new_quantity: int
 
 def demo_remove_item_from_cart(client: Meijer, item_index: int) -> None:
     """Demonstrate removing an item from cart."""
-    print(f"\n🗑️ === REMOVE ITEM FROM CART DEMO ===")
+    print("\n🗑️ === REMOVE ITEM FROM CART DEMO ===")
     print(f"Removing item {item_index}")
     
     try:
@@ -215,7 +213,7 @@ def demo_remove_item_from_cart(client: Meijer, item_index: int) -> None:
 
 def demo_set_store(client: Meijer, store_id: str) -> None:
     """Demonstrate setting the store for cart operations."""
-    print(f"\n🏪 === SET STORE DEMO ===")
+    print("\n🏪 === SET STORE DEMO ===")
     print(f"Setting store to {store_id}")
     
     try:

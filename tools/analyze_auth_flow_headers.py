@@ -8,10 +8,8 @@ successful and failed authentication attempts.
 """
 
 import json
-import os
-import sys
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any, Optional
 from collections import defaultdict, Counter
 import re
 

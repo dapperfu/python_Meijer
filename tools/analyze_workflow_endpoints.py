@@ -16,11 +16,10 @@ for improving header spoofing to appear 100% like the Meijer app.
 import json
 import logging
 import os
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Any
+from typing import Dict, Any
 
 # Add the parent directory to the path to import meijer modules
 sys.path.append(str(Path(__file__).parent.parent))
@@ -494,19 +493,19 @@ def response(flow):
         print(f"⏰ Analysis Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Workflow endpoints summary
-        print(f"\n🔍 Workflow Endpoints Found:")
+        print("\n🔍 Workflow Endpoints Found:")
         for workflow_type, endpoints in self.workflow_endpoints.items():
             print(f"  • {workflow_type}: {len(endpoints)} endpoints")
             
         # New endpoints summary
-        print(f"\n🆕 New Endpoints Discovered:")
+        print("\n🆕 New Endpoints Discovered:")
         for workflow_type, endpoints in self.new_endpoints.items():
             if endpoints:
                 print(f"  • {workflow_type}: {len(endpoints)} new endpoints")
                 
         # Validation summary
         if hasattr(self, 'validation_results'):
-            print(f"\n✅ Endpoint Validation:")
+            print("\n✅ Endpoint Validation:")
             for workflow_type, validation in self.validation_results.items():
                 score = validation.get("validation_score", 0.0)
                 print(f"  • {workflow_type}: {score:.1%} ({validation['known_endpoints']}/{validation['total_endpoints']})")
@@ -520,7 +519,7 @@ def response(flow):
             
         # Recommendations summary
         recommendations = self._generate_recommendations()
-        print(f"\n💡 Key Recommendations:")
+        print("\n💡 Key Recommendations:")
         for category, recs in recommendations.items():
             if recs:
                 print(f"  • {category}: {len(recs)} recommendations")

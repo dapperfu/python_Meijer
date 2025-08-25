@@ -29,11 +29,10 @@ import sqlite3
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple, Union
+from typing import Dict, List, Optional, Any
 from contextlib import contextmanager
-import json
 
-from .models import PriceRecord, PriceHistory, ShopnScanPrice
+from .models import PriceRecord, ShopnScanPrice
 
 
 class PriceDatabase:

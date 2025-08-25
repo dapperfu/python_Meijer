@@ -5,7 +5,6 @@ Search for actual API endpoints related to accounts in the log file.
 
 import re
 import json
-from typing import List, Dict, Any
 
 def search_api_endpoints():
     """Search for actual API endpoints related to accounts."""
@@ -57,7 +56,7 @@ def search_api_endpoints():
     for endpoint in sorted(found_endpoints):
         print(f"  {endpoint}")
     
-    print(f"\nResults saved to: api_endpoints_found.json")
+    print("\nResults saved to: api_endpoints_found.json")
 
 if __name__ == "__main__":
     search_api_endpoints()

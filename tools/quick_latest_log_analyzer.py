@@ -5,7 +5,6 @@ Quick Latest Log Analyzer for Meijer mitmproxy logs
 This script quickly analyzes the most recent log file to find current coupon state.
 """
 
-import json
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -108,11 +107,11 @@ def display_results(results: dict):
     
     print(f"\nTotal Interactions Found: {results['total_interactions']}")
     
-    print(f"\nDepartment/Category Breakdown:")
+    print("\nDepartment/Category Breakdown:")
     for dept, count in sorted(results['departments'].items()):
         print(f"  {dept}: {count}")
     
-    print(f"\nEndpoint Breakdown:")
+    print("\nEndpoint Breakdown:")
     for endpoint, count in sorted(results['endpoints'].items()):
         print(f"  {endpoint}: {count}")
     
@@ -120,7 +119,7 @@ def display_results(results: dict):
     print(f"Clipped Patterns Found: {results['clipped_patterns']}")
     
     # Check against expected values
-    print(f"\n" + "="*40)
+    print("\n" + "="*40)
     print("EXPECTED vs FOUND COMPARISON")
     print("="*40)
     

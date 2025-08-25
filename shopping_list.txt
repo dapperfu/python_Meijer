@@ -1,0 +1,10 @@
+# Meijer Shopping List - 2025-08-25 13:53:02
+# Format: Item Name [UPC] [Quantity] [Unit Price] [Total Price] [Methodology] [Notes] [Status] [Location]
+# Lines starting with # are comments
+
+LEGO Jurassic World Raptor Off-Road Escape 76972
+Milk, 2%
+Meijer Snack Kit
+Frederik's by Meijer Coffee 12 oz. bag or Pods* 12 ct.
+sweet potatoes
+Olipop Sparkling Tonic

@@ -8,9 +8,9 @@ including ClippedOffers, ads, and other coupon endpoints.
 
 import json
 import re
-from collections import defaultdict, Counter
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 
 
 class SimpleCouponAnalyzer:
@@ -174,11 +174,11 @@ class SimpleCouponAnalyzer:
         print(f"\nClippedOffers Endpoint Calls: {len(self.clipped_offers)}")
         print(f"Ads Endpoint Calls: {len(self.ads_data)}")
         
-        print(f"\nOther Coupon Endpoints:")
+        print("\nOther Coupon Endpoints:")
         for endpoint, calls in self.coupon_endpoints.items():
             print(f"  {endpoint}: {len(calls)} calls")
         
-        print(f"\nDepartment/Category Breakdown:")
+        print("\nDepartment/Category Breakdown:")
         for dept, count in sorted(self.category_counts.items()):
             print(f"  {dept}: {count}")
         

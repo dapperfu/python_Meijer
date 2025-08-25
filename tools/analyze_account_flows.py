@@ -4,9 +4,6 @@ Analyze account-related flows from mitmproxy log files.
 """
 
 import json
-import sys
-from typing import Dict, List, Any, Optional
-from mitmproxy import ctx
 from mitmproxy import http
 
 
@@ -97,7 +94,7 @@ class AccountFlowAnalyzer:
         with open('account_flows_analysis.json', 'w') as f:
             json.dump(analysis, f, indent=2, default=str)
         
-        print(f"\nDetailed analysis saved to: account_flows_analysis.json")
+        print("\nDetailed analysis saved to: account_flows_analysis.json")
 
 
 addons = [AccountFlowAnalyzer()]

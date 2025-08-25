@@ -18,7 +18,6 @@ from meijer.models import (
     MeijerItem,
     SearchResult,
     Store,
-    StoreHours,
     create_meijer_items_from_search,
 )
 from meijer.mperks import EarnedReward, MCardInfo

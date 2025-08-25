@@ -8,7 +8,7 @@ and response data to ensure complete implementation coverage.
 
 import json
 import re
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 from urllib.parse import urlparse, parse_qs
 from mitmproxy import ctx
 
@@ -292,9 +292,9 @@ def done():
     print(f"Total cart flows analyzed: {report['summary']['total_cart_flows']}")
     print(f"Unique endpoints found: {report['summary']['unique_endpoints']}")
     print(f"HTTP methods used: {', '.join(report['summary']['methods_used'])}")
-    print(f"Most used endpoints:")
+    print("Most used endpoints:")
     for endpoint, count in report['endpoint_analysis']['most_used_endpoints'][:10]:
         print(f"  {endpoint}: {count} calls")
-    print(f"\nDetailed report saved to: cart_endpoints_analysis.json")
-    print(f"Summary saved to: cart_endpoints_summary.json")
+    print("\nDetailed report saved to: cart_endpoints_analysis.json")
+    print("Summary saved to: cart_endpoints_summary.json")
     print("="*80)

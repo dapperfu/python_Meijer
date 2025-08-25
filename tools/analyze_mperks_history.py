@@ -9,7 +9,6 @@ and extract information about mPerks history API calls.
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any, Optional
 
 # Add the project root to the path
 project_root = Path(__file__).parent.parent
@@ -17,7 +16,6 @@ sys.path.insert(0, str(project_root))
 
 from mitmproxy import http
 from mitmproxy import ctx
-from mitmproxy.script import concurrent
 
 
 class MPerksHistoryAnalyzer:

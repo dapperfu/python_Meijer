@@ -6,7 +6,7 @@ Focuses on the specific flows mentioned in the user query.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 
 def extract_specific_flows(log_file_path: str) -> Dict[str, Any]:
@@ -203,7 +203,7 @@ def main():
     session_template = generate_complete_session_template(analysis)
     
     # Print detailed results
-    print(f"\n=== DETAILED SHOP'N'SCAN FLOW ANALYSIS ===")
+    print("\n=== DETAILED SHOP'N'SCAN FLOW ANALYSIS ===")
     print(f"isShopAndScanEnabled calls: {len(flows['is_shop_scan_enabled'])}")
     print(f"NextGenPOSBasket calls: {len(flows['next_gen_pos_basket'])}")
     print(f"Device IDs found: {len(flows['device_ids'])}")
@@ -212,25 +212,25 @@ def main():
     print(f"Cart updates found: {len(flows['cart_updates'])}")
     print(f"Header sets found: {len(flows['headers'])}")
     
-    print(f"\n=== SESSION SEQUENCE ===")
+    print("\n=== SESSION SEQUENCE ===")
     for flow in analysis['session_sequence'][:10]:  # Show first 10
         print(f"Index {flow['index']}: {flow['type']}")
     
-    print(f"\n=== DEVICE ID USAGE ===")
+    print("\n=== DEVICE ID USAGE ===")
     for device_id, usage in analysis['device_id_usage'].items():
         print(f"Device ID: {device_id}")
         print(f"  Used in {len(usage)} flows")
     
-    print(f"\n=== EXTRACTED INFORMATION ===")
+    print("\n=== EXTRACTED INFORMATION ===")
     print(f"Store ID: {analysis['store_id']}")
     print(f"App Version: {analysis['app_version']}")
     print(f"OS Info: {analysis['os_info']}")
     
-    print(f"\n=== UPC SCAN DETAILS ===")
+    print("\n=== UPC SCAN DETAILS ===")
     for scan in flows['upc_scans']:
         print(f"Barcode: {scan['barcode']} (Index: {scan['index']})")
     
-    print(f"\n=== COMPLETE SESSION TEMPLATE ===")
+    print("\n=== COMPLETE SESSION TEMPLATE ===")
     print(json.dumps(session_template, indent=2))
     
     # Save detailed results
@@ -243,7 +243,7 @@ def main():
     with open('logs/detailed_shop_scan_analysis.json', 'w') as f:
         json.dump(results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/detailed_shop_scan_analysis.json")
+    print("\nDetailed results saved to: logs/detailed_shop_scan_analysis.json")
 
 
 if __name__ == '__main__':

@@ -9,13 +9,11 @@ while adding new discovered endpoints.
 
 import json
 import logging
-import os
 import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
-from urllib.parse import urlparse
+from typing import Any, Dict
 
 
 class FlaskApiServerUpdater:
@@ -302,13 +300,13 @@ def main():
     updater.save_update_report(str(report_file))
     
     # Print summary
-    print(f"\n✅ Flask API server updated successfully!")
+    print("\n✅ Flask API server updated successfully!")
     print(f"📊 New endpoints added: {len(updater.new_endpoints)}")
     print(f"🐍 Updated app saved to: {updated_app_file}")
     print(f"📁 Update report saved to: {report_file}")
     
     # Print new endpoints
-    print(f"\n🆕 New Endpoints Added:")
+    print("\n🆕 New Endpoints Added:")
     for endpoint in sorted(updater.new_endpoints):
         endpoint_info = updater.endpoints_data['endpoints'].get(endpoint, {})
         methods = list(endpoint_info.get('methods', set())) if endpoint_info.get('methods') else ['GET']
@@ -316,7 +314,7 @@ def main():
     
     # Print categories
     categories = updater.endpoints_data.get('categories', {})
-    print(f"\n📂 Endpoint Categories:")
+    print("\n📂 Endpoint Categories:")
     for category, endpoints in categories.items():
         if endpoints:
             print(f"  {category}: {len(endpoints)} endpoints")

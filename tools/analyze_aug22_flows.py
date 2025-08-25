@@ -12,8 +12,7 @@ import sys
 import re
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-from datetime import datetime
+from typing import Dict, Any
 
 
 def analyze_aug22_flows(log_file_path: str) -> Dict[str, Any]:
@@ -49,7 +48,7 @@ def analyze_aug22_flows(log_file_path: str) -> Dict[str, Any]:
         print("=" * 80)
         
         # 1. Find Shop'n'Scan Started flows
-        print(f"\n🔍 SEARCHING FOR SHOP'N'SCAN STARTED FLOWS")
+        print("\n🔍 SEARCHING FOR SHOP'N'SCAN STARTED FLOWS")
         print("-" * 50)
         
         shop_scan_patterns = [
@@ -68,7 +67,7 @@ def analyze_aug22_flows(log_file_path: str) -> Dict[str, Any]:
                 results['shop_n_scan_flows'].extend(matches)
         
         # 2. Find barcode 7199129* patterns
-        print(f"\n📦 SEARCHING FOR BARCODE 7199129* PATTERNS")
+        print("\n📦 SEARCHING FOR BARCODE 7199129* PATTERNS")
         print("-" * 50)
         
         barcode_patterns = [
@@ -87,7 +86,7 @@ def analyze_aug22_flows(log_file_path: str) -> Dict[str, Any]:
                 results['barcode_7199129_flows'].extend(matches)
         
         # 3. Look for quantity changes and price analysis
-        print(f"\n💰 SEARCHING FOR QUANTITY CHANGES AND PRICE ANALYSIS")
+        print("\n💰 SEARCHING FOR QUANTITY CHANGES AND PRICE ANALYSIS")
         print("-" * 50)
         
         # Look for cart progression with quantity changes
@@ -124,7 +123,7 @@ def analyze_aug22_flows(log_file_path: str) -> Dict[str, Any]:
                         print(f"    Unit price: ${items_added:.2f}")
         
         # 4. Look for specific barcode context
-        print(f"\n🔍 DETAILED BARCODE 7199129* ANALYSIS")
+        print("\n🔍 DETAILED BARCODE 7199129* ANALYSIS")
         print("-" * 50)
         
         # Search for any context around 7199 patterns
@@ -139,7 +138,7 @@ def analyze_aug22_flows(log_file_path: str) -> Dict[str, Any]:
             print("No 7199 barcode patterns found in context")
         
         # 5. Look for shop'n'scan specific flows
-        print(f"\n🛒 SHOP'N'SCAN FLOW DETAILS")
+        print("\n🛒 SHOP'N'SCAN FLOW DETAILS")
         print("-" * 50)
         
         # Look for shop'n'scan related content
@@ -171,12 +170,12 @@ def main():
     
     log_file = sys.argv[1]
     
-    print(f"August 22 Flow Analysis")
+    print("August 22 Flow Analysis")
     print(f"Log file: {log_file}")
-    print(f"Target flows:")
-    print(f"  - Shop'n'Scan Started")
-    print(f"  - Barcode 7199129* scanned once with one item in cart")
-    print(f"  - Quantity changes to 2 and price analysis")
+    print("Target flows:")
+    print("  - Shop'n'Scan Started")
+    print("  - Barcode 7199129* scanned once with one item in cart")
+    print("  - Quantity changes to 2 and price analysis")
     
     # Perform analysis
     results = analyze_aug22_flows(log_file)
@@ -189,7 +188,7 @@ def main():
     print(f"\nDetailed analysis saved to: {output_file}")
     
     # Summary
-    print(f"\n📊 ANALYSIS SUMMARY:")
+    print("\n📊 ANALYSIS SUMMARY:")
     print(f"  Shop'n'Scan flows found: {len(results['shop_n_scan_flows'])}")
     print(f"  Barcode 7199129* flows found: {len(results['barcode_7199129_flows'])}")
     print(f"  Quantity changes found: {len(results['quantity_changes'])}")

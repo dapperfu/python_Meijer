@@ -8,7 +8,6 @@ bypassing Akamai protection and handling the complete authentication flow.
 
 import imaplib
 import logging
-import random
 import re
 import time
 import secrets
@@ -619,7 +618,7 @@ class OktaSeleniumAuth:
             print("✅ Username field found and ready")
             
             # Debug: show field details
-            print(f"🔍 Username field details:")
+            print("🔍 Username field details:")
             print(f"   ID: {username_field.get_attribute('id')}")
             print(f"   Name: {username_field.get_attribute('name')}")
             print(f"   Type: {username_field.get_attribute('type')}")
@@ -1296,7 +1295,6 @@ class OktaSeleniumAuth:
         try:
             import os
             import json
-            from pathlib import Path
             
             print("💾 Saving tokens to auth.json...")
             
@@ -1974,7 +1972,7 @@ class OktaSeleniumAuth:
             elif hasattr(self, 'driver') and self.driver:
                 print("🧹 Destructor closing browser...")
                 self.driver.quit()
-        except Exception as e:
+        except Exception:
             # Ignore errors during cleanup
             pass
 
@@ -2053,7 +2051,7 @@ class OktaSeleniumAuth:
             current_title = self.driver.title
             
             if current_url != old_url or current_title != old_title:
-                print(f"✅ Page transition detected:")
+                print("✅ Page transition detected:")
                 print(f"   URL: {old_url} → {current_url}")
                 print(f"   Title: {old_title} → {current_title}")
                 return True

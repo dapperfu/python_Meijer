@@ -7,7 +7,6 @@ This tool finds the username/password submissions and completes the full authent
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
 
 def extract_complete_auth_sequence():
     """Extract the complete authentication sequence including username/password submissions."""
@@ -48,7 +47,7 @@ def extract_complete_auth_sequence():
         print(f"✅ Found 2FA challenge at position: {challenge_pos:,}")
         
         # Now search for the complete authentication sequence
-        print(f"\n🔍 Searching for complete authentication sequence...")
+        print("\n🔍 Searching for complete authentication sequence...")
         
         # Look for username submission patterns
         # The log format seems to use compressed headers, so we need to look for the actual content
@@ -183,7 +182,7 @@ def extract_complete_auth_sequence():
         print(f"\n📁 Complete authentication analysis saved to: {analysis_file}")
         
         # Print summary
-        print(f"\n📋 Authentication Events Summary:")
+        print("\n📋 Authentication Events Summary:")
         for i, event in enumerate(auth_events):
             print(f"  {i+1}. {event['type']} (pos: {event['position']:,})")
             if 'endpoint' in event:

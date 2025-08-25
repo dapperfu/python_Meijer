@@ -45,7 +45,7 @@ def demonstrate_integration():
 def test_enhanced_functionality(enhanced_client):
     """Test the enhanced client's functionality."""
     
-    print(f"\n🧪 TESTING ENHANCED CLIENT FUNCTIONALITY")
+    print("\n🧪 TESTING ENHANCED CLIENT FUNCTIONALITY")
     print("-" * 40)
     
     if not enhanced_client:
@@ -87,7 +87,7 @@ def test_enhanced_functionality(enhanced_client):
 def demonstrate_header_management(enhanced_client):
     """Demonstrate header management capabilities."""
     
-    print(f"\n🎭 HEADER MANAGEMENT DEMONSTRATION")
+    print("\n🎭 HEADER MANAGEMENT DEMONSTRATION")
     print("-" * 40)
     
     if not enhanced_client:
@@ -103,7 +103,7 @@ def demonstrate_header_management(enhanced_client):
                 print(f"  {header}: {value[:60]}{'...' if len(value) > 60 else ''}")
         
         # Demonstrate header rotation
-        print(f"\n🔄 Demonstrating header rotation...")
+        print("\n🔄 Demonstrating header rotation...")
         spoofer = HeaderSpoofer()
         
         print("📱 Available profiles:")
@@ -112,7 +112,7 @@ def demonstrate_header_management(enhanced_client):
             print(f"  {i+1}. {browser}: {profile.user_agent[:50]}...")
         
         # Show how to manually rotate
-        print(f"\n💡 Manual header rotation:")
+        print("\n💡 Manual header rotation:")
         print("  enhanced_client.bypass_client._rotate_headers()")
         print("  enhanced_client.bypass_client.reset_session()")
         
@@ -123,7 +123,7 @@ def demonstrate_header_management(enhanced_client):
 def show_usage_examples():
     """Show practical usage examples."""
     
-    print(f"\n📚 PRACTICAL USAGE EXAMPLES")
+    print("\n📚 PRACTICAL USAGE EXAMPLES")
     print("-" * 40)
     
     print("1️⃣ Basic Integration:")
@@ -181,7 +181,7 @@ def main():
         # Show usage examples
         show_usage_examples()
         
-        print(f"\n🎯 INTEGRATION SUMMARY:")
+        print("\n🎯 INTEGRATION SUMMARY:")
         print("=" * 60)
         print("✅ Seamless integration with existing Meijer client")
         print("✅ Automatic Akamai bypass on all requests")
@@ -190,7 +190,7 @@ def main():
         print("✅ No changes needed to existing code")
         print("✅ Enhanced security and reliability")
         
-        print(f"\n💡 NEXT STEPS:")
+        print("\n💡 NEXT STEPS:")
         print("1. Use create_enhanced_meijer_client() to wrap your existing client")
         print("2. All requests automatically use bypass strategies")
         print("3. Monitor for blocking and adjust strategies as needed")
@@ -218,7 +218,7 @@ def main():
         with open("integration_example.json", "w") as f:
             json.dump(integration_info, f, indent=2)
         
-        print(f"\n💾 Integration example saved to: integration_example.json")
+        print("\n💾 Integration example saved to: integration_example.json")
         
     except Exception as e:
         print(f"❌ Error in demonstration: {e}")

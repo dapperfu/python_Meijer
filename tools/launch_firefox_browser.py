@@ -25,7 +25,7 @@ from pathlib import Path
 # Add the meijer package to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meijer.firefox_profile_manager import FirefoxProfileManager, create_meijer_profile
+from meijer.firefox_profile_manager import FirefoxProfileManager
 from meijer.enhanced_headless_auth import EnhancedHeadlessAuthClient
 
 
@@ -86,7 +86,7 @@ def launch_regular_firefox(profile_name: str = "meijer_automation",
         # Add proxy preferences
         # Note: Firefox command-line doesn't support proxy directly, so we'll use preferences
         firefox_cmd.extend([
-            "--pref", f"network.proxy.type=1",
+            "--pref", "network.proxy.type=1",
             "--pref", f"network.proxy.http={proxy_host}",
             "--pref", f"network.proxy.http_port={proxy_port}",
             "--pref", f"network.proxy.ssl={proxy_host}",

@@ -8,10 +8,7 @@ UPC scanning, cart updates, and session resumption after crashes.
 """
 
 import json
-import re
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 import argparse
 
 
@@ -231,7 +228,7 @@ def main():
     device_info = extract_device_id_info(flows)
     
     # Print summary
-    print(f"\n=== SHOP'N'SCAN FLOW ANALYSIS ===")
+    print("\n=== SHOP'N'SCAN FLOW ANALYSIS ===")
     print(f"isShopAndScanEnabled calls: {len(analysis['is_shop_scan_enabled_calls'])}")
     print(f"NextGenPOSBasket calls: {len(analysis['next_gen_pos_basket_calls'])}")
     print(f"UPC scan related calls: {len(analysis['upc_scans'])}")
@@ -240,7 +237,7 @@ def main():
     
     # Show device ID details
     if device_info:
-        print(f"\n=== DEVICE ID INFORMATION ===")
+        print("\n=== DEVICE ID INFORMATION ===")
         for info in device_info[:5]:  # Show first 5
             print(f"URL: {info['url']}")
             print(f"Method: {info['method']}")
@@ -254,7 +251,7 @@ def main():
             print("-" * 50)
     
     # Show session start JSON template
-    print(f"\n=== SESSION START JSON TEMPLATE ===")
+    print("\n=== SESSION START JSON TEMPLATE ===")
     session_json = generate_session_start_json()
     print(json.dumps(session_json, indent=2))
     

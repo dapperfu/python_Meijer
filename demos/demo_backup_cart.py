@@ -39,7 +39,7 @@ def demo_backup_fallback_cart():
             return
         
         # Check cart status
-        print(f"\n📊 Cart Status After Adding Original Item:")
+        print("\n📊 Cart Status After Adding Original Item:")
         print("-" * 30)
         print(f"Total items: {cart.item_count}")
         print(f"Unique products: {cart.unique_item_count}")
@@ -48,7 +48,7 @@ def demo_backup_fallback_cart():
         # Get the cart item to add backup
         if cart.has_items:
             original_item = cart.items[0]
-            print(f"\n🔍 Original Item Details:")
+            print("\n🔍 Original Item Details:")
             print(f"  Entry Number: {original_item.entry_number}")
             print(f"  Product Code: {original_item.product_code}")
             print(f"  Product Name: {original_item.product_name or 'Unknown'}")
@@ -57,10 +57,10 @@ def demo_backup_fallback_cart():
             print(f"  Backup item count: {original_item.backup_item_count}")
         
         # Add backup/fallback item
-        print(f"\n🔄 Adding backup/fallback item:")
+        print("\n🔄 Adding backup/fallback item:")
         print(f"  Original UPC: {original_upc}")
         print(f"  Backup UPC: {backup_upc}")
-        print(f"  Backup Description: Alternative peeler brand")
+        print("  Backup Description: Alternative peeler brand")
         
         if cart.has_items:
             original_item = cart.items[0]
@@ -76,7 +76,7 @@ def demo_backup_fallback_cart():
                 print("   ❌ Failed to add backup item")
         
         # Check backup status
-        print(f"\n📊 Backup Status After Adding Backup Item:")
+        print("\n📊 Backup Status After Adding Backup Item:")
         print("-" * 30)
         print(f"Has items with backups: {cart.has_items_with_backups}")
         print(f"Items with backups: {len(cart.items_with_backups)}")
@@ -84,7 +84,7 @@ def demo_backup_fallback_cart():
         
         # Show backup items
         if cart.has_items_with_backups:
-            print(f"\n🔋 Items with Backup/Fallback Options:")
+            print("\n🔋 Items with Backup/Fallback Options:")
             print("-" * 30)
             for item in cart.items_with_backups:
                 print(f"  • {item.product_name or f'UPC {item.product_code}'}")
@@ -95,7 +95,7 @@ def demo_backup_fallback_cart():
         
         # Show all items
         if cart.has_items:
-            print(f"\n🛍️ All Items in Cart:")
+            print("\n🛍️ All Items in Cart:")
             print("-" * 30)
             for item in cart.items:
                 backup_indicator = f" [Has {item.backup_item_count} backups]" if item.has_backup else ""
@@ -104,7 +104,7 @@ def demo_backup_fallback_cart():
                 print(f"    Quantity: {item.current_quantity}")
                 print(f"    Price: ${item.total_value:.2f}")
         
-        print(f"\n💰 Cart Totals:")
+        print("\n💰 Cart Totals:")
         print("-" * 30)
         print(f"Subtotal: ${cart.subtotal:.2f}")
         print(f"Total Price: ${cart.total_price:.2f}")
@@ -131,7 +131,7 @@ def demo_backup_workflow():
         original_upc = "719812800516"  # Original peeler
         backup_upc = "123456789012"    # Different peeler brand
         
-        print(f"\n📋 Workflow Steps:")
+        print("\n📋 Workflow Steps:")
         print("-" * 30)
         
         # Step 1: Search by UPC
@@ -163,7 +163,7 @@ def demo_backup_workflow():
                 return
         
         # Final status
-        print(f"\n🎯 Final Cart Status:")
+        print("\n🎯 Final Cart Status:")
         print("-" * 30)
         print(f"Total items: {cart.item_count}")
         print(f"Total quantity: {cart.total_quantity}")
@@ -171,7 +171,7 @@ def demo_backup_workflow():
         print(f"Total backup substitutions: {cart.total_backup_substitutions}")
         
         if cart.has_items_with_backups:
-            print(f"\n🔋 Backup/Fallback Details:")
+            print("\n🔋 Backup/Fallback Details:")
             for item in cart.items_with_backups:
                 print(f"  • {item.product_name or f'UPC {item.product_code}'}")
                 print(f"    Entry Number: {item.entry_number}")
@@ -207,7 +207,7 @@ def demo_cart_backup_management():
             print(f"Item 2 Entry: {item2_entry}")
             
             # Add backup items using cart methods
-            print(f"\n🔄 Adding backup items using cart methods:")
+            print("\n🔄 Adding backup items using cart methods:")
             
             # Add backup to first item
             success = cart.add_backup_item_to_cart_item(
@@ -226,14 +226,14 @@ def demo_cart_backup_management():
             print(f"  Added backup to item 2: {'✅' if success else '❌'}")
             
             # Show backup status
-            print(f"\n📊 Backup Status:")
+            print("\n📊 Backup Status:")
             print(f"  Item 1 backups: {cart.get_cart_item_backups(item1_entry)}")
             print(f"  Item 2 backups: {cart.get_cart_item_backups(item2_entry)}")
             print(f"  Total items with backups: {len(cart.items_with_backups)}")
             print(f"  Total backup substitutions: {cart.total_backup_substitutions}")
             
             # Remove a backup item
-            print(f"\n🗑️ Removing backup item from item 1:")
+            print("\n🗑️ Removing backup item from item 1:")
             success = cart.remove_backup_item_from_cart_item(item1_entry, "111111111111")
             print(f"  Removed backup: {'✅' if success else '❌'}")
             print(f"  Item 1 backups after removal: {cart.get_cart_item_backups(item1_entry)}")

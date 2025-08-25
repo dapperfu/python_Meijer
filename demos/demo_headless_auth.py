@@ -7,7 +7,6 @@ Demo script for testing the three authentication methods:
 """
 
 import sys
-import os
 import logging
 from pathlib import Path
 

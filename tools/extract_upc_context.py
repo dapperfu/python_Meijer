@@ -5,7 +5,7 @@ Extract UPC context and shop'n'scan flow details from binary mitmproxy log.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 
 def extract_upc_context(log_file_path: str) -> Dict[str, Any]:
@@ -48,7 +48,7 @@ def extract_upc_context(log_file_path: str) -> Dict[str, Any]:
                 'json_matches': json_matches
             })
             
-        except Exception as e:
+        except Exception:
             pass
         
         start = pos + 1
@@ -78,7 +78,7 @@ def extract_upc_context(log_file_path: str) -> Dict[str, Any]:
                 'json_matches': json_matches
             })
             
-        except Exception as e:
+        except Exception:
             pass
         
         start = pos + 1
@@ -119,7 +119,7 @@ def extract_upc_context(log_file_path: str) -> Dict[str, Any]:
                     'http_requests': http_patterns
                 })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -247,24 +247,24 @@ def main():
     session_template = generate_complete_session_template(results, analysis)
     
     # Print results
-    print(f"\n=== UPC CONTEXT ANALYSIS ===")
+    print("\n=== UPC CONTEXT ANALYSIS ===")
     print(f"UPC 629 contexts found: {len(results['upc_629_contexts'])}")
     print(f"UPC 0461 contexts found: {len(results['upc_0461_contexts'])}")
     print(f"Shop'n'scan flows found: {len(results['shop_scan_flows'])}")
     
-    print(f"\n=== UPC SCANNING SEQUENCE ===")
+    print("\n=== UPC SCANNING SEQUENCE ===")
     for i, (upc, pos) in enumerate(analysis['upc_scanning_sequence'][:20]):  # Show first 20
         print(f"{i+1:2d}. UPC {upc} at position {pos}")
     
-    print(f"\n=== SESSION PHASES ===")
+    print("\n=== SESSION PHASES ===")
     for i, (phase, pos) in enumerate(analysis['session_phases'][:10]):  # Show first 10
         print(f"{i+1:2d}. {phase} at position {pos}")
     
-    print(f"\n=== DEVICE ID USAGE ===")
+    print("\n=== DEVICE ID USAGE ===")
     for device_id, count in results['device_id_usage'].items():
         print(f"Device ID: {device_id} (used {count} times)")
     
-    print(f"\n=== COMPLETE SESSION TEMPLATE ===")
+    print("\n=== COMPLETE SESSION TEMPLATE ===")
     print(json.dumps(session_template, indent=2))
     
     # Save detailed results
@@ -277,7 +277,7 @@ def main():
     with open('logs/upc_context_analysis.json', 'w') as f:
         json.dump(detailed_results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/upc_context_analysis.json")
+    print("\nDetailed results saved to: logs/upc_context_analysis.json")
 
 
 if __name__ == '__main__':

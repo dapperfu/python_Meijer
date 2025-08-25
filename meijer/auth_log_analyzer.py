@@ -15,10 +15,7 @@ The analyzer follows a priority-based approach:
 
 import json
 import logging
-import os
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-from urllib.parse import urlparse, parse_qs
+from typing import Dict, Any, Tuple
 
 try:
     from mitmproxy import io

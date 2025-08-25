@@ -8,9 +8,8 @@ add to cart, add to shop'n'scan cart).
 """
 
 import sys
-import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List
 from mitmproxy import io
 from mitmproxy.flow import Flow
 

@@ -11,9 +11,8 @@ This script analyzes all *.log files to extract:
 
 import json
 import re
-import gzip
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, Any
 from collections import defaultdict
 import logging
 
@@ -286,7 +285,7 @@ def main():
             print(f"❌ {log_file.name}: {result['error']}")
     
     # Generate comprehensive report
-    print(f"\n📊 Generating comprehensive report...")
+    print("\n📊 Generating comprehensive report...")
     report = analyzer.generate_report()
     
     # Save detailed report
@@ -294,14 +293,14 @@ def main():
     analyzer.save_report(report, output_file)
     
     # Print summary
-    print(f"\n📋 Analysis Summary:")
+    print("\n📋 Analysis Summary:")
     print(f"  Total endpoints found: {report['summary']['total_endpoints']}")
     print(f"  Total domains found: {report['summary']['total_domains']}")
     print(f"  Total auth patterns: {report['summary']['total_auth_patterns']}")
     print(f"  Total content types: {report['summary']['total_content_types']}")
     
     # Show top endpoints
-    print(f"\n🏆 Top 10 endpoints by frequency:")
+    print("\n🏆 Top 10 endpoints by frequency:")
     sorted_endpoints = sorted(
         report['endpoints'].items(), 
         key=lambda x: x[1]['count'], 
@@ -313,7 +312,7 @@ def main():
         print(f"  {i+1:2d}. {endpoint} ({data['count']} calls, {methods})")
     
     # Show domains
-    print(f"\n🌐 Domains found:")
+    print("\n🌐 Domains found:")
     for domain, data in report['domains'].items():
         print(f"  {domain}: {data['count']} calls, {len(data['endpoints'])} endpoints")
     

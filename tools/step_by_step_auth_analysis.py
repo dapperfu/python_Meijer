@@ -12,8 +12,8 @@ import random
 import base64
 import hashlib
 import secrets
-from urllib.parse import urlencode, parse_qs, urlparse
-from typing import Dict, Any, Optional, Tuple
+from urllib.parse import urlencode
+from typing import Dict, Any, Tuple
 import logging
 
 # Configure logging
@@ -141,7 +141,7 @@ class StepByStepAuthAnalysis:
             'success': response.status_code == 200
         }
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Final URL: {response.url}")
         logger.info(f"   Content Length: {len(response.content)}")
@@ -178,7 +178,7 @@ class StepByStepAuthAnalysis:
             'success': response.status_code == 200
         }
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Content Length: {len(response.content)}")
         logger.info(f"   Content Type: {response.headers.get('content-type', '')}")
@@ -235,7 +235,7 @@ class StepByStepAuthAnalysis:
             logger.error(f"❌ Nonce request failed: {response.status_code}")
             analysis['error_response'] = response.text[:500]
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Content Length: {len(response.content)}")
         logger.info(f"   Content Type: {response.headers.get('content-type', '')}")
@@ -285,7 +285,7 @@ class StepByStepAuthAnalysis:
             'success': response.status_code == 200
         }
         
-        logger.info(f"📊 Response Analysis:")
+        logger.info("📊 Response Analysis:")
         logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Content Length: {len(response.content)}")
         logger.info(f"   Content Type: {response.headers.get('content-type', '')}")

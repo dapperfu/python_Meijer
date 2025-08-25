@@ -8,7 +8,7 @@ import json
 import time
 import re
 from urllib.parse import urlparse, parse_qs
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import requests
 import logging
 

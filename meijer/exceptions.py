@@ -276,7 +276,7 @@ def retry_meijer_operation(
                 logger.info(f"✅ Operation succeeded on attempt {attempt + 1}")
             return result
             
-        except MeijerRateLimitError as e:
+        except MeijerRateLimitError:
             if attempt < max_retries:
                 delay = backoff_factor * (2 ** attempt)
                 logger.warning(f"⏱️  Rate limited, retrying in {delay}s (attempt {attempt + 1}/{max_retries + 1})")

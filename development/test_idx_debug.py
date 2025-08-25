@@ -6,15 +6,8 @@ even with Selenium cookies.
 
 import sys
 import os
-import time
 import json
-import secrets
-import hashlib
-import base64
-import uuid
 import logging
-from typing import Dict, Any, Optional, Tuple
-from urllib.parse import urlencode
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -82,7 +75,7 @@ def test_idx_with_different_approaches():
             'headers': {
                 'Accept': 'application/json; okta-version=1.0.0',
                 'X-Okta-User-Agent-Extended': 'okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459',
-                'X-Device-Fingerprint': f"dummy_nonce|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8",
+                'X-Device-Fingerprint': "dummy_nonce|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8",
                 'User-Agent': authenticator.user_agent,
                 'Content-Type': 'application/json',
                 'Origin': authenticator.okta_base,

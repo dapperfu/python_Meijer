@@ -7,8 +7,7 @@ This tool is designed to handle the specific binary format of the current logs.
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from collections import defaultdict
+from typing import Dict, Any
 
 
 def analyze_current_log():
@@ -37,13 +36,13 @@ def analyze_current_log():
         # Try to decode as text with error handling
         try:
             decoded_content = content.decode('utf-8', errors='ignore')
-            print(f"✅ Successfully decoded as UTF-8")
+            print("✅ Successfully decoded as UTF-8")
         except UnicodeDecodeError:
             try:
                 decoded_content = content.decode('latin-1', errors='ignore')
-                print(f"✅ Successfully decoded as Latin-1")
+                print("✅ Successfully decoded as Latin-1")
             except:
-                print(f"❌ Failed to decode content")
+                print("❌ Failed to decode content")
                 return
         
         # Search for login-related patterns

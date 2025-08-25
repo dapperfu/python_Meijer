@@ -9,7 +9,7 @@ import functools
 import logging
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 try:
     import io
@@ -21,7 +21,6 @@ except ImportError:
     requests = None
     Image = None
 
-from .base import ItemType
 
 if TYPE_CHECKING:
     from ..client import Meijer

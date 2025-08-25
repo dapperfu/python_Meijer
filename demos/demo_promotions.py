@@ -22,11 +22,9 @@ including dynamic pricing, stackable discounts, loyalty rewards, and deal optimi
 """
 
 import asyncio
-import json
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
 
-from meijer import PromotionsManager, Promotion, PromotionRule, DealOptimization, FlashSale
+from meijer import PromotionsManager, Promotion, PromotionRule, FlashSale
 from meijer.promotions import (
     PromotionType, PromotionStatus, DiscountType, EligibilityType
 )
@@ -408,7 +406,7 @@ class PromotionsDemo:
             print("✅ Test promotion created successfully")
             print(f"   Name: {test_promotion.name}")
             print(f"   Discount: {test_promotion.rules[0].discount_value}%")
-            print(f"   Duration: 1 day")
+            print("   Duration: 1 day")
             
             # Note: In a real demo, you would create/update/delete promotions
             # For safety, we'll just show the structure

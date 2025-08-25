@@ -25,7 +25,7 @@ import json
 import os
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Any
+from typing import Dict, List, Set, Any
 from urllib.parse import urlparse
 
 from mitmproxy import io
@@ -339,21 +339,21 @@ class EndpointFrequencyAnalyzer:
         print("🔍 ENDPOINT IMPLEMENTATION GAPS ANALYSIS")
         print("="*80)
         
-        print(f"\n📊 Summary:")
+        print("\n📊 Summary:")
         print(f"  Total endpoints found: {report['summary']['total_endpoints_found']}")
         print(f"  Currently implemented: {report['summary']['total_implemented']}")
         print(f"  Missing implementation: {report['summary']['total_missing']}")
         
-        print(f"\n🏆 Top 10 Most Frequently Hit Missing Endpoints:")
+        print("\n🏆 Top 10 Most Frequently Hit Missing Endpoints:")
         for i, endpoint_data in enumerate(report["missing_endpoints_by_frequency"][:10], 1):
             print(f"  {i:2d}. {endpoint_data['endpoint']} (hit {endpoint_data['count']} times)")
             
-        print(f"\n📂 Missing Endpoints by Category:")
+        print("\n📂 Missing Endpoints by Category:")
         for category, endpoints in report["missing_endpoints_by_category"].items():
             if endpoints:
                 print(f"  {category:15s}: {len(endpoints):3d} endpoints")
                 
-        print(f"\n🎯 Top 5 High Priority Implementation Targets:")
+        print("\n🎯 Top 5 High Priority Implementation Targets:")
         for i, endpoint_data in enumerate(report["implementation_priority"][:5], 1):
             print(f"  {i}. {endpoint_data['endpoint']} (priority: {endpoint_data['priority_score']:.1f})")
 

@@ -7,12 +7,9 @@ and analyze the search, cart, and shop'n'scan operations.
 """
 
 import sys
-import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from mitmproxy import http
-from mitmproxy import ctx
-from mitmproxy.script import concurrent
 
 
 class UPCFlowExtractor:

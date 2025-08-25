@@ -5,9 +5,8 @@ Focus on finding the correct authentication headers and workflow.
 """
 
 import json
-import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from mitmproxy import io
 from mitmproxy.http import HTTPFlow
 
@@ -159,17 +158,17 @@ def main():
     analysis = analyze_complex_promotions(flows)
     
     # Print results
-    print(f"\n📊 Analysis Results:")
+    print("\n📊 Analysis Results:")
     print(f"  Total complex promo calls: {analysis['total_flows']}")
     print(f"  Successful calls: {analysis['successful_calls']}")
     print(f"  Failed calls: {analysis['failed_calls']}")
     
     if analysis['flows']:
-        print(f"\n🔑 Authentication Headers Used:")
+        print("\n🔑 Authentication Headers Used:")
         for header in analysis['auth_patterns']['headers_used']:
             print(f"  - {header}")
         
-        print(f"\n✅ Successful Authentication Patterns:")
+        print("\n✅ Successful Authentication Patterns:")
         for header, values in analysis['auth_patterns']['successful_auth'].items():
             unique_values = list(set(values))
             print(f"  {header}: {len(unique_values)} unique values")
@@ -177,7 +176,7 @@ def main():
                 for value in unique_values:
                     print(f"    - {value[:100]}{'...' if len(value) > 100 else ''}")
         
-        print(f"\n❌ Failed Authentication Patterns:")
+        print("\n❌ Failed Authentication Patterns:")
         for header, values in analysis['auth_patterns']['failed_auth'].items():
             unique_values = list(set(values))
             print(f"  {header}: {len(unique_values)} unique values")
@@ -190,14 +189,14 @@ def main():
         failed_flows = [f for f in analysis['flows'] if f["status_code"] and f["status_code"] >= 400]
         
         if successful_flows:
-            print(f"\n✅ Sample Successful Call:")
+            print("\n✅ Sample Successful Call:")
             sample = successful_flows[0]
             print(f"  URL: {sample['url']}")
             print(f"  Status: {sample['status_code']}")
             print(f"  Auth Headers: {list(sample['auth_headers'].keys())}")
         
         if failed_flows:
-            print(f"\n❌ Sample Failed Call:")
+            print("\n❌ Sample Failed Call:")
             sample = failed_flows[0]
             print(f"  URL: {sample['url']}")
             print(f"  Status: {sample['status_code']}")

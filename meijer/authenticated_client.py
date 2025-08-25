@@ -8,18 +8,14 @@ then switches to requests for the authentication sequence.
 import json
 import time
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 from pathlib import Path
 import requests
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import TimeoutException, WebDriverException
 
 from .exceptions import AuthenticationError, TwoFactorRequiredError
-from .models.base import BaseModel
 
 logger = logging.getLogger(__name__)
 

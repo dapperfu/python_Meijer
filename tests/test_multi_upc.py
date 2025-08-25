@@ -8,7 +8,6 @@ efficient bulk UPC lookup for up to 20 products in a single API call.
 
 import pytest
 from unittest.mock import Mock, patch
-from typing import List
 
 from meijer.search import Search
 from meijer.models import MeijerItem

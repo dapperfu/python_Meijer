@@ -27,7 +27,6 @@ This script generates a working cart notebook that demonstrates:
 
 import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
-from typing import List, Dict, Any
 
 
 def create_cart_notebook() -> nbf.NotebookNode:

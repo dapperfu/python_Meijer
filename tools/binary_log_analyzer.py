@@ -5,7 +5,6 @@ Binary mitmproxy log analyzer for shop'n'scan flows.
 
 import json
 import re
-import struct
 from typing import List, Dict, Any, Optional
 
 
@@ -102,7 +101,7 @@ def extract_http_flows_from_binary(log_file_path: str) -> List[Dict[str, Any]]:
                 if flow:
                     flows.append(flow)
                     
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -235,11 +234,11 @@ def main():
     analysis = analyze_shop_scan_session(log_file)
     
     # Print results
-    print(f"\n=== PATTERN ANALYSIS ===")
+    print("\n=== PATTERN ANALYSIS ===")
     for pattern, count in analysis['patterns_found'].items():
         print(f"{pattern}: {count} matches")
     
-    print(f"\n=== SHOP'N'SCAN FLOWS ===")
+    print("\n=== SHOP'N'SCAN FLOWS ===")
     print(f"Found {len(analysis['shop_scan_flows'])} shop'n'scan related flows")
     
     for i, flow in enumerate(analysis['shop_scan_flows'][:5]):  # Show first 5
@@ -250,18 +249,18 @@ def main():
         if flow['body']:
             print(f"  Body: {type(flow['body'])}")
     
-    print(f"\n=== EXTRACTED INFORMATION ===")
+    print("\n=== EXTRACTED INFORMATION ===")
     print(f"Device IDs: {analysis['device_ids']}")
     print(f"Store ID: {analysis['store_id']}")
     
-    print(f"\n=== SESSION TEMPLATE ===")
+    print("\n=== SESSION TEMPLATE ===")
     print(json.dumps(analysis['session_template'], indent=2))
     
     # Save results
     with open('logs/binary_shop_scan_analysis.json', 'w') as f:
         json.dump(analysis, f, indent=2)
     
-    print(f"\nResults saved to: logs/binary_shop_scan_analysis.json")
+    print("\nResults saved to: logs/binary_shop_scan_analysis.json")
 
 
 if __name__ == '__main__':

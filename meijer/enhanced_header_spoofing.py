@@ -16,8 +16,7 @@ Based on analysis of:
 import random
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any
-from datetime import datetime
+from typing import Dict, Any
 
 import requests
 
@@ -147,7 +146,7 @@ class EnhancedMeijerHeaderSpoofer:
             "Content-Type": "application/json",
             "X-Meijer-Store": store_id,
             "Origin": "https://www.meijer.com",
-            "Referer": f"https://www.meijer.com/shopping/cart",
+            "Referer": "https://www.meijer.com/shopping/cart",
         }
         
     def _get_shop_scan_headers(self, **kwargs) -> Dict[str, str]:
@@ -160,7 +159,7 @@ class EnhancedMeijerHeaderSpoofer:
             "X-Meijer-Store": store_id,
             "X-Meijer-Workflow": "shop_scan",
             "Origin": "https://www.meijer.com",
-            "Referer": f"https://www.meijer.com/shop-and-scan",
+            "Referer": "https://www.meijer.com/shop-and-scan",
         }
         
     def _get_item_operation_headers(self, **kwargs) -> Dict[str, str]:
@@ -174,7 +173,7 @@ class EnhancedMeijerHeaderSpoofer:
             "X-Meijer-Store": store_id,
             "X-Meijer-Item-Type": item_type,
             "Origin": "https://www.meijer.com",
-            "Referer": f"https://www.meijer.com/products",
+            "Referer": "https://www.meijer.com/products",
         }
         
     def _get_fulfillment_headers(self, **kwargs) -> Dict[str, str]:
@@ -343,7 +342,7 @@ if __name__ == "__main__":
             print(f"  {key}: {value[:60]}{'...' if len(value) > 60 else ''}")
             
     # Show session summary
-    print(f"\n📊 Session Summary:")
+    print("\n📊 Session Summary:")
     summary = spoofer.get_session_summary()
     print(f"  Requests: {summary['session_stats']['request_count']}")
     print(f"  Active Workflows: {', '.join(summary['session_stats']['active_workflows'])}")

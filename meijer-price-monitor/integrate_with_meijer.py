@@ -136,7 +136,7 @@ def demonstrate_monitor_creation(price_monitor: PriceMonitor) -> None:
         print(f"\n🔄 Running monitor '{monitor_id}'...")
         results = price_monitor.run_monitor(monitor_id)
         
-        print(f"✅ Monitor completed:")
+        print("✅ Monitor completed:")
         print(f"   • Products found: {results['products_found']}")
         print(f"   • Stores scanned: {results['stores_scanned']}")
         print(f"   • Errors: {len(results['errors'])}")

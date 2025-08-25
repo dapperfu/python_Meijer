@@ -43,7 +43,7 @@ def test_store_search():
         
         if coords:
             print(f"  ✓ Got coordinates: {coords}")
-            print(f"  🔍 Now testing find_stores_nearby with these coordinates:")
+            print("  🔍 Now testing find_stores_nearby with these coordinates:")
             nearby_stores = meijer.client.find_stores_nearby(coords[0], coords[1], 100, 50)
             print(f"    find_stores_nearby returned {len(nearby_stores)} stores")
             

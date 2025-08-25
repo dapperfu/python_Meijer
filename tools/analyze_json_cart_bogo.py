@@ -228,7 +228,7 @@ def main():
     analysis_file = sys.argv[1]
     target_upc = sys.argv[2] if len(sys.argv) > 2 else None
     
-    print(f"JSON Cart BOGO Analysis")
+    print("JSON Cart BOGO Analysis")
     print(f"Analysis file: {analysis_file}")
     
     try:
@@ -256,7 +256,7 @@ def main():
                 print(f"Extracted UPCs: {upc_analysis['extracted_upcs']}")
                 
                 if upc_analysis['cart_progression']:
-                    print(f"\n📊 CART PROGRESSION WITH BOGO INDICATORS:")
+                    print("\n📊 CART PROGRESSION WITH BOGO INDICATORS:")
                     print(f"{'Step':<4} {'Cart Total':<12} {'Items Added':<12} {'Price/Item':<12} {'BOGO':<15} {'Discount':<10}")
                     print("-" * 80)
                     
@@ -268,7 +268,7 @@ def main():
                     # Show BOGO details
                     bogo_steps = upc_analysis['bogo_steps']
                     if bogo_steps:
-                        print(f"\n💰 BOGO PRICING DETAILS:")
+                        print("\n💰 BOGO PRICING DETAILS:")
                         for step in bogo_steps:
                             print(f"  Step {step['step']}: {step['bogo_type']} - Added ${step['items_added']:.2f} worth of items")
                             print(f"    Previous price per item: ${upc_analysis['cart_progression'][step['step']-2]['price_per_item']:.2f}")
@@ -276,10 +276,10 @@ def main():
                             print(f"    Discount: {step['discount_percent']:.1f}%")
                             print(f"    Total items: {step['total_items']}")
                     else:
-                        print(f"\n💰 No BOGO patterns detected in cart progression")
+                        print("\n💰 No BOGO patterns detected in cart progression")
                 
                 if upc_analysis['pricing_info']:
-                    print(f"\n📦 PRICING INFORMATION FROM SEARCH:")
+                    print("\n📦 PRICING INFORMATION FROM SEARCH:")
                     for i, pricing in enumerate(upc_analysis['pricing_info']):
                         print(f"  Search result {i+1}: {pricing}")
             else:
@@ -287,7 +287,7 @@ def main():
         else:
             # Analyze all UPCs for BOGO patterns
             print(f"\n{'='*60}")
-            print(f"ANALYZING ALL UPCS FOR BOGO PATTERNS")
+            print("ANALYZING ALL UPCS FOR BOGO PATTERNS")
             print(f"{'='*60}")
             
             bogo_upcs = []

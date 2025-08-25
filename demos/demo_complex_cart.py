@@ -22,13 +22,10 @@ including cart validation, optimization, splitting, merging, and complex operati
 """
 
 import asyncio
-import json
-from datetime import datetime, timedelta
-from typing import Dict, List, Any
 
-from meijer import ComplexCartManager, CartValidationIssue, CartOptimizationResult, CartSplitResult
+from meijer import ComplexCartManager
 from meijer.complex_cart import (
-    CartOperationType, CartValidationStatus, CartItemStatus
+    CartValidationStatus
 )
 
 
@@ -97,7 +94,7 @@ class ComplexCartDemo:
                 
                 # Show suggested fixes
                 if validation_issues:
-                    print(f"\n💡 SUGGESTED FIXES:")
+                    print("\n💡 SUGGESTED FIXES:")
                     for issue in validation_issues[:3]:
                         if issue.suggested_fixes:
                             print(f"   • {issue.issue_type}:")
@@ -188,12 +185,12 @@ class ComplexCartDemo:
                 print(f"   Split carts created: {len(split_result.split_carts)}")
                 print(f"   Total items across splits: {split_result.total_items}")
                 
-                print(f"\n📋 Split criteria used:")
+                print("\n📋 Split criteria used:")
                 for key, value in split_result.split_criteria.items():
                     print(f"   • {key}: {value}")
                 
                 if split_result.split_carts:
-                    print(f"\n🛒 Resulting split carts:")
+                    print("\n🛒 Resulting split carts:")
                     for i, split_cart in enumerate(split_result.split_carts[:3]):
                         print(f"   {i+1}. Cart ID: {split_cart.get('cartId', 'Unknown')}")
                         print(f"      Items: {split_cart.get('itemCount', 0)}")
@@ -233,7 +230,7 @@ class ComplexCartDemo:
                 print("✅ Cart merging completed successfully!")
                 print(f"   Source carts: {len(source_cart_ids)}")
                 print(f"   Target cart: {target_cart_id}")
-                print(f"   Merge strategy: smart")
+                print("   Merge strategy: smart")
                 
                 if "mergedItems" in merge_result:
                     print(f"   Items merged: {merge_result['mergedItems']}")
@@ -273,7 +270,7 @@ class ComplexCartDemo:
             if coupon_result:
                 print("✅ Complex coupon applied successfully!")
                 print(f"   Coupon code: {coupon_code}")
-                print(f"   Auto-optimization: enabled")
+                print("   Auto-optimization: enabled")
                 
                 if "discountAmount" in coupon_result:
                     print(f"   Discount amount: ${coupon_result['discountAmount']:.2f}")
@@ -330,7 +327,7 @@ class ComplexCartDemo:
             if move_to_saved_result:
                 print("✅ Items moved to saved successfully!")
                 print(f"   Items moved: {len(item_codes)}")
-                print(f"   Save for later: enabled")
+                print("   Save for later: enabled")
                 
                 if "savedItems" in move_to_saved_result:
                     print(f"   Total saved items: {len(move_to_saved_result['savedItems'])}")
@@ -353,7 +350,7 @@ class ComplexCartDemo:
             if move_from_saved_result:
                 print("✅ Items moved from saved successfully!")
                 print(f"   Items moved: {len(saved_item_codes)}")
-                print(f"   Custom quantities applied")
+                print("   Custom quantities applied")
                 
                 if "movedItems" in move_from_saved_result:
                     print(f"   Items added to cart: {len(move_from_saved_result['movedItems'])}")

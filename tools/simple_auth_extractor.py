@@ -7,10 +7,8 @@ and extracts the surrounding context to understand the exact flow.
 """
 
 import re
-import json
-import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List
 
 def extract_auth_context(log_file_path: str):
     """

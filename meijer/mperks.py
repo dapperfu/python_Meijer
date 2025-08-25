@@ -5,11 +5,10 @@ This module provides a client for interacting with Meijer's mPerks loyalty progr
 fetching real rewards from the API and creating reward objects from the actual JSON responses.
 """
 
-import json
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 from dataclasses import dataclass, field
 
@@ -20,13 +19,10 @@ from .models.rewards import (
     FuelReward,
     ProductReward,
     RewardFactory,
-    RewardMetadata,
-    RewardRequirements,
     RewardStatus,
-    RewardType,
     TotalPurchaseDiscountReward,
 )
-from .exceptions import MeijerAPIError, AuthenticationError
+from .exceptions import MeijerAPIError
 
 
 # Compatibility classes for existing code

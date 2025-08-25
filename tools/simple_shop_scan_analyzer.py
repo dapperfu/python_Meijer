@@ -5,7 +5,7 @@ Simple shop'n'scan flow analyzer for mitmproxy logs.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 
 def extract_shop_scan_flows(log_file_path: str) -> Dict[str, Any]:
@@ -149,24 +149,24 @@ def main():
     session_template = generate_session_start_template(device_info)
     
     # Print results
-    print(f"\n=== SHOP'N'SCAN FLOW ANALYSIS ===")
+    print("\n=== SHOP'N'SCAN FLOW ANALYSIS ===")
     print(f"isShopAndScanEnabled calls: {len(flows['is_shop_scan_enabled'])}")
     print(f"NextGenPOSBasket calls: {len(flows['next_gen_pos_basket'])}")
     print(f"Device IDs found: {len(flows['device_ids'])}")
     print(f"UPC scans found: {len(flows['upc_scans'])}")
     print(f"Session starts found: {len(flows['session_starts'])}")
     
-    print(f"\n=== DEVICE INFORMATION ===")
+    print("\n=== DEVICE INFORMATION ===")
     print(f"Unique Device IDs: {device_info['unique_device_ids']}")
     print(f"Device OS: {device_info['device_os_info']}")
     print(f"App Versions: {device_info['app_versions']}")
     print(f"Store IDs: {device_info['store_ids']}")
     
-    print(f"\n=== UPC SCAN DETAILS ===")
+    print("\n=== UPC SCAN DETAILS ===")
     for scan in flows['upc_scans']:
         print(f"Barcode: {scan['barcode']}")
     
-    print(f"\n=== SESSION START TEMPLATE ===")
+    print("\n=== SESSION START TEMPLATE ===")
     print(json.dumps(session_template, indent=2))
     
     # Save results
@@ -179,7 +179,7 @@ def main():
     with open('logs/shop_scan_analysis_simple.json', 'w') as f:
         json.dump(results, f, indent=2)
     
-    print(f"\nResults saved to: logs/shop_scan_analysis_simple.json")
+    print("\nResults saved to: logs/shop_scan_analysis_simple.json")
 
 
 if __name__ == '__main__':

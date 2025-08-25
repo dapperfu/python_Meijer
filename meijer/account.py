@@ -22,14 +22,11 @@ profile management, preferences, receipts, orders, savings tracking, and
 other account-related features discovered through log analysis.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union, BinaryIO
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from enum import Enum
-import json
-import os
 
-from .exceptions import MeijerError
 from .models.base import BaseModel
 
 

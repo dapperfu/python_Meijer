@@ -5,7 +5,6 @@ and save them to auth.json for testing purposes.
 """
 
 import json
-import sys
 from pathlib import Path
 
 

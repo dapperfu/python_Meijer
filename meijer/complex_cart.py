@@ -22,10 +22,9 @@ edge case handling, cart validation, and advanced cart management features.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union, Tuple
-from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+from datetime import datetime
 from enum import Enum
-import json
 import logging
 
 from .exceptions import MeijerError

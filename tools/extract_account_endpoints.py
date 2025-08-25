@@ -4,8 +4,6 @@ Extract key account endpoints from the large analysis file.
 """
 
 import json
-import sys
-from typing import Dict, List, Any
 
 def extract_key_endpoints():
     """Extract key account endpoints from the analysis file."""
@@ -48,7 +46,7 @@ def extract_key_endpoints():
         for endpoint in meijer_endpoints:
             print(f"  {endpoint}")
         
-        print(f"\nFocused analysis saved to: focused_account_endpoints.json")
+        print("\nFocused analysis saved to: focused_account_endpoints.json")
         
     except Exception as e:
         print(f"Error: {e}")

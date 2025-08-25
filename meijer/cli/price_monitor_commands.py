@@ -34,7 +34,6 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Prompt, Confirm
-from rich.text import Text
 
 from ..price_monitor import PriceMonitor
 from ..client import Meijer
@@ -118,7 +117,7 @@ def init(data_dir: Optional[str]):
         )
         
         # Confirm setup
-        console.print(f"\n[bold]Configuration Summary:[/bold]")
+        console.print("\n[bold]Configuration Summary:[/bold]")
         console.print(f"  • Search: {search_query}")
         console.print(f"  • Location: {location}")
         console.print(f"  • Radius: {radius_int} miles")
@@ -469,18 +468,18 @@ def run_initial_scan(price_monitor: PriceMonitor, monitor_id: str) -> None:
 
 def display_scan_results(results: dict) -> None:
     """Display the results of a price monitoring scan."""
-    console.print(f"\n[bold green]✅ Scan completed successfully![/bold green]")
+    console.print("\n[bold green]✅ Scan completed successfully![/bold green]")
     console.print(f"Products found: [bold]{results['products_found']}[/bold]")
     console.print(f"Stores scanned: [bold]{results['stores_scanned']}[/bold]")
     
     if results['errors']:
-        console.print(f"\n[bold red]Errors encountered:[/bold red]")
+        console.print("\n[bold red]Errors encountered:[/bold red]")
         for error in results['errors']:
             console.print(f"  • {error}")
     
     if results['price_records']:
         # Show sample of products found
-        console.print(f"\n[bold]Sample products found:[/bold]")
+        console.print("\n[bold]Sample products found:[/bold]")
         
         table = Table(title="Sample Products")
         table.add_column("Product Name", style="cyan", no_wrap=True)

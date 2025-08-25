@@ -5,7 +5,7 @@ Comprehensive Shop'n'Scan endpoint analysis and comparison with Python implement
 
 import json
 import re
-from typing import List, Dict, Any, Set
+from typing import Dict, Any
 from pathlib import Path
 
 
@@ -111,7 +111,7 @@ def extract_all_shop_scan_endpoints(log_file_path: str) -> Dict[str, Any]:
                     if response_patterns:
                         results['endpoints'][endpoint_key]['responses'].extend(response_patterns)
                     
-                except Exception as e:
+                except Exception:
                     pass
                 
                 start = pos + 1
@@ -172,7 +172,7 @@ def extract_all_shop_scan_endpoints(log_file_path: str) -> Dict[str, Any]:
                     'http_requests': http_patterns
                 })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -331,34 +331,34 @@ def main():
     comparison = compare_implementations(log_analysis, python_analysis)
     
     # Print results
-    print(f"\n=== LOG ANALYSIS RESULTS ===")
+    print("\n=== LOG ANALYSIS RESULTS ===")
     print(f"Endpoints found: {len(log_analysis['endpoints'])}")
     print(f"Request types found: {len(log_analysis['request_types'])}")
     print(f"Session flows found: {len(log_analysis['session_flows'])}")
     
-    print(f"\n=== PYTHON IMPLEMENTATION ANALYSIS ===")
+    print("\n=== PYTHON IMPLEMENTATION ANALYSIS ===")
     print(f"Endpoints implemented: {len(python_analysis['endpoints'])}")
     print(f"Methods implemented: {len(python_analysis['methods'])}")
     print(f"Session management: {bool(python_analysis.get('session_management'))}")
     print(f"Cart operations: {bool(python_analysis.get('cart_operations'))}")
     
-    print(f"\n=== COMPARISON RESULTS ===")
+    print("\n=== COMPARISON RESULTS ===")
     print(f"Missing endpoints: {len(comparison['missing_endpoints'])}")
     print(f"Missing operations: {len(comparison['missing_operations'])}")
     print(f"Implementation gaps: {len(comparison['implementation_gaps'])}")
     
     if comparison['missing_endpoints']:
-        print(f"\nMissing endpoints:")
+        print("\nMissing endpoints:")
         for endpoint in comparison['missing_endpoints']:
             print(f"  - {endpoint}")
     
     if comparison['missing_operations']:
-        print(f"\nMissing operations:")
+        print("\nMissing operations:")
         for operation in comparison['missing_operations']:
             print(f"  - {operation}")
     
     if comparison['recommendations']:
-        print(f"\nRecommendations:")
+        print("\nRecommendations:")
         for rec in comparison['recommendations']:
             print(f"  - {rec}")
     
@@ -372,7 +372,7 @@ def main():
     with open('logs/comprehensive_shop_scan_analysis.json', 'w') as f:
         json.dump(detailed_results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/comprehensive_shop_scan_analysis.json")
+    print("\nDetailed results saved to: logs/comprehensive_shop_scan_analysis.json")
 
 
 if __name__ == '__main__':

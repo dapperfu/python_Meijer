@@ -18,16 +18,15 @@ Context: Enhanced headless authentication with persistent Firefox profiles
 
 import logging
 import time
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
 from selenium.common.exceptions import WebDriverException, TimeoutException
 
-from .firefox_profile_manager import FirefoxProfileManager, create_meijer_profile
+from .firefox_profile_manager import create_meijer_profile
 from .exceptions import AuthenticationError
 
 logger = logging.getLogger(__name__)

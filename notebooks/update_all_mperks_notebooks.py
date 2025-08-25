@@ -8,7 +8,6 @@ This script adds mPerks history sections to all relevant mPerks notebooks.
 import json
 import os
 import shutil
-from pathlib import Path
 import nbformat as nbf
 
 

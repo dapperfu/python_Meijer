@@ -7,7 +7,6 @@ Flask caching server instead of the real Meijer API.
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add the parent directory to the path so we can import the meijer module

@@ -10,7 +10,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from meijer.header_spoofing import HeaderSpoofer, create_spoofed_session
+from meijer.header_spoofing import HeaderSpoofer
 from meijer.akamai_bypass_client import AkamaiBypassClient
 import requests
 import json
@@ -35,7 +35,7 @@ def demonstrate_real_headers():
     for header, value in real_headers.items():
         print(f"  {header}: {value[:80]}{'...' if len(value) > 80 else ''}")
     
-    print(f"\n💡 KEY INSIGHTS:")
+    print("\n💡 KEY INSIGHTS:")
     print("  • User-Agent: Exact Meijer mobile app signature")
     print("  • X-ACF-Sensor-Data: Akamai client fingerprinting")
     print("  • Simple headers: No complex browser fingerprinting needed")
@@ -47,7 +47,7 @@ def demonstrate_real_headers():
 def create_mobile_app_session():
     """Create a session that mimics the Meijer mobile app."""
     
-    print(f"\n🔧 CREATING MOBILE APP SESSION")
+    print("\n🔧 CREATING MOBILE APP SESSION")
     print("-" * 40)
     
     # Create a session with the exact mobile app headers
@@ -66,7 +66,7 @@ def create_mobile_app_session():
 def test_akamai_bypass():
     """Test the Akamai bypass with real headers."""
     
-    print(f"\n🧪 TESTING AKAMAI BYPASS")
+    print("\n🧪 TESTING AKAMAI BYPASS")
     print("-" * 40)
     
     # Create the bypass client
@@ -105,7 +105,7 @@ def test_akamai_bypass():
 def demonstrate_header_rotation():
     """Demonstrate header rotation strategies."""
     
-    print(f"\n🔄 HEADER ROTATION STRATEGIES")
+    print("\n🔄 HEADER ROTATION STRATEGIES")
     print("-" * 40)
     
     # Create header spoofer
@@ -117,7 +117,7 @@ def demonstrate_header_rotation():
         platform = "Mobile" if "Mobile" in profile.user_agent else "Desktop"
         print(f"  {i+1}. {browser_name} ({platform}) - {profile.user_agent[:60]}...")
     
-    print(f"\n💡 Rotation Strategy:")
+    print("\n💡 Rotation Strategy:")
     print("  • Rotate every 10-20 requests")
     print("  • Maintain session consistency")
     print("  • Use mobile app headers for auth endpoints")
@@ -143,7 +143,7 @@ def main():
         # Show header rotation strategies
         demonstrate_header_rotation()
         
-        print(f"\n🎯 RECOMMENDATIONS FOR AKAMAI BYPASS:")
+        print("\n🎯 RECOMMENDATIONS FOR AKAMAI BYPASS:")
         print("=" * 60)
         print("1. Use exact mobile app User-Agent for authentication")
         print("2. Include X-ACF-Sensor-Data header when available")
@@ -153,7 +153,7 @@ def main():
         print("6. Maintain session state across requests")
         print("7. Monitor for blocking indicators and adapt")
         
-        print(f"\n💾 Example session headers saved to: example_session_headers.json")
+        print("\n💾 Example session headers saved to: example_session_headers.json")
         
         # Save example headers to file
         with open("example_session_headers.json", "w") as f:

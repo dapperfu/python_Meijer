@@ -7,9 +7,6 @@ actual Meijer API credentials.
 """
 
 import requests
-import json
-import time
-from typing import Dict, Any
 
 
 def test_health_endpoint(base_url: str = "http://localhost:5000") -> bool:

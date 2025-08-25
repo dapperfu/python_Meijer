@@ -9,7 +9,6 @@ with different configurations and options.
 import sys
 import os
 import logging
-from typing import Dict, Any
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -41,7 +40,7 @@ def demo_basic_headless_auth():
         
         # Read credentials
         username, password = read_credentials()
-        print(f"🔐 Using credentials:")
+        print("🔐 Using credentials:")
         print(f"   Username: {username}")
         print(f"   Password: {'*' * len(password)}")
         print()
@@ -204,7 +203,7 @@ def demo_class_based_auth():
             print(f"   Error: {result.error_message}")
         
         if result.success and result.session_data:
-            print(f"\n📄 Session Data:")
+            print("\n📄 Session Data:")
             print(f"   Page Source Length: {result.session_data.get('page_source_length', 'N/A')}")
             print(f"   Page Title: {result.session_data.get('page_title', 'N/A')}")
             print(f"   Current URL: {result.session_data.get('current_url', 'N/A')}")

@@ -19,7 +19,7 @@ def main():
         if flow.response:
             print(f"Status: {flow.response.status_code}, URL: {flow.request.pretty_url}")
             if flow.response.status_code == 401:
-                print(f"401 Error found!")
+                print("401 Error found!")
                 print(f"Headers: {dict(flow.request.headers)}")
                 break
 

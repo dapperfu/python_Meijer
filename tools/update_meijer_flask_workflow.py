@@ -10,11 +10,9 @@ This script automates the entire process:
 
 import json
 import logging
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 # Import our custom tools
 sys.path.append(str(Path(__file__).parent))
@@ -200,7 +198,7 @@ class MeijerFlaskUpdateWorkflow:
         
         # Extraction summary
         if self.extraction_results:
-            print(f"\n📊 ENDPOINT EXTRACTION:")
+            print("\n📊 ENDPOINT EXTRACTION:")
             print(f"  Total endpoints found: {self.extraction_results.get('total_endpoints', 0)}")
             print(f"  Report file: {self.extraction_results.get('report_file', 'N/A')}")
             print(f"  Routes file: {self.extraction_results.get('routes_file', 'N/A')}")
@@ -208,14 +206,14 @@ class MeijerFlaskUpdateWorkflow:
             # Print categories
             categories = self.extraction_results.get('categories', {})
             if categories:
-                print(f"  Categories:")
+                print("  Categories:")
                 for category, endpoints in categories.items():
                     if endpoints:
                         print(f"    {category}: {len(endpoints)} endpoints")
         
         # Update summary
         if self.update_results:
-            print(f"\n🐍 FLASK SERVER UPDATE:")
+            print("\n🐍 FLASK SERVER UPDATE:")
             print(f"  Status: {self.update_results.get('status', 'N/A')}")
             print(f"  New endpoints added: {self.update_results.get('new_endpoints_added', 0)}")
             
@@ -228,7 +226,7 @@ class MeijerFlaskUpdateWorkflow:
             # Print new endpoints
             new_endpoints = self.update_results.get('new_endpoints', [])
             if new_endpoints:
-                print(f"  New endpoints:")
+                print("  New endpoints:")
                 for endpoint in new_endpoints:
                     print(f"    {endpoint}")
         

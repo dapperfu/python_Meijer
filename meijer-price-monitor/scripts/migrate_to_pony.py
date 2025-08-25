@@ -25,7 +25,7 @@ import sqlite3
 import sys
 from pathlib import Path
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict
 
 # Add the parent directory to the path to import price_monitor modules
 sys.path.insert(0, str(Path(__file__).parent.parent))

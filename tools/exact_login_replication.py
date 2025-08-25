@@ -7,7 +7,6 @@ Replicates the exact successful login sequence from the mitmproxy logs
 import requests
 import json
 import time
-import random
 import uuid
 import os
 import urllib3
@@ -15,8 +14,8 @@ import hashlib
 import base64
 import secrets
 from urllib3.exceptions import InsecureRequestWarning
-from urllib.parse import urlencode, parse_qs, urlparse
-from typing import Dict, Any, Optional, Tuple
+from urllib.parse import parse_qs, urlparse
+from typing import Dict, Any, Tuple
 import logging
 
 # Suppress SSL warnings when using mitmproxy
@@ -89,7 +88,7 @@ class ExactLoginReplication:
         }
         
         print(f"🚀 ExactLoginReplication initialized for {username}")
-        print(f"🔧 Session headers configured for mobile app simulation")
+        print("🔧 Session headers configured for mobile app simulation")
 
     def generate_pkce_params(self) -> Tuple[str, str]:
         """Generate PKCE parameters exactly as in successful flow."""

@@ -23,7 +23,7 @@ modern cart operations and better integration.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 from datetime import datetime
 
 from .exceptions import CartError

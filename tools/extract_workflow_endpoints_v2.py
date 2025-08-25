@@ -18,8 +18,7 @@ import json
 import sys
 from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 
 from mitmproxy import http, options
 from mitmproxy.tools.dump import DumpMaster
@@ -334,7 +333,7 @@ class WorkflowEndpointExtractor:
         print(f"📊 Total Flows Processed: {len(self.flows)}")
         
         # Endpoint counts
-        print(f"\n🔍 Endpoints Found:")
+        print("\n🔍 Endpoints Found:")
         for key, value in self.results.items():
             if isinstance(value, list):
                 print(f"  • {key}: {len(value)} endpoints")
@@ -353,7 +352,7 @@ class WorkflowEndpointExtractor:
         # Insights
         if "insights" in self.results:
             insights = self.results["insights"]
-            print(f"\n💡 Key Insights:")
+            print("\n💡 Key Insights:")
             for category, items in insights.items():
                 if items:
                     print(f"  • {category}: {len(items)} items")

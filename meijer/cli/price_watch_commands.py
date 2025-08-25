@@ -21,8 +21,7 @@ following the existing CLI patterns and style.
 """
 
 import csv
-import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -34,7 +33,7 @@ from rich.text import Text
 
 from ..price_watch.database import ensure_database_exists
 from ..price_watch.manager import PriceWatchManager
-from ..price_watch.email_config import get_email_config, create_email_config_template
+from ..price_watch.email_config import get_email_config
 from ..price_watch.email_config import EmailSender
 
 
@@ -116,7 +115,7 @@ def add_watch(
         )
         
         # Display success message
-        console.print(f"✅ [green]Watch added successfully![/green]")
+        console.print("✅ [green]Watch added successfully![/green]")
         console.print(f"   Product: {watch.product}")
         console.print(f"   Store: {watch.store or 'Any Store'}")
         if watch.desired_price:
@@ -289,7 +288,7 @@ def refresh_prices(
         )
         
         # Display results
-        console.print(f"✅ [green]Price refresh completed![/green]")
+        console.print("✅ [green]Price refresh completed![/green]")
         console.print(f"   Refreshed: {result['refreshed']}")
         console.print(f"   Errors: {result['errors']}")
         console.print(f"   Duration: {result['duration']:.2f}s")
@@ -479,7 +478,7 @@ def import_watches(file_path: Path):
                     error_count += 1
                     console.print(f"❌ [red]Error importing row {row_num}: {e}[/red]")
         
-        console.print(f"✅ [green]Import completed![/green]")
+        console.print("✅ [green]Import completed![/green]")
         console.print(f"   Imported: {imported_count}")
         console.print(f"   Errors: {error_count}")
         
@@ -775,7 +774,7 @@ def get_price(
         )
         
         if price_info:
-            console.print(f"✅ [green]Price found![/green]")
+            console.print("✅ [green]Price found![/green]")
             console.print(f"   Price: ${price_info['price']}")
             console.print(f"   Type: {price_info['price_type']}")
             if price_info.get('regular_price'):
@@ -954,7 +953,7 @@ def _send_email_notifications(alerts: List[Dict[str, Any]]) -> None:
         message_id = email_sender.send_consolidated_alerts(alerts)
         
         if message_id:
-            console.print(f"✅ [green]Email notification sent successfully![/green]")
+            console.print("✅ [green]Email notification sent successfully![/green]")
             console.print(f"   Message ID: {message_id}")
             console.print(f"   Recipients: {len(alerts)} alert(s) consolidated")
         else:

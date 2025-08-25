@@ -24,14 +24,12 @@ allowing local testing and development without hitting the real API.
 import json
 import logging
 import os
-import time
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
-from urllib.parse import urlparse, parse_qs
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 import redis
 import requests
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address

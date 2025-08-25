@@ -10,7 +10,7 @@ import sys
 import re
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 def search_for_upc(content: str, target_upc: str) -> List[Dict[str, Any]]:
@@ -214,7 +214,7 @@ def main():
     log_file = sys.argv[1]
     target_upc = sys.argv[2] if len(sys.argv) > 2 else "719812800516"
     
-    print(f"BOGO40% Pattern Analysis")
+    print("BOGO40% Pattern Analysis")
     print(f"Log file: {log_file}")
     print(f"Target UPC: {target_upc}")
     
@@ -252,7 +252,7 @@ def main():
         
         # Analyze BOGO patterns
         print(f"\n{'='*60}")
-        print(f"BOGO PATTERN ANALYSIS")
+        print("BOGO PATTERN ANALYSIS")
         print(f"{'='*60}")
         
         bogo_patterns = analyze_bogo40_patterns(content_str)
@@ -265,14 +265,14 @@ def main():
         
         # Analyze cart progression for BOGO patterns
         print(f"\n{'='*60}")
-        print(f"CART PROGRESSION BOGO ANALYSIS")
+        print("CART PROGRESSION BOGO ANALYSIS")
         print(f"{'='*60}")
         
         cart_progression = analyze_cart_progression_for_bogo(content_str)
         
         if cart_progression:
             print(f"Found {len(cart_progression)} cart progression steps")
-            print(f"\n📊 CART PROGRESSION WITH BOGO INDICATORS:")
+            print("\n📊 CART PROGRESSION WITH BOGO INDICATORS:")
             print(f"{'Step':<4} {'Cart Total':<12} {'Items Added':<12} {'Price/Item':<12} {'BOGO':<15}")
             print("-" * 70)
             
@@ -283,7 +283,7 @@ def main():
             # Show BOGO details
             bogo_steps = [step for step in cart_progression if step['bogo_indicator']]
             if bogo_steps:
-                print(f"\n💰 BOGO PRICING DETAILS:")
+                print("\n💰 BOGO PRICING DETAILS:")
                 for step in bogo_steps:
                     print(f"  Step {step['step']}: {step['bogo_type']} - Added ${step['items_added']:.2f} worth of items")
                     print(f"    Previous price per item: ${cart_progression[step['step']-2]['price_per_item']:.2f}")

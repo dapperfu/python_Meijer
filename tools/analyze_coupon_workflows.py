@@ -8,8 +8,8 @@ including ClippedOffers, ads, and other coupon endpoints.
 
 import json
 import re
-from collections import defaultdict, Counter
-from typing import Dict, List, Any, Optional
+from collections import defaultdict
+from typing import Any, Optional
 from urllib.parse import urlparse, parse_qs
 import mitmproxy.ctx
 from mitmproxy import http
@@ -162,11 +162,11 @@ class CouponWorkflowAnalyzer:
         print(f"\nClippedOffers Endpoint Calls: {len(self.clipped_offers)}")
         print(f"Ads Endpoint Calls: {len(self.ads_data)}")
         
-        print(f"\nOther Coupon Endpoints:")
+        print("\nOther Coupon Endpoints:")
         for endpoint, calls in self.coupon_endpoints.items():
             print(f"  {endpoint}: {len(calls)} calls")
         
-        print(f"\nDepartment/Category Breakdown:")
+        print("\nDepartment/Category Breakdown:")
         for dept, count in sorted(self.category_counts.items()):
             print(f"  {dept}: {count}")
         

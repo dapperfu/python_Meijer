@@ -543,7 +543,7 @@ def main():
             # Show JWT analysis
             if 'jwt_analysis' in response and response['jwt_analysis'].get('is_authentic'):
                 jwt = response['jwt_analysis']
-                print(f"      JWT Analysis:")
+                print("      JWT Analysis:")
                 print(f"        Algorithm: {jwt.get('algorithm')}")
                 print(f"        Issuer: {jwt.get('issuer')}")
                 print(f"        Audience: {jwt.get('audience')}")
@@ -571,7 +571,7 @@ def main():
             # Show JWT analysis
             if 'jwt_analysis' in request and request['jwt_analysis'].get('is_authentic'):
                 jwt = request['jwt_analysis']
-                print(f"      JWT Analysis:")
+                print("      JWT Analysis:")
                 print(f"        Algorithm: {jwt.get('algorithm')}")
                 print(f"        Issuer: {jwt.get('issuer')}")
                 print(f"        Audience: {jwt.get('audience')}")
@@ -600,7 +600,7 @@ def main():
                 # Show JWT analysis for OAuth2 tokens
                 if 'jwt_analysis' in best_tokens and best_tokens['jwt_analysis'].get('is_authentic'):
                     jwt = best_tokens['jwt_analysis']
-                    print(f"   JWT Details:")
+                    print("   JWT Details:")
                     print(f"     Algorithm: {jwt.get('algorithm')}")
                     print(f"     Key ID: {jwt.get('key_id')}")
                     print(f"     Issuer: {jwt.get('issuer')}")
@@ -623,7 +623,7 @@ def main():
                 # Show JWT analysis for bearer tokens
                 if 'jwt_analysis' in best_tokens and best_tokens['jwt_analysis'].get('is_authentic'):
                     jwt = best_tokens['jwt_analysis']
-                    print(f"   JWT Details:")
+                    print("   JWT Details:")
                     print(f"     Algorithm: {jwt.get('algorithm')}")
                     print(f"     Key ID: {jwt.get('key_id')}")
                     print(f"     Issuer: {jwt.get('issuer')}")
@@ -752,7 +752,7 @@ def test_jwt_analysis():
     print(f"   Is Authentic: {analysis.get('is_authentic')}")
     
     # Show the decoded payload for verification
-    print(f"\n📋 Decoded JWT Payload:")
+    print("\n📋 Decoded JWT Payload:")
     payload = analysis.get('payload', {})
     for key, value in payload.items():
         if isinstance(value, list):

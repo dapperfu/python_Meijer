@@ -10,10 +10,8 @@ This script directly reads mitmproxy log files to find:
 """
 
 import json
-import re
-import sys
 from pathlib import Path
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, List, Any
 from collections import defaultdict
 import gzip
 import pickle
@@ -222,8 +220,8 @@ def main():
     with open("shop_scan_analysis_direct.json", "w") as f:
         json.dump(comprehensive_report, f, indent=2, default=str)
     
-    print(f"\n✅ Analysis complete!")
-    print(f"📄 Comprehensive report saved to: shop_scan_analysis_direct.json")
+    print("\n✅ Analysis complete!")
+    print("📄 Comprehensive report saved to: shop_scan_analysis_direct.json")
     print(f"🔍 Found {len(comprehensive_report['analysis_summary']['total_unique_endpoints'])} unique endpoints")
     print(f"🏪 Found {len(comprehensive_report['analysis_summary']['total_shop_endpoints'])} shop-related endpoints")
     print(f"📱 Found {len(comprehensive_report['analysis_summary']['total_scan_endpoints'])} scan-related endpoints")

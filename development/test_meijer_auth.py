@@ -4,7 +4,6 @@ Test script for Meijer authentication with real credentials.
 This script will test the complete authentication flow and validate auth.json creation.
 """
 
-import os
 import sys
 import json
 import logging

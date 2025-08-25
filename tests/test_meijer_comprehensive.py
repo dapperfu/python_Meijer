@@ -7,7 +7,7 @@ Tests basic functionality that works with the current API implementation.
 
 import unittest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 # Import the client
 from meijer import (

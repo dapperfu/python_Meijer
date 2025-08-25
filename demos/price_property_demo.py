@@ -42,40 +42,40 @@ async def demo_price_properties():
         item = create_meijer_item(test_upc, meijer_client=client)
         print(f"   Created: {item}")
         
-        print(f"\n3. 🔍 Testing different price access methods...")
+        print("\n3. 🔍 Testing different price access methods...")
         
         # Method 1: Direct price access (triggers background population)
-        print(f"\n   📊 Method 1: item.price (background population)")
+        print("\n   📊 Method 1: item.price (background population)")
         print(f"      Initial price: {item.price}")
-        print(f"      Note: This triggers background population automatically")
+        print("      Note: This triggers background population automatically")
         
         # Wait a bit for background population
-        print(f"      Waiting 2 seconds for background population...")
+        print("      Waiting 2 seconds for background population...")
         await asyncio.sleep(2)
         
         print(f"      Price after background population: {item.price}")
         
         # Method 2: Explicit async population
-        print(f"\n   ⚡ Method 2: await item.populated_price (explicit)")
-        print(f"      This ensures data is populated before proceeding")
+        print("\n   ⚡ Method 2: await item.populated_price (explicit)")
+        print("      This ensures data is populated before proceeding")
         populated_price = await item.populated_price
         print(f"      Populated price: {populated_price}")
         
         # Method 3: Force refresh
-        print(f"\n   🔄 Method 3: await item.force_refresh_price (refresh)")
-        print(f"      This ignores cached data and gets fresh information")
+        print("\n   🔄 Method 3: await item.force_refresh_price (refresh)")
+        print("      This ignores cached data and gets fresh information")
         refreshed_price = await item.force_refresh_price
         print(f"      Refreshed price: {refreshed_price}")
         
-        print(f"\n4. 📋 Summary of Price Properties")
-        print(f"   • item.price: Automatic background population")
-        print(f"   • await item.populated_price: Explicit population")
-        print(f"   • await item.force_refresh_price: Force refresh")
+        print("\n4. 📋 Summary of Price Properties")
+        print("   • item.price: Automatic background population")
+        print("   • await item.populated_price: Explicit population")
+        print("   • await item.force_refresh_price: Force refresh")
         
-        print(f"\n5. 💡 When to Use Each Method")
-        print(f"   • item.price: When you want background population (non-blocking)")
-        print(f"   • await item.populated_price: When you need data before proceeding")
-        print(f"   • await item.force_refresh_price: When you need latest data")
+        print("\n5. 💡 When to Use Each Method")
+        print("   • item.price: When you want background population (non-blocking)")
+        print("   • await item.populated_price: When you need data before proceeding")
+        print("   • await item.force_refresh_price: When you need latest data")
         
     except Exception as e:
         print(f"❌ Demo failed: {e}")
@@ -94,10 +94,10 @@ async def demo_mock_price_properties():
         item = MeijerItem.from_upc("123456789012")
         print(f"   Created mock item: {item}")
         
-        print(f"\n   Testing price properties without client:")
+        print("\n   Testing price properties without client:")
         print(f"   • item.price: {item.price}")
-        print(f"   • No background population (no client)")
-        print(f"   • No async methods available")
+        print("   • No background population (no client)")
+        print("   • No async methods available")
         
     except Exception as e:
         print(f"   ❌ Mock demo failed: {e}")
@@ -174,7 +174,7 @@ for item in items:
     for i, pattern in enumerate(patterns, 1):
         print(f"\n{i}. {pattern['title']}")
         print(f"   {pattern['description']}")
-        print(f"   Code:")
+        print("   Code:")
         print(f"   {pattern['code']}")
 
 

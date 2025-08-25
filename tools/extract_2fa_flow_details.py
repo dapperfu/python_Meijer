@@ -7,7 +7,6 @@ This tool focuses on the specific authentication sequence to examine cookies and
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
 
 def extract_2fa_flow_details():
     """Extract detailed 2FA flow details around the critical point."""
@@ -59,7 +58,7 @@ def extract_2fa_flow_details():
         print("=" * 80)
         
         # Now look for the complete authentication sequence around this point
-        print(f"\n🔍 Searching for complete authentication sequence...")
+        print("\n🔍 Searching for complete authentication sequence...")
         
         # Look for username/password submissions before the 2FA challenge
         username_pattern = r'POST.*username.*HTTP'
@@ -153,7 +152,7 @@ def extract_2fa_flow_details():
         print(f"\n📁 Detailed 2FA analysis saved to: {analysis_file}")
         
         # Print summary
-        print(f"\n📋 Authentication Sequence Summary:")
+        print("\n📋 Authentication Sequence Summary:")
         for i, event in enumerate(auth_sequence):
             print(f"  {i+1}. {event['type']} (pos: {event['position']:,})")
         

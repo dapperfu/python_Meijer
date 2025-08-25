@@ -26,20 +26,17 @@ This module provides the core functionality for:
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Set
+from typing import Dict, List, Optional, Any
 import time
 
 # Import from the core Meijer API
-from meijer.client import Meijer
 from meijer.search import Search
-from meijer.stores import MeijerStore
 MEIJER_AVAILABLE = True
 
 # Import local modules
 from .models import PriceRecord, PriceHistory, PriceDropAnalysis, ShopnScanPrice
-from .database import PriceDatabase
 from .search_engine import EnhancedSearchEngine, SearchQuery, SearchResult
 from .storage_manager import DualPathStorageManager
 

@@ -7,9 +7,8 @@ all shop and scan related endpoints and their details.
 """
 
 import json
-import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from collections import defaultdict
 
 
@@ -185,7 +184,7 @@ def main():
     output_file = "shop_scan_endpoints_analysis.json"
     save_shop_scan_endpoints(shop_scan_data, output_file)
     
-    print(f"\n✅ Shop & scan endpoint extraction complete!")
+    print("\n✅ Shop & scan endpoint extraction complete!")
     print(f"📄 Results saved to: {output_file}")
 
 

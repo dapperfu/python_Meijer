@@ -6,15 +6,12 @@ and managing Shop & Scan functionality with simplified BOGO detection (1 vs 2 it
 and enhanced workflow management.
 """
 
-import json
-import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from .client import Meijer
 
 from .models import MeijerItem
-from .exceptions import ShopScanError
 
 
 class ShopNScan:
@@ -812,7 +809,7 @@ class ShopNScan:
                 
                 # Generate recommendation
                 if price_drop_percentage >= 100:
-                    results["recommendation"] = f"BOGO Free! Second item is completely free"
+                    results["recommendation"] = "BOGO Free! Second item is completely free"
                 else:
                     results["recommendation"] = f"BOGO detected! {bogo_type} - {price_drop_percentage:.1f}% off second item"
             else:

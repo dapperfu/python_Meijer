@@ -14,11 +14,9 @@ Note: These tests will use live endpoints when authenticated, falling back to mo
 when unauthenticated to ensure tests can run in CI/CD environments.
 """
 
-import json
-import logging
 import os
-from typing import Dict, List, Optional
-from unittest.mock import Mock, patch
+from typing import Dict
+from unittest.mock import Mock
 
 import pytest
 

@@ -33,7 +33,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from price_monitor.core import PriceMonitor
 from price_monitor.search_engine import SearchQuery
-from price_monitor.storage_manager import DualPathStorageManager
 
 
 def setup_logging():
@@ -132,7 +131,7 @@ def test_price_verification(upcs: list):
         test_upcs, store_id, progress_callback
     )
     
-    print(f"\n✅ Verification completed!")
+    print("\n✅ Verification completed!")
     
     # Display results
     for upc, result in verification_results.items():
@@ -237,8 +236,8 @@ def main():
         print("\n📋 Test Summary:")
         print(f"  • Enhanced search: ✅ {len(search_results) if search_results else 0} products found")
         print(f"  • Price verification: ✅ Tested with {len(search_results[:3]) if search_results else 0} UPCs")
-        print(f"  • Storage statistics: ✅ Retrieved successfully")
-        print(f"  • Database operations: ✅ All operations completed")
+        print("  • Storage statistics: ✅ Retrieved successfully")
+        print("  • Database operations: ✅ All operations completed")
         
     except Exception as e:
         print(f"\n❌ Test failed with error: {e}")

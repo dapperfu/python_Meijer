@@ -144,7 +144,7 @@ def demo_orders():
             if orders:
                 # Show first order details
                 first_order = orders[0]
-                print(f"\n2. First order details:")
+                print("\n2. First order details:")
                 print(f"   - Order ID: {first_order.get('orderId', 'N/A')}")
                 print(f"   - Order Number: {first_order.get('orderNumber', 'N/A')}")
                 print(f"   - Status: {first_order.get('status', 'N/A')}")
@@ -153,14 +153,14 @@ def demo_orders():
                 # Get detailed order information
                 order_id = first_order.get('orderId')
                 if order_id:
-                    print(f"\n3. Getting detailed order information...")
+                    print("\n3. Getting detailed order information...")
                     order_details = client.account.get_order_details(order_id)
                     if order_details:
-                        print(f"   ✅ Order details retrieved successfully")
+                        print("   ✅ Order details retrieved successfully")
                         print(f"   - Items: {len(order_details.get('items', []))}")
                         print(f"   - Store: {order_details.get('storeName', 'N/A')}")
                     else:
-                        print(f"   ❌ Could not get order details")
+                        print("   ❌ Could not get order details")
             else:
                 print("   ℹ️  No orders found in history")
         else:
@@ -261,7 +261,7 @@ def demo_account_update():
         # Show what fields can be updated
         profile = client.account.get_profile()
         if profile:
-            print(f"\n2. Current profile fields that can be updated:")
+            print("\n2. Current profile fields that can be updated:")
             print(f"   - First Name: {profile.first_name}")
             print(f"   - Last Name: {profile.last_name}")
             print(f"   - Email: {profile.email}")

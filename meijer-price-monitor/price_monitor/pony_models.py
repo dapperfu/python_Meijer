@@ -23,7 +23,7 @@ database structure with minimal column overlap and proper relationships.
 
 from pony.orm import *
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 import logging
 
 # Configure logging

@@ -13,16 +13,14 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, Any
 from collections import defaultdict
-import re
 
 # Add the project root to the path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from mitmproxy import http
-from mitmproxy import ctx
 
 
 class ShopScanAnalyzer:
@@ -135,7 +133,7 @@ def analyze_log_file(log_file: str) -> Dict[str, Any]:
     # Create a temporary script for this analysis
     temp_script = f"/tmp/analyze_{Path(log_file).stem}.py"
     
-    script_content = f'''#!/usr/bin/env python3
+    script_content = '''#!/usr/bin/env python3
 import json
 import sys
 from pathlib import Path
@@ -236,8 +234,8 @@ def main():
     with open("shop_scan_analysis_comprehensive.json", "w") as f:
         json.dump(comprehensive_report, f, indent=2, default=str)
     
-    print(f"\n✅ Analysis complete!")
-    print(f"📄 Comprehensive report saved to: shop_scan_analysis_comprehensive.json")
+    print("\n✅ Analysis complete!")
+    print("📄 Comprehensive report saved to: shop_scan_analysis_comprehensive.json")
     print(f"🔍 Found {len(comprehensive_report['analysis_summary']['total_unique_endpoints'])} unique endpoints")
     print(f"🏪 Found {len(comprehensive_report['analysis_summary']['total_shop_endpoints'])} shop-related endpoints")
     print(f"📱 Found {len(comprehensive_report['analysis_summary']['total_scan_endpoints'])} scan-related endpoints")

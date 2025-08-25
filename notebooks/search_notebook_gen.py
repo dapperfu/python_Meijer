@@ -11,8 +11,6 @@ This script creates a notebook demonstrating all search capabilities:
 """
 
 import json
-from pathlib import Path
-from datetime import datetime
 
 def generate_search_notebook():
     """Generate the comprehensive search notebook."""
@@ -606,7 +604,7 @@ def main():
     
     print(f"✅ Search notebook generated: {output_file}")
     print(f"📊 Notebook contains {len(notebook['cells'])} cells")
-    print(f"🔍 Features: Autocomplete, Search, Click Tracking, Behavior Analytics, Image Management")
+    print("🔍 Features: Autocomplete, Search, Click Tracking, Behavior Analytics, Image Management")
 
 if __name__ == "__main__":
     main()

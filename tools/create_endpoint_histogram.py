@@ -24,8 +24,7 @@ to help prioritize implementation efforts.
 import json
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from typing import Dict, List, Any
-import numpy as np
+from typing import Dict, Any
 
 
 def load_endpoint_data(filename: str = "endpoint_gaps_report.json") -> Dict[str, Any]:

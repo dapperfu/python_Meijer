@@ -24,7 +24,7 @@ SQLite database module while maintaining the same interface.
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 from contextlib import contextmanager
 
 from pony.orm import *

@@ -8,7 +8,6 @@ by looking for HTTP request patterns and extracting the surrounding context.
 
 import re
 import json
-import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -112,7 +111,7 @@ def find_http_requests(content: bytes, pattern: bytes) -> List[Dict[str, Any]]:
             if request:
                 requests.append(request)
             
-        except Exception as e:
+        except Exception:
             pass
         
         start = pos + 1
@@ -154,7 +153,7 @@ def find_requests_by_url_pattern(content: bytes, url_pattern: bytes) -> List[Dic
                     }
                     requests.append(request)
             
-        except Exception as e:
+        except Exception:
             pass
         
         start = pos + 1
@@ -206,7 +205,7 @@ def parse_http_request(context_text: str, pattern_offset: int) -> Optional[Dict[
         
         return request
         
-    except Exception as e:
+    except Exception:
         return None
 
 def extract_headers_from_context(context_text: str) -> Dict[str, str]:

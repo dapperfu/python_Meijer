@@ -7,8 +7,6 @@ This tool captures the entire authentication workflow from start to finish.
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from collections import defaultdict
 
 def extract_complete_login_sequence():
     """Extract the complete login sequence with headers, cookies, and 2FA."""
@@ -159,7 +157,7 @@ def extract_complete_login_sequence():
         print(f"\n📁 Detailed analysis saved to: {analysis_file}")
         
         # Print summary
-        print(f"\n📋 Login Sequence Summary:")
+        print("\n📋 Login Sequence Summary:")
         for i, event in enumerate(login_sequence):
             print(f"  {i+1}. {event['type']} (pos: {event['position']:,})")
         

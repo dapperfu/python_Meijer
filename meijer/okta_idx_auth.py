@@ -157,7 +157,7 @@ class OKTAIDXAuthenticator:
         response = self.session.get(login_page_url, headers=headers)
         
         if response.status_code == 200:
-            print(f"✅ Login page visited successfully")
+            print("✅ Login page visited successfully")
             print(f"🍪 Bootstrap cookies: {len(self.session.cookies)} cookies")
             for cookie in self.session.cookies:
                 print(f"   {cookie.name}: {cookie.value[:20]}...")

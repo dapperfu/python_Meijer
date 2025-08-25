@@ -5,7 +5,7 @@ Search for specific test barcodes in shop'n'scan flows.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 
 def search_test_barcodes(log_file_path: str) -> Dict[str, Any]:
@@ -87,7 +87,7 @@ def search_test_barcodes(log_file_path: str) -> Dict[str, Any]:
                     if any(pattern in context_text for pattern in ['START_TRANSACTION', 'NextGenPOSBasket', 'isShopAndScanEnabled']):
                         results['session_flows'].append(barcode_match)
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -212,31 +212,31 @@ def main():
     session_template = generate_test_session_template(analysis)
     
     # Print results
-    print(f"\n=== TEST BARCODE SEARCH RESULTS ===")
+    print("\n=== TEST BARCODE SEARCH RESULTS ===")
     print(f"Total barcode matches found: {len(results['barcode_matches'])}")
     print(f"Shop'n'scan contexts: {len(results['shop_scan_contexts'])}")
     print(f"Cart operations: {len(results['cart_operations'])}")
     print(f"Session flows: {len(results['session_flows'])}")
     
-    print(f"\n=== BARCODE FREQUENCY ===")
+    print("\n=== BARCODE FREQUENCY ===")
     for barcode, count in analysis['barcode_frequency'].items():
         print(f"{barcode}: {count} matches")
     
-    print(f"\n=== SHOP'N'SCAN USAGE ===")
+    print("\n=== SHOP'N'SCAN USAGE ===")
     for barcode, usage in analysis['shop_scan_usage'].items():
         print(f"{barcode}: {len(usage)} shop'n'scan contexts")
         for i, usage_info in enumerate(usage[:3]):  # Show first 3
             print(f"  {i+1}. Position: {usage_info['position']}, HTTP patterns: {usage_info['http_patterns']}")
     
-    print(f"\n=== CART OPERATIONS ===")
+    print("\n=== CART OPERATIONS ===")
     for barcode, operations in analysis['cart_operations'].items():
         print(f"{barcode}: {len(operations)} cart operations")
     
-    print(f"\n=== SESSION FLOWS ===")
+    print("\n=== SESSION FLOWS ===")
     for barcode, flows in analysis['session_flows'].items():
         print(f"{barcode}: {len(flows)} session flows")
     
-    print(f"\n=== TEST SESSION TEMPLATE ===")
+    print("\n=== TEST SESSION TEMPLATE ===")
     print(json.dumps(session_template, indent=2))
     
     # Save detailed results
@@ -249,7 +249,7 @@ def main():
     with open('logs/test_barcode_analysis.json', 'w') as f:
         json.dump(detailed_results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/test_barcode_analysis.json")
+    print("\nDetailed results saved to: logs/test_barcode_analysis.json")
 
 
 if __name__ == '__main__':

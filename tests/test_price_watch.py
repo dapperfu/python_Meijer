@@ -26,12 +26,9 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from decimal import Decimal
 
-from meijer.price_watch.database import PriceWatchDatabase, ensure_database_exists
+from meijer.price_watch.database import PriceWatchDatabase
 from meijer.price_watch.manager import PriceWatchManager
 from meijer.price_watch.email_config import EmailConfig, EmailSender
-from meijer.models.price_watch import (
-    Product, Store, PriceHistory, Watch, PriceType, OnlyWhenType
-)
 
 
 class TestPriceWatchDatabase:

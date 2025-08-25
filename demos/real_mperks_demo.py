@@ -9,13 +9,11 @@ from the Meijer API and create reward objects from the actual JSON responses.
 import sys
 import json
 from pathlib import Path
-from decimal import Decimal
 
 # Add the meijer package to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from meijer.mperks import MPerksClient
-from meijer.models.rewards import RewardStatus
 
 
 def demo_real_mperks_client():

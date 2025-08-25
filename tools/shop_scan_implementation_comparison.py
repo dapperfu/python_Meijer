@@ -5,7 +5,7 @@ Comprehensive comparison between Shop'n'Scan log analysis and Python implementat
 
 import json
 import re
-from typing import List, Dict, Any, Set
+from typing import Dict, Any
 from pathlib import Path
 
 
@@ -379,45 +379,45 @@ def main():
     implementation_plan = generate_implementation_plan(comparison)
     
     # Print results
-    print(f"\n=== PYTHON IMPLEMENTATION ANALYSIS ===")
+    print("\n=== PYTHON IMPLEMENTATION ANALYSIS ===")
     print(f"Endpoints implemented: {len(python_analysis['endpoints'])}")
     print(f"Methods implemented: {len(python_analysis['methods'])}")
     print(f"Session management: {bool(python_analysis.get('session_management'))}")
     print(f"Cart operations: {bool(python_analysis.get('cart_operations'))}")
     print(f"Missing features: {len(python_analysis['missing_features'])}")
     
-    print(f"\n=== LOG ANALYSIS FINDINGS ===")
+    print("\n=== LOG ANALYSIS FINDINGS ===")
     print(f"Endpoints found: {len(log_analysis['endpoints'])}")
     print(f"Operations found: {len(log_analysis['operations'])}")
     print(f"Cart items: {len(log_analysis['cart_items'])}")
     
-    print(f"\n=== COMPARISON RESULTS ===")
+    print("\n=== COMPARISON RESULTS ===")
     print(f"Missing methods: {len(comparison['missing_methods'])}")
     print(f"Missing endpoints: {len(comparison['missing_endpoints'])}")
     print(f"Payload mismatches: {len(comparison['payload_mismatches'])}")
     
     if comparison['missing_methods']:
-        print(f"\nMissing Methods:")
+        print("\nMissing Methods:")
         for item in comparison['missing_methods']:
             print(f"  - {item['method']}: {item['description']} (Priority: {item['priority']})")
     
     if comparison['missing_endpoints']:
-        print(f"\nMissing Endpoints:")
+        print("\nMissing Endpoints:")
         for item in comparison['missing_endpoints']:
             print(f"  - {item['endpoint']}: {item['suggested_method']}")
     
     if comparison['payload_mismatches']:
-        print(f"\nPayload Mismatches:")
+        print("\nPayload Mismatches:")
         for item in comparison['payload_mismatches']:
             print(f"  - {item['operation']}: {item['action_needed']}")
     
-    print(f"\n=== IMPLEMENTATION PLAN ===")
+    print("\n=== IMPLEMENTATION PLAN ===")
     print(f"High Priority: {len(implementation_plan['high_priority'])} items")
     print(f"Medium Priority: {len(implementation_plan['medium_priority'])} items")
     print(f"Implementation Steps: {len(implementation_plan['implementation_steps'])}")
     
     if implementation_plan['implementation_steps']:
-        print(f"\nImplementation Steps:")
+        print("\nImplementation Steps:")
         for step in implementation_plan['implementation_steps']:
             print(f"  - {step['step']}: {step['description']} ({step['estimated_effort']})")
     
@@ -432,7 +432,7 @@ def main():
     with open('logs/shop_scan_implementation_comparison.json', 'w') as f:
         json.dump(detailed_results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/shop_scan_implementation_comparison.json")
+    print("\nDetailed results saved to: logs/shop_scan_implementation_comparison.json")
 
 
 if __name__ == '__main__':

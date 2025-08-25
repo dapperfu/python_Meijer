@@ -14,7 +14,7 @@ import sys
 import re
 import json
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 
 def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
@@ -91,7 +91,7 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
         print(f"  ✅ Found {len(upc_locations)} occurrences of UPC {target_upc}")
         
         # 2. Look for cart progression and quantity changes around these UPCs
-        print(f"\n🛒 ANALYZING CART PROGRESSION AND QUANTITY CHANGES")
+        print("\n🛒 ANALYZING CART PROGRESSION AND QUANTITY CHANGES")
         print("-" * 50)
         
         for i, location in enumerate(upc_locations):
@@ -118,7 +118,7 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
                     
                     print(f"      Entry {j+1}: Cart now: ${cart_now_val:.2f}, Was: ${cart_was_val:.2f}, Savings: ${savings_val:.2f}")
             else:
-                print(f"    No cart totals found in context")
+                print("    No cart totals found in context")
             
             # Look for quantity information - multiple patterns
             quantity_patterns = [
@@ -148,10 +148,10 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
                     except ValueError:
                         continue
             else:
-                print(f"    No quantities found")
+                print("    No quantities found")
         
         # 3. Look for multiple scans of the same UPC
-        print(f"\n📱 SEARCHING FOR MULTIPLE SCANS OF SAME UPC")
+        print("\n📱 SEARCHING FOR MULTIPLE SCANS OF SAME UPC")
         print("-" * 50)
         
         # Look for transaction data with this UPC
@@ -164,10 +164,10 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
                 print(f"    Transaction {i+1}: {match[:200]}...")
                 results['multiple_scans'].append(match)
         else:
-            print(f"  No transaction matches found")
+            print("  No transaction matches found")
         
         # 4. Look for quantity progression patterns
-        print(f"\n📊 ANALYZING QUANTITY PROGRESSION")
+        print("\n📊 ANALYZING QUANTITY PROGRESSION")
         print("-" * 50)
         
         # Look for patterns showing quantity changes
@@ -194,7 +194,7 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
                         continue
         
         # 5. Look for shop'n'scan context
-        print(f"\n🛍️ SHOP'N'SCAN CONTEXT ANALYSIS")
+        print("\n🛍️ SHOP'N'SCAN CONTEXT ANALYSIS")
         print("-" * 50)
         
         for i, location in enumerate(upc_locations):
@@ -209,7 +209,7 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
                 print(f"  UPC Location {i+1}: No shop'n'scan context found")
         
         # 6. Look for price changes and BOGO patterns
-        print(f"\n💰 PRICE ANALYSIS")
+        print("\n💰 PRICE ANALYSIS")
         print("-" * 50)
         
         if len(results['cart_progression']) > 1:
@@ -234,7 +234,7 @@ def search_specific_upc(log_file_path: str, target_upc: str) -> Dict[str, Any]:
                         }
                         results['price_changes'].append(price_entry)
         else:
-            print(f"  Not enough cart progression data for price analysis")
+            print("  Not enough cart progression data for price analysis")
         
         return results
         
@@ -255,10 +255,10 @@ def main():
     log_file = sys.argv[1]
     target_upc = sys.argv[2]
     
-    print(f"Specific UPC Search and Analysis")
+    print("Specific UPC Search and Analysis")
     print(f"Log file: {log_file}")
     print(f"Target UPC: {target_upc}")
-    print(f"Looking for quantity progression: 1 → 2 → 10")
+    print("Looking for quantity progression: 1 → 2 → 10")
     
     # Perform search
     results = search_specific_upc(log_file, target_upc)
@@ -271,7 +271,7 @@ def main():
     print(f"\nDetailed analysis saved to: {output_file}")
     
     # Summary
-    print(f"\n📊 SEARCH SUMMARY:")
+    print("\n📊 SEARCH SUMMARY:")
     print(f"  UPC found: {'✅ YES' if results['upc_found'] else '❌ NO'}")
     if results['upc_found']:
         print(f"  UPC locations: {len(results['upc_locations'])}")
@@ -284,7 +284,7 @@ def main():
         
         # Show quantity progression if found
         if results['quantity_progression']:
-            print(f"\n📈 QUANTITY PROGRESSION FOUND:")
+            print("\n📈 QUANTITY PROGRESSION FOUND:")
             quantities = sorted([q['quantity'] for q in results['quantity_progression']])
             print(f"  Quantities: {quantities}")
 

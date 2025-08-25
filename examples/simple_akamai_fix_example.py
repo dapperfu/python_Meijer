@@ -15,7 +15,6 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 from meijer.simple_akamai_fix import create_login_friendly_session, get_mobile_app_headers
-import requests
 
 
 def demonstrate_simple_fix():
@@ -32,7 +31,7 @@ def demonstrate_simple_fix():
     print("🔒 Regular API calls remain unchanged")
     
     # Test 1: Login endpoint (should get mobile headers)
-    print(f"\n🧪 TEST 1: Login Endpoint")
+    print("\n🧪 TEST 1: Login Endpoint")
     print("-" * 30)
     
     login_url = "https://id.meijer.com/idp/idx/identify"
@@ -47,7 +46,7 @@ def demonstrate_simple_fix():
         print(f"❌ Error: {e}")
     
     # Test 2: Regular API endpoint (should NOT get mobile headers)
-    print(f"\n🧪 TEST 2: Regular API Endpoint")
+    print("\n🧪 TEST 2: Regular API Endpoint")
     print("-" * 30)
     
     api_url = "https://api.meijer.com/api/stores"
@@ -62,7 +61,7 @@ def demonstrate_simple_fix():
         print(f"❌ Error: {e}")
     
     # Test 3: Show the mobile app headers
-    print(f"\n📱 MOBILE APP HEADERS")
+    print("\n📱 MOBILE APP HEADERS")
     print("-" * 30)
     
     headers = get_mobile_app_headers()
@@ -73,7 +72,7 @@ def demonstrate_simple_fix():
 def show_integration_example():
     """Show how to integrate this with existing code."""
     
-    print(f"\n🔗 INTEGRATION EXAMPLE")
+    print("\n🔗 INTEGRATION EXAMPLE")
     print("=" * 60)
     
     print("💡 To use this in your existing Meijer client:")

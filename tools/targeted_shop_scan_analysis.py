@@ -5,8 +5,7 @@ Targeted Shop'n'Scan analysis focusing on specific operations and endpoints foun
 
 import json
 import re
-from typing import List, Dict, Any, Set
-from pathlib import Path
+from typing import List, Dict, Any
 
 
 def analyze_specific_shop_scan_operations(log_file_path: str) -> Dict[str, Any]:
@@ -117,7 +116,7 @@ def analyze_specific_shop_scan_operations(log_file_path: str) -> Dict[str, Any]:
                         'context': context_text[:500] + '...' if len(context_text) > 500 else context_text
                     })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -145,7 +144,7 @@ def analyze_specific_shop_scan_operations(log_file_path: str) -> Dict[str, Any]:
                     'quantity': quantity_match.group(1) if quantity_match else None,
                     'description': desc_match.group(1) if desc_match else None
                 })
-        except Exception as e:
+        except Exception:
             pass
     
     # Look for session management patterns
@@ -192,7 +191,7 @@ def analyze_specific_shop_scan_operations(log_file_path: str) -> Dict[str, Any]:
                     'context_preview': context_text[:400] + '...' if len(context_text) > 400 else context_text
                 })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -300,38 +299,38 @@ def main():
     recommendations = generate_implementation_recommendations(analysis)
     
     # Print results
-    print(f"\n=== ENDPOINT ANALYSIS ===")
+    print("\n=== ENDPOINT ANALYSIS ===")
     for endpoint, data in analysis.get('endpoints', {}).items():
         print(f"\n{endpoint}")
         print(f"  Method: {data['method']}")
         print(f"  Count: {data['count']}")
         print(f"  Operations: {list(data['operations'].keys())}")
     
-    print(f"\n=== OPERATION ANALYSIS ===")
+    print("\n=== OPERATION ANALYSIS ===")
     for operation, data in analysis.get('operations', {}).items():
         print(f"\n{operation}")
         print(f"  Count: {data['count']}")
         print(f"  Endpoints: {list(data['endpoints'])}")
     
-    print(f"\n=== SESSION FLOWS ===")
+    print("\n=== SESSION FLOWS ===")
     for flow in analysis.get('session_flows', [])[:5]:  # Show first 5
         print(f"\n{flow['operation']}")
         print(f"  Endpoint: {flow['endpoint']}")
         print(f"  Device ID: {flow['device_id']}")
         print(f"  Transaction ID: {flow['transaction_id']}")
     
-    print(f"\n=== CART ITEMS ===")
+    print("\n=== CART ITEMS ===")
     for item in analysis.get('cart_items', [])[:5]:  # Show first 5
         print(f"\nUPC: {item['upc']}")
         print(f"  Scanned: {item['scanned_upc']}")
         print(f"  Quantity: {item['quantity']}")
         print(f"  Description: {item['description']}")
     
-    print(f"\n=== IMPLEMENTATION GAPS ===")
+    print("\n=== IMPLEMENTATION GAPS ===")
     for gap in gaps:
         print(f"  - {gap}")
     
-    print(f"\n=== RECOMMENDATIONS ===")
+    print("\n=== RECOMMENDATIONS ===")
     for category, items in recommendations.items():
         if items:
             print(f"\n{category.upper()}:")
@@ -356,7 +355,7 @@ def main():
     with open('logs/targeted_shop_scan_analysis.json', 'w') as f:
         json.dump(detailed_results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/targeted_shop_scan_analysis.json")
+    print("\nDetailed results saved to: logs/targeted_shop_scan_analysis.json")
 
 
 if __name__ == '__main__':

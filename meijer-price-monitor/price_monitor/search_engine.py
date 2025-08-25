@@ -29,13 +29,10 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Iterator, Tuple
+from typing import Dict, List, Optional, Any
 
 # Import from the core Meijer API
-from meijer.client import Meijer
 from meijer.search import Search
-from meijer.stores import MeijerStore
 MEIJER_AVAILABLE = True
 
 

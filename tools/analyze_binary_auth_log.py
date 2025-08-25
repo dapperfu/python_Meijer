@@ -6,9 +6,7 @@ This tool analyzes mitmproxy binary log files to extract authentication patterns
 without requiring the mitmproxy module.
 """
 
-import re
 import json
-import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict, Counter
@@ -126,7 +124,7 @@ def extract_http_flows_from_binary(log_file_path: str) -> List[Dict[str, Any]]:
                     if flow and is_auth_flow(flow):
                         flows.append(flow)
                         
-                except Exception as e:
+                except Exception:
                     pass
                 
                 start = pos + 1

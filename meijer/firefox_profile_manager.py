@@ -17,7 +17,6 @@ Context: Firefox profile management for persistent authentication sessions
 
 import os
 import shutil
-import tempfile
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any

@@ -6,8 +6,6 @@ This script demonstrates the new headless authentication method without
 touching any existing configuration files.
 """
 
-import tempfile
-import os
 from meijer.headless_auth import HeadlessMeijerAuth, authenticate_with_requests
 
 def test_headless_auth_with_proxy():

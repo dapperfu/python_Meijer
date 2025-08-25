@@ -7,7 +7,6 @@ authentication flow from device fingerprinting to token acquisition.
 """
 
 import json
-import re
 from typing import Any, Dict, List
 from datetime import datetime
 import os
@@ -240,7 +239,7 @@ def flow_to_dict(flow):
 
 def print_summary(analysis: Dict[str, Any], auth_flows: List[Dict[str, Any]]):
     """Print a summary of the authentication flows."""
-    print(f"\n📊 SUMMARY OF AUTHENTICATION FLOWS")
+    print("\n📊 SUMMARY OF AUTHENTICATION FLOWS")
     print(f"   Total flows analyzed: {len(auth_flows)}")
     
     if not auth_flows:
@@ -252,16 +251,16 @@ def print_summary(analysis: Dict[str, Any], auth_flows: List[Dict[str, Any]]):
     device_flows = [f for f in auth_flows if 'device' in f.get('request', {}).get('url', '')]
     token_flows = [f for f in auth_flows if 'token' in f.get('request', {}).get('url', '')]
     
-    print(f"\n🔄 OAUTH2 FLOW:")
+    print("\n🔄 OAUTH2 FLOW:")
     print(f"   Found {len(oauth_flows)} OAuth2 authorize requests")
     
-    print(f"\n🔍 DEVICE FINGERPRINTING FLOWS:")
+    print("\n🔍 DEVICE FINGERPRINTING FLOWS:")
     print(f"   Found {len(device_flows)} device nonce requests")
     
-    print(f"\n🔑 TOKEN ACQUISITION FLOWS:")
+    print("\n🔑 TOKEN ACQUISITION FLOWS:")
     print(f"   Found {len(token_flows)} token exchange requests")
     
-    print(f"\n🔍 DETAILED FLOW ANALYSIS:")
+    print("\n🔍 DETAILED FLOW ANALYSIS:")
     print()
     
     for i, flow in enumerate(auth_flows[:5]):  # Show first 5 flows
@@ -284,7 +283,7 @@ def print_summary(analysis: Dict[str, Any], auth_flows: List[Dict[str, Any]]):
 
 def analyze_log_file(log_file):
     """Analyze a single mitmproxy log file."""
-    print(f"📥 Loading mitmproxy flows...")
+    print("📥 Loading mitmproxy flows...")
     
     try:
         flows = load_flows(log_file)

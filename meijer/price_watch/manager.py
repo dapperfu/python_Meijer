@@ -25,14 +25,13 @@ import re
 import time
 from datetime import datetime, timedelta
 from decimal import Decimal
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Any
 
-from pony.orm import db_session, commit, rollback, select
+from pony.orm import db_session, commit
 
 from ..models.price_watch import (
-    db, Product, Store, PriceHistory, Watch, AlertEvent, 
-    Notification, RunLog, SchemaVersion, PriceType, 
+    Product, Store, PriceHistory, Watch, AlertEvent, 
+    Notification, RunLog, PriceType, 
     OnlyWhenType, AlertReason, NotificationStatus
 )
 from .database import PriceWatchDatabase
@@ -658,7 +657,6 @@ class PriceWatchManager:
         self.logger.debug(f"Fetching price for {identifier} ({id_type}) using {method}")
         
         # Mock implementation - replace with actual API calls
-        import random
         
         # Simulate API delay
         time.sleep(0.1)

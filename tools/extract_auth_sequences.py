@@ -8,7 +8,6 @@ by analyzing the patterns we found and reconstructing the flows.
 
 import re
 import json
-import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict, Counter
@@ -135,7 +134,7 @@ def extract_oauth2_sequence(content: bytes, position: int) -> Optional[Dict[str,
         
         return sequence
         
-    except Exception as e:
+    except Exception:
         return None
 
 def extract_idp_sequence(content: bytes, position: int) -> Optional[Dict[str, Any]]:
@@ -181,7 +180,7 @@ def extract_idp_sequence(content: bytes, position: int) -> Optional[Dict[str, An
         
         return sequence
         
-    except Exception as e:
+    except Exception:
         return None
 
 def extract_device_fingerprint_sequence(content: bytes, position: int) -> Optional[Dict[str, Any]]:
@@ -216,7 +215,7 @@ def extract_device_fingerprint_sequence(content: bytes, position: int) -> Option
         
         return sequence
         
-    except Exception as e:
+    except Exception:
         return None
 
 def extract_token_sequence(content: bytes, position: int) -> Optional[Dict[str, Any]]:
@@ -262,7 +261,7 @@ def extract_token_sequence(content: bytes, position: int) -> Optional[Dict[str, 
         
         return sequence
         
-    except Exception as e:
+    except Exception:
         return None
 
 def extract_headers_from_context(context_text: str) -> Dict[str, str]:

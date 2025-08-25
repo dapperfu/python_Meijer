@@ -5,7 +5,7 @@ Find actual barcode scanning patterns in shop'n'scan flows.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 
 def find_actual_barcode_scans(log_file_path: str) -> Dict[str, Any]:
@@ -65,7 +65,7 @@ def find_actual_barcode_scans(log_file_path: str) -> Dict[str, Any]:
                                 'type': 'barcode_scan'
                             })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -118,7 +118,7 @@ def find_actual_barcode_scans(log_file_path: str) -> Dict[str, Any]:
                     'json_payloads': json_payloads
                 })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -154,7 +154,7 @@ def find_actual_barcode_scans(log_file_path: str) -> Dict[str, Any]:
                         'context': context_text
                     })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -272,24 +272,24 @@ def main():
     session_flow = generate_complete_session_flow(results, analysis)
     
     # Print results
-    print(f"\n=== ACTUAL BARCODE SCANNING ANALYSIS ===")
+    print("\n=== ACTUAL BARCODE SCANNING ANALYSIS ===")
     print(f"Barcode scans found: {len(results['barcode_scans'])}")
     print(f"Shop'n'scan flows found: {len(results['shop_scan_flows'])}")
     print(f"Device ID transitions found: {len(results['device_id_transitions'])}")
     
-    print(f"\n=== BARCODE SCANNING SEQUENCE ===")
+    print("\n=== BARCODE SCANNING SEQUENCE ===")
     for i, scan in enumerate(analysis['scanning_sequence'][:10]):  # Show first 10
         print(f"{i+1:2d}. Barcode {scan['barcode']} at position {scan['position']}")
     
-    print(f"\n=== SESSION PHASES ===")
+    print("\n=== SESSION PHASES ===")
     for i, flow in enumerate(analysis['session_phases'][:10]):  # Show first 10
         print(f"{i+1:2d}. {flow['pattern']} at position {flow['position']}")
     
-    print(f"\n=== DEVICE USAGE PATTERN ===")
+    print("\n=== DEVICE USAGE PATTERN ===")
     for device_id, count in analysis['device_usage_pattern'].items():
         print(f"Device ID: {device_id} (used {count} times)")
     
-    print(f"\n=== COMPLETE SESSION FLOW ===")
+    print("\n=== COMPLETE SESSION FLOW ===")
     print(json.dumps(session_flow, indent=2))
     
     # Save detailed results
@@ -302,7 +302,7 @@ def main():
     with open('logs/actual_barcode_analysis.json', 'w') as f:
         json.dump(detailed_results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/actual_barcode_analysis.json")
+    print("\nDetailed results saved to: logs/actual_barcode_analysis.json")
 
 
 if __name__ == '__main__':

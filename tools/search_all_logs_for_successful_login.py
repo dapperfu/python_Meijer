@@ -4,11 +4,9 @@ Search all mitmproxy log files for successful login events.
 This script will analyze all logs to find complete, successful authentication flows.
 """
 
-import os
 import json
-import glob
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 def load_mitmproxy_flows(log_file: str) -> List[Dict[str, Any]]:
     """Load flows from a mitmproxy log file."""

@@ -20,7 +20,7 @@ from pathlib import Path
 # Add the meijer package to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meijer.firefox_profile_manager import FirefoxProfileManager, create_meijer_profile
+from meijer.firefox_profile_manager import FirefoxProfileManager
 
 
 def list_profiles(base_dir: str = None):

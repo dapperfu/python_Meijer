@@ -15,8 +15,7 @@ Requirements:
 
 import sys
 import argparse
-from typing import List, Tuple
-from pathlib import Path
+from typing import List
 
 try:
     import barcode

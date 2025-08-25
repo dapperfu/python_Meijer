@@ -18,9 +18,7 @@ Requirements:
 import json
 import sys
 import os
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-from urllib.parse import urlparse, parse_qs
+from typing import Dict, Any, Tuple
 import logging
 
 # Add parent directory to path for imports
@@ -351,9 +349,9 @@ class MeijerAuthLogAnalyzer:
             
             # Show helpful information about the save location
             if self.auth_file == get_meijer_config_path("auth.json"):
-                logger.info(f"💡 Tokens saved to standard config location - Meijer client will find them automatically")
+                logger.info("💡 Tokens saved to standard config location - Meijer client will find them automatically")
             else:
-                logger.info(f"⚠️  Tokens saved to custom location - you may need to copy to standard location")
+                logger.info("⚠️  Tokens saved to custom location - you may need to copy to standard location")
             
             return True
             

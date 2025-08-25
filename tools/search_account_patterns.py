@@ -5,7 +5,6 @@ Search for account-related patterns in the log file.
 
 import re
 import json
-from typing import List, Dict, Any
 
 def search_account_patterns():
     """Search for account-related patterns in the log file."""
@@ -53,7 +52,7 @@ def search_account_patterns():
     for endpoint in sorted(found_endpoints):
         print(f"  {endpoint}")
     
-    print(f"\nResults saved to: account_endpoints_found.json")
+    print("\nResults saved to: account_endpoints_found.json")
 
 if __name__ == "__main__":
     search_account_patterns()

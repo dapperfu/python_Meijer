@@ -11,7 +11,6 @@ This demo script tests specific UPCs that demonstrate different pricing scenario
 Each UPC is tested individually to isolate edge case behavior.
 """
 
-import json
 import logging
 import sys
 from typing import Dict, List, Optional

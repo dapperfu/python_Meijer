@@ -9,14 +9,13 @@ Flask API server code with the latest endpoints.
 
 import json
 import logging
-import os
 import re
 import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
-from urllib.parse import urlparse, parse_qs
+from typing import Any, Dict, List
+from urllib.parse import urlparse
 
 # Add the parent directory to the path to import meijer modules
 sys.path.append(str(Path(__file__).parent.parent))
@@ -423,14 +422,14 @@ def main():
         extractor.save_flask_routes(str(routes_file))
         
         # Print summary
-        print(f"\n✅ Extraction completed successfully!")
+        print("\n✅ Extraction completed successfully!")
         print(f"📊 Total endpoints found: {len(extractor.unique_paths)}")
         print(f"📁 Report saved to: {report_file}")
         print(f"🐍 Flask routes saved to: {routes_file}")
         
         # Print categories
         categories = extractor.categorize_endpoints()
-        print(f"\n📂 Endpoint Categories:")
+        print("\n📂 Endpoint Categories:")
         for category, endpoints in categories.items():
             if endpoints:
                 print(f"  {category}: {len(endpoints)} endpoints")

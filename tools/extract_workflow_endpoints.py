@@ -19,8 +19,7 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 
 class WorkflowEndpointExtractor:
@@ -394,7 +393,7 @@ def response(flow):
         
         # Endpoint counts
         if "endpoint_counts" in self.results:
-            print(f"\n🔍 Endpoints Found:")
+            print("\n🔍 Endpoints Found:")
             for workflow_type, count in self.results["endpoint_counts"].items():
                 print(f"  • {workflow_type}: {count} endpoints")
                 
@@ -412,7 +411,7 @@ def response(flow):
         # Insights
         if "insights" in self.results:
             insights = self.results["insights"]
-            print(f"\n💡 Key Insights:")
+            print("\n💡 Key Insights:")
             for category, items in insights.items():
                 if items:
                     print(f"  • {category}: {len(items)} items")

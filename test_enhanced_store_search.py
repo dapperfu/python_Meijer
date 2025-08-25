@@ -26,7 +26,6 @@ This script demonstrates the enhanced store search capabilities including:
 
 import os
 import sys
-from typing import List
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -77,7 +76,7 @@ def test_geocoding_service():
             coords = google_geocoder.get_city_coordinates("Kendallville", "IN")
             if coords:
                 print(f"  ✓ Kendallville, IN -> {coords}")
-                print(f"    This matches the coordinates from the app: (41.441438399999996, -85.2649754)")
+                print("    This matches the coordinates from the app: (41.441438399999996, -85.2649754)")
             else:
                 print("  ✗ Kendallville, IN -> Failed to geocode")
         else:

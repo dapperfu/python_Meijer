@@ -10,8 +10,7 @@ import sys
 import re
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-from collections import defaultdict
+from typing import List, Dict, Any
 
 
 def extract_pricing_progression(content: str, upc: str) -> Dict[str, Any]:
@@ -136,7 +135,7 @@ def analyze_pricing_tiers(log_file_path: str, target_upcs: List[str]) -> Dict[st
                 
                 # Analyze cart progression
                 if pricing_info['cart_totals']:
-                    print(f"\n📊 CART PRICING PROGRESSION:")
+                    print("\n📊 CART PRICING PROGRESSION:")
                     print(f"{'Step':<4} {'Cart Now':<10} {'Cart Was':<10} {'Savings':<10} {'Savings %':<10}")
                     print("-" * 60)
                     
@@ -144,7 +143,7 @@ def analyze_pricing_tiers(log_file_path: str, target_upcs: List[str]) -> Dict[st
                         print(f"{i+1:<4} ${cart['cart_now']:<9.2f} ${cart['cart_was']:<9.2f} ${cart['savings']:<9.2f} {cart['savings_percentage']:<9.1f}%")
                     
                     # Calculate price per item progression
-                    print(f"\n💰 PRICE PER ITEM ANALYSIS:")
+                    print("\n💰 PRICE PER ITEM ANALYSIS:")
                     if len(pricing_info['cart_totals']) > 1:
                         for i in range(1, len(pricing_info['cart_totals'])):
                             prev_cart = pricing_info['cart_totals'][i-1]
@@ -157,25 +156,25 @@ def analyze_pricing_tiers(log_file_path: str, target_upcs: List[str]) -> Dict[st
                 
                 # Analyze quantity patterns
                 if pricing_info['quantity_patterns']:
-                    print(f"\n📦 QUANTITY PATTERNS:")
+                    print("\n📦 QUANTITY PATTERNS:")
                     for pattern in pricing_info['quantity_patterns']:
                         print(f"  Quantity: {pattern['quantity']} - {pattern['pricing_text']}")
                 
                 # Analyze BOGO indicators
                 if pricing_info['bogo_indicators']:
-                    print(f"\n🎯 BOGO INDICATORS:")
+                    print("\n🎯 BOGO INDICATORS:")
                     for indicator in pricing_info['bogo_indicators']:
                         print(f"  Found: {indicator}")
                 
                 # Analyze tiered pricing
                 if pricing_info['tiered_pricing']:
-                    print(f"\n🏷️  TIERED PRICING INDICATORS:")
+                    print("\n🏷️  TIERED PRICING INDICATORS:")
                     for tier in pricing_info['tiered_pricing']:
                         print(f"  Found: {tier}")
                 
                 # Analyze pricing patterns
                 if pricing_info['cart_totals']:
-                    print(f"\n🔍 PRICING PATTERN ANALYSIS:")
+                    print("\n🔍 PRICING PATTERN ANALYSIS:")
                     
                     # Look for BOGO patterns in cart progression
                     cart_totals = [cart['cart_now'] for cart in pricing_info['cart_totals']]
@@ -248,15 +247,15 @@ def generate_pricing_summary(results: Dict[str, Dict[str, Any]]) -> None:
             
             # Pricing pattern classification
             if pricing_info.get('bogo_indicators'):
-                print(f"Pricing Type: BOGO (Buy One Get One)")
+                print("Pricing Type: BOGO (Buy One Get One)")
             elif pricing_info.get('tiered_pricing'):
-                print(f"Pricing Type: Tiered Pricing")
+                print("Pricing Type: Tiered Pricing")
             else:
-                print(f"Pricing Type: Standard Pricing")
+                print("Pricing Type: Standard Pricing")
             
             # Quantity discount analysis
             if len(cart_totals) > 1:
-                print(f"\nQuantity Discount Analysis:")
+                print("\nQuantity Discount Analysis:")
                 for i in range(1, len(cart_totals)):
                     prev_total = cart_totals[i-1]['cart_now']
                     curr_total = cart_totals[i]['cart_now']
@@ -267,12 +266,12 @@ def generate_pricing_summary(results: Dict[str, Dict[str, Any]]) -> None:
                     elif i == 2:
                         print(f"  Second item: ${increase:.2f}")
                         if increase < cart_totals[0]['cart_now']:
-                            print(f"    → BOGO discount applied!")
+                            print("    → BOGO discount applied!")
                     elif i == 4:
                         print(f"  Fourth item: ${increase:.2f}")
                         avg_previous = sum(cart_totals[j]['cart_now'] - cart_totals[j-1]['cart_now'] for j in range(1, i)) / (i-1)
                         if increase < avg_previous * 0.8:
-                            print(f"    → Tiered pricing discount applied!")
+                            print("    → Tiered pricing discount applied!")
 
 
 def main():
@@ -287,7 +286,7 @@ def main():
         "070896523112", "713733252843", "016000275263", "046100001899"
     ]
     
-    print(f"Pricing Tier Analysis")
+    print("Pricing Tier Analysis")
     print(f"Log file: {log_file}")
     print(f"Target UPCs: {', '.join(target_upcs)}")
     

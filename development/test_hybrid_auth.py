@@ -11,7 +11,7 @@ import secrets
 import hashlib
 import base64
 import uuid
-from urllib.parse import urlencode, parse_qs, urlparse
+from urllib.parse import urlencode
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -21,9 +21,6 @@ def test_hybrid_auth():
     try:
         from selenium import webdriver
         from selenium.webdriver.firefox.options import Options
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
-        from selenium.webdriver.support import expected_conditions as EC
         import requests
         print("✅ Selenium and requests imported successfully")
         
@@ -191,7 +188,7 @@ def test_hybrid_auth():
             headers = {
                 'Accept': 'application/json; okta-version=1.0.0',
                 'X-Okta-User-Agent-Extended': 'okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459',
-                'X-Device-Fingerprint': f"dummy_nonce|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8",
+                'X-Device-Fingerprint': "dummy_nonce|a51183db48a04679a8d3769ee8a151455b09acf91a15ffe9625eeec4f91ad5b7|21c0dae824c3f48f32f5b271e1d291d8",
                 'User-Agent': session.headers['User-Agent'],
                 'Content-Type': 'application/json',
                 'Origin': 'https://id.meijer.com',
@@ -209,7 +206,7 @@ def test_hybrid_auth():
                 "stateHandle": state_token
             }
             
-            print(f"🔄 Testing IDX identify with Selenium cookies...")
+            print("🔄 Testing IDX identify with Selenium cookies...")
             print(f"   URL: {idx_url}")
             print(f"   State token: {state_token[:30]}...")
             

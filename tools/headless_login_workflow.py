@@ -12,8 +12,8 @@ import random
 import base64
 import hashlib
 import secrets
-from urllib.parse import urlencode, parse_qs, urlparse
-from typing import Dict, Any, Optional, Tuple
+from urllib.parse import urlencode
+from typing import Dict, Any, Tuple
 import logging
 
 # Configure logging

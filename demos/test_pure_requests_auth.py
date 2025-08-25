@@ -5,7 +5,6 @@ This script tests the exact flow replication from the captured logs.
 """
 
 import sys
-import os
 import logging
 import time
 import json

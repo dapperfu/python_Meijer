@@ -7,7 +7,7 @@ This script reads the binary log file properly without using grep.
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 def analyze_latest_log_for_checkout(log_file_path: str) -> Dict[str, Any]:
     """
@@ -160,7 +160,7 @@ def main():
     results = analyze_latest_log_for_checkout(str(latest_log))
     
     # Save results
-    output_file = f"logs/latest_log_checkout_analysis.json"
+    output_file = "logs/latest_log_checkout_analysis.json"
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=2)
     

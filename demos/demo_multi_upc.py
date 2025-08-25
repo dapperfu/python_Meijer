@@ -10,7 +10,7 @@ the functionality and compare it with individual UPC searches.
 """
 
 import time
-from typing import List, Optional
+from typing import List
 
 from meijer import Meijer
 from meijer.models import MeijerItem
@@ -105,7 +105,7 @@ def demo_multi_upc_functionality():
         # Performance comparison
         if multi_upc_time > 0 and individual_time > 0:
             speedup = individual_time / multi_upc_time
-            print(f"\n⚡ Performance Comparison:")
+            print("\n⚡ Performance Comparison:")
             print(f"   Multi-UPC (20 UPCs): {multi_upc_time:.2f}s")
             print(f"   Individual (5 UPCs): {individual_time:.2f}s")
             print(f"   Speedup: {speedup:.1f}x faster with multi-UPC")
@@ -125,13 +125,13 @@ def demo_multi_upc_functionality():
                 store_id=store_id
             )
             
-            print(f"✅ Store-specific search completed")
+            print("✅ Store-specific search completed")
             print(f"📦 Found {len(store_products)} products for store {store_id}")
             
             # Check for store-specific data
             if store_products:
                 first_product = store_products[0]
-                print(f"\n📋 Sample store-specific result:")
+                print("\n📋 Sample store-specific result:")
                 print(f"   Product: {first_product.title}")
                 print(f"   UPC: {first_product.upc}")
                 print(f"   Price: ${first_product.price or 'N/A'}")
@@ -157,7 +157,7 @@ def demo_multi_upc_functionality():
             print(f"⚠️  Unexpected error: {e}")
         
         # Test with empty list
-        print(f"\n📋 Testing with empty UPC list")
+        print("\n📋 Testing with empty UPC list")
         try:
             result = client.search_multiple_products_by_upc([])
             print(f"✅ Empty list handled correctly: {len(result)} results")

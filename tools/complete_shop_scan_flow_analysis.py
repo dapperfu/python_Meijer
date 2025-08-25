@@ -5,7 +5,7 @@ Complete Shop'n'Scan flow analysis including checkout and completion.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 from pathlib import Path
 
 
@@ -95,7 +95,7 @@ def analyze_complete_shop_scan_flow(log_file_path: str) -> Dict[str, Any]:
                 'context_preview': context_text[:400] + '...' if len(context_text) > 400 else context_text
             })
             
-        except Exception as e:
+        except Exception:
             pass
         
         start = pos + 1
@@ -235,7 +235,7 @@ def main():
     results = analyze_complete_shop_scan_flow(log_file)
     
     # Print results
-    print(f"\n=== SESSION FLOW ===")
+    print("\n=== SESSION FLOW ===")
     for flow in results.get('session_flow', []):
         print(f"\n{flow['step']}")
         print(f"  Operation: {flow['operation']}")
@@ -246,7 +246,7 @@ def main():
         if flow['details'].get('cart_items'):
             print(f"  Cart Items: {len(flow['details']['cart_items'])}")
     
-    print(f"\n=== CHECKOUT FLOW ===")
+    print("\n=== CHECKOUT FLOW ===")
     for flow in results.get('checkout_flow', []):
         if 'description' in flow:
             print(f"\n{flow['step']}")
@@ -261,11 +261,11 @@ def main():
             print(f"  Endpoint: {flow['endpoint']}")
             print(f"  Timestamp: {flow['timestamp']}")
     
-    print(f"\n=== IMPLEMENTATION GAPS ===")
+    print("\n=== IMPLEMENTATION GAPS ===")
     for gap in results.get('implementation_gaps', []):
         print(f"  - {gap['operation']}: {gap['status']} (Priority: {gap['priority']})")
     
-    print(f"\n=== RECOMMENDATIONS ===")
+    print("\n=== RECOMMENDATIONS ===")
     for category in results.get('recommendations', []):
         print(f"\n{category['category']} ({category['priority']} Priority):")
         for item in category['items']:
@@ -278,7 +278,7 @@ def main():
     with open('logs/complete_shop_scan_flow_analysis.json', 'w') as f:
         json.dump(results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/complete_shop_scan_flow_analysis.json")
+    print("\nDetailed results saved to: logs/complete_shop_scan_flow_analysis.json")
 
 
 if __name__ == '__main__':

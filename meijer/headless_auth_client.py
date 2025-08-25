@@ -16,7 +16,7 @@ import secrets
 import hashlib
 import base64
 import uuid
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, Any, Tuple
 from pathlib import Path
 import requests
 
@@ -32,8 +32,7 @@ try:
 except ImportError:
     SELENIUM_AVAILABLE = False
 
-from .exceptions import AuthenticationError, TwoFactorRequiredError
-from .models.base import BaseModel
+from .exceptions import AuthenticationError
 
 logger = logging.getLogger(__name__)
 

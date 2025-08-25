@@ -11,7 +11,7 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from datetime import datetime
 
 try:
@@ -503,11 +503,11 @@ class MPerksFlowAnalyzer:
         print(f"Reward claiming flows: {report['reward_claiming_flows']}")
         print(f"Flow sequences identified: {report['flow_sequences']}")
         
-        print(f"\n🔑 FLOW TYPES:")
+        print("\n🔑 FLOW TYPES:")
         for flow_type, count in report['flow_types_summary'].items():
             print(f"  {flow_type}: {count}")
         
-        print(f"\n🌐 TOP ENDPOINTS:")
+        print("\n🌐 TOP ENDPOINTS:")
         top_endpoints = sorted(
             report['endpoints_summary'].items(),
             key=lambda x: x[1]['count'],
@@ -518,7 +518,7 @@ class MPerksFlowAnalyzer:
             print(f"  {endpoint}: {data['count']} calls")
         
         if report['reward_claiming_flows'] > 0:
-            print(f"\n🎁 REWARD CLAIMING ANALYSIS:")
+            print("\n🎁 REWARD CLAIMING ANALYSIS:")
             reward_types = defaultdict(int)
             for claim in report['reward_claiming_analysis']:
                 reward_types[claim['reward_type']] += 1
@@ -526,7 +526,7 @@ class MPerksFlowAnalyzer:
             for reward_type, count in reward_types.items():
                 print(f"  {reward_type}: {count} claims")
         
-        print(f"\n💡 KEY FINDINGS:")
+        print("\n💡 KEY FINDINGS:")
         for finding in report['key_findings']:
             print(f"  • {finding}")
 

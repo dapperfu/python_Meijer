@@ -30,12 +30,12 @@ def demo_coupon_system():
         print(f"Coupon Stats: {stats}")
         
         # Show some sample coupons
-        print(f"\nSample Coupons:")
+        print("\nSample Coupons:")
         for i, coupon in enumerate(coupons[:5]):
             print(f"  {i+1}. {coupon}")
         
         # Demonstrate clipping functionality
-        print(f"\n" + "="*40)
+        print("\n" + "="*40)
         print("COUPON CLIPPING DEMO")
         print("="*40)
         
@@ -47,25 +47,25 @@ def demo_coupon_system():
             print(f"Current clipped state: {sample_coupon.clipped}")
             
             # Clip the coupon
-            print(f"\nClipping coupon...")
+            print("\nClipping coupon...")
             success = client.coupons.clip(sample_coupon.id)
             if success:
-                print(f"✓ Successfully clipped coupon!")
+                print("✓ Successfully clipped coupon!")
                 print(f"New clipped state: {sample_coupon.clipped}")
             else:
-                print(f"✗ Failed to clip coupon")
+                print("✗ Failed to clip coupon")
             
             # Unclip the coupon
-            print(f"\nUnclipping coupon...")
+            print("\nUnclipping coupon...")
             success = client.coupons.unclip(sample_coupon.id)
             if success:
-                print(f"✓ Successfully unclipped coupon!")
+                print("✓ Successfully unclipped coupon!")
                 print(f"New clipped state: {sample_coupon.clipped}")
             else:
-                print(f"✗ Failed to unclip coupon")
+                print("✗ Failed to unclip coupon")
         
         # Demonstrate filtering
-        print(f"\n" + "="*40)
+        print("\n" + "="*40)
         print("COUPON FILTERING DEMO")
         print("="*40)
         
@@ -84,12 +84,12 @@ def demo_coupon_system():
         print(f"Cottonelle coupons: {len(cottonelle_coupons)}")
         
         if cottonelle_coupons:
-            print(f"Found Cottonelle coupons:")
+            print("Found Cottonelle coupons:")
             for coupon in cottonelle_coupons:
                 print(f"  - {coupon.name} ({coupon.get_discount_description()})")
         
         # Demonstrate bulk operations
-        print(f"\n" + "="*40)
+        print("\n" + "="*40)
         print("BULK OPERATIONS DEMO")
         print("="*40)
         
@@ -97,33 +97,33 @@ def demo_coupon_system():
         clipped_before = coupons.get_clipped_count()
         available_before = coupons.get_available_count()
         
-        print(f"Before bulk operations:")
+        print("Before bulk operations:")
         print(f"  Clipped: {clipped_before}")
         print(f"  Available: {available_before}")
         
         # Note: We won't actually run bulk operations in demo to avoid
         # affecting the user's actual coupon state
-        print(f"\nNote: Bulk operations (clip_all, unclip_all) are available")
-        print(f"but not demonstrated to avoid affecting your coupon state.")
+        print("\nNote: Bulk operations (clip_all, unclip_all) are available")
+        print("but not demonstrated to avoid affecting your coupon state.")
         
         # Export functionality
-        print(f"\n" + "="*40)
+        print("\n" + "="*40)
         print("EXPORT FUNCTIONALITY")
         print("="*40)
         
-        print(f"Coupons can be exported to JSON using:")
-        print(f"  client.coupons.export_to_json('my_coupons.json')")
+        print("Coupons can be exported to JSON using:")
+        print("  client.coupons.export_to_json('my_coupons.json')")
         
-        print(f"\nCoupon collection can be converted to list:")
-        print(f"  coupon_list = client.coupons().to_list()")
+        print("\nCoupon collection can be converted to list:")
+        print("  coupon_list = client.coupons().to_list()")
         
-        print(f"\n" + "="*60)
+        print("\n" + "="*60)
         print("DEMO COMPLETE!")
         print("="*60)
         
     except Exception as e:
         print(f"Error during demo: {e}")
-        print(f"Make sure you're authenticated with the Meijer client")
+        print("Make sure you're authenticated with the Meijer client")
 
 
 if __name__ == "__main__":

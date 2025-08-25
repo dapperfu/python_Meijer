@@ -102,7 +102,7 @@ def demo_authentication_with_profile():
         
         print(f"👤 Username: {username}")
         print(f"🔑 Password: {'*' * len(password)}")
-        print(f"🌐 Profile: meijer_automation")
+        print("🌐 Profile: meijer_automation")
         
         # Perform authentication with profile
         print("\n🚀 Starting authentication with Firefox profile...")
@@ -116,7 +116,7 @@ def demo_authentication_with_profile():
         )
         
         # Display results
-        print(f"\n📊 Authentication Result:")
+        print("\n📊 Authentication Result:")
         print(f"✅ Success: {result['success']}")
         print(f"💬 Message: {result['message']}")
         print(f"📁 Profile Path: {result['profile_path']}")

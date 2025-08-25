@@ -8,9 +8,8 @@ to find all shop and scan related endpoints, methods, and JSON responses.
 
 import json
 import re
-import sys
 from pathlib import Path
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, Any, Optional
 from collections import defaultdict
 
 
@@ -274,8 +273,8 @@ def main():
     with open("comprehensive_shop_scan_analysis.json", "w") as f:
         json.dump(comprehensive_report, f, indent=2, default=str)
     
-    print(f"\n✅ Analysis complete!")
-    print(f"📄 Comprehensive report saved to: comprehensive_shop_scan_analysis.json")
+    print("\n✅ Analysis complete!")
+    print("📄 Comprehensive report saved to: comprehensive_shop_scan_analysis.json")
     print(f"🔍 Found {len(comprehensive_report['analysis_summary']['total_unique_endpoints'])} unique endpoints")
     print(f"🏪 Found {len(comprehensive_report['analysis_summary']['total_shop_endpoints'])} shop-related endpoints")
     print(f"📱 Found {len(comprehensive_report['analysis_summary']['total_scan_endpoints'])} scan-related endpoints")

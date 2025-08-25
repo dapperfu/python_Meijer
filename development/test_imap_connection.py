@@ -148,14 +148,14 @@ def test_imap_connection():
                     print("❌ No verification codes found in email body")
                 
                 # Show the email body content
-                print(f"\n📄 Email body content (first 30 lines):")
+                print("\n📄 Email body content (first 30 lines):")
                 body_lines = email_lines[body_start:body_start+30]
                 for i, line in enumerate(body_lines):
                     if line.strip():
                         print(f"   {body_start+i+1:2d}: {line}")
                 
                 # Look for any lines that might contain the verification code
-                print(f"\n🔍 Looking for lines that might contain verification code:")
+                print("\n🔍 Looking for lines that might contain verification code:")
                 verification_keywords = ['verification', 'code', 'enter', 'verify', 'confirm']
                 relevant_lines = []
                 for line in body_lines:

@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
-import json
 
 
 class RewardStatus(Enum):

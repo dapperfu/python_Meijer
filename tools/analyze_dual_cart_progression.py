@@ -10,7 +10,7 @@ import sys
 import re
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 def extract_dual_cart_progression(content: str) -> Dict[str, List[Dict[str, Any]]]:
@@ -120,13 +120,13 @@ def analyze_dual_cart_progression(log_file_path: str) -> Dict[str, Any]:
         
         # Analyze shop'n'scan progression
         print(f"\n{'='*60}")
-        print(f"SHOP'N'SCAN CART PROGRESSION")
+        print("SHOP'N'SCAN CART PROGRESSION")
         print(f"{'='*60}")
         
         shop_scan_flows = cart_progression['shop_n_scan']
         if shop_scan_flows:
             print(f"Found {len(shop_scan_flows)} shop'n'scan cart steps")
-            print(f"\n📊 SHOP'N'SCAN CART PROGRESSION:")
+            print("\n📊 SHOP'N'SCAN CART PROGRESSION:")
             print(f"{'Step':<4} {'Cart Total':<12} {'Items Added':<12} {'Price/Item':<12} {'Total Items':<12}")
             print("-" * 70)
             
@@ -134,7 +134,7 @@ def analyze_dual_cart_progression(log_file_path: str) -> Dict[str, Any]:
                 print(f"{step['step']:<4} ${step['cart_now']:<11.2f} ${step['items_added']:<11.2f} ${step['price_per_item']:<11.2f} {step['total_items']:<12}")
             
             # Analyze pricing patterns
-            print(f"\n💰 SHOP'N'SCAN PRICING ANALYSIS:")
+            print("\n💰 SHOP'N'SCAN PRICING ANALYSIS:")
             for i in range(1, len(shop_scan_flows)):
                 prev_step = shop_scan_flows[i-1]
                 curr_step = shop_scan_flows[i]
@@ -151,23 +151,23 @@ def analyze_dual_cart_progression(log_file_path: str) -> Dict[str, Any]:
                     
                     # Check for specific pricing thresholds
                     if curr_step['total_items'] == 5 and curr_step['price_per_item'] == 2.99:
-                        print(f"    → BINGO! Hit 5-item threshold - price dropped to $2.99!")
+                        print("    → BINGO! Hit 5-item threshold - price dropped to $2.99!")
                     elif curr_step['total_items'] == 4 and curr_step['price_per_item'] < 3.99:
-                        print(f"    → Hit 4-item threshold - price dropped!")
+                        print("    → Hit 4-item threshold - price dropped!")
                     elif curr_step['total_items'] == 2 and curr_step['price_per_item'] < 3.99:
-                        print(f"    → Hit 2-item threshold - price dropped!")
+                        print("    → Hit 2-item threshold - price dropped!")
         else:
             print("No shop'n'scan cart progression found")
         
         # Analyze pickup cart progression
         print(f"\n{'='*60}")
-        print(f"PICKUP CART PROGRESSION")
+        print("PICKUP CART PROGRESSION")
         print(f"{'='*60}")
         
         pickup_flows = cart_progression['pickup_cart']
         if pickup_flows:
             print(f"Found {len(pickup_flows)} pickup cart steps")
-            print(f"\n📊 PICKUP CART PROGRESSION:")
+            print("\n📊 PICKUP CART PROGRESSION:")
             print(f"{'Step':<4} {'Cart Total':<12} {'Items Added':<12} {'Price/Item':<12} {'Total Items':<12}")
             print("-" * 70)
             
@@ -175,7 +175,7 @@ def analyze_dual_cart_progression(log_file_path: str) -> Dict[str, Any]:
                 print(f"{step['step']:<4} ${step['cart_now']:<11.2f} ${step['items_added']:<11.2f} ${step['price_per_item']:<11.2f} {step['total_items']:<12}")
             
             # Analyze pricing patterns
-            print(f"\n💰 PICKUP CART PRICING ANALYSIS:")
+            print("\n💰 PICKUP CART PRICING ANALYSIS:")
             for i in range(1, len(pickup_flows)):
                 prev_step = pickup_flows[i-1]
                 curr_step = pickup_flows[i]
@@ -192,11 +192,11 @@ def analyze_dual_cart_progression(log_file_path: str) -> Dict[str, Any]:
                     
                     # Check for specific pricing thresholds
                     if curr_step['total_items'] == 5 and curr_step['price_per_item'] == 2.99:
-                        print(f"    → BINGO! Hit 5-item threshold - price dropped to $2.99!")
+                        print("    → BINGO! Hit 5-item threshold - price dropped to $2.99!")
                     elif curr_step['total_items'] == 4 and curr_step['price_per_item'] < 3.99:
-                        print(f"    → Hit 4-item threshold - price dropped!")
+                        print("    → Hit 4-item threshold - price dropped!")
                     elif curr_step['total_items'] == 2 and curr_step['price_per_item'] < 3.99:
-                        print(f"    → Hit 2-item threshold - price dropped!")
+                        print("    → Hit 2-item threshold - price dropped!")
         else:
             print("No pickup cart progression found")
         
@@ -222,7 +222,7 @@ def generate_dual_summary(cart_progression: Dict[str, Any]) -> None:
     shop_scan_flows = cart_progression.get('shop_n_scan', [])
     if shop_scan_flows:
         print(f"\n{'='*60}")
-        print(f"SHOP'N'SCAN SUMMARY")
+        print("SHOP'N'SCAN SUMMARY")
         print(f"{'='*60}")
         
         # Find pricing drops
@@ -253,7 +253,7 @@ def generate_dual_summary(cart_progression: Dict[str, Any]) -> None:
     pickup_flows = cart_progression.get('pickup_cart', [])
     if pickup_flows:
         print(f"\n{'='*60}")
-        print(f"PICKUP CART SUMMARY")
+        print("PICKUP CART SUMMARY")
         print(f"{'='*60}")
         
         # Find pricing drops
@@ -289,7 +289,7 @@ def main():
     
     log_file = sys.argv[1]
     
-    print(f"Dual Cart Progression Analysis")
+    print("Dual Cart Progression Analysis")
     print(f"Log file: {log_file}")
     
     # Perform dual cart analysis

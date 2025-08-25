@@ -21,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from meijer.models.rewards import (
     RewardFactory,
     RewardStatus,
-    RewardType,
     RewardMetadata,
     create_example_rewards
 )
@@ -108,19 +107,19 @@ def demo_reward_claiming(rewards, customer_points=8000):
         print(f"   Claimable: {reward.is_claimable}")
         
         if reward.claim(customer_points):
-            print(f"   ✅ SUCCESSFULLY CLAIMED!")
+            print("   ✅ SUCCESSFULLY CLAIMED!")
             print(f"   New status: {reward.status.value}")
             print(f"   Claimed at: {reward.claimed_at}")
             customer_points -= reward.points_required
             print(f"   Remaining points: {customer_points}")
         else:
-            print(f"   ❌ FAILED TO CLAIM")
+            print("   ❌ FAILED TO CLAIM")
             if not reward.is_claimable:
-                print(f"   Reason: Reward not claimable")
+                print("   Reason: Reward not claimable")
             elif customer_points < reward.points_required:
-                print(f"   Reason: Insufficient points")
+                print("   Reason: Insufficient points")
             else:
-                print(f"   Reason: Unknown")
+                print("   Reason: Unknown")
         print()
     
     return rewards
@@ -144,7 +143,7 @@ def demo_reward_redemption(rewards):
                     print(f"   ✅ Redeemed for {gallons} gallons")
                     print(f"   Total savings: ${savings}")
                 else:
-                    print(f"   ❌ Failed to redeem")
+                    print("   ❌ Failed to redeem")
             
             elif hasattr(reward, 'product_name'):
                 # Product reward
@@ -152,7 +151,7 @@ def demo_reward_redemption(rewards):
                 if success:
                     print(f"   ✅ Redeemed product: {reward.product_name}")
                 else:
-                    print(f"   ❌ Failed to redeem")
+                    print("   ❌ Failed to redeem")
             
             elif hasattr(reward, 'discount_amount'):
                 # Total purchase discount
@@ -163,7 +162,7 @@ def demo_reward_redemption(rewards):
                     print(f"   ✅ Redeemed for ${purchase_total} purchase")
                     print(f"   Discount applied: ${discount}")
                 else:
-                    print(f"   ❌ Failed to redeem")
+                    print("   ❌ Failed to redeem")
             
             print(f"   Final status: {reward.status.value}")
             print()

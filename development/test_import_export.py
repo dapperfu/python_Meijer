@@ -5,7 +5,7 @@ Test script for coupon import/export functionality.
 This script tests the import/export features without requiring authentication.
 """
 
-from meijer.models.coupons import Coupon, CouponCollection, CouponType, CouponStatus
+from meijer.models.coupons import Coupon, CouponCollection
 import os
 import tempfile
 
@@ -294,7 +294,7 @@ def main():
         except Exception as e:
             print(f"✗ Test error: {e}")
     
-    print(f"\n" + "="*60)
+    print("\n" + "="*60)
     print(f"TEST RESULTS: {passed}/{total} tests passed")
     print("="*60)
     
@@ -303,15 +303,15 @@ def main():
     else:
         print(f"⚠️  {total - passed} tests failed")
     
-    print(f"\nImport/export features available:")
-    print(f"  - export_clipped_coupons(filepath)")
-    print(f"  - export_by_department(dept, filepath)")
-    print(f"  - create_backup(filepath)")
-    print(f"  - restore_from_backup(filepath)")
-    print(f"  - share_clipped_coupons(filepath)")
-    print(f"  - import_shared_coupons(filepath)")
-    print(f"  - backup_and_clear(filepath)")
-    print(f"  - restore_and_clip(filepath)")
+    print("\nImport/export features available:")
+    print("  - export_clipped_coupons(filepath)")
+    print("  - export_by_department(dept, filepath)")
+    print("  - create_backup(filepath)")
+    print("  - restore_from_backup(filepath)")
+    print("  - share_clipped_coupons(filepath)")
+    print("  - import_shared_coupons(filepath)")
+    print("  - backup_and_clear(filepath)")
+    print("  - restore_and_clip(filepath)")
 
 
 if __name__ == "__main__":

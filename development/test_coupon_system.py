@@ -30,13 +30,13 @@ def test_coupon_model():
     print(f"Can unclip: {coupon.can_unclip()}")
     
     # Test clipping
-    print(f"\nClipping coupon...")
+    print("\nClipping coupon...")
     success = coupon.clip()
     print(f"Clip success: {success}")
     print(f"New clipped state: {coupon.clipped}")
     
     # Test unclipping
-    print(f"\nUnclipping coupon...")
+    print("\nUnclipping coupon...")
     success = coupon.unclip()
     print(f"Unclip success: {success}")
     print(f"New clipped state: {coupon.clipped}")
@@ -99,7 +99,7 @@ def test_coupon_collection():
     print(f"Available coupons: {len(available_coupons)}")
     
     # Test bulk operations
-    print(f"\nTesting bulk operations...")
+    print("\nTesting bulk operations...")
     clipped_count = collection.clip_all()
     print(f"Clipped {clipped_count} coupons")
     

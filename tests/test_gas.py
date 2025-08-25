@@ -7,7 +7,6 @@ Tests all gas station functionality including fuel prices, hours, and amenities.
 
 import unittest
 from datetime import datetime, time
-from unittest.mock import Mock, patch
 
 from meijer.gas import (
     FuelPrice,

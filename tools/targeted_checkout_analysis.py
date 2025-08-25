@@ -5,7 +5,7 @@ Targeted analysis of the specific checkout flow with PDF417 barcode.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 from pathlib import Path
 
 
@@ -118,7 +118,7 @@ def find_specific_checkout_flow(log_file_path: str) -> Dict[str, Any]:
                     }
                     break
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -167,7 +167,7 @@ def find_specific_checkout_flow(log_file_path: str) -> Dict[str, Any]:
                     }
                     break
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -216,7 +216,7 @@ def find_specific_checkout_flow(log_file_path: str) -> Dict[str, Any]:
                     }
                     break
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -255,39 +255,39 @@ def main():
     
     # Print results
     if results['pdf417_barcode']:
-        print(f"\n=== PDF417 BARCODE FOUND ===")
+        print("\n=== PDF417 BARCODE FOUND ===")
         print(f"Barcode: {results['pdf417_barcode']['barcode']}")
         print(f"Position: {results['pdf417_barcode']['position']}")
         print(f"Context Preview: {results['pdf417_barcode']['context'][:500]}...")
     
     if results['session_resumption']:
-        print(f"\n=== SESSION RESUMPTION ===")
+        print("\n=== SESSION RESUMPTION ===")
         print(f"Pattern: {results['session_resumption']['pattern']}")
         print(f"Device ID: {results['session_resumption']['device_id']}")
         print(f"Transaction ID: {results['session_resumption']['transaction_id']}")
         print(f"Context Preview: {results['session_resumption']['context'][:500]}...")
     
     if results['transfer_flow']:
-        print(f"\n=== TRANSFER FLOW ===")
+        print("\n=== TRANSFER FLOW ===")
         print(f"Pattern: {results['transfer_flow']['pattern']}")
         print(f"Device ID: {results['transfer_flow']['device_id']}")
         print(f"Transaction ID: {results['transfer_flow']['transaction_id']}")
         print(f"Context Preview: {results['transfer_flow']['context'][:500]}...")
     
     if results['checkout_completion']:
-        print(f"\n=== CHECKOUT COMPLETION ===")
+        print("\n=== CHECKOUT COMPLETION ===")
         print(f"Pattern: {results['checkout_completion']['pattern']}")
         print(f"Device ID: {results['checkout_completion']['device_id']}")
         print(f"Transaction ID: {results['checkout_completion']['transaction_id']}")
         print(f"Context Preview: {results['checkout_completion']['context'][:500]}...")
     
     if results['checkout_endpoints']:
-        print(f"\n=== CHECKOUT ENDPOINTS ===")
+        print("\n=== CHECKOUT ENDPOINTS ===")
         for endpoint in results['checkout_endpoints']:
             print(f"\n{endpoint['method']} {endpoint['url']}")
     
     if results['checkout_flow']:
-        print(f"\n=== CHECKOUT FLOW PATTERNS ===")
+        print("\n=== CHECKOUT FLOW PATTERNS ===")
         for flow in results['checkout_flow']:
             print(f"\nPattern: {flow['pattern']}")
             print(f"Matches: {flow['matches']}")
@@ -296,7 +296,7 @@ def main():
     with open('logs/targeted_checkout_analysis.json', 'w') as f:
         json.dump(results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/targeted_checkout_analysis.json")
+    print("\nDetailed results saved to: logs/targeted_checkout_analysis.json")
 
 
 if __name__ == '__main__':

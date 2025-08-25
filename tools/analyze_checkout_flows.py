@@ -5,7 +5,7 @@ Analyze Shop'n'Scan checkout flows from the latest log file.
 
 import json
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 from pathlib import Path
 
 
@@ -132,7 +132,7 @@ def analyze_checkout_flows(log_file_path: str) -> Dict[str, Any]:
                         'context_preview': context_text[:400] + '...' if len(context_text) > 400 else context_text
                     })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -174,7 +174,7 @@ def analyze_checkout_flows(log_file_path: str) -> Dict[str, Any]:
                     'context_preview': context_text[:500] + '...' if len(context_text) > 500 else context_text
                 }
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -210,7 +210,7 @@ def analyze_checkout_flows(log_file_path: str) -> Dict[str, Any]:
                     'context_preview': context_text[:400] + '...' if len(context_text) > 400 else context_text
                 })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -247,7 +247,7 @@ def analyze_checkout_flows(log_file_path: str) -> Dict[str, Any]:
                     'context_preview': context_text[:400] + '...' if len(context_text) > 400 else context_text
                 })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -284,7 +284,7 @@ def analyze_checkout_flows(log_file_path: str) -> Dict[str, Any]:
                     'context_preview': context_text[:400] + '...' if len(context_text) > 400 else context_text
                 })
                 
-            except Exception as e:
+            except Exception:
                 pass
             
             start = pos + 1
@@ -306,14 +306,14 @@ def main():
     results = analyze_checkout_flows(log_file)
     
     # Print results
-    print(f"\n=== CHECKOUT ENDPOINTS ===")
+    print("\n=== CHECKOUT ENDPOINTS ===")
     for endpoint, data in results.get('checkout_endpoints', {}).items():
         print(f"\n{endpoint}")
         print(f"  Method: {data['method']}")
         print(f"  Count: {data['count']}")
         print(f"  Operations: {list(data['operations'].keys())}")
     
-    print(f"\n=== CHECKOUT OPERATIONS ===")
+    print("\n=== CHECKOUT OPERATIONS ===")
     for operation, data in results.get('checkout_operations', {}).items():
         print(f"\n{operation}")
         print(f"  Count: {data['count']}")
@@ -321,19 +321,19 @@ def main():
         print(f"  Device ID: {data['device_id']}")
         print(f"  Transaction ID: {data['transaction_id']}")
     
-    print(f"\n=== PDF417 BARCODES ===")
+    print("\n=== PDF417 BARCODES ===")
     for barcode in results.get('pdf417_barcodes', [])[:5]:  # Show first 5
         print(f"\nBarcode: {barcode['barcode']}")
         print(f"  Context: {barcode['context']}")
         print(f"  Position: {barcode['position']}")
     
-    print(f"\n=== CHECKOUT SUMMARIES ===")
+    print("\n=== CHECKOUT SUMMARIES ===")
     for summary in results.get('checkout_summaries', [])[:5]:  # Show first 5
         print(f"\nPattern: {summary['pattern']}")
         print(f"  Prices: {summary['prices']}")
         print(f"  Context: {summary['context']}")
     
-    print(f"\n=== SESSION RESUMPTION ===")
+    print("\n=== SESSION RESUMPTION ===")
     for resumption in results.get('session_resumption', [])[:5]:  # Show first 5
         print(f"\nPattern: {resumption['pattern']}")
         print(f"  Device ID: {resumption['device_id']}")
@@ -343,7 +343,7 @@ def main():
     with open('logs/checkout_flow_analysis.json', 'w') as f:
         json.dump(results, f, indent=2)
     
-    print(f"\nDetailed results saved to: logs/checkout_flow_analysis.json")
+    print("\nDetailed results saved to: logs/checkout_flow_analysis.json")
 
 
 if __name__ == '__main__':

@@ -12,9 +12,8 @@ This script searches for specific coupon patterns mentioned by the user:
 
 import json
 import re
-from collections import defaultdict, Counter
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Any, Optional
 
 
 class TargetedCouponSearch:
@@ -140,11 +139,11 @@ class TargetedCouponSearch:
         
         print(f"\nTotal Coupon-Related Interactions Found: {self.total_interactions}")
         
-        print(f"\nDepartment/Category Breakdown:")
+        print("\nDepartment/Category Breakdown:")
         for dept, count in sorted(self.department_counts.items()):
             print(f"  {dept}: {count}")
         
-        print(f"\nEndpoint Breakdown:")
+        print("\nEndpoint Breakdown:")
         for endpoint, count in sorted(self.endpoint_counts.items()):
             print(f"  {endpoint}: {count}")
         
@@ -155,7 +154,7 @@ class TargetedCouponSearch:
                 print(f"  - {item[:200]}...")  # Truncate for readability
         
         # Check against expected values
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("EXPECTED vs FOUND COMPARISON")
         print("="*50)
         

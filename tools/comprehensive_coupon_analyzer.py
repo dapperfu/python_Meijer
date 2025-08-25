@@ -8,9 +8,9 @@ including department counts, clipped offers, and specific items like Cottonelle.
 
 import json
 import re
-from collections import defaultdict, Counter
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 
 class ComprehensiveCouponAnalyzer:
@@ -144,7 +144,7 @@ class ComprehensiveCouponAnalyzer:
         
         print(f"\nTotal Interactions Found: {self.total_interactions}")
         
-        print(f"\nDepartment/Category Breakdown:")
+        print("\nDepartment/Category Breakdown:")
         for dept, count in sorted(self.department_counts.items()):
             print(f"  {dept}: {count}")
         
@@ -154,7 +154,7 @@ class ComprehensiveCouponAnalyzer:
         
         # Show sample Cottonelle items
         if self.cottonelle_items:
-            print(f"\nSample Cottonelle items:")
+            print("\nSample Cottonelle items:")
             for item in self.cottonelle_items[:3]:
                 if isinstance(item, dict):
                     # Extract relevant information
@@ -167,7 +167,7 @@ class ComprehensiveCouponAnalyzer:
                     print()
         
         # Check against expected values
-        print(f"\n" + "="*50)
+        print("\n" + "="*50)
         print("EXPECTED vs FOUND COMPARISON")
         print("="*50)
         

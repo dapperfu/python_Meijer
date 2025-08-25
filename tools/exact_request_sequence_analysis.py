@@ -6,7 +6,6 @@ Analyzes the successful login flow from mitmproxy logs to extract the exact sequ
 
 import json
 import sys
-from typing import Dict, Any, List
 from urllib.parse import parse_qs, urlparse
 
 def analyze_exact_sequence(log_file: str):
@@ -64,7 +63,7 @@ def analyze_exact_sequence(log_file: str):
         
         # Show key request headers
         if flow['request_headers']:
-            print(f"   Key Headers:")
+            print("   Key Headers:")
             for header, value in flow['request_headers'].items():
                 if header.lower() in ['user-agent', 'accept', 'content-type', 'x-device-fingerprint', 'x-acf-sensor-data']:
                     print(f"     {header}: {value}")
@@ -75,7 +74,7 @@ def analyze_exact_sequence(log_file: str):
         
         # Show key cookies
         if flow['cookies']:
-            print(f"   Key Cookies:")
+            print("   Key Cookies:")
             for cookie, value in flow['cookies'].items():
                 if cookie in ['_abck', 'bm_sz', 'bm_sv', 'ak_bmsc', 'JSESSIONID']:
                     print(f"     {cookie}: {value[:100]}...")
@@ -100,7 +99,7 @@ def analyze_exact_sequence(log_file: str):
     # 2. Device Fingerprint
     device_flow = next((f for f in successful_sequence if f['type'] == 'device_nonce'), None)
     if device_flow:
-        print(f"\n📱 DEVICE FINGERPRINT:")
+        print("\n📱 DEVICE FINGERPRINT:")
         print(f"   URL: {device_flow['url']}")
         print(f"   Method: {device_flow['method']}")
         print(f"   Headers: {list(device_flow['request_headers'].keys())}")
@@ -108,7 +107,7 @@ def analyze_exact_sequence(log_file: str):
     # 3. Login Identify
     identify_flow = next((f for f in successful_sequence if f['type'] == 'web_login_identify'), None)
     if identify_flow:
-        print(f"\n🔐 LOGIN IDENTIFY:")
+        print("\n🔐 LOGIN IDENTIFY:")
         print(f"   URL: {identify_flow['url']}")
         print(f"   Method: {identify_flow['method']}")
         print(f"   Content-Type: {identify_flow['request_headers'].get('content-type', 'N/A')}")
@@ -117,7 +116,7 @@ def analyze_exact_sequence(log_file: str):
     # 4. Challenge Answer
     challenge_flow = next((f for f in successful_sequence if f['type'] == 'challenge_answer'), None)
     if challenge_flow:
-        print(f"\n🔑 CHALLENGE ANSWER:")
+        print("\n🔑 CHALLENGE ANSWER:")
         print(f"   URL: {challenge_flow['url']}")
         print(f"   Method: {challenge_flow['method']}")
         print(f"   Request Body: {challenge_flow['request_body'][:100]}...")
@@ -125,13 +124,13 @@ def analyze_exact_sequence(log_file: str):
     # 5. Token Exchange
     token_flow = next((f for f in successful_sequence if f['type'] == 'token_exchange'), None)
     if token_flow:
-        print(f"\n🎫 TOKEN EXCHANGE:")
+        print("\n🎫 TOKEN EXCHANGE:")
         print(f"   URL: {token_flow['url']}")
         print(f"   Method: {token_flow['method']}")
         print(f"   X-ACF-Sensor-Data: {token_flow['request_headers'].get('x-acf-sensor-data', 'N/A')[:100]}...")
     
     # 6. Cookie Evolution
-    print(f"\n🍪 COOKIE EVOLUTION PATTERN:")
+    print("\n🍪 COOKIE EVOLUTION PATTERN:")
     for i, flow in enumerate(successful_sequence):
         if flow['set_cookies']:
             print(f"   Step {i+1} ({flow['type']}): {len(flow['set_cookies'])} cookies set")
@@ -140,7 +139,7 @@ def analyze_exact_sequence(log_file: str):
                     print(f"     {cookie[:100]}...")
     
     # 7. Timing Analysis
-    print(f"\n⏱️  TIMING ANALYSIS:")
+    print("\n⏱️  TIMING ANALYSIS:")
     for i, flow in enumerate(successful_sequence):
         if i > 0:
             prev_time = successful_sequence[i-1]['timestamp']

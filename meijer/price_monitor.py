@@ -27,14 +27,13 @@ This module provides functionality to:
 import json
 import logging
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Set
+from typing import Dict, List, Optional, Any
 import time
 
 from .client import Meijer
 from .search import Search
-from .stores import MeijerStore
 
 
 @dataclass
