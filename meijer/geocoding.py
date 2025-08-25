@@ -35,6 +35,7 @@ class GoogleMobileGeocoder:
         self.auth_data = auth_data or self._extract_auth_from_logs()
         self.base_url = "https://geomobileservices-pa.googleapis.com"
         self.geocode_endpoint = "/google.internal.maps.geomobileservices.geocoding.v3mobile.GeocodingService/Geocode"
+        self.reverse_geocode_endpoint = "/google.internal.maps.geomobileservices.geocoding.v3mobile.GeocodingService/ReverseGeocode"
 
         if not self.auth_data:
             raise ValueError(
@@ -221,12 +222,19 @@ class GoogleMobileGeocoder:
             Tuple of (latitude, longitude) if successful, None otherwise
         """
         try:
-            # Construct the gRPC request payload exactly like the Meijer app does
-            # From the raw request: "manistee, United States" + "*en-US8Bcom.meijer.mobile.meijer"
-            # The format appears to be: location + "*en-US8Bcom.meijer.mobile.meijer"
-            payload = f'{location}"*en-US8Bcom.meijer.mobile.meijer'
+            # The logs show both Geocode and ReverseGeocode endpoints
+            # Let's try the Geocode endpoint first since we need forward geocoding
+            endpoint = self.geocode_endpoint
 
-            # Define headers
+            # Create the exact payload structure from the logs
+            # From the logs: binary data with location + language + app identifier
+            # The format appears to be: location + "en-US" + "com.meijer.mobile.meijer"
+
+            # Create the binary payload exactly like the logs show
+            # This is a simplified version - the actual app uses protobuf
+            payload = f"{location}\x00en-US\x00com.meijer.mobile.meijer".encode("utf-8")
+
+            # Define headers exactly like the logs
             headers = {
                 "user-agent": self.auth_data.get(
                     "user_agent",
@@ -234,20 +242,21 @@ class GoogleMobileGeocoder:
                 ),
                 "content-type": "application/grpc",
                 "te": "trailers",
+                "transfer-encoding": "chunked",
                 "x-goog-spatula": self.auth_data["spatula_token"],
                 "grpc-accept-encoding": "gzip",
                 "grpc-timeout": "9976501u",
             }
 
             # Make the request
-            logger.info(f"Making request to: {self.base_url}{self.geocode_endpoint}")
-            logger.info(f"Request payload: {payload}")
+            logger.info(f"Making geocoding request to: {self.base_url}{endpoint}")
+            logger.info(f"Request payload length: {len(payload)} bytes")
             logger.info(f"Request headers: {headers}")
 
             response = requests.post(
-                f"{self.base_url}{self.geocode_endpoint}",
+                f"{self.base_url}{endpoint}",
                 headers=headers,
-                data=payload.encode("utf-8"),
+                data=payload,
                 timeout=30,
             )
 
