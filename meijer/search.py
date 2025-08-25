@@ -5,7 +5,7 @@ This module provides methods for searching products using Constructor.io
 and other search APIs based on APK analysis.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from datetime import datetime
 
 if TYPE_CHECKING:
@@ -57,7 +57,7 @@ class Search:
         results_per_page: int = 24,
         page: int = 1,
         sort_by: str = "relevance",
-        store_id: Optional[str] = None,
+        store_id: Optional[Union[str, int]] = None,
         **kwargs,
     ) -> SearchResult:
         """
@@ -89,14 +89,16 @@ class Search:
 
             # Add store filter if provided (Constructor.io expects filters[availableInStores])
             if store_id:
-                params["filters[availableInStores]"] = store_id
+                # Normalize store_id to string format
+                store_id_str = str(store_id)
+                params["filters[availableInStores]"] = store_id_str
 
             # Add any additional kwargs (but filter out store_id to avoid duplication)
             filtered_kwargs = {k: v for k, v in kwargs.items() if k != "store_id"}
             params.update(filtered_kwargs)
 
             self.logger.info(
-                f"Searching for: '{query}' (page {page}, {results_per_page} results, store: {store_id or 'all'})"
+                f"Searching for: '{query}' (page {page}, {results_per_page} results, store: {store_id_str if store_id else 'all'})"
             )
 
             response = self.meijer._make_request("GET", url, params=params)

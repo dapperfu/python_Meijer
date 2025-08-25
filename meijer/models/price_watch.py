@@ -25,7 +25,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional, List
 
-from pony.orm import *
+from pony.orm import Entity, PrimaryKey, Required, Optional, Set, composite_key, index
 
 
 class PriceType(str, Enum):
@@ -59,7 +59,7 @@ class AlertReason(str, Enum):
     CLEARANCE_DETECTED = "clearance_detected"
 
 
-class Product(db.Entity):
+class Product(Entity):
     """
     Product entity representing a sellable item at Meijer.
     
@@ -98,7 +98,7 @@ class Product(db.Entity):
         return f"{self.brand or 'Unknown'} {self.name or 'Unknown'} ({self.identifier})"
 
 
-class Store(db.Entity):
+class Store(Entity):
     """
     Store entity representing a physical Meijer store location.
     """
@@ -134,7 +134,7 @@ class Store(db.Entity):
             return f"Store {self.store_code}"
 
 
-class PriceHistory(db.Entity):
+class PriceHistory(Entity):
     """
     Price history entity tracking observed prices for products at stores.
     """
@@ -178,7 +178,7 @@ class PriceHistory(db.Entity):
         return f"{self.product} at {self.store}: ${self.price} ({self.price_type}) on {self.observed_at}"
 
 
-class Watch(db.Entity):
+class Watch(Entity):
     """
     Watch entity representing user intent to track a specific product.
     """

@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import click
 
@@ -579,7 +579,7 @@ def list_clearall():
 
 
 @list_group.command("defrag")
-@click.option("--store-id", help="Store ID for location lookup")
+@click.option("--store-id", help="Store ID for location lookup (accepts string or integer)")
 @click.option(
     "-r", "--reverse", is_flag=True, help="Sort items in reverse order (descending)"
 )
@@ -592,7 +592,7 @@ def list_clearall():
 @click.option(
     "-s", "--show", is_flag=True, help="Show shopping list before and after defrag"
 )
-def list_defrag(store_id: Optional[str], reverse: bool, zig: bool, show: bool):
+def list_defrag(store_id: Optional[Union[str, int]], reverse: bool, zig: bool, show: bool):
     """Defragment shopping list by organizing items by aisle."""
     client = get_meijer_client()
 
@@ -654,8 +654,8 @@ def list_defrag(store_id: Optional[str], reverse: bool, zig: bool, show: bool):
 @list_group.command("export")
 @click.argument("filename", type=click.Path(), default="shopping_list.txt")
 @click.option("--defrag", "-d", is_flag=True, help="Export with defragmented organization by aisle")
-@click.option("--store-id", "-s", help="Store ID for location lookup (required for defrag)")
-def list_export(filename: str, defrag: bool, store_id: Optional[str]):
+@click.option("--store-id", "-s", help="Store ID for location lookup (required for defrag, accepts string or integer)")
+def list_export(filename: str, defrag: bool, store_id: Optional[Union[str, int]]):
     """Export shopping list to a file with full details for round-trip import."""
     client = get_meijer_client()
 

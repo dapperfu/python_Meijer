@@ -7,7 +7,7 @@ to reduce file size and improve organization.
 """
 
 import re
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -362,22 +362,25 @@ class ProductOperations:
             return None
 
     def get_product_detail(
-        self, upc: str, store_id: Optional[str] = None
+        self, upc: str, store_id: Optional[Union[str, int]] = None
     ) -> Optional[MeijerItem]:
         """
         Get detailed product information by UPC including store location.
 
         Args:
             upc: Product UPC/barcode
-            store_id: Optional store ID for store-specific pricing and location
+            store_id: Optional store ID for store-specific pricing and location (accepts string or integer)
 
         Returns:
             MeijerItem with detailed product information, or None if not found
         """
         try:
+            # Normalize store_id to string format
+            store_id_str = str(store_id) if store_id else None
+            
             # First try to get product detail from Meijer's product detail API
             # This should contain actual aisle location information
-            product_detail = self._get_product_detail_from_api(upc, store_id)
+            product_detail = self._get_product_detail_from_api(upc, store_id_str)
 
             if product_detail and product_detail.aisle_primary:
                 # We have real location data from the API
@@ -394,8 +397,8 @@ class ProductOperations:
                 product = search_results.results[0]
 
                 # If we have a store ID, try to get store-specific details
-                if store_id and hasattr(self.client, "get_store_by_id"):
-                    store = self.client.get_store_by_id(store_id)
+                if store_id_str and hasattr(self.client, "get_store_by_id"):
+                    store = self.client.get_store_by_id(store_id_str)
                     if store:
                         self.logger.debug(
                             f"Found store {store.name} for product lookup"
@@ -410,7 +413,7 @@ class ProductOperations:
             return None
 
     def _get_product_detail_from_api(
-        self, upc: str, store_id: Optional[str] = None
+        self, upc: str, store_id: Optional[Union[str, int]] = None
     ) -> Optional[MeijerItem]:
         """
         Get product detail from Meijer's product detail API endpoint.
@@ -440,7 +443,9 @@ class ProductOperations:
             params = {"fields": "FULL", "pageName": "pdp_app"}
 
             if store_id:
-                params["store"] = store_id
+                # Normalize store_id to string format
+                store_id_str = str(store_id)
+                params["store"] = store_id_str
 
             self.logger.debug(f"Trying Meijer product detail endpoint: {endpoint}")
             response = self.client._make_request(
