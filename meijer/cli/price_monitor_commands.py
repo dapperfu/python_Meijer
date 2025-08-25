@@ -70,7 +70,7 @@ def init(data_dir: Optional[str]):
         # Check authentication
         if not meijer.is_authenticated():
             console.print(
-                "[red]❌ Not authenticated. Please run 'meijer login' first.[/red]"
+                "[red]❌ Not authenticated. Please run 'meijer auth log --mode full' first.[/red]"
             )
             return
         
@@ -178,7 +178,7 @@ def run(monitor_name: str, data_dir: Optional[str]):
         # Check authentication
         if not meijer.is_authenticated():
             console.print(
-                "[red]❌ Not authenticated. Please run 'meijer login' first.[/red]"
+                "[red]❌ Not authenticated. Please run 'meijer auth log --mode full' first.[/red]"
             )
             return
         
@@ -247,7 +247,7 @@ def list(data_dir: Optional[str]):
         # Check authentication
         if not meijer.is_authenticated():
             console.print(
-                "[red]❌ Not authenticated. Please run 'meijer login' first.[/red]"
+                "[red]❌ Not authenticated. Please run 'meijer auth log --mode full' first.[/red]"
             )
             return
         
@@ -313,7 +313,7 @@ def delete(monitor_name: str, data_dir: Optional[str]):
         # Check authentication
         if not meijer.is_authenticated():
             console.print(
-                "[red]❌ Not authenticated. Please run 'meijer login' first.[/red]"
+                "[red]❌ Not authenticated. Please run 'meijer auth log --mode full' first.[/red]"
             )
             return
         
@@ -388,7 +388,7 @@ def deals(min_discount: float, max_price: Optional[float], data_dir: Optional[st
         # Check authentication
         if not meijer.is_authenticated():
             console.print(
-                "[red]❌ Not authenticated. Please run 'meijer login' first.[/red]"
+                "[red]❌ Not authenticated. Please run 'meijer auth log --mode full' first.[/red]"
             )
             return
         

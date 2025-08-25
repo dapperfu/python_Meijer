@@ -1,0 +1,10 @@
+[tool.hatch.version]
+source = "regex"
+path = "meijer/__init__.py"
+pattern = '__version__ = "([^"]+)"'
+
+[tool.hatch.build.targets.wheel]
+packages = ["meijer"]
+
+[tool.hatch.build.hooks.custom]
+path = "hatch_build_hook.py"

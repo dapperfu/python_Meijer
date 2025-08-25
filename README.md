@@ -499,56 +499,27 @@ Show gas station information.
 meijer gas
 ```
 
-### `meijer login`
 
-Authenticate with Meijer using username/password (legacy command).
-
-```bash
-meijer login [OPTIONS]
-
-Options:
-  --user, -u TEXT         Username/email for authentication
-  --password, -p TEXT     Password for authentication
-  --save-credentials      Save credentials to login.txt
-  --clear-credentials     Clear saved credentials
-  --method, -m TEXT       Authentication method (requests, selenium, fake-headers)
-  --headless              Run browser in headless mode
-  --keep-open             Keep browser open for debugging
-  --proxy-host TEXT       Proxy host for mitmproxy (default: 127.0.0.1)
-  --proxy-port INTEGER    Proxy port for mitmproxy (default: 8080)
-
-Examples:
-  meijer login --method requests            # Headless authentication
-  meijer login --method selenium           # Browser automation
-  meijer login --method fake-headers       # Experimental method
-  meijer login --proxy-host 127.0.0.1 --proxy-port 8080
-```
 
 ## Authentication Methods
 
-### 1. **Requests Method** (Default)
-- **Command**: `meijer login --method requests`
-- **Description**: Pure HTTP requests with no browser
-- **Use Case**: Fastest, most reliable for automation
-- **Requirements**: Username/password, optional email 2FA config
+### 1. **Log Analysis** (Recommended)
+- **Command**: `meijer auth log --mode full`
+- **Description**: Extract complete OAuth2 flow from mitmproxy logs
+- **Use Case**: Persistent authentication with auto-refresh
+- **Requirements**: mitmproxy logs, complete login flow
 
-### 2. **Selenium Method**
-- **Command**: `meijer login --method selenium`
-- **Description**: Full browser automation with OKTA
-- **Use Case**: When requests method fails, debugging
-- **Requirements**: Username/password, browser driver
+### 2. **Quick Token Capture**
+- **Command**: `meijer auth log --mode quick`
+- **Description**: Extract bearer tokens from recent app usage
+- **Use Case**: Fast API access without full login
+- **Requirements**: mitmproxy logs, recent app activity
 
-### 3. **Hybrid Method**
-- **Command**: `meijer login --method hybrid`
-- **Description**: Minimal browser + HTTP requests
-- **Use Case**: Balance of speed and reliability
-- **Requirements**: Username/password, optional email 2FA
-
-### 4. **Log Analysis**
-- **Command**: `meijer auth log`
-- **Description**: Extract tokens from mitmproxy logs
-- **Use Case**: When you have existing browser sessions
-- **Requirements**: mitmproxy logs, Meijer app usage
+### 3. **Auto-Detection**
+- **Command**: `meijer auth log --mode auto`
+- **Description**: Automatically detect best available authentication
+- **Use Case**: Smart fallback between full and quick modes
+- **Requirements**: mitmproxy logs, any app activity
 
 ## Configuration
 
@@ -638,11 +609,11 @@ meijer cart slots --date 2025-08-25
 ### Authentication
 
 ```bash
-# Quick login
-meijer login --method requests
-
-# Extract tokens from logs
+# Extract tokens from logs (recommended)
 meijer auth log --mode full
+
+# Quick token capture
+meijer auth log --mode quick
 
 # Check status
 meijer status
@@ -653,9 +624,10 @@ meijer status
 ### Common Issues
 
 1. **Authentication Failed**
-   - Try different methods: `--method requests`, `--method selenium`
-   - Check credentials and network connectivity
-   - Use `meijer auth log` for token extraction
+   - Use `meijer auth log --mode full` for complete OAuth2 flow
+   - Use `meijer auth log --mode quick` for immediate token capture
+   - Check mitmproxy logs and network connectivity
+   - Ensure complete login flow in Meijer app
 
 2. **Proxy Issues**
    - Ensure mitmproxy is running on specified port

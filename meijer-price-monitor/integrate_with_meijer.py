@@ -70,7 +70,7 @@ def create_authenticated_monitor() -> Optional[PriceMonitor]:
         
         # Check authentication
         if not meijer.is_authenticated():
-            print("❌ Not authenticated. Please run 'meijer login' first.")
+            print("❌ Not authenticated. Please run 'meijer auth log --mode full' first.")
             print("   You can also use the standalone monitor without authentication for testing.")
             return None
         

@@ -33,7 +33,6 @@ from .commands import (
     email_2fa_group,
     gas_command,
     list_group,
-    login_command,
     settings_group,
     status_command,
     stores_group,
@@ -102,7 +101,6 @@ def cli(ctx: click.Context, verbose: int, proxy: str, local: bool):
     • stores - Manage store information and search
     • settings - Manage account settings and preferences
     • email-2fa - Manage email 2FA configuration and testing
-    • login - Login with username/password (requests, Selenium, or fake-headers methods, requests is default)
     • auth - Manage authentication (login, logout, status, log extraction, email setup)
     • status - Show authentication status
     • ads - Browse weekly ad items
@@ -139,7 +137,6 @@ cli.add_command(auth_group, name="auth")
 cli.add_command(status_command, name="status")
 cli.add_command(ad_command, name="ads")
 cli.add_command(gas_command, name="gas")
-cli.add_command(login_command, name="login")
 
 
 if __name__ == "__main__":

@@ -29,3 +29,6 @@ bandit>=1.7.0
 
 # Pre-commit hooks
 pre-commit>=3.5.0
+
+# Version management
+hatch>=1.14.0

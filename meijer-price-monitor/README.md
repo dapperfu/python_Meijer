@@ -210,7 +210,7 @@ The project is designed to be modular and extensible:
 
 ### Common Issues
 
-1. **Authentication Errors**: Ensure you're logged in with `meijer login`
+1. **Authentication Errors**: Ensure you're authenticated with `meijer auth log --mode full`
 2. **Store Not Found**: Check location and radius settings
 3. **No Products Found**: Verify search query and store availability
 4. **Cron Issues**: Check cron status with `make cron-status`

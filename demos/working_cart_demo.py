@@ -304,7 +304,7 @@ def main() -> None:
             print(f"   Status: {client.auth_status.name}")
             if client.auth_status.name != "AUTHENTICATED":
                 print("⚠️  Client not authenticated - some operations may fail")
-                print("💡 Run 'meijer login' first for full functionality")
+                print("💡 Run 'meijer auth log --mode full' first for full functionality")
         else:
             print("⚠️  Authentication status not available")
         
@@ -324,7 +324,7 @@ def main() -> None:
         
         print("\n✅ Cart demo completed!")
         print("\n💡 To test with real items:")
-        print("   1. Run 'meijer login' to authenticate")
+        print("   1. Run 'meijer auth log --mode full' to authenticate")
         print("   2. Use 'meijer cart add <UPC>' to add items")
         print("   3. Use 'meijer cart show' to view cart")
         print("   4. Use 'meijer cart remove <index>' to remove items")

@@ -1,0 +1,296 @@
+Meijer Price Watcher - Requirements Specification
+
+Target repo: dapperfu/python_Meijer branch v2
+This spec extends the existing CLI in the repo with a Price Watch subsystem. It is written to paste into CursorAI to generate code. Do not generate code in this step.
+
+1. Purpose and scope
+
+- Build a CLI feature set that tracks Meijer item prices by Identifier (UPC or PLU) and store, records normalized price history in SQLite via PonyORM, and sends email alerts when prices drop or when a sale or clearance state appears.
+- Prices generally change once per week. We will not depend on the day of week for logic. We will detect changes purely from observed data.
+- Primary audience is a single user on a Linux workstation who already uses the meijer CLI in this repo. The new commands live under meijer watch ... and reuse the repo’s authentication and request stack. The commands should feel consistent with existing groups like meijer list, meijer stores, meijer cart, and meijer email-2fa.
+
+2. References and alignment with current CLI
+
+- The repo already exposes a Click based CLI with grouped commands for list, stores, cart, email 2FA, etc. Naming, option styles, and help output for the new commands should match existing conventions shown in README sections for meijer list, meijer stores, meijer cart, and meijer email-2fa.
+
+3. High level objectives
+
+1) Persist product and price data in a normalized SQLite database using PonyORM.
+2) Watch specific Identifiers (UPC or PLU) and optional store scopes.
+3) Fetch current prices for watched items on demand.
+4) Detect price drops and generate alerts.
+5) Categorize prices as regular, sale, or clearance when possible.
+6) Email the user when conditions are met, using credentials in ~/.config/meijer/.
+7) Provide safe idempotency so a single drop does not spam duplicate alerts.
+8) Provide exports and simple reports.
+
+4. Non goals
+
+- No background daemons. Scheduling is external, for example cron.
+- No web UI. CLI only.
+- No multi user tenancy.
+- No scraping beyond the project’s existing API approach.
+
+5. Terminology
+
+- Product: a sellable item identified by UPC or PLU at Meijer.
+- Identifier: a code that may be UPC (packaged goods) or PLU (produce items). Both should be supported.
+- Store: a physical store context that may have store-specific pricing.
+- Price event: an observation of price for a product at a store at a time.
+- Watch: user intent to track a specific product, optionally scoped to a store.
+- Alert: a notification generated when a rule is satisfied.
+
+6. Configuration
+
+- Config folder: ~/.config/meijer/
+- Files:
+  - email.toml or email.ini for email credentials and recipients. Required keys:
+    - imap_host, imap_port, imap_username, imap_password
+    - smtp_host, smtp_port, smtp_username, smtp_password, from, to
+  - Reasoning: IMAP creds are explicitly requested to be stored here. SMTP pairs are required to send mail. Use IMAP optionally for post send checks or dedupe if desired by implementation.
+- Database path: ~/.local/share/meijer/prices.db
+- Respect XDG_* env overrides if present.
+
+7. Security
+
+- Accept normal email passwords or app passwords.
+- File permissions: on create, set 0600 for credential files and 0600 for DB.
+- Never print secrets in logs.
+- If keyring is available, allow optional storage there, but plain file storage must remain supported since the request specifies IMAP credentials in config.
+
+8. Database design with PonyORM
+
+DB engine
+- SQLite, PRAGMA foreign_keys = ON.
+
+Core tables
+1) product
+   - id integer PK autoincrement
+   - identifier text not null
+   - id_type text not null enum: UPC, PLU
+   - brand text nullable
+   - name text nullable
+   - size text nullable
+   - department text nullable
+   - image_url text nullable
+   - created_at datetime not null
+   - updated_at datetime not null
+   - Indexes: unique on (identifier, id_type), index on (brand, name)
+
+2) store
+   - id integer PK autoincrement
+   - store_code text unique not null  - this is the numeric or string identifier used by Meijer APIs
+   - name text nullable
+   - city text nullable
+   - state text nullable
+   - timezone text nullable
+   - created_at datetime not null
+   - updated_at datetime not null
+
+3) price_history
+   - id integer PK autoincrement
+   - product FK to product.id not null
+   - store FK to store.id not null
+   - observed_at datetime not null  - when we observed this price
+   - price numeric(10,2) not null
+   - unit_price numeric(10,4) nullable
+   - currency text not null default "USD"
+   - price_type text not null enum: regular, sale, clearance, unknown
+   - regular_price numeric(10,2) nullable  - if the API provides both regular and promo prices
+   - promo_id text nullable
+   - promo_text text nullable
+   - valid_from datetime nullable
+   - valid_to datetime nullable
+   - in_stock boolean nullable
+   - source text not null  - method used like cart, shop_scan, search, keywords to align with existing CLI methods.
+   - Constraints and indexes: unique partial index on (product, store, date(observed_at), price, price_type) to avoid duplicates, index on (product, store, observed_at DESC)
+
+4) watch
+   - id integer PK autoincrement
+   - product FK not null
+   - store FK nullable  - if null, the watch applies to any store seen
+   - note text nullable
+   - desired_price numeric(10,2) nullable
+   - only_when text enum: any_drop, sale_or_clearance, clearance_only, below_desired_price default any_drop
+   - created_at datetime not null
+   - active boolean not null default true
+   - Uniqueness: (product, store) unique while active
+
+5) alert_event
+   - id integer PK autoincrement
+   - watch FK not null
+   - price_history FK not null
+   - reason text not null  - eg drop, hit_desired_price, sale_detected, clearance_detected
+   - delta_amount numeric(10,2) not null  - negative for drops
+   - created_at datetime not null
+   - Dedupe index: unique on (watch, price_history)
+
+6) notification
+   - id integer PK autoincrement
+   - alert_event FK not null
+   - channel text not null  - email
+   - sent_at datetime nullable
+   - status text enum: pending, sent, failed
+   - provider_message_id text nullable
+   - Unique index: one notification per alert per channel
+
+7) run_log
+   - id integer PK autoincrement
+   - command text not null
+   - started_at datetime not null
+   - finished_at datetime nullable
+   - ok boolean nullable
+   - error text nullable
+   - For observability and retries.
+
+Design notes
+- Keep all history. No destructive updates of prices.
+- Regular vs sale vs clearance classification is recorded on each observation.
+- Later we can derive weekly buckets if desired.
+- PonyORM entity classes should map 1-to-1 with the tables above with relationships and cascade delete rules where sensible.
+
+9. Price classification rules
+
+- price_type comes from the API where possible. If the API returns fields indicating promo or clearance, map accordingly. If classification is not exposed, use heuristics:
+  - If both regular_price and price are returned and price < regular_price mark sale.
+  - If response text contains tokens like clearance, mark clearance.
+  - Otherwise mark unknown.
+- Clearance prices usually move downward only. Do not enforce this as a rule in code. Use it only for alert logic, for example more conservative dedupe.
+
+10. Change detection and dedupe
+
+- A change is recorded whenever a new observation differs by amount or type from the most recent price_history entry for the same (product, store).
+- Weekly cadence is informational. We do not discard extra observations.
+- Drop detection: if new_price < previous_price then create an alert_event with reason = drop and delta_amount = new_price - previous_price.
+- Desired price: if desired_price is set for a watch and new_price <= desired_price then reason = hit_desired_price.
+- Sale detection: if price_type changes from regular or unknown to sale, and only_when allows it, emit sale_detected.
+- Clearance detection: if price_type changes to clearance, and only_when allows it, emit clearance_detected.
+- Dedupe: Do not generate multiple alerts for the exact same price_history row. Also, if multiple alerts would be generated for the same change, coalesce into a single email notification with a combined message.
+
+11. CLI specification
+
+Follow the style and help formatting used in the existing README. Examples below use similar patterns to meijer list and friends.
+
+11.1 Group
+meijer watch [COMMAND]
+Global options inherit from the root CLI where it makes sense, for example -v verbosity and --proxy.
+
+11.2 Commands
+
+1) meijer watch add <IDENTIFIER> [OPTIONS]
+   - Options:
+     --type [UPC|PLU]  - override identifier type if not auto-detected
+     --store-id, -s TEXT  - bind the watch to a store
+     --desired-price DECIMAL
+     --only-when [any_drop|sale_or_clearance|clearance_only|below_desired_price]
+     --note TEXT
+   - Behavior: ensures product and store rows exist, upserts a watch, does not fetch price yet.
+
+2) meijer watch rm <IDENTIFIER> [--store-id STORE]
+   - Deactivate the matching watch.
+
+3) meijer watch ls [--active/--all] [--format table|json|csv]
+   - List watches with current last known price if available.
+
+4) meijer watch refresh [--store-id STORE] [--limit N] [--method cart|shop_scan|search|keywords ...]
+   - Fetch current prices for watches and insert price_history.
+   - Optionally select a pricing method consistent with the existing CLI estimation methods.
+   - Writes run_log.
+
+5) meijer watch report [--since YYYY-MM-DD] [--format table|json|csv]
+   - Show price changes and current best prices for all watches since a date.
+   - Default --since is last refresh run.
+
+6) meijer watch notify [--dry-run] [--since YYYY-MM-DD] [--channel email]
+   - Create alert_event rows for any new qualifying drops and generate notification rows.
+   - If --dry-run, print what would be emailed.
+   - If not dry run, send emails using config from ~/.config/meijer/.
+
+7) meijer watch import FILE and meijer watch export FILE
+   - CSV format with columns: identifier,id_type,store_id,desired_price,only_when,note.
+
+8) meijer price get <IDENTIFIER> [--store-id STORE] [--method ...]
+   - Convenience to query and print current price without affecting watches.
+   - Writes price_history unless --no-store flag is set.
+
+11.3 Exit codes
+- 0 success, 1 generic error, 2 invalid args, 3 auth or config error, 4 email send error.
+
+12. Email alerts
+
+- Use SMTP details from config to send. IMAP details stored in the same file can be used for optional verification or storing in a specific folder if implemented.
+- Subject format: Meijer price alert: {brand} {name} at ${price} [sale|clearance]
+- Body includes:
+  - Product and Identifier (UPC or PLU)
+  - Store name and code
+  - New price, previous price, delta, type
+  - If sale: regular price, promo text, validity
+  - If clearance: mark it clearly
+  - Timestamp and source method
+  - Unsubscribe hint: meijer watch rm <identifier> [--store-id ...]
+- One email can include multiple alerts that occurred in the same run.
+- Record each send in notification with provider message id if available.
+
+13. Data import sources
+
+- Reuse existing request flows and estimation methods where possible to obtain current prices or product info. The README lists methods like cart, shop_scan, search, and keywords. Preserve that naming for source field in price_history.
+
+14. Performance and limits
+
+- Watches are expected to be in the tens or low hundreds.
+- Implement polite rate limiting and retry with exponential backoff.
+- refresh should batch requests and sleep between batches to avoid hammering endpoints.
+- Add --limit to test small sets.
+
+15. Logging and observability
+
+- Respect root CLI verbosity flags -v, -vv, -vvv.
+- Log per item fetch with timing at -vv.
+- Summarize run in run_log.
+- On failure, set ok = false and capture error text.
+
+16. Validation and constraints
+
+- UPC must be 12 digits. PLU must be 4-5 digits. Allow explicit --type override.
+- Store id must match a known store in the store table. Provide meijer stores search and meijer stores show to help the user discover ids.
+- Prices must be positive. Currency restricted to USD unless extended later.
+
+17. Reporting
+
+- meijer watch report in table format by default with columns:
+  Identifier, Type, Product, Store, Last price, Prev price, Delta, Type, Observed at
+- --format json|csv supported.
+
+18. Migration and versioning
+
+- Create a meta table with schema_version integer.
+- Initial schema version 1.
+- Future migrations will update this value.
+- Provide a hidden command meijer watch --migrate or auto migrate on first run.
+
+19. Testing
+
+- Unit tests for:
+  - Add, list, remove watch.
+  - Insert and dedupe price history.
+  - Change detection and alert generation.
+  - Email build and dry run.
+  - Happy path and error path for missing config.
+- Integration test that stubs the pricing API layer and runs refresh then notify.
+
+20. UX details
+
+- Help text and examples should mirror the style already used in README, with inline examples similar to meijer list add and meijer cart add.
+- Show friendly messages for first run:
+  - If DB missing, create.
+  - If email config missing, print a short setup hint and exit 3.
+
+21. Acceptance criteria
+
+- I can run meijer watch add 012345678905 -s 217 --desired-price 7.99 --only-when sale_or_clearance and see it in meijer watch ls.
+- I can run meijer watch add 4011 --type PLU and see it in meijer watch ls.
+- I can run meijer watch refresh and get new price_history rows.
+- If a price drops, meijer watch notify with a valid email config sends a single consolidated email and records a notification row with status sent.
+- Re-running notify does not resend the same alert unless a new change is observed.
+- meijer watch report --since 2025-08-01 prints changes since that date.
+- DB schema exists as described with foreign keys enforced and indexes present.

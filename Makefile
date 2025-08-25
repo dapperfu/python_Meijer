@@ -26,6 +26,9 @@ help:
 	@echo "🛠️  Development:"
 	@echo "  make venv         - Create/update virtual environment"
 	@echo "  make notebook     - Start Jupyter notebook"
+	@echo "  make version      - Show current version"
+	@echo "  make version-bump - Bump version (patch/minor/major)"
+	@echo "  make version-sync - Synchronize versions across all files"
 	@echo "  make regenerate-notebooks - Regenerate all notebooks from generation scripts"
 	@echo "  make execute-notebooks   - Execute all notebooks to show outputs"
 	@echo "  make notebook-workflow   - Complete notebook regeneration and execution"
@@ -424,7 +427,7 @@ completion-bash:
 	@echo ""
 	@echo "    # Main make targets"
 	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
-	@echo "        opts=\"help venv notebook regenerate-notebooks execute-notebooks notebook-workflow demos log logs rotate-logs auth clean completion completion-bash completion-install\""
+	@echo "        opts=\"help venv notebook regenerate-notebooks execute-notebooks notebook-workflow demos log logs rotate-logs auth clean completion completion-bash completion-install version version-bump version-sync\""
 	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
 	@echo "        return 0"
 	@echo "    fi"
@@ -479,3 +482,39 @@ completion-test:
 	@echo "🔧 If completion doesn't work, run:"
 	@echo "   make completion-install"
 	@echo "   source ~/.bashrc"
+
+# Version Management with Hatch
+.PHONY: version
+version:
+	@echo "📋 Current version information:"
+	@echo "================================="
+	@echo "pyproject.toml: $(shell grep '^version =' pyproject.toml | sed 's/version = //' | tr -d '"')"
+	@echo "meijer/__init__.py: $(shell grep '__version__' meijer/__init__.py | sed 's/__version__ = //' | tr -d '"')"
+	@echo "hatch.toml: $(shell grep '^version =' hatch.toml | sed 's/version = //' | tr -d '"')"
+	@echo ""
+	@echo "💡 Use 'make version-bump TYPE=patch|minor|major' to bump version"
+
+.PHONY: version-bump
+version-bump:
+	@if [ -z "$(TYPE)" ]; then \
+		echo "❌ Error: TYPE parameter required"; \
+		echo "💡 Usage: make version-bump TYPE=patch|minor|major"; \
+		echo "   patch: 3.2.0 → 3.2.1 (bug fixes)"; \
+		echo "   minor: 3.2.0 → 3.3.0 (new features)"; \
+		echo "   major: 3.2.0 → 4.0.0 (breaking changes)"; \
+		exit 1; \
+	fi; \
+	echo "🚀 Bumping version $(TYPE)..."; \
+	${VENV}/bin/hatch version $(TYPE); \
+	echo "✅ Version bumped successfully!"; \
+	echo "🔄 Synchronizing versions across all files..."; \
+	${VENV}/bin/python hatch_build_hook.py; \
+	echo "📋 New version information:"; \
+	$(MAKE) version
+
+.PHONY: version-sync
+version-sync:
+	@echo "🔄 Synchronizing versions across all configuration files..."
+	@${VENV}/bin/python hatch_build_hook.py
+	@echo "✅ Version synchronization complete!"
+	@$(MAKE) version

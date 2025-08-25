@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "meijer-cli"
-version = "3.2.0"
 description = "A comprehensive CLI tool for managing Meijer shopping lists"
 readme = "README.md"
 license = {text = "MIT"}
@@ -63,3 +62,7 @@ where = ["."]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["*.pyc", "*.pyo", "__pycache__", "*.egg-info", ".git*", ".vscode*", "venv*", "tests*", "examples*", "demos*", "tools*", "notebooks*", "htmlcov*", ".pytest_cache*", ".mypy_cache*", ".coverage*"]
+
+[tool.hatch.version]
+source = "file"
+path = "meijer/__init__.py"
