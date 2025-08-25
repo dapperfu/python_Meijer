@@ -8,28 +8,26 @@ based on actual endpoint analysis from the decompiled APK and network logs.
 import json
 import logging
 import os
-import urllib3
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-# Suppress SSL warnings when using mitmproxy
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import urllib3
 
+from .account import AccountManager
 from .auth import MeijerAuth, TokenStorage
 from .coupon_operations import CouponOperations
 from .coupons import CouponManager
 from .exceptions import MeijerAPIError, MeijerAuthenticationError
 from .feedback import MeijerFeedback
 from .models import AuthTokens, ListItem, MeijerItem, SearchResult
+from .models.coupons import Coupon
 from .mperks import (
     EarnableOffer,
     EarnedReward,
     EarnTabData,
     MCardInfo,
     MPerksEarnedRewards,
-    MPerksHistory,
-    MPerksHistoryEvent,
 )
 from .product_operations import ProductOperations
 from .search import Search
@@ -37,7 +35,9 @@ from .settings import MeijerSettings
 from .shop_scan import ShopNScan
 from .shopping_list import MeijerList
 from .stores import MeijerStore
-from .account import AccountManager
+
+# Suppress SSL warnings when using mitmproxy
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class StoresInterface:
@@ -342,7 +342,7 @@ class Meijer:
             key_parts.append(str(sorted(json_data.items())))
         
         key_string = "|".join(key_parts)
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return hashlib.md5(key_string.encode(), usedforsecurity=False).hexdigest()
 
     def _check_cache(self, cache_key: str, max_age: int = 300) -> dict:
         """
@@ -466,7 +466,7 @@ class Meijer:
         self.constructor_base_url = f"{base_url}/api/meijer"
         self.feedback_base_url = f"{base_url}/api/meijer"
         
-        self.logger.info(f"🔧 Configured local endpoints:")
+        self.logger.info("🔧 Configured local endpoints:")
         self.logger.info(f"  API Base: {self.api_base_url}")
         self.logger.info(f"  ID Base: {self.id_base_url}")
         self.logger.info(f"  Digital Base: {self.digital_base_url}")
@@ -501,22 +501,6 @@ class Meijer:
             os.environ['MEIJER_SSL_CERT'] = cert_path
         elif not verify:
             os.environ['MEIJER_SSL_VERIFY'] = 'false'
-        
-        self.id_base_url = f"{base_url}/api/meijer"
-        self.digital_base_url = f"{base_url}/api/meijer"
-        self.loyalty_base_url = f"{base_url}/api/meijer"
-        self.www_base_url = f"{base_url}/api/meijer"
-        self.constructor_base_url = f"{base_url}/api/meijer"
-        self.feedback_base_url = f"{base_url}/api/meijer"
-        
-        self.logger.info(f"Configured local endpoints:")
-        self.logger.info(f"  API Base: {self.api_base_url}")
-        self.logger.info(f"  ID Base: {self.id_base_url}")
-        self.logger.info(f"  Digital Base: {self.digital_base_url}")
-        self.logger.info(f"  Loyalty Base: {self.loyalty_base_url}")
-        self.logger.info(f"  WWW Base: {self.www_base_url}")
-        self.logger.info(f"  Constructor Base: {self.constructor_base_url}")
-        self.logger.info(f"  Feedback Base: {self.feedback_base_url}")
 
     def _get_api_url(self, endpoint: str) -> str:
         """
@@ -786,7 +770,6 @@ class Meijer:
         **kwargs,
     ) -> Any:
         """Make HTTP request with proper error handling, caching, and rate limiting."""
-        import requests
         import os
 
         try:
@@ -945,6 +928,7 @@ class Meijer:
         self,
         zip_code: Optional[str] = None,
         city: Optional[str] = None,
+        state: Optional[str] = None,
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         radius: Optional[int] = None,
@@ -1022,33 +1006,19 @@ class Meijer:
                     
                     return stores
                 else:
-                    self.logger.warning(f"Could not get coordinates for ZIP code: {zip_code}")
-                    # Fall back to regular search without distance info
+                    self.logger.error(f"Could not get coordinates for ZIP code: {zip_code}")
+                    self.logger.error("ZIP code search requires geocoding service. Please:")
+                    self.logger.error("1. Set GOOGLE_MAPS_API_KEY environment variable, or")
+                    self.logger.error("2. Provide a mitmproxy log file with geocoding requests")
+                    return []
             
             # Handle city search
             if city:
                 self.logger.info(f"Searching for stores near city: {city}")
-                # Convert city to coordinates and use proximity search
-                city_coords = self._get_city_coordinates(city, state)
-                if city_coords:
-                    latitude, longitude = city_coords
-                    self.logger.info(f"City {city} coordinates: {latitude}, {longitude}")
-                    stores = self.find_stores_nearby(latitude, longitude, radius or 50, max_results)
-                    
-                    if not stores:
-                        self.logger.warning(f"No stores found near city {city}")
-                        return []
-                    
-                    self.logger.info(f"Found {len(stores)} stores near city {city} with distance info")
-                    
-                    # Filter by required services if specified
-                    if required_services:
-                        stores = self._filter_stores_by_services(stores, required_services)
-                    
-                    return stores
-                else:
-                    self.logger.warning(f"Could not get coordinates for city: {city}")
-                    # Fall back to regular search without distance info
+                self.logger.error("City search requires geocoding service. Please:")
+                self.logger.error("1. Set GOOGLE_MAPS_API_KEY environment variable, or")
+                self.logger.error("2. Provide a mitmproxy log file with geocoding requests")
+                return []
             
             # If radius is specified with coordinates, use the enhanced proximity search
             if radius and latitude and longitude:
@@ -1080,12 +1050,31 @@ class Meijer:
                     "dataVariant": 2,
                 }
             else:
-                # Default coordinates near the center of Michigan
+                # Choose default coordinates based on search criteria
+                if city and state:
+                    # If searching for a city, use coordinates appropriate for that region
+                    if state.upper() in ['IN', 'INDIANA']:
+                        # Use central Indiana coordinates
+                        default_lat, default_lng = 39.8283, -86.0014  # Indianapolis area
+                        search_radius = 200  # Larger radius for state-wide search
+                    elif state.upper() in ['MI', 'MICHIGAN']:
+                        # Use central Michigan coordinates
+                        default_lat, default_lng = 44.3148, -85.6024  # Center of Michigan
+                        search_radius = 200  # Larger radius for state-wide search
+                    else:
+                        # Default to central Michigan for other searches
+                        default_lat, default_lng = 44.3148, -85.6024
+                        search_radius = 300
+                else:
+                    # Default to central Michigan
+                    default_lat, default_lng = 44.3148, -85.6024
+                    search_radius = 300
+                
                 params = {
-                    "latitude": 44.3148,  # Center of Michigan
-                    "longitude": -85.6024,
-                    "miles": 500,  # Large radius to get stores across the region
-                    "numToReturn": max_results,  # Get more stores
+                    "latitude": default_lat,
+                    "longitude": default_lng,
+                    "miles": search_radius,
+                    "numToReturn": max_results,
                     "dataVariant": 2,
                 }
 
@@ -1129,7 +1118,6 @@ class Meijer:
                         # Filter by city if provided (case-insensitive, partial matching)
                         if city:
                             store_city = store_data.get("City", "")
-                            store_state = store_data.get("State", "")
                             if not store_city:
                                 continue
 
@@ -1142,17 +1130,8 @@ class Meijer:
                             # Check if search city is contained in store city (normalized)
                             city_matches = search_city in store_city_normalized or store_city_normalized in search_city
                             
-                            # If state is specified, also check state matching
-                            if state and store_state:
-                                search_state = state.upper().strip()
-                                store_state_normalized = store_state.upper().strip()
-                                state_matches = search_state == store_state_normalized
-                                
-                                # Both city and state must match
-                                if not (city_matches and state_matches):
-                                    continue
-                            elif not city_matches:
-                                # Only city matching if no state specified
+                            # Only city matching for now
+                            if not city_matches:
                                 continue
 
                         store = MeijerStore.from_api_data(store_data, self)
@@ -1176,10 +1155,10 @@ class Meijer:
 
     def _get_zip_code_coordinates(self, zip_code: str) -> Optional[Tuple[float, float]]:
         """
-        Get coordinates for a ZIP code using the geocoding service.
+        Get coordinates for a ZIP code using the Google Mobile Geocoding Service.
         
-        This method uses the enhanced geocoding service to convert ZIP codes to coordinates.
-        It supports ZIP codes from any state, not just Michigan.
+        This method mimics the Meijer app's approach by using Google's mobile geocoding
+        service with authentication tokens extracted from mitmproxy logs.
         
         Args:
             zip_code: ZIP code string
@@ -1189,11 +1168,13 @@ class Meijer:
         """
         try:
             from .geocoding import get_geocoding_service
+            
+            # Get the geocoding service that mimics the Meijer app
             geocoder = get_geocoding_service()
-            return geocoder.get_zip_code_coordinates(zip_code)
-        except ValueError as e:
-            self.logger.error(f"Geocoding service not available: {e}")
-            return None
+            
+            # Use the ZIP code geocoding method
+            return geocoder.geocode_zip_code(zip_code)
+            
         except Exception as e:
             self.logger.error(f"Error getting ZIP code coordinates: {e}")
             return None
@@ -2291,7 +2272,6 @@ class Meijer:
         Returns:
             bool: True if mitmproxy is detected and configured
         """
-        import subprocess
         import socket
         
         try:

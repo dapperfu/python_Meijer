@@ -8,8 +8,9 @@ Authentication classes and utilities for the Meijer API client.
 import json
 import logging
 import os
+import time
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import requests
 from requests.auth import AuthBase
@@ -19,6 +20,7 @@ from .models import AuthTokens
 # Try to import Akamai bypass functionality
 try:
     from .akamai_bypass_client import AkamaiBypassClient
+
     AKAMAI_BYPASS_AVAILABLE = True
 except ImportError:
     AKAMAI_BYPASS_AVAILABLE = False
@@ -124,18 +126,20 @@ class TokenStorage:
                 # Use the OAuth2 base URL for token refresh
                 oauth_base = "https://id.meijer.com"
                 self.akamai_client = AkamaiBypassClient(base_url=oauth_base)
-                self.logger.info("✅ Akamai bypass client initialized for token refresh")
+                self.logger.info(
+                    "✅ Akamai bypass client initialized for token refresh"
+                )
             except Exception as e:
                 self.logger.warning(f"⚠️ Failed to initialize Akamai bypass client: {e}")
 
     def set_local_base_url(self, base_url: str):
         """
         Set the base URL for local development/testing.
-        
+
         Args:
             base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
         """
-        base_url = base_url.rstrip('/')
+        base_url = base_url.rstrip("/")
         self.oauth_base_url = f"{base_url}/api/meijer/oauth2/default/v1"
         self.logger.info(f"Using local OAuth base URL: {self.oauth_base_url}")
 
@@ -254,7 +258,7 @@ class TokenStorage:
             }
 
             self.logger.info("🔄 Refreshing tokens via OAuth2 endpoint...")
-            
+
             # Use Akamai bypass client if available, otherwise fall back to regular requests
             if self.akamai_client:
                 self.logger.info("🛡️ Using Akamai bypass for token refresh...")
@@ -262,15 +266,14 @@ class TokenStorage:
                     # Extract the endpoint from the full URL
                     endpoint = "/oauth2/default/v1/token"
                     response = self.akamai_client.post(
-                        endpoint,
-                        data=refresh_data,
-                        headers=headers,
-                        timeout=30
+                        endpoint, data=refresh_data, headers=headers, timeout=30
                     )
                 except Exception as e:
-                    self.logger.warning(f"⚠️ Akamai bypass failed, falling back to regular request: {e}")
+                    self.logger.warning(
+                        f"⚠️ Akamai bypass failed, falling back to regular request: {e}"
+                    )
                     # Fall back to regular request
-                    if self.client and hasattr(self.client, 'session'):
+                    if self.client and hasattr(self.client, "session"):
                         response = self.client.session.post(
                             f"{self.oauth_base_url}/token",
                             data=refresh_data,
@@ -286,7 +289,7 @@ class TokenStorage:
                         )
             else:
                 self.logger.info("📡 Using regular request for token refresh...")
-                if self.client and hasattr(self.client, 'session'):
+                if self.client and hasattr(self.client, "session"):
                     response = self.client.session.post(
                         f"{self.oauth_base_url}/token",
                         data=refresh_data,
@@ -362,7 +365,7 @@ class TokenStorage:
             }
 
             self.logger.info("🔐 Exchanging authorization code for initial tokens...")
-            if self.client and hasattr(self.client, 'session'):
+            if self.client and hasattr(self.client, "session"):
                 response = self.client.session.post(
                     f"{self.oauth_base_url}/token",
                     data=exchange_data,
@@ -514,10 +517,132 @@ class TokenStorage:
             self.logger.error(f"❌ Failed to extract tokens from log: {e}")
             return None
 
+    def extract_geocoding_auth_from_log(
+        self, log_file: str
+    ) -> Optional[Dict[str, str]]:
+        """
+        Extract geocoding authentication from mitmproxy log file.
+
+        This method looks for Google mobile geocoding requests and extracts
+        the x-goog-spatula header for persistent use.
+
+        Args:
+            log_file: Path to mitmproxy log file
+
+        Returns:
+            Dictionary with geocoding authentication data if found, None otherwise
+        """
+        try:
+            from mitmproxy import io
+            from mitmproxy.http import HTTPFlow
+
+            flows = []
+            with open(log_file, "rb") as f:
+                reader = io.FlowReader(f)
+                for flow in reader.stream():
+                    if isinstance(flow, HTTPFlow):
+                        flows.append(flow)
+
+            # Find geocoding requests
+            for flow in flows:
+                if (
+                    flow.request
+                    and "geomobileservices-pa.googleapis.com"
+                    in flow.request.pretty_host
+                    and "Geocode" in flow.request.path
+                ):
+                    # Extract spatula header and other relevant data
+                    spatula_header = flow.request.headers.get("x-goog-spatula", "")
+                    user_agent = flow.request.headers.get("user-agent", "")
+
+                    if spatula_header:
+                        self.logger.info("Found geocoding authentication in log file")
+
+                        # Store in auth.json for future use
+                        auth_data = {
+                            "geocoding": {
+                                "spatula_header": spatula_header,
+                                "user_agent": user_agent,
+                                "extracted_at": time.time(),
+                            }
+                        }
+
+                        # Save to auth.json
+                        self._save_geocoding_auth(auth_data)
+
+                        return {
+                            "spatula_header": spatula_header,
+                            "user_agent": user_agent,
+                        }
+
+            self.logger.warning("No geocoding authentication found in log file")
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error extracting geocoding auth from log: {e}")
+            return None
+
+    def _save_geocoding_auth(self, auth_data: Dict[str, Any]) -> bool:
+        """Save geocoding authentication data to auth.json."""
+        try:
+            # Load existing auth data
+            existing_data = {}
+            if os.path.exists(self.storage_file):
+                with open(self.storage_file, "r") as f:
+                    existing_data = json.load(f)
+
+            # Update with new geocoding data
+            existing_data.update(auth_data)
+
+            # Save back to file
+            with open(self.storage_file, "w") as f:
+                json.dump(existing_data, f, indent=2)
+
+            self.logger.info("Geocoding authentication saved to auth.json")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to save geocoding auth: {e}")
+            return False
+
+    def get_geocoding_auth(self) -> Optional[Dict[str, str]]:
+        """
+        Get stored geocoding authentication from auth.json.
+
+        Returns:
+            Dictionary with geocoding authentication data if available, None otherwise
+        """
+        try:
+            if not os.path.exists(self.storage_file):
+                return None
+
+            with open(self.storage_file, "r") as f:
+                data = json.load(f)
+
+            geocoding_data = data.get("geocoding", {})
+            if geocoding_data and "spatula_header" in geocoding_data:
+                # Check if the data is not too old (e.g., less than 24 hours)
+                extracted_at = geocoding_data.get("extracted_at", 0)
+                if time.time() - extracted_at < 86400:  # 24 hours
+                    self.logger.info("Using stored geocoding authentication")
+                    return {
+                        "spatula_header": geocoding_data["spatula_header"],
+                        "user_agent": geocoding_data.get("user_agent", ""),
+                    }
+                else:
+                    self.logger.info("Stored geocoding authentication is expired")
+                    return None
+
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error reading geocoding auth: {e}")
+            return None
+
     def load_credentials_from_file(self) -> Optional[Tuple[str, str]]:
         """
         Load username and password from meijer.toml file as fallback.
-        
+
         Returns:
             Tuple of (username, password) or None if file doesn't exist
         """
@@ -527,38 +652,43 @@ class TokenStorage:
             if os.path.exists(config_file):
                 try:
                     import toml
+
                     with open(config_file, "r") as f:
                         config = toml.load(f)
-                    
-                    if 'auth' in config and 'username' in config['auth']:
+
+                    if "auth" in config and "username" in config["auth"]:
                         # Password is stored in email section for security
-                        if 'smtp' in config and 'password' in config['smtp']:
-                            username = config['auth']['username']
-                            password = config['smtp']['password']
+                        if "smtp" in config and "password" in config["smtp"]:
+                            username = config["auth"]["username"]
+                            password = config["smtp"]["password"]
                             self.logger.info("✅ Loaded credentials from meijer.toml")
                             return username, password
                 except Exception as e:
                     self.logger.debug(f"Could not parse meijer.toml: {e}")
-            
+
             # Fallback to legacy login.txt if it exists
             login_file = get_meijer_config_path("login.txt")
             if os.path.exists(login_file):
                 with open(login_file, "r") as f:
                     lines = f.readlines()
-                    
+
                 if len(lines) >= 2:
                     username = lines[0].strip()
                     password = lines[1].strip()
-                    
+
                     if username and password:
-                        self.logger.info("✅ Loaded credentials from login.txt fallback file")
+                        self.logger.info(
+                            "✅ Loaded credentials from login.txt fallback file"
+                        )
                         return username, password
-                        
-                self.logger.warning("⚠️ login.txt file exists but format is invalid (need 2 lines: username, password)")
+
+                self.logger.warning(
+                    "⚠️ login.txt file exists but format is invalid (need 2 lines: username, password)"
+                )
                 return None
-                
+
             return None
-            
+
         except Exception as e:
             self.logger.error(f"❌ Failed to load credentials from config files: {e}")
             return None
@@ -566,23 +696,23 @@ class TokenStorage:
     def save_credentials_to_file(self, username: str, password: str) -> bool:
         """
         Save username and password to login.txt file for fallback use.
-        
+
         Args:
             username: User's email address
             password: User's password
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
             login_file = get_meijer_config_path("login.txt")
-            
+
             with open(login_file, "w") as f:
                 f.write(f"{username}\n{password}\n")
-                
+
             self.logger.info("✅ Credentials saved to login.txt fallback file")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"❌ Failed to save credentials to login.txt: {e}")
             return False
@@ -590,7 +720,7 @@ class TokenStorage:
     def clear_credentials_file(self) -> bool:
         """
         Remove the login.txt credentials file.
-        
+
         Returns:
             True if successful, False otherwise
         """
@@ -601,7 +731,7 @@ class TokenStorage:
                 self.logger.info("✅ Credentials file cleared")
                 return True
             return True  # File didn't exist, so "cleared" successfully
-            
+
         except Exception as e:
             self.logger.error(f"❌ Failed to clear credentials file: {e}")
             return False
