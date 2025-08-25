@@ -983,16 +983,19 @@ class Meijer:
         Examples
         --------
         >>> # Basic search with coordinates
-        >>> stores = client.get_stores(42.9634, -85.6681, 25)
+        >>> stores = client.get_stores(latitude=42.9634, longitude=-85.6681, radius=25)
         >>> 
         >>> # Search with service filtering
-        >>> stores = client.get_stores(42.9634, -85.6681, 50, required_services=['pharmacy', 'gas_station'])
+        >>> stores = client.get_stores(latitude=42.9634, longitude=-85.6681, radius=50, required_services=['pharmacy', 'gas_station'])
         >>> 
         >>> # Search by ZIP code
         >>> stores = client.get_stores(zip_code="49508", radius=25)
         >>> 
         >>> # Search by city
         >>> stores = client.get_stores(city="Grand Rapids", radius=30)
+        >>> 
+        >>> # Search by city and state
+        >>> stores = client.get_stores(city="Kendallville", state="IN", radius=100)
         """
         try:
             # Handle ZIP code search with distance calculation
@@ -1106,6 +1109,7 @@ class Meijer:
                         # Filter by city if provided (case-insensitive, partial matching)
                         if city:
                             store_city = store_data.get("City", "")
+                            store_state = store_data.get("State", "")
                             if not store_city:
                                 continue
 
@@ -1116,10 +1120,20 @@ class Meijer:
                             )
 
                             # Check if search city is contained in store city (normalized)
-                            if search_city not in store_city_normalized:
-                                # Also try reverse: check if store city is contained in search city
-                                if store_city_normalized not in search_city:
+                            city_matches = search_city in store_city_normalized or store_city_normalized in search_city
+                            
+                            # If state is specified, also check state matching
+                            if state and store_state:
+                                search_state = state.upper().strip()
+                                store_state_normalized = store_state.upper().strip()
+                                state_matches = search_state == store_state_normalized
+                                
+                                # Both city and state must match
+                                if not (city_matches and state_matches):
                                     continue
+                            elif not city_matches:
+                                # Only city matching if no state specified
+                                continue
 
                         store = MeijerStore.from_api_data(store_data, self)
                         stores.append(store)
@@ -1140,7 +1154,7 @@ class Meijer:
             self.logger.error(f"Error getting stores: {e}")
             return []
 
-    def mei_get_zip_code_coordinates(self, zip_code: str) -> Optional[Tuple[float, float]]:
+    def _get_zip_code_coordinates(self, zip_code: str) -> Optional[Tuple[float, float]]:
         """
         Get coordinates for a ZIP code using the geocoding service.
         

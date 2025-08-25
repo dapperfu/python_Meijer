@@ -1069,7 +1069,10 @@ def stores_search(
     )
 
     try:
-        client = get_meijer_client()
+        # Get proxy setting from context
+        proxy = ctx.obj.get('proxy') if ctx.obj else None
+        local = ctx.obj.get('local') if ctx.obj else None
+        client = get_meijer_client(proxy=proxy, local=local)
         stores = []
 
         # Determine search method
