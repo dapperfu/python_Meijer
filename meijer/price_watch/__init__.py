@@ -36,7 +36,7 @@ from .email_config import (
 )
 from .templates.email_templates import EmailTemplateManager, template_manager
 
-from .models.price_watch import (
+from ..models.price_watch import (
     Product,
     Store,
     PriceHistory,

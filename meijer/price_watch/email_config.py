@@ -165,26 +165,37 @@ class EmailConfig:
             from ...email_2fa import get_meijer_config_path
             email_auth_path = get_meijer_config_path("email.txt")
             if email_auth_path.exists():
-                import configparser
-                config = configparser.ConfigParser()
-                config.read(email_auth_path)
+                # Read the email.txt file and parse it manually
+                with open(email_auth_path, 'r') as f:
+                    content = f.read()
                 
-                if 'email' in config:
-                    email_section = config['email']
-                    if 'username' in email_section and 'password' in email_section:
-                        # Use existing email auth
-                        username = email_section['username']
-                        password = email_section['password']
-                        
-                        # Update template with existing credentials
-                        template_config['smtp']['username'] = username
-                        template_config['smtp']['password'] = password
-                        template_config['smtp']['from'] = username
-                        template_config['smtp']['to'] = username
-                        template_config['imap']['username'] = username
-                        template_config['imap']['password'] = password
-                        
-                        self.logger.info("Loaded existing email credentials from email.txt")
+                # Extract username and password from the file
+                username = None
+                password = None
+                
+                for line in content.split('\n'):
+                    line = line.strip()
+                    if line.startswith('username='):
+                        username = line.split('=', 1)[1]
+                    elif line.startswith('password='):
+                        password = line.split('=', 1)[1]
+                
+                if username and password:
+                    # Update template with existing credentials
+                    template_config['smtp']['username'] = username
+                    template_config['smtp']['password'] = password
+                    template_config['smtp']['from'] = username
+                    template_config['smtp']['to'] = username
+                    template_config['imap']['username'] = username
+                    template_config['imap']['password'] = password
+                    
+                    # Also update SMTP host if it's DreamHost
+                    if 'dreamhost' in username.lower():
+                        template_config['smtp']['host'] = 'smtp.dreamhost.com'
+                        template_config['smtp']['port'] = 587
+                        template_config['smtp']['use_tls'] = True
+                    
+                    self.logger.info("Loaded existing email credentials from email.txt")
         except Exception as e:
             self.logger.debug(f"Could not load existing email auth: {e}")
         

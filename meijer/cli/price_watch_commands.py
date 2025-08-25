@@ -64,7 +64,7 @@ def price_watch_group():
 )
 @click.option(
     "--desired-price",
-    type=click.Decimal,
+    type=click.FLOAT,
     help="Target price for alerts"
 )
 @click.option(

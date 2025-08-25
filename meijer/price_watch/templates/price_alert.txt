@@ -1,0 +1,28 @@
+Meijer Price Alert
+==================
+
+{{ alerts|length }} item(s) updated
+
+{% for alert in alerts %}
+Product: {{ alert.product_name }}
+Identifier: {{ alert.product_identifier }} ({{ alert.id_type }})
+Store: {{ alert.store_name }}
+
+Current Price: ${{ "%.2f"|format(alert.new_price) }}
+{% if alert.previous_price %}Previous Price: ${{ "%.2f"|format(alert.previous_price) }}{% endif %}
+Change: {% if alert.delta_amount < 0 %}-{% else %}+{% endif %}${{ "%.2f"|format(alert.delta_amount|abs) }} ({{ alert.reason|replace('_', ' ')|title }})
+
+Price Type: {{ alert.price_type|title }}
+Source: {{ alert.source|title }}
+Observed: {{ alert.observed_at|strftime('%Y-%m-%d %H:%M:%S') }}
+
+---
+{% endfor %}
+
+To stop receiving these alerts, run:
+meijer watch rm {{ alerts[0].product_identifier if alerts else '<identifier>' }}
+
+Generated on {{ generated_at|strftime('%Y-%m-%d %H:%M:%S UTC') }}
+
+This email was sent by the Meijer Price Watch system.
+For support, please check the project documentation.

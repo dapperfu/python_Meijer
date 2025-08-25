@@ -1,0 +1,15 @@
+Meijer Price Watch - Test Email
+===============================
+
+✅ Email configuration is working correctly!
+
+Test Details:
+-------------
+Test Type: Email Configuration Test
+Product Used: {{ product_name }} ({{ product_identifier }})
+Store: {{ store_name }}
+Current Price: ${{ "%.2f"|format(current_price) }}
+Test Time: {{ test_time|strftime('%Y-%m-%d %H:%M:%S UTC') }}
+
+This is a test email to verify your Meijer Price Watch email configuration.
+If you received this, your email setup is working correctly!
