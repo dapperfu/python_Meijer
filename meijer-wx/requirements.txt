@@ -1,0 +1,28 @@
+# Core wxPython GUI dependencies
+wxPython>=4.2.0
+
+# Meijer library dependency
+-e ../
+
+# Platform-specific directory handling
+platformdirs>=4.0.0
+
+# Configuration and data handling
+PyYAML>=6.0.1
+toml>=0.10.2
+
+# Data processing and export
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Logging and debugging
+colorlog>=6.7.0
+
+# Cross-platform utilities
+psutil>=5.9.0
+
+# Optional: Rich text and formatting
+rich>=13.0.0
+
+# Optional: Image handling for icons
+Pillow>=10.0.0
