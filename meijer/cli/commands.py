@@ -1137,6 +1137,7 @@ def stores_search(
                     "phone": store.phone_number,
                     "latitude": store.latitude,
                     "longitude": store.longitude,
+                    "distance": store.distance if hasattr(store, 'distance') else None,
                     "services": {
                         "curbside_pickup": store.has_curbside_pickup,
                         "delivery": store.has_delivery,
@@ -1153,37 +1154,59 @@ def stores_search(
 
             output = io.StringIO()
             writer = csv.writer(output)
-            writer.writerow(
-                [
-                    "Unit ID",
-                    "Name",
-                    "Address",
-                    "City",
-                    "State",
-                    "ZIP",
-                    "Phone",
-                    "Curbside",
-                    "Delivery",
-                    "Pharmacy",
-                    "Gas",
-                ]
-            )
+            # Add distance column if any store has distance info
+            has_distance = any(hasattr(store, 'distance') and store.distance is not None for store in stores)
+            
+            headers = [
+                "Unit ID",
+                "Name",
+                "Address",
+                "City",
+                "State",
+                "ZIP",
+                "Phone",
+            ]
+            if has_distance:
+                headers.append("Distance")
+            headers.extend([
+                "Curbside",
+                "Delivery",
+                "Pharmacy",
+                "Gas",
+            ])
+            writer.writerow(headers)
             for store in stores:
-                writer.writerow(
-                    [
-                        store.unit_id,
-                        store.name,
-                        store.address,
-                        store.city,
-                        store.state,
-                        store.zip_code,
-                        store.phone_number,
-                        "Yes" if store.has_curbside_pickup else "No",
-                        "Yes" if store.has_delivery else "No",
-                        "Yes" if store.has_pharmacy else "No",
-                        "Yes" if store.gas_station else "No",
-                    ]
-                )
+                row = [
+                    store.unit_id,
+                    store.name,
+                    store.address,
+                    store.city,
+                    store.state,
+                    store.zip_code,
+                    store.phone_number,
+                ]
+                
+                if has_distance:
+                    # Format distance if available
+                    if hasattr(store, 'distance') and store.distance is not None:
+                        if store.distance < 1:
+                            distance_str = f"{store.distance * 5280:.0f} ft"
+                        elif store.distance < 10:
+                            distance_str = f"{store.distance:.1f} mi"
+                        else:
+                            distance_str = f"{store.distance:.0f} mi"
+                        row.append(distance_str)
+                    else:
+                        row.append("N/A")
+                
+                row.extend([
+                    "Yes" if store.has_curbside_pickup else "No",
+                    "Yes" if store.has_delivery else "No",
+                    "Yes" if store.has_pharmacy else "No",
+                    "Yes" if store.gas_station else "No",
+                ])
+                
+                writer.writerow(row)
             click.echo(output.getvalue())
         else:
             # Default table format
@@ -1197,14 +1220,30 @@ def stores_search(
                 header_style="bold cyan",
             )
 
+            # Add distance column if any store has distance info
+            has_distance = any(hasattr(store, 'distance') and store.distance is not None for store in stores)
+            
             table.add_column("#", style="cyan", no_wrap=True)
             table.add_column("Name", style="cyan", no_wrap=True)
             table.add_column("Location", style="cyan", no_wrap=True)
+            if has_distance:
+                table.add_column("Distance", style="cyan", no_wrap=True)
             table.add_column("Phone", style="cyan", no_wrap=True)
             table.add_column("Services", style="cyan", no_wrap=True)
 
             for i, store in enumerate(stores, 1):
                 location = f"{store.city}, {store.state} {store.zip_code}"
+                
+                # Format distance if available
+                distance_str = "N/A"
+                if hasattr(store, 'distance') and store.distance is not None:
+                    if store.distance < 1:
+                        distance_str = f"{store.distance * 5280:.0f} ft"
+                    elif store.distance < 10:
+                        distance_str = f"{store.distance:.1f} mi"
+                    else:
+                        distance_str = f"{store.distance:.0f} mi"
+                
                 services = []
                 if store.has_curbside_pickup:
                     services.append("🚗")
@@ -1217,13 +1256,24 @@ def stores_search(
 
                 services_str = " ".join(services) if services else "None"
 
-                table.add_row(
-                    str(i),
-                    store.name,
-                    location,
-                    store.phone_number or "N/A",
-                    services_str,
-                )
+                # Add row with or without distance column
+                if has_distance:
+                    table.add_row(
+                        str(i),
+                        store.name,
+                        location,
+                        distance_str,
+                        store.phone_number or "N/A",
+                        services_str,
+                    )
+                else:
+                    table.add_row(
+                        str(i),
+                        store.name,
+                        location,
+                        store.phone_number or "N/A",
+                        services_str,
+                    )
 
             console.print(table)
 
