@@ -176,9 +176,6 @@ class Meijer:
         else:
             self._setup_default_endpoints()
 
-        # Initialize token storage
-        self.token_storage = TokenStorage()
-
         # Initialize requests session for HTTP requests
         import requests
         from requests.adapters import HTTPAdapter
@@ -209,8 +206,11 @@ class Meijer:
             'Keep-Alive': 'timeout=30, max=100'
         })
         
-        # Initialize authentication
-        self.auth = MeijerAuth(self.token_storage)
+        # Initialize token storage with session
+        self.token_storage = TokenStorage(session=self.session)
+        
+        # Initialize authentication with session
+        self.auth = MeijerAuth(self.token_storage, session=self.session)
 
         # Initialize sub-components
         self.shopping_list = MeijerList(self)
@@ -1140,13 +1140,12 @@ class Meijer:
             self.logger.error(f"Error getting stores: {e}")
             return []
 
-    def _get_zip_code_coordinates(self, zip_code: str) -> Optional[Tuple[float, float]]:
+    def mei_get_zip_code_coordinates(self, zip_code: str) -> Optional[Tuple[float, float]]:
         """
-        Get coordinates for a ZIP code using a simple lookup.
+        Get coordinates for a ZIP code using the geocoding service.
         
-        This method provides basic ZIP code to coordinate mapping for common Michigan ZIP codes.
-        For production use, consider integrating with a geocoding service like Google Maps API,
-        OpenStreetMap Nominatim, or a ZIP code database.
+        This method uses the enhanced geocoding service to convert ZIP codes to coordinates.
+        It supports ZIP codes from any state, not just Michigan.
         
         Args:
             zip_code: ZIP code string
@@ -2566,10 +2565,22 @@ class Meijer:
                 'https': f'http://{self.proxy_host}:{self.proxy_port}'
             }
             self.logger.info(f"🔒 Proxy configured: {self.proxy_host}:{self.proxy_port}")
+            
+            # When using mitmproxy, disable SSL verification
+            self.session.verify = False
+            self.logger.info("🔒 SSL verification disabled for mitmproxy compatibility")
+            
+            # Update auth classes to use the same session with proxy
+            if hasattr(self, 'token_storage') and self.token_storage:
+                self.token_storage.session = self.session
+            if hasattr(self, 'auth') and self.auth:
+                self.auth.session = self.session
         else:
             # Remove proxy configuration
             self.session.proxies = {}
-            self.logger.info("🔒 Proxy configuration removed")
+            # Re-enable SSL verification when not using proxy
+            self.session.verify = True
+            self.logger.info("🔒 Proxy configuration removed, SSL verification re-enabled")
 
     def _detect_mitmproxy(self) -> bool:
         """

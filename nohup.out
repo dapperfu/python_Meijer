@@ -116,3 +116,10 @@ libva info: Trying to open /usr/lib/x86_64-linux-gnu/dri/radeonsi_drv_video.so
 libva info: Found init function __vaDriverInit_1_20
 libva info: va_openDriver() returns 0
 ATTENTION: default value of option mesa_glthread overridden by environment.
+[90m[main 2025-08-25T14:49:54.966Z][0m updateURL https://api2.cursor.sh/updates/api/update/linux-x64/cursor/1.4.5/54d763cf04a072e28645346c5c0bd38e48b35a55a195401039098f225c1b990f/stable
+[90m[main 2025-08-25T14:49:54.967Z][0m update#setState idle
+[91m[main 2025-08-25T14:49:57.086Z][0m vscode-file: Refused to load resource /keg/cursor/tmp/.mount_CursorUDEd14/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff from vscode-file: protocol (original URL: vscode-file://vscode-app/keg/cursor/tmp/.mount_CursorUDEd14/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff)
+[91m[main 2025-08-25T14:49:57.097Z][0m vscode-file: Refused to load resource /keg/cursor/tmp/.mount_CursorUDEd14/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff from vscode-file: protocol (original URL: vscode-file://vscode-app/keg/cursor/tmp/.mount_CursorUDEd14/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff)
+[90m[main 2025-08-25T14:50:24.967Z][0m update#setState checking for updates
+[90m[main 2025-08-25T14:50:25.026Z][0m update#setState idle
+[93m[main 2025-08-25T14:51:00.708Z][0m No ptyHost heartbeat after 6 seconds

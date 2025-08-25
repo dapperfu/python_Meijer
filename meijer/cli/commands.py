@@ -1051,7 +1051,9 @@ def stores_group():
     help="Output format",
 )
 @click.help_option("-h", "--help")
+@click.pass_context
 def stores_search(
+    ctx: click.Context,
     city: str,
     zip: str,
     near: str,

@@ -55,8 +55,9 @@ def get_meijer_config_path(filename: str) -> str:
 class MeijerAuth(AuthBase):
     """Custom authentication class for Meijer API requests with automatic token refresh."""
 
-    def __init__(self, token_storage: "TokenStorage"):
+    def __init__(self, token_storage: "TokenStorage", session: Optional["requests.Session"] = None):
         self.token_storage = token_storage
+        self.session = session  # Use provided session instead of global requests
         self.logger = logging.getLogger(__name__)
 
     def __call__(self, request):
@@ -98,12 +99,13 @@ class MeijerAuth(AuthBase):
 class TokenStorage:
     """Handles persistent storage and automatic refresh of authentication tokens."""
 
-    def __init__(self, storage_file: str = None):
+    def __init__(self, storage_file: str = None, session: Optional["requests.Session"] = None):
         if storage_file is None:
             # Use cross-platform config directory with JSON format
             self.storage_file = get_meijer_config_path("auth.json")
         else:
             self.storage_file = storage_file
+        self.session = session  # Use provided session instead of global requests
         self.logger = logging.getLogger(__name__)
 
         # OAuth2 configuration based on log analysis
@@ -268,20 +270,36 @@ class TokenStorage:
                 except Exception as e:
                     self.logger.warning(f"⚠️ Akamai bypass failed, falling back to regular request: {e}")
                     # Fall back to regular request
+                    if self.session:
+                        response = self.session.post(
+                            f"{self.oauth_base_url}/token",
+                            data=refresh_data,
+                            headers=headers,
+                            timeout=30,
+                        )
+                    else:
+                        response = requests.post(
+                            f"{self.oauth_base_url}/token",
+                            data=refresh_data,
+                            headers=headers,
+                            timeout=30,
+                        )
+            else:
+                self.logger.info("📡 Using regular request for token refresh...")
+                if self.session:
+                    response = self.session.post(
+                        f"{self.oauth_base_url}/token",
+                        data=refresh_data,
+                        headers=headers,
+                        timeout=30,
+                    )
+                else:
                     response = requests.post(
                         f"{self.oauth_base_url}/token",
                         data=refresh_data,
                         headers=headers,
                         timeout=30,
                     )
-            else:
-                self.logger.info("📡 Using regular request for token refresh...")
-                response = requests.post(
-                    f"{self.oauth_base_url}/token",
-                    data=refresh_data,
-                    headers=headers,
-                    timeout=30,
-                )
 
             if response.status_code == 200:
                 token_data = response.json()
@@ -344,12 +362,20 @@ class TokenStorage:
             }
 
             self.logger.info("🔐 Exchanging authorization code for initial tokens...")
-            response = requests.post(
-                f"{self.oauth_base_url}/token",
-                data=exchange_data,
-                headers=headers,
-                timeout=30,
-            )
+            if self.session:
+                response = self.session.post(
+                    f"{self.oauth_base_url}/token",
+                    data=exchange_data,
+                    headers=headers,
+                    timeout=30,
+                )
+            else:
+                response = requests.post(
+                    f"{self.oauth_base_url}/token",
+                    data=exchange_data,
+                    headers=headers,
+                    timeout=30,
+                )
 
             if response.status_code == 200:
                 token_data = response.json()

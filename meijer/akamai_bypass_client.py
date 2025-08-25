@@ -58,7 +58,8 @@ class AkamaiBypassClient:
         # Make the request with retries
         for attempt in range(self.max_retries):
             try:
-                response = self.session.request(method, url, headers=headers, **kwargs)
+                # Don't pass headers again since they're already in the session
+                response = self.session.request(method, url, **kwargs)
                 self.request_count += 1
 
                 # Check if we got blocked
