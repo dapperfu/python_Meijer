@@ -15,7 +15,7 @@ log:
 	@mkdir -p logs
 	@echo "📁 Logs will be stored in logs/ directory"
 	@echo ""
-	@bash -c 'set -eu; trap "echo; echo \"🔄 Stopping mitmweb and rotation...\"; exit 0" INT TERM; while true; do current_hour=$$(date +%H); ts=$$(date +%Y%m%d_$${current_hour})00; LOG_FILE="logs/meijer_mitm_$${ts}.log"; echo "📝 Starting capture session at $$(date)"; echo "📝 Log file: $$LOG_FILE"; next_hour=$$(($$current_hour + 1)); printf "⏰ Next rotation at: %02d:00:00\n" $$next_hour; echo ""; echo "🚀 Starting mitmweb..."; mitmweb --mode wireguard --mode regular@0.0.0.0:8080 --mode socks5@0.0.0.0:1080 --web-port 8081 --web-host 0.0.0.0 -w "$$LOG_FILE" -s tools/shop_n_scan_faker.py --set block_global=false; echo "🔄 Rotating log and restarting in 5 seconds..."; sleep 5; echo ""; done'
+	@bash -c 'set -eu; trap "echo; echo \"🔄 Stopping mitmweb and rotation...\"; exit 0" INT TERM; while true; do current_hour=$$(date +%H); ts=$$(date +%Y%m%d_$${current_hour})00; LOG_FILE="logs/meijer_mitm_$${ts}.log"; echo "📝 Starting capture session at $$(date)"; echo "📝 Log file: $$LOG_FILE"; next_hour=$$((10#$${current_hour} + 1)); printf "⏰ Next rotation at: %02d:00:00\n" $$next_hour; echo ""; echo "🚀 Starting mitmweb..."; mitmweb --mode wireguard --mode regular@0.0.0.0:8080 --mode socks5@0.0.0.0:1080 --web-port 8081 --web-host 0.0.0.0 -w "$$LOG_FILE" -s tools/shop_n_scan_faker.py --set block_global=false; echo "🔄 Rotating log and restarting in 5 seconds..."; sleep 5; echo ""; done'
 
 .PHONY: logs
 logs:

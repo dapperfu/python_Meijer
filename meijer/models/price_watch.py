@@ -31,6 +31,8 @@ from datetime import datetime
 # Database binding - will be set by the database manager
 db = Database()
 
+# This will be bound later by the database manager
+
 
 class PriceType(str, Enum):
     """Types of prices that can be observed."""

@@ -67,7 +67,8 @@ where = ["."]
 [tool.setuptools.exclude-package-data]
 "*" = ["*.pyc", "*.pyo", "__pycache__", "*.egg-info", ".git*", ".vscode*", "venv*", "tests*", "examples*", "demos*", "tools*", "notebooks*", "htmlcov*", ".pytest_cache*", ".mypy_cache*", ".coverage*"]
 
-[tool.setuptools.dynamic]
-version = {attr = "meijer.__version__"}
+
+
+
 
 

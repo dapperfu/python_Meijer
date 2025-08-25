@@ -27,10 +27,7 @@ from typing import Optional
 
 from pony.orm import Database, db_session, commit, rollback
 
-from ..models.price_watch import (
-    Product, Store, PriceHistory, Watch, AlertEvent, 
-    Notification, RunLog, SchemaVersion
-)
+from ..models.price_watch import db, SchemaVersion
 
 
 class PriceWatchDatabase:
@@ -55,10 +52,12 @@ class PriceWatchDatabase:
             db_path = self._get_default_db_path()
         
         self.db_path = Path(db_path)
-        self.db = Database()
         
         # Ensure directory exists
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Use the global db instance from models
+        self.db = db
         
         # Bind entities to database
         self._bind_entities()
@@ -87,13 +86,14 @@ class PriceWatchDatabase:
     
     def _bind_entities(self) -> None:
         """Bind all entity classes to the database."""
+        # Bind the global db instance to SQLite
         self.db.bind(
             provider='sqlite',
             filename=str(self.db_path),
             create_db=True
         )
         
-        # Generate mapping
+        # Generate mapping and create tables
         self.db.generate_mapping(create_tables=True)
     
     def _init_database(self) -> None:

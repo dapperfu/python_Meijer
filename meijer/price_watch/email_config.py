@@ -162,8 +162,8 @@ class EmailConfig:
         
         # Try to load existing email auth if available
         try:
-            from ...email_2fa import get_meijer_config_path
-            email_auth_path = get_meijer_config_path("email.txt")
+            from meijer.auth import get_meijer_config_path
+            email_auth_path = Path(get_meijer_config_path("email.txt"))
             if email_auth_path.exists():
                 # Read the email.txt file and parse it manually
                 with open(email_auth_path, 'r') as f:
@@ -189,11 +189,14 @@ class EmailConfig:
                     template_config['imap']['username'] = username
                     template_config['imap']['password'] = password
                     
-                    # Also update SMTP host if it's DreamHost
-                    if 'dreamhost' in username.lower():
+                    # Also update SMTP and IMAP hosts if it's DreamHost
+                    if 'dreamhost' in username.lower() or 'eabi.xyz' in username.lower():
                         template_config['smtp']['host'] = 'smtp.dreamhost.com'
                         template_config['smtp']['port'] = 587
                         template_config['smtp']['use_tls'] = True
+                        template_config['imap']['host'] = 'imap.dreamhost.com'
+                        template_config['imap']['port'] = 993
+                        template_config['imap']['use_ssl'] = True
                     
                     self.logger.info("Loaded existing email credentials from email.txt")
         except Exception as e:

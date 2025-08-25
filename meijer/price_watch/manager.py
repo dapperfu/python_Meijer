@@ -31,7 +31,7 @@ from typing import Dict, List, Optional, Tuple, Any
 from pony.orm import db_session, commit, rollback, select
 
 from ..models.price_watch import (
-    Product, Store, PriceHistory, Watch, AlertEvent, 
+    db, Product, Store, PriceHistory, Watch, AlertEvent, 
     Notification, RunLog, SchemaVersion, PriceType, 
     OnlyWhenType, AlertReason, NotificationStatus
 )

@@ -1,9 +1,6 @@
-[tool.hatch.version]
-source = "file"
-path = "meijer/__init__.py"
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["meijer"]
 
-[tool.hatch.build.hooks.custom]
-path = "hatch_build_hook.py"
+
