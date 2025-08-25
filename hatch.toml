@@ -1,7 +1,5 @@
 [tool.hatch.version]
-source = "regex"
-path = "meijer/__init__.py"
-pattern = '__version__ = "([^"]+)"'
+source = "git"
 
 [tool.hatch.build.targets.wheel]
 packages = ["meijer"]
