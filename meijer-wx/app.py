@@ -25,9 +25,9 @@ from pathlib import Path
 import platformdirs
 import wx
 
-from .services.client import MeijerClientService
-from .services.settings import SettingsService
-from .ui.main_frame import MainFrame
+from services.client import MeijerClientService
+from services.settings import SettingsService
+from ui.main_frame import MainFrame
 
 
 class MeijerApp(wx.App):

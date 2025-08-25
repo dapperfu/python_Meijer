@@ -1,14 +1,14 @@
 from flask import render_template, flash, redirect, url_for, request
 from . import bp
 
-from ...models.mock_models import MockMeijerClient
+from ...models.meijer_integration import meijer_client
 
 
 @bp.route("/")
 def stores():
     """Stores management page."""
     try:
-        client = MockMeijerClient()
+        client = meijer_client
         stores_list = client.get_stores()
         return render_template("stores.html", stores=stores_list)
     except Exception as e:
@@ -24,7 +24,7 @@ def stores_search():
         zip_code = request.form.get("zip_code", "")
         # radius = int(request.form.get("radius", 50))  # TODO: Implement radius filtering
 
-        client = MockMeijerClient()
+        client = meijer_client
         if city:
             stores_list = client.get_stores(city=city)
         elif zip_code:

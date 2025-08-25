@@ -7,17 +7,19 @@ from typing import Any
 import wx
 import wx.adv
 
-from ..services.client import MeijerClientService
-from ..services.settings import SettingsService
-from .auth_panel import AuthPanel
-from .cart_panel import CartPanel
-from .coupons_panel import CouponsPanel
-from .dashboard import DashboardPanel
-from .email2fa_panel import Email2FAPanel
-from .list_panel import ListPanel
-from .log_panel import LogPanel
-from .settings_dialog import SettingsDialog
-from .stores_panel import StoresPanel
+from services.client import MeijerClientService
+from services.settings import SettingsService
+from ui.ads_panel import AdsPanel
+from ui.auth_panel import AuthPanel
+from ui.cart_panel import CartPanel
+from ui.coupons_panel import CouponsPanel
+from ui.dashboard import DashboardPanel
+from ui.email2fa_panel import Email2FAPanel
+from ui.list_panel import ListPanel
+from ui.log_panel import LogPanel
+from ui.price_watch_panel import PriceWatchPanel
+from ui.settings_dialog import SettingsDialog
+from ui.stores_panel import StoresPanel
 
 
 class MainFrame(wx.Frame):
@@ -116,6 +118,8 @@ class MainFrame(wx.Frame):
         coupons_item = self.nav_tree.AppendItem(root, "🎫 Coupons")
         stores_item = self.nav_tree.AppendItem(root, "🏪 Stores")
         cart_item = self.nav_tree.AppendItem(root, "🛍️ Cart")
+        price_watch_item = self.nav_tree.AppendItem(root, "👀 Price Watch")
+        ads_item = self.nav_tree.AppendItem(root, "📰 Weekly Ads")
         auth_item = self.nav_tree.AppendItem(root, "🔐 Authentication")
         email2fa_item = self.nav_tree.AppendItem(root, "📧 Email 2FA")
         settings_item = self.nav_tree.AppendItem(root, "⚙️ Settings")
@@ -127,13 +131,16 @@ class MainFrame(wx.Frame):
             "coupons": coupons_item,
             "stores": stores_item,
             "cart": cart_item,
+            "price_watch": price_watch_item,
+            "ads": ads_item,
             "auth": auth_item,
             "email2fa": email2fa_item,
             "settings": settings_item,
         }
 
-        # Expand root
-        self.nav_tree.Expand(root)
+        # Expand all items (but not the hidden root)
+        for item in self.nav_items.values():
+            self.nav_tree.Expand(item)
 
         # Set tree size
         self.nav_tree.SetMinSize((250, -1))
@@ -180,6 +187,18 @@ class MainFrame(wx.Frame):
         )
         self.main_notebook.AddPage(self.panels["cart"], "Cart")
 
+        # Price watch panel
+        self.panels["price_watch"] = PriceWatchPanel(
+            self.main_notebook, self.settings_service, self.client_service
+        )
+        self.main_notebook.AddPage(self.panels["price_watch"], "Price Watch")
+
+        # Ads panel
+        self.panels["ads"] = AdsPanel(
+            self.main_notebook, self.settings_service, self.client_service
+        )
+        self.main_notebook.AddPage(self.panels["ads"], "Weekly Ads")
+
         # Authentication panel
         self.panels["auth"] = AuthPanel(
             self.main_notebook, self.settings_service, self.client_service
@@ -192,9 +211,7 @@ class MainFrame(wx.Frame):
         )
         self.main_notebook.AddPage(self.panels["email2fa"], "Email 2FA")
 
-        # Hide all pages initially
-        for i in range(self.main_notebook.GetPageCount()):
-            self.main_notebook.HidePage(i)
+        # Don't add pages initially - they'll be added when selected
 
     def _create_log_panel(self) -> None:
         """Create the collapsible log panel at the bottom."""
@@ -272,17 +289,14 @@ class MainFrame(wx.Frame):
         if panel_name not in self.panels:
             return
 
-        # Hide all pages
-        for i in range(self.main_notebook.GetPageCount()):
-            self.main_notebook.HidePage(i)
+        # Remove all existing pages
+        while self.main_notebook.GetPageCount() > 0:
+            self.main_notebook.RemovePage(0)
 
-        # Show selected panel
+        # Add and show selected panel
         panel = self.panels[panel_name]
-        page_index = self.main_notebook.GetPageIndex(panel)
-        if page_index != wx.NOT_FOUND:
-            self.main_notebook.ShowPage(page_index)
-            self.main_notebook.SetSelection(page_index)
-            self.current_panel = panel
+        self.main_notebook.AddPage(panel, panel_name.replace("_", " ").title())
+        self.current_panel = panel
 
         # Update status
         self.SetStatusText(f"Showing {panel_name.replace('_', ' ').title()}")

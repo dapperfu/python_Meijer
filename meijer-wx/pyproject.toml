@@ -68,12 +68,12 @@ Repository = "https://github.com/dapperfu/python_Meijer.git"
 Issues = "https://github.com/dapperfu/python_Meijer/issues"
 
 [project.scripts]
-meijer-wx = "meijer_wx.app:main"
+meijer-wx = "app:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["meijer_wx*"]
-exclude = ["tests*", "build*", "dist*", "venv*"]
+include = ["*"]
+exclude = ["tests*", "build*", "dist*", "venv*", "*.pyc", "__pycache__"]
 
 [tool.ruff]
 target-version = "py311"

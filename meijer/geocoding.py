@@ -227,13 +227,40 @@ class GoogleMobileGeocoder:
             # Let's try the Geocode endpoint first since we need forward geocoding
             endpoint = self.geocode_endpoint
 
-            # Create the exact payload structure from the logs
-            # From the logs: binary data with location + language + app identifier
-            # The format appears to be: location + "en-US" + "com.meijer.mobile.meijer"
-
-            # Create the binary payload exactly like the logs show
-            # This is a simplified version - the actual app uses protobuf
-            payload = f"{location}\x00en-US\x00com.meijer.mobile.meijer".encode("utf-8")
+            # Create the exact payload structure from the working request analysis
+            # From the working request: 67 bytes with specific binary format
+            # The working payload structure is:
+            # [4 bytes length][total content length][constant 0x0a][location length][location][binary structure][app identifier]
+            
+            # Convert location to bytes
+            location_bytes = location.encode('utf-8')
+            location_length = len(location_bytes)
+            
+            # Calculate total content length (everything after the 4-byte prefix)
+            binary_structure = b'\x1a\x00"\x00*\x05en-US8\x01B\x18com.meijer.mobile.meijer'
+            total_content_length = 1 + 1 + location_length + len(binary_structure)  # 0x0a + location_length + location + binary_structure
+            
+            # Create the exact binary payload structure from working request
+            # This matches the successful request format exactly
+            payload_parts = [
+                b'\x00\x00\x00\x00',  # 4-byte length prefix
+                bytes([total_content_length, 0x0a]),  # total content length + constant 0x0a
+                bytes([location_length]),  # location length
+                location_bytes,        # location string
+                binary_structure       # binary structure + app ID
+            ]
+            
+            payload = b''.join(payload_parts)
+            
+            # For debugging: log the exact payload format
+            logger.debug(f"Payload structure: {len(payload_parts)} parts")
+            logger.debug(f"Part 1 (length): {payload_parts[0].hex()} ({len(payload_parts[0])} bytes)")
+            logger.debug(f"Part 2 (content length + constant): {payload_parts[1].hex()} ({len(payload_parts[1])} bytes)")
+            logger.debug(f"Part 3 (location length): {payload_parts[2].hex()} ({len(payload_parts[2])} bytes)")
+            logger.debug(f"Part 4 (location): {payload_parts[3].hex()} ({len(payload_parts[3])} bytes)")
+            logger.debug(f"Part 5 (binary): {payload_parts[4].hex()} ({len(payload_parts[4])} bytes)")
+            logger.debug(f"Total payload: {len(payload)} bytes")
+            logger.debug(f"Calculated content length: {total_content_length}")
 
             # Define headers exactly like the logs
             headers = {
@@ -243,7 +270,6 @@ class GoogleMobileGeocoder:
                 ),
                 "content-type": "application/grpc",
                 "te": "trailers",
-                "transfer-encoding": "chunked",
                 "x-goog-spatula": self.auth_data["spatula_token"],
                 "grpc-accept-encoding": "gzip",
                 "grpc-timeout": "9976501u",
@@ -271,6 +297,11 @@ class GoogleMobileGeocoder:
                         "Received empty response - request may have been rejected"
                     )
                     return None
+                
+                # Log the response for debugging
+                logger.info(f"✅ Got successful response! Content length: {len(response.content)} bytes")
+                logger.debug(f"Response (hex): {response.content[:100].hex()}...")
+                
                 # Parse gRPC response
                 return self._parse_grpc_response(response.content)
             else:
@@ -301,12 +332,12 @@ class GoogleMobileGeocoder:
             # Look for coordinate patterns in the response
 
             # Log the raw response for debugging
-            logger.debug(f"Raw gRPC response length: {len(response_content)} bytes")
-            logger.debug(f"Raw response (hex): {response_content[:100].hex()}")
+            logger.info(f"Raw gRPC response length: {len(response_content)} bytes")
+            logger.info(f"Raw response (hex): {response_content[:100].hex()}...")
 
             # Convert to string for easier parsing
             content_str = response_content.decode("utf-8", errors="ignore")
-            logger.debug(f"Decoded response: {content_str[:200]}...")
+            logger.info(f"Decoded response: {content_str[:200]}...")
 
             # Look for coordinate patterns (numbers with decimal points)
             import re
@@ -314,7 +345,7 @@ class GoogleMobileGeocoder:
             # Pattern for coordinates: look for two decimal numbers that could be lat/lng
             coord_pattern = r"(-?\d+\.\d+)"
             coords = re.findall(coord_pattern, content_str)
-            logger.debug(f"Found coordinate candidates: {coords}")
+            logger.info(f"Found coordinate candidates: {coords}")
 
             if len(coords) >= 2:
                 # The first two decimal numbers are likely latitude and longitude
@@ -323,13 +354,38 @@ class GoogleMobileGeocoder:
 
                 # Validate reasonable coordinate ranges
                 if -90 <= lat <= 90 and -180 <= lng <= 180:
-                    logger.info(f"Parsed coordinates from gRPC response: {lat}, {lng}")
+                    logger.info(f"✅ Parsed coordinates from gRPC response: {lat}, {lng}")
                     return (lat, lng)
                 else:
                     logger.warning(f"Coordinates out of valid range: {lat}, {lng}")
                     return None
-            else:
-                logger.warning("Could not find coordinate pattern in gRPC response")
+            
+            # If no decimal coordinates found, try to extract from binary data
+            logger.info("No decimal coordinates found, trying binary extraction...")
+            
+            # Look for binary coordinate patterns in the raw response
+            # The coordinates might be encoded as binary floats or integers
+            try:
+                # Search for potential coordinate patterns in binary data
+                # Look for sequences that could represent coordinates
+                
+                # Try to find coordinates in the binary response
+                # This is a more sophisticated approach for binary gRPC responses
+                
+                # For now, let's use a fallback: extract coordinates from the working request response
+                # Since we know the working request returned coordinates, let's analyze that pattern
+                
+                logger.info("Attempting binary coordinate extraction...")
+                
+                # Look for patterns that could be coordinates in the binary data
+                # This is complex and would require understanding the exact gRPC response format
+                
+                # For now, raise an exception to trigger the fallback system
+                logger.warning("Binary coordinate extraction not implemented yet")
+                raise ValueError("Google Mobile Geocoding Service returned response but coordinates could not be parsed")
+                
+            except Exception as e:
+                logger.error(f"Error in binary coordinate extraction: {e}")
                 return None
 
         except Exception as e:
@@ -530,3 +586,93 @@ def get_geocoding_service(
         # Fall back to Google Maps API
         logger.info("Falling back to Google Maps API geocoding service")
         return GoogleMapsGeocoder()
+
+
+class FallbackGeocoder:
+    """
+    A geocoder that tries multiple services with automatic fallback.
+    """
+    
+    def __init__(self, auth_data: Optional[Dict[str, Any]] = None):
+        self.mobile_geocoder = None
+        self.maps_geocoder = None
+        
+        # Try to initialize mobile geocoder
+        try:
+            self.mobile_geocoder = GoogleMobileGeocoder(auth_data)
+            logger.info("✅ Google Mobile Geocoding Service initialized")
+        except ValueError:
+            logger.info("⚠️  Google Mobile Geocoding Service not available")
+        
+        # Initialize Maps geocoder as fallback
+        try:
+            self.maps_geocoder = GoogleMapsGeocoder()
+            logger.info("✅ Google Maps API geocoder initialized")
+        except ValueError:
+            logger.warning("⚠️  Google Maps API geocoder not available")
+    
+    def geocode_zip_code(self, zip_code: str) -> Optional[Tuple[float, float]]:
+        """
+        Geocode a ZIP code with automatic fallback.
+        """
+        # Try mobile geocoder first
+        if self.mobile_geocoder:
+            try:
+                logger.info(f"🔍 Trying Google Mobile Geocoding Service for ZIP {zip_code}")
+                coords = self.mobile_geocoder.geocode_zip_code(zip_code)
+                if coords:
+                    logger.info(f"✅ Mobile geocoding successful: {coords}")
+                    return coords
+                else:
+                    logger.warning("⚠️  Mobile geocoding returned no coordinates")
+            except Exception as e:
+                logger.warning(f"⚠️  Mobile geocoding failed: {e}")
+        
+        # Fall back to Maps API
+        if self.maps_geocoder:
+            try:
+                logger.info(f"🔄 Falling back to Google Maps API for ZIP {zip_code}")
+                coords = self.maps_geocoder.geocode_zip_code(zip_code)
+                if coords:
+                    logger.info(f"✅ Maps API geocoding successful: {coords}")
+                    return coords
+                else:
+                    logger.warning("⚠️  Maps API geocoding returned no coordinates")
+            except Exception as e:
+                logger.error(f"❌ Maps API geocoding failed: {e}")
+        
+        logger.error("❌ All geocoding services failed")
+        return None
+    
+    def geocode_city(self, city: str, state: Optional[str] = None) -> Optional[Tuple[float, float]]:
+        """
+        Geocode a city with automatic fallback.
+        """
+        # Try mobile geocoder first
+        if self.mobile_geocoder:
+            try:
+                logger.info(f"🔍 Trying Google Mobile Geocoding Service for city {city}")
+                coords = self.mobile_geocoder.geocode_city(city, state)
+                if coords:
+                    logger.info(f"✅ Mobile geocoding successful: {coords}")
+                    return coords
+                else:
+                    logger.warning("⚠️  Mobile geocoding returned no coordinates")
+            except Exception as e:
+                logger.warning(f"⚠️  Mobile geocoding failed: {e}")
+        
+        # Fall back to Maps API
+        if self.maps_geocoder:
+            try:
+                logger.info(f"🔄 Falling back to Google Maps API for city {city}")
+                coords = self.maps_geocoder.geocode_city(city, state)
+                if coords:
+                    logger.info(f"✅ Maps API geocoding successful: {coords}")
+                    return coords
+                else:
+                    logger.warning("⚠️  Maps API geocoding returned no coordinates")
+            except Exception as e:
+                logger.error(f"❌ Maps API geocoding failed: {e}")
+        
+        logger.error("❌ All geocoding services failed")
+        return None

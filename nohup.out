@@ -132,3 +132,479 @@ ATTENTION: default value of option mesa_glthread overridden by environment.
 [90m[main 2025-08-25T17:50:24.975Z][0m update#setState checking for updates
 [90m[main 2025-08-25T17:50:25.133Z][0m update#setState idle
 ATTENTION: default value of option mesa_glthread overridden by environment.
+[90m[main 2025-08-25T18:50:24.977Z][0m update#setState checking for updates
+[90m[main 2025-08-25T18:50:25.146Z][0m update#setState idle
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[90m[main 2025-08-25T19:50:24.980Z][0m update#setState checking for updates
+[90m[main 2025-08-25T19:50:25.153Z][0m update#setState idle
+[91m[main 2025-08-25T20:16:10.880Z][0m Listing processes failed: Error: cat: /proc/1961225/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 27: let: PROCESS_TIME_BEFORE=+: syntax error: operand expected (error token is "+")
+
+[91m[main 2025-08-25T20:17:05.862Z][0m Listing processes failed: Error: cat: /proc/1967545/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 27: let: PROCESS_TIME_BEFORE=+: syntax error: operand expected (error token is "+")
+
+[91m[main 2025-08-25T20:19:05.260Z][0m Listing processes failed: Error: cat: /proc/1979320/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 51: let: PROCESS_TIME_AFTER=+: syntax error: operand expected (error token is "+")
+
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[91m[main 2025-08-25T20:20:19.376Z][0m CodeWindow: detected unresponsive
+[1765009:0825/162024.747313:ERROR:browser_main_loop.cc(278)] GLib-GObject: ../../../gobject/gsignal.c:2685: instance '0x294040ad850' has no handler with id '2440'
+[91m[main 2025-08-25T20:20:34.379Z][0m CodeWindow unresponsive samples:
+<1> 
+    at Object.Obo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:28695)
+    at Object.get (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:46039)
+    at aWs.getLastBubbleIdWithTerminalSessionIdShownReactive (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:341)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5563:1263)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at T0t (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31420)
+    at Wbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:32343)
+    at sVc (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31708)
+    at YH (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31609)
+    at dM (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27159)
+    at ips.r [as setData] (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:44223)
+    at setData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:491:30013)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37120
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:604
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37110
+    at up.updateComposerDataSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:30035)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at up.updateComposerBubbleSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37077)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.setBubbleData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:553)
+    at aWs.handleToolResult (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:7156)
+    at Bnn.call (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:969:72680)
+    at async vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:3762:5221
+<1> 
+    at Array Iterator.next (<anonymous>)
+    at Object.prepareRender (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:252:15046)
+    at Object.prepareRender (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:252:13499)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:252:18854
+    at bke (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:252:3323)
+    at JEl._onRenderScheduled (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:252:18844)
+    at $Wi.t [as _runner] (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:252:18463)
+    at $Wi.execute (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:28400)
+    at s (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:28648)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:28819
+<1> 
+    at Set.add (<anonymous>)
+    at new Set (<anonymous>)
+    at yXd (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:27680)
+    at TSt.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:30521)
+    at q5._deliver (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:2962)
+    at q5._deliverQueue (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3053)
+    at q5.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3390)
+    at q5.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:4769)
+    at l7s.setContext (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:28893)
+    at vXd.set (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:26931)
+    at HTMLDivElement.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5476:55813)
+<1> 
+    at HTMLDivElement.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5511:109915)
+<1> 
+    at Function.keys (<anonymous>)
+    at yXd (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:27695)
+    at TSt.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:30521)
+    at q5._deliver (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:2962)
+    at q5._deliverQueue (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3053)
+    at q5.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3390)
+    at q5.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:4769)
+    at TSt.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:30556)
+    at q5._deliver (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:2962)
+    at q5._deliverQueue (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3053)
+    at q5.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3390)
+    at q5.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:4769)
+    at l7s.setContext (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:28893)
+    at vXd.set (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5620:26931)
+    at e6s.onViewsVisibilityChanged (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5386:6116)
+    at TSt.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5386:17141)
+    at ve._deliver (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:2962)
+    at ve.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3283)
+    at TSt.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4917:18445)
+    at ve._deliver (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:2962)
+    at ve.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3283)
+    at tWs.setVisible (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:738:3780)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4917:15408
+    at Array.map (<anonymous>)
+    at YE.setVisible (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4917:15399)
+    at s.setVisible (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4926:103854)
+    at trt.hideActiveComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4928:150029)
+    at trt.hideActiveComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:11547)
+    at trt.doOpenComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4928:146529)
+    at trt.openComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4928:146403)
+    at trt.doOpenPaneComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:18479)
+    at trt.openPaneComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:18096)
+    at avn.run (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:8648)
+    at O0.runAction (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:52296)
+    at O0.run (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:52199)
+    at $5s.onClick (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:420:18011)
+    at HTMLLIElement.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:420:17694)
+<1> 
+    at ox.getItemsLength (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:436:72070)
+    at trt.getToolbarWidth (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:20348)
+    at trt.layoutCompositeBar (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:19805)
+    at trt.showComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:11464)
+    at trt.doOpenComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4928:146835)
+    at trt.openComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4928:146403)
+    at trt.doOpenPaneComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:18479)
+    at trt.openPaneComposite (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:18096)
+    at avn.run (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4935:8648)
+    at O0.runAction (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:52296)
+    at O0.run (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:52199)
+    at $5s.onClick (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:420:18011)
+    at HTMLLIElement.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:420:17694)
+<1> 
+    at HTMLLIElement.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5511:109915)
+<1> 
+    at xT (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:43806)
+    at $El.onConfigurationChanged (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:99:87987)
+    at $El.handleEvents (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:95:1257)
+    at lwo._doConsumeQueue (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:289:37252)
+    at lwo._consumeViewEventQueue (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:289:37033)
+    at lwo._emitMany (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:289:36939)
+    at lwo.endEmitViewEvents (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:289:36647)
+    at TSt.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:290:64189)
+    at ve._deliver (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:2962)
+    at ve.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3283)
+    at ICt._recomputeOptions (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:141390)
+    at TSt.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:140916)
+    at ve._deliver (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:2962)
+    at ve.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3283)
+    at rZn.measureReferenceDomElement (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:47990)
+    at rZn.observe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:47585)
+    at t (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:47040)
+    at r (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:47157)
+    at ResizeObserver.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:92:47401)
+<1> 
+    at ve._deliverQueue (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3032)
+    at ve.fire (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:49:3390)
+    at Cme._setState (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:96:41405)
+    at Cme.setScrollDimensions (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:96:38437)
+    at ResizeObserver.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:895:7778)
+Total Samples: 9
+For full overview of the unresponsive period, capture cpu profile via https://aka.ms/vscode-tracing-cpu-profile
+[91m[main 2025-08-25T20:20:40.579Z][0m CodeWindow: recovered from unresponsive
+[91m[main 2025-08-25T20:21:05.635Z][0m CodeWindow: detected unresponsive
+[1765009:0825/162112.251631:ERROR:browser_main_loop.cc(278)] GLib-GObject: ../../../gobject/gsignal.c:2685: instance '0x294040adb90' has no handler with id '2675'
+[91m[main 2025-08-25T20:21:12.255Z][0m CodeWindow unresponsive samples:
+<2> 
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35153
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at up.getLoadedConversation (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35084)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.getLastBubbleIdWithTerminalSessionIdShownReactive (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:241)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5563:1263)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at T0t (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31420)
+    at Wbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:32343)
+    at sVc (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31708)
+    at YH (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31609)
+    at dM (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27159)
+    at ips.r [as setData] (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:44223)
+    at setData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:491:30013)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37120
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:604
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37110
+    at up.updateComposerDataSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:30035)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at up.updateComposerBubbleSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37077)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.setBubbleData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:553)
+    at aWs.handleToolError (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:7518)
+    at Jsn.toolWrappedStream (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:3762:13003)
+    at async hNs (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:22433)
+    at async eR.handleStreamComposer (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:858:993)
+    at async ygn.streamResponse (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:33881)
+    at async bWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5593:7314)
+    at async aWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:966)
+    at async cWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:3010)
+    at async hWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:9020)
+    at async Oet.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:897:7223)
+    at async EQ.processCodeBlocks (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:1002:3733)
+    at async dse.submitChatMaybeAbortCurrent (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:2101:5954)
+    at async bi (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4064:28260)
+<2> 
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35103
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at up.getLoadedConversation (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35084)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.getLastBubbleIdWithTerminalSessionIdShownReactive (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:241)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5563:1263)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at T0t (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31420)
+    at Wbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:32343)
+    at sVc (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31708)
+    at YH (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31609)
+    at dM (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27159)
+    at ips.r [as setData] (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:44223)
+    at setData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:491:30013)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37120
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:604
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37110
+    at up.updateComposerDataSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:30035)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at up.updateComposerBubbleSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37077)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.setBubbleData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:553)
+    at aWs.handleToolError (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:7518)
+    at Jsn.toolWrappedStream (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:3762:13003)
+    at async hNs (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:22433)
+    at async eR.handleStreamComposer (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:858:993)
+    at async ygn.streamResponse (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:33881)
+    at async bWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5593:7314)
+    at async aWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:966)
+    at async cWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:3010)
+    at async hWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:9020)
+    at async Oet.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:897:7223)
+    at async EQ.processCodeBlocks (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:1002:3733)
+    at async dse.submitChatMaybeAbortCurrent (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:2101:5954)
+    at async bi (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4064:28260)
+<1> 
+    at Object.Obo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:28695)
+    at Object.get (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:46039)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35150
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at up.getLoadedConversation (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35084)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.getLastBubbleIdWithTerminalSessionIdShownReactive (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:241)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5563:1263)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at T0t (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31420)
+    at Wbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:32343)
+    at sVc (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31708)
+    at YH (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31609)
+    at dM (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27159)
+    at ips.r [as setData] (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:44223)
+    at setData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:491:30013)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37120
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:604
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37110
+    at up.updateComposerDataSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:30035)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at up.updateComposerBubbleSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37077)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.setBubbleData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:553)
+    at aWs.handleToolError (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:7518)
+    at Jsn.toolWrappedStream (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:3762:13003)
+    at async hNs (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:22433)
+    at async eR.handleStreamComposer (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:858:993)
+    at async ygn.streamResponse (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:33881)
+    at async bWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5593:7314)
+    at async aWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:966)
+    at async cWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:3010)
+    at async hWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:9020)
+    at async Oet.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:897:7223)
+    at async EQ.processCodeBlocks (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:1002:3733)
+    at async dse.submitChatMaybeAbortCurrent (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:2101:5954)
+    at async bi (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4064:28260)
+<1> 
+    at Object.Obo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:28695)
+    at Object.get (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:46039)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35153
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at up.getLoadedConversation (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:35084)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.getLastBubbleIdWithTerminalSessionIdShownReactive (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:241)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5563:1263)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at T0t (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31420)
+    at Wbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:32343)
+    at sVc (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31708)
+    at YH (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31609)
+    at dM (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27159)
+    at ips.r [as setData] (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:44223)
+    at setData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:491:30013)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37120
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:604
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37110
+    at up.updateComposerDataSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:30035)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at up.updateComposerBubbleSetStore (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:806:37077)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44324
+    at iQn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44010)
+    at NB (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:43971)
+    at n.value (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:52:44313)
+    at aWs.setBubbleData (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:553)
+    at aWs.handleToolError (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:7518)
+    at Jsn.toolWrappedStream (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:3762:13003)
+    at async hNs (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:22433)
+    at async eR.handleStreamComposer (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:858:993)
+    at async ygn.streamResponse (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4768:33881)
+    at async bWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5593:7314)
+    at async aWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5571:966)
+    at async cWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:3010)
+    at async hWs.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5589:9020)
+    at async Oet.<anonymous> (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:897:7223)
+    at async EQ.processCodeBlocks (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:1002:3733)
+    at async dse.submitChatMaybeAbortCurrent (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:2101:5954)
+    at async bi (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:4064:28260)
+Total Samples: 6
+For full overview of the unresponsive period, capture cpu profile via https://aka.ms/vscode-tracing-cpu-profile
+[90m[main 2025-08-25T20:21:14.629Z][0m Extension host with pid 1765206 exited with code: 0, signal: unknown.
+[91m[main 2025-08-25T20:22:04.938Z][0m Listing processes failed: Error: cat: /proc/1989766/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 27: let: PROCESS_TIME_BEFORE=+: syntax error: operand expected (error token is "+")
+
+[91m[main 2025-08-25T20:23:28.374Z][0m Listing processes failed: Error: cat: /proc/2002828/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 51: let: PROCESS_TIME_AFTER=+: syntax error: operand expected (error token is "+")
+
+[91m[main 2025-08-25T20:27:43.855Z][0m CodeWindow: detected unresponsive
+[91m[main 2025-08-25T20:27:45.615Z][0m CodeWindow: recovered from unresponsive
+[91m[main 2025-08-25T20:27:45.621Z][0m CodeWindow unresponsive samples:
+<1> 
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:969:58673
+    at Array.map (<anonymous>)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:969:58664
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at Nnn.getLastBubbleWithReviewStatusFromLast2Bubbles (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:969:58616)
+    at Nnn.getReviewModelForLastBubbleUnderReview (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:969:55447)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5471:38736)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at $e (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:25174)
+    at a8s (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5471:38670)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36239
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at q (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36232)
+    at get fallback (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5475:15116)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:38749)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at $e (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:25174)
+    at Ve (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:38593)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36239
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27209)
+    at q (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36232)
+    at children (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5475:15065)
+    at f (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36109)
+    at SI.a (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:24361)
+    at YH (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31542)
+    at SI (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:24407)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:35961
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:35721)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at $e (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:25174)
+    at NE (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:38441)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36239
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27209)
+    at q (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36232)
+    at Isl (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5475:14658)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36239
+    at wh (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:27262)
+    at q (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:36232)
+    at get children (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5475:12316)
+    at Object.fn (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:38629)
+    at Bbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:30039)
+    at BKe (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29793)
+    at T0t (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31420)
+    at Wbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:32343)
+    at sVc (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31708)
+    at YH (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:31609)
+    at Fbo (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:29477)
+    at n (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:276:24655)
+    at xt (vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5475:9394)
+    at vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/workbench/workbench.desktop.main.js:5475:9924
+Total Samples: 1
+For full overview of the unresponsive period, capture cpu profile via https://aka.ms/vscode-tracing-cpu-profile
+[1765009:0825/162751.073516:ERROR:browser_main_loop.cc(278)] GLib-GObject: ../../../gobject/gsignal.c:2685: instance '0x294000eed10' has no handler with id '3006'
+[1765009:0825/162824.908736:ERROR:browser_main_loop.cc(278)] GLib-GObject: ../../../gobject/gsignal.c:2685: instance '0x294000eed10' has no handler with id '3253'
+[91m[main 2025-08-25T20:35:05.967Z][0m Listing processes failed: Error: cat: /proc/2080026/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 51: let: PROCESS_TIME_AFTER=+: syntax error: operand expected (error token is "+")
+
+[91m[main 2025-08-25T20:37:27.059Z][0m Listing processes failed: Error: cat: /proc/2089488/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 27: let: PROCESS_TIME_BEFORE=+: syntax error: operand expected (error token is "+")
+
+[91m[main 2025-08-25T20:45:26.471Z][0m Listing processes failed: Error: cat: /proc/2115458/stat: No such file or directory
+/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 27: let: PROCESS_TIME_BEFORE=+: syntax error: operand expected (error token is "+")
+
+[90m[main 2025-08-25T20:50:24.983Z][0m update#setState checking for updates
+[90m[main 2025-08-25T20:50:25.143Z][0m update#setState ready
+[90m[main 2025-08-25T20:59:48.146Z][0m Extension host with pid 1765203 exited with code: 0, signal: unknown.
+[90m[main 2025-08-25T20:59:48.182Z][0m Extension host with pid 1988010 exited with code: 0, signal: unknown.
+[91m[main 2025-08-25T20:59:48.781Z][0m [UtilityProcess id: 2, type: fileWatcher, pid: 1765220]: crashed with code 15 and reason 'killed'
+[91m[main 2025-08-25T20:59:48.981Z][0m [UtilityProcess id: 3, type: fileWatcher, pid: 1988006]: crashed with code 15 and reason 'killed'
+[90m[main 2025-08-25T20:59:50.327Z][0m update#quitAndInstall(): starting updater with command /keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/appimageupdatetool.AppImage -u "zsync|https://downloads.cursor.com/production/823f58d4f60b795a6aefb9955933f3a2f0331d7b/linux/x64/Cursor-1.5.5-x86_64.AppImage.zsync" -O "/keg/cursor/Cursor-1.4.5-x86_64.AppImage"; /keg/cursor/Cursor-1.4.5-x86_64.AppImage &
+Checking for updates...
+zsync2: Using CA bundle found on system: /etc/ssl/certs/ca-certificates.crt
+... done!
+Starting update...
+
+Updating from generic server via ZSync
+zsync2: Using CA bundle found on system: /etc/ssl/certs/ca-certificates.crt
+[2K0% done[2K0% done[2K0% done[2K0% done
+zsync2: /keg/cursor/Cursor-1.4.5-x86_64.AppImage found, using as seed file
+zsync2: Target file: /keg/cursor/Cursor-1.4.5-x86_64.AppImage
+zsync2: Reading seed file: /keg/cursor/Cursor-1.4.5-x86_64.AppImage
+[2K18.5021% done (34.32 of 185.47 MiB)...[2K46.44% done (86.12 of 185.47 MiB)...[2K58.45% done (108.40 of 185.47 MiB)...[2K65.51% done (121.49 of 185.47 MiB)...
+zsync2: Usable data from seed files: 86.091279%
+zsync2: Renaming temp file
+zsync2: Fetching remaining blocks
+[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...
+zsync2: Downloading from https://downloads.cursor.com/production/823f58d4f60b795a6aefb9955933f3a2f0331d7b/linux/x64/Cursor-1.5.5-x86_64.AppImage
+zsync2: optimized ranges, old requests count 114, new requests count 19
+
+[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.09% done (159.67 of 185.47 MiB)...[2K86.10% done (159.68 of 185.47 MiB)...[2K86.12% done (159.73 of 185.47 MiB)...[2K86.12% done (159.73 of 185.47 MiB)...[2K86.71% done (160.82 of 185.47 MiB)...[2K87.62% done (162.52 of 185.47 MiB)...[2K88.29% done (163.74 of 185.47 MiB)...[2K88.99% done (165.04 of 185.47 MiB)...[2K89.22% done (165.47 of 185.47 MiB)...[2K89.27% done (165.57 of 185.47 MiB)...[2K89.29% done (165.60 of 185.47 MiB)...[2K89.37% done (165.75 of 185.47 MiB)...[2K89.38% done (165.78 of 185.47 MiB)...[2K89.40% done (165.82 of 185.47 MiB)...[2K89.54% done (166.06 of 185.47 MiB)...[2K89.57% done (166.13 of 185.47 MiB)...[2K90.08% done (167.07 of 185.47 MiB)...[2K90.97% done (168.72 of 185.47 MiB)...[2K91.87% done (170.39 of 185.47 MiB)...[2K92.63% done (171.81 of 185.47 MiB)...[2K93.16% done (172.78 of 185.47 MiB)...[2K93.18% done (172.82 of 185.47 MiB)...[2K93.19% done (172.83 of 185.47 MiB)...[2K93.38% done (173.18 of 185.47 MiB)...[2K94.02% done (174.38 of 185.47 MiB)...[2K94.20% done (174.72 of 185.47 MiB)...[2K94.58% done (175.42 of 185.47 MiB)...[2K94.73% done (175.70 of 185.47 MiB)...[2K95.24% done (176.65 of 185.47 MiB)...[2K95.60% done (177.32 of 185.47 MiB)...[2K96.10% done (178.23 of 185.47 MiB)...[2K96.48% done (178.93 of 185.47 MiB)...[2K96.50% done (178.99 of 185.47 MiB)...[2K97.10% done (180.10 of 185.47 MiB)...[2K97.98% done (181.72 of 185.47 MiB)...[2K98.88% done (183.40 of 185.47 MiB)...[2K99.79% done (185.08 of 185.47 MiB)...[2K99.86% done (185.22 of 185.47 MiB)...
+zsync2: Verifying downloaded file
+[2K100.00% done (185.47 of 185.47 MiB)...[2K100.00% done (185.47 of 185.47 MiB)...
+zsync2: checksum matches OK
+[2K0.00% done (0.00 of 185.47 MiB)...
+zsync2: used 167432192 local, fetched 33584320
+[2K100.00% done (185.47 of 185.47 MiB)...
+Validation warning: AppImage not signed
+Update successful. Updated existing file /keg/cursor/Cursor-1.4.5-x86_64.AppImage
+[90m[main 2025-08-25T20:59:59.722Z][0m updateURL https://api2.cursor.sh/updates/api/update/linux-x64/cursor/1.5.5/54d763cf04a072e28645346c5c0bd38e48b35a55a195401039098f225c1b990f/stable
+[90m[main 2025-08-25T20:59:59.722Z][0m update#setState idle
+[91m[main 2025-08-25T21:00:01.852Z][0m vscode-file: Refused to load resource /keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff from vscode-file: protocol (original URL: vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff)
+[91m[main 2025-08-25T21:00:01.863Z][0m vscode-file: Refused to load resource /keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff from vscode-file: protocol (original URL: vscode-file://vscode-app/keg/cursor/tmp/.mount_CursoraDl2Tu/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff)
+[90m[main 2025-08-25T21:00:29.724Z][0m update#setState checking for updates
+[90m[main 2025-08-25T21:00:29.785Z][0m update#setState idle
+[90m[main 2025-08-25T21:05:43.412Z][0m Extension host with pid 2128745 exited with code: 0, signal: unknown.
+[91m[main 2025-08-25T21:05:43.451Z][0m [UtilityProcess id: 1, type: fileWatcher, pid: 2128771]: crashed with code 15 and reason 'killed'
+(node:2128548) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 child-process-gone listeners added to [App]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `cursor --trace-warnings ...` to show where the warning was created)
+[2128548:0825/175258.279545:ERROR:atom_cache.cc(229)] Add WM_CHANGE_STATE to kAtomsToCache
+[90m[main 2025-08-25T22:00:29.725Z][0m update#setState checking for updates
+[90m[main 2025-08-25T22:00:29.884Z][0m update#setState idle

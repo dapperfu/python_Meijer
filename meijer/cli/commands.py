@@ -21,6 +21,7 @@ from .utils import (
     export_to_text,
     get_meijer_client,
     import_from_csv,
+    import_from_excel,
     import_from_json,
     import_from_text,
 )
@@ -731,6 +732,64 @@ def list_defrag(
         raise click.ClickException(f"❌ Defrag failed: {e}")
 
 
+@list_group.command("dedup")
+@click.option(
+    "-s", "--show", is_flag=True, help="Show shopping list before and after dedup"
+)
+def list_dedup(show: bool):
+    """Remove duplicate items from shopping list by consolidating quantities."""
+    client = get_meijer_client()
+
+    try:
+        # Show items before dedup if requested
+        if show:
+            click.echo("📋 Shopping List Before Dedup:")
+            items_before = client.list.get()
+            if items_before:
+                display_items_table(items_before, "Before Dedup")
+            else:
+                click.echo("📝 Shopping list is empty")
+            click.echo()
+
+        click.echo("🔍 Starting shopping list deduplication...")
+        click.echo(
+            "⏳ This will consolidate duplicate items and sum their quantities..."
+        )
+
+        result = client.list.dedup()
+
+        if result.get("success"):
+            click.echo("🎉 Deduplication completed successfully!")
+
+            # Show dedup statistics
+            original_count = result.get("original_count", 0)
+            deduplicated_count = result.get("deduplicated_count", 0)
+            removed_duplicates = result.get("removed_duplicates", 0)
+
+            click.echo("📊 Deduplication Statistics:")
+            click.echo(f"   Original items: {original_count}")
+            click.echo(f"   After dedup: {deduplicated_count}")
+            click.echo(f"   Duplicates removed: {removed_duplicates}")
+
+            if removed_duplicates > 0:
+                click.echo(f"   💾 Space saved: {removed_duplicates} item(s)")
+
+            # Show items after dedup if requested
+            if show:
+                click.echo()
+                click.echo("📋 Shopping List After Dedup:")
+                items_after = client.list.get()
+                if items_after:
+                    display_items_table(items_after, "After Dedup")
+                else:
+                    click.echo("📝 Shopping list is empty after dedup")
+        else:
+            error_msg = result.get("error", "Unknown error")
+            raise click.ClickException(f"❌ Deduplication failed: {error_msg}")
+    except Exception as e:
+        raise click.ClickException(f"❌ Deduplication failed: {e}")
+
+
 @list_group.command("export")
 @click.argument("filename", type=click.Path(), default="shopping_list.txt")
 @click.option(
@@ -745,7 +804,22 @@ def list_defrag(
     help="Store ID for location lookup (required for defrag, accepts string or integer)",
 )
 def list_export(filename: str, defrag: bool, store_id: Optional[Union[str, int]]):
-    """Export shopping list to a file with full details for round-trip import."""
+    """Export shopping list to a file with full details for round-trip import.
+
+    The export format is automatically detected from the filename extension:
+
+    Supported formats:
+      .txt  - Human-readable text format with all details
+      .csv  - Simple tabular format (Item, Quantity, Notes, Status)
+      .json - Structured JSON format for programmatic use
+      .xlsx/.xls - Excel spreadsheet format
+
+    Examples:
+      meijer list export shopping_list.txt      # Text format
+      meijer list export shopping_list.csv      # CSV format
+      meijer list export shopping_list.json     # JSON format
+      meijer list export shopping_list.xlsx     # Excel format
+    """
     client = get_meijer_client()
 
     try:
@@ -811,12 +885,26 @@ def list_export(filename: str, defrag: bool, store_id: Optional[Union[str, int]]
 @click.option(
     "--format",
     "-f",
-    type=click.Choice(["auto", "text", "csv", "json"]),
+    type=click.Choice(["auto", "text", "csv", "json", "excel"]),
     default="auto",
     help="Import format (auto-detect if not specified)",
 )
 def list_import(filename: str, clear: bool, format: str):
-    """Import shopping list from a file with full details."""
+    """Import shopping list from a file with full details.
+
+    The import format is automatically detected from the filename extension:
+
+    Supported formats:
+      .txt  - Human-readable text format with all details
+      .csv  - Simple tabular format (Item, Quantity, Notes, Status)
+      .json - Structured JSON format for programmatic use
+      .xlsx/.xls - Excel spreadsheet format
+
+    Examples:
+      meijer list import shopping_list.txt
+      meijer list import shopping_list.csv --clear
+      meijer list import shopping_list.xlsx
+    """
     client = get_meijer_client()
 
     try:
@@ -838,18 +926,51 @@ def list_import(filename: str, clear: bool, format: str):
                 format = "csv"
             elif filename.endswith(".json"):
                 format = "json"
+            elif filename.endswith(".xlsx") or filename.endswith(".xls"):
+                format = "excel"
             else:
                 format = "text"
 
         # Import based on format
         if format == "text":
-            imported_count = import_from_text(client, file_path)
+            imported_items = import_from_text(client, file_path)
         elif format == "csv":
-            imported_count = import_from_csv(client, file_path)
+            imported_items = import_from_csv(client, file_path)
         elif format == "json":
-            imported_count = import_from_json(client, file_path)
+            imported_items = import_from_json(client, file_path)
+        elif format == "excel":
+            imported_items = import_from_excel(client, file_path)
         else:
             raise click.ClickException(f"❌ Unsupported format: {format}")
+
+        # Actually add the imported items to the shopping list
+        imported_count = 0
+        for item in imported_items:
+            try:
+                if isinstance(item, str):
+                    # Text format returns just strings
+                    success = client.list.add_item_with_details(
+                        upc=f"ITEM_{hash(item) % 10000}",
+                        description=item,
+                        quantity=1,
+                        notes="",
+                    )
+                else:
+                    # CSV/JSON/Excel formats return (name, quantity, notes) tuples
+                    name, quantity, notes = item
+                    success = client.list.add_item_with_details(
+                        upc=f"ITEM_{hash(name) % 10000}",
+                        description=name,
+                        quantity=quantity,
+                        notes=notes,
+                    )
+
+                if success:
+                    imported_count += 1
+                else:
+                    click.echo(f"⚠️  Failed to add item: {item}")
+            except Exception as e:
+                click.echo(f"⚠️  Error adding item {item}: {e}")
 
         click.echo(f"\n📊 Import Summary: {imported_count} items imported")
         click.echo(f"📁 File processed: {file_path.absolute()}")

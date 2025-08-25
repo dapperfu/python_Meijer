@@ -24,7 +24,7 @@ Routes for cart management functionality.
 from flask import render_template, flash, redirect, url_for, request
 from . import bp
 
-from ...models.mock_models import MockMeijerClient
+from ...models.meijer_integration import meijer_client
 
 
 @bp.route("/")
@@ -56,7 +56,7 @@ def cart_add():
             flash("UPC is required", "error")
             return redirect(url_for("cart.cart"))
 
-        client = MockMeijerClient()
+        client = meijer_client
         if client.cart:
             client.cart.store_id = store
             success = client.cart.add_item_by_upc(upc, quantity)
@@ -77,7 +77,7 @@ def cart_add():
 def cart_remove(item_index: int):
     """Remove item from cart."""
     try:
-        client = MockMeijerClient()
+        client = meijer_client
         if client.cart and client.cart.items:
             if 1 <= item_index <= len(client.cart.items):
                 item = client.cart.items[item_index - 1]
@@ -105,7 +105,7 @@ def cart_remove(item_index: int):
 def cart_clear():
     """Clear all items from cart."""
     try:
-        client = MockMeijerClient()
+        client = meijer_client
         if client.cart:
             # Remove all items one by one
             items_to_remove = list(client.cart.items)
@@ -127,13 +127,43 @@ def cart_clear():
 def cart_defrag():
     """Defragment cart by removing duplicates and consolidating items."""
     try:
-        client = MockMeijerClient()
-        if client.cart:
-            # This would implement cart defragmentation logic
-            # For now, just show a message
-            flash("Cart defragmentation feature coming soon", "info")
+        client = meijer_client
+        if client.cart and client.cart.items:
+            # Get current cart items
+            items = client.cart.items
+            
+            # Create a dictionary to consolidate items by name
+            consolidated = {}
+            removed_count = 0
+            
+            for item in items:
+                name = getattr(item, "name", "Unknown Item")
+                price = getattr(item, "price", 0.0)
+                entry_number = getattr(item, "entry_number", None)
+                
+                if name in consolidated:
+                    # Item already exists, consolidate quantities
+                    existing_item = consolidated[name]
+                    existing_quantity = getattr(existing_item, "current_quantity", 1)
+                    new_quantity = getattr(item, "current_quantity", 1)
+                    
+                    # Update the existing item's quantity
+                    setattr(existing_item, "current_quantity", existing_quantity + new_quantity)
+                    
+                    # Remove the duplicate item
+                    if entry_number:
+                        client.cart.remove_item(entry_number)
+                        removed_count += 1
+                else:
+                    # First occurrence of this item, keep it
+                    consolidated[name] = item
+            
+            if removed_count > 0:
+                flash(f"Cart defragmented successfully! Removed {removed_count} duplicate items.", "success")
+            else:
+                flash("Cart is already optimized - no duplicates found.", "info")
         else:
-            flash("Cart functionality not available", "error")
+            flash("Cart is empty or not available", "error")
 
     except Exception as e:
         flash(f"Error defragmenting cart: {str(e)}", "error")

@@ -347,11 +347,12 @@ def export_to_json(items: List, file_path: Path) -> None:
     click.echo(f"📄 Exported {len(items)} items to {file_path}")
 
 
-def import_from_text(file_path: Path) -> List[str]:
+def import_from_text(client, file_path: Path) -> List[str]:
     """
     Import shopping list items from a text file.
 
     Args:
+        client: Meijer client instance (not used, but kept for consistency)
         file_path: Path to import file
 
     Returns:
@@ -372,11 +373,12 @@ def import_from_text(file_path: Path) -> List[str]:
     return items
 
 
-def import_from_csv(file_path: Path) -> List[tuple]:
+def import_from_csv(client, file_path: Path) -> List[tuple]:
     """
     Import shopping list items from a CSV file.
 
     Args:
+        client: Meijer client instance (not used, but kept for consistency)
         file_path: Path to import file
 
     Returns:
@@ -405,11 +407,12 @@ def import_from_csv(file_path: Path) -> List[tuple]:
     return items
 
 
-def import_from_json(file_path: Path) -> List[tuple]:
+def import_from_json(client, file_path: Path) -> List[tuple]:
     """
     Import shopping list items from a JSON file.
 
     Args:
+        client: Meijer client instance (not used, but kept for consistency)
         file_path: Path to import file
 
     Returns:
@@ -426,7 +429,7 @@ def import_from_json(file_path: Path) -> List[tuple]:
     items = []
     for item in data.get("items", []):
         name = item.get("name", "").strip()
-        quantity = item.get("quantity", 1)
+        quantity = int(item.get("quantity", 1))
         notes = item.get("notes", "").strip()
 
         if name:
@@ -434,6 +437,99 @@ def import_from_json(file_path: Path) -> List[tuple]:
             items.append((name, quantity, notes))
 
     logger.debug(f"JSON import completed. Found {len(items)} items")
+    return items
+
+
+def import_from_excel(client, file_path: Path) -> List[tuple]:
+    """
+    Import shopping list items from an Excel file.
+
+    Args:
+        client: Meijer client instance (not used, but kept for consistency)
+        file_path: Path to import file
+
+    Returns:
+        List[tuple]: List of (name, quantity, notes) tuples
+    """
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Importing items from Excel file: {file_path}")
+
+    try:
+        import openpyxl
+    except ImportError:
+        raise ImportError(
+            "openpyxl is required for Excel import. Install with: pip install openpyxl"
+        )
+
+    items = []
+    workbook = openpyxl.load_workbook(file_path)
+    
+    # Try to find the first sheet with data
+    sheet = None
+    for sheet_name in workbook.sheetnames:
+        ws = workbook[sheet_name]
+        if ws.max_row > 1:  # More than just headers
+            sheet = ws
+            break
+    
+    if not sheet:
+        logger.warning("No data found in Excel file")
+        return items
+
+    # Look for headers in the first row
+    headers = []
+    for col in range(1, sheet.max_column + 1):
+        cell_value = sheet.cell(row=1, column=col).value
+        if cell_value:
+            headers.append(str(cell_value).strip().lower())
+        else:
+            headers.append("")
+
+    # Find column indices
+    name_col = None
+    quantity_col = None
+    notes_col = None
+    
+    for i, header in enumerate(headers):
+        if "item" in header or "name" in header:
+            name_col = i + 1
+        elif "quantity" in header or "qty" in header:
+            quantity_col = i + 1
+        elif "notes" in header or "note" in header:
+            notes_col = i + 1
+
+    # If we can't find specific headers, assume first column is name
+    if name_col is None:
+        name_col = 1
+
+    # Read data rows
+    for row_num in range(2, sheet.max_row + 1):
+        name = sheet.cell(row=row_num, column=name_col).value
+        if name and str(name).strip():
+            name = str(name).strip()
+            
+            # Get quantity (default to 1 if not found)
+            quantity = 1
+            if quantity_col:
+                qty_value = sheet.cell(row=row_num, column=quantity_col).value
+                if qty_value is not None:
+                    try:
+                        quantity = int(qty_value)
+                    except (ValueError, TypeError):
+                        quantity = 1
+            
+            # Get notes
+            notes = ""
+            if notes_col:
+                notes_value = sheet.cell(row=row_num, column=notes_col).value
+                if notes_value:
+                    notes = str(notes_value).strip()
+
+            logger.debug(f"Importing Excel row {row_num}: {name}, quantity: {quantity}")
+            items.append((name, quantity, notes))
+
+    workbook.close()
+    logger.debug(f"Excel import completed. Found {len(items)} items")
     return items
 
 

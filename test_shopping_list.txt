@@ -1,0 +1,20 @@
+# Meijer Shopping List - 2025-08-25 16:26:51
+# Format: Item Name [UPC] [Quantity] [Unit Price] [Total Price] [Methodology] [Notes] [Status] [Location]
+# Lines starting with # are comments
+
+LEGO Jurassic World Raptor Off-Road Escape 76972 Qty:2
+Milk, 2% Qty:2
+Meijer Snack Kit Qty:2
+Frederik's by Meijer Coffee 12 oz. bag or Pods* 12 ct. Qty:2
+sweet potatoes
+Olipop Sparkling Tonic
+LEGO Jurassic World Raptor Off-Road Escape 76972
+Milk, 2%
+Meijer Snack Kit
+Frederik's by Meijer Coffee 12 oz. bag or Pods* 12 ct.
+Olipop Sparkling Tonic
+sweet potatoes
+Frederik's by Meijer Coffee 12 oz. bag or Pods* 12 ct.
+Meijer Snack Kit
+Milk, 2%
+LEGO Jurassic World Raptor Off-Road Escape 76972

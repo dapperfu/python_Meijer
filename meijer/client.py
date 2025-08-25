@@ -1272,12 +1272,12 @@ class Meijer:
             Tuple of (latitude, longitude) if found, None otherwise
         """
         try:
-            from .geocoding import get_geocoding_service
+            from .geocoding import FallbackGeocoder
 
-            # Get the geocoding service that mimics the Meijer app
-            geocoder = get_geocoding_service()
+            # Get the fallback geocoder that tries mobile service first, then Maps API
+            geocoder = FallbackGeocoder()
 
-            # Use the ZIP code geocoding method
+            # Use the ZIP code geocoding method with automatic fallback
             return geocoder.geocode_zip_code(zip_code)
 
         except Exception as e:

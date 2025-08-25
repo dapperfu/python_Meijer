@@ -2031,3 +2031,158 @@ Unable to load shopping list: `{str(e)}`
         except Exception as e:
             self.logger.error(f"❌ Failed to export defragmented list: {e}")
             raise RuntimeError(f"Failed to export defragmented list: {e}")
+
+    def dedup(self) -> Dict[str, Any]:
+        """
+        Remove duplicate items from the shopping list by consolidating quantities.
+
+        This method identifies items with the same name (case-insensitive) and consolidates
+        them into single entries with summed quantities.
+
+        Returns:
+            Dict containing deduplication results and statistics
+        """
+        self.logger.info("🔍 Starting shopping list deduplication...")
+
+        try:
+            # Get current list items
+            items = self.get()
+        except Exception as e:
+            self.logger.error(f"❌ Failed to get list items: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "original_count": 0,
+                "deduplicated_count": 0,
+                "removed_duplicates": 0,
+                "consolidated_items": [],
+            }
+
+        if not items:
+            self.logger.info("ℹ️  No items to deduplicate")
+            return {
+                "success": True,
+                "original_count": 0,
+                "deduplicated_count": 0,
+                "removed_duplicates": 0,
+                "consolidated_items": [],
+            }
+
+        self.logger.info(f"📋 Found {len(items)} items to process")
+
+        # Group items by name (case-insensitive)
+        item_groups = {}
+        for item in items:
+            # Use normalized name for grouping (lowercase, strip whitespace)
+            normalized_name = item.name.lower().strip()
+
+            if normalized_name not in item_groups:
+                item_groups[normalized_name] = []
+            item_groups[normalized_name].append(item)
+
+        # Identify duplicates and prepare consolidated items
+        consolidated_items = []
+        removed_count = 0
+
+        for normalized_name, group_items in item_groups.items():
+            if len(group_items) == 1:
+                # No duplicates, keep as-is
+                consolidated_items.append(group_items[0])
+            else:
+                # Duplicates found - consolidate
+                self.logger.info(
+                    f"🔄 Consolidating {len(group_items)} items: '{group_items[0].name}'"
+                )
+
+                # Use the first item as the base and sum quantities
+                base_item = group_items[0]
+                total_quantity = sum(item.quantity for item in group_items)
+
+                # Create consolidated item with summed quantity
+                consolidated_item = ListItem(
+                    list_item_id=base_item.list_item_id,
+                    list_item_type_id=base_item.list_item_type_id,
+                    item_display_order=base_item.item_display_order,
+                    item_part_number=base_item.item_part_number,
+                    item_description=base_item.item_description,
+                    quantity=total_quantity,
+                    store_id=base_item.store_id,
+                    notes=base_item.notes,
+                    is_complete=base_item.is_complete,
+                    is_favorite=base_item.is_favorite,
+                    listing_id=base_item.listing_id,
+                    promotion_start=base_item.promotion_start,
+                    promotion_end=base_item.promotion_end,
+                    coupon_id=base_item.coupon_id,
+                    product_details=base_item.product_details,
+                )
+
+                consolidated_items.append(consolidated_item)
+                removed_count += len(group_items) - 1
+
+                self.logger.info(
+                    f"   ✅ Consolidated {len(group_items)} items into 1 with quantity {total_quantity}"
+                )
+
+        if removed_count == 0:
+            self.logger.info(
+                "🎉 No duplicates found - shopping list is already deduplicated"
+            )
+            return {
+                "success": True,
+                "original_count": len(items),
+                "deduplicated_count": len(consolidated_items),
+                "removed_duplicates": 0,
+                "consolidated_items": [item.to_dict() for item in consolidated_items],
+            }
+
+        # Clear the current list
+        self.logger.info("🗑️  Clearing current shopping list...")
+        if not self.clear_list():
+            self.logger.error("❌ Failed to clear shopping list")
+            return {
+                "success": False,
+                "error": "Failed to clear shopping list",
+                "original_count": len(items),
+                "deduplicated_count": len(consolidated_items),
+                "removed_duplicates": removed_count,
+                "consolidated_items": [item.to_dict() for item in consolidated_items],
+            }
+
+        # Re-add consolidated items
+        self.logger.info("📝 Re-adding consolidated items...")
+        added_count = 0
+
+        for idx, item in enumerate(consolidated_items):
+            success = self.add_item_with_details(
+                upc=item.item_part_number or f"ITEM_{item.list_item_id}",
+                quantity=item.quantity,
+                description=item.item_description,
+                notes=item.notes,
+                display_order=idx + 1,
+            )
+
+            if success:
+                added_count += 1
+                self.logger.info(
+                    f"✅ Re-added: {item.item_description} (Qty: {item.quantity})"
+                )
+            else:
+                self.logger.warning(
+                    f"⚠️  Failed to re-add item: {item.item_description}"
+                )
+
+        self.logger.info(
+            f"🎉 Deduplication complete! Removed {removed_count} duplicates"
+        )
+        self.logger.info(
+            f"📊 Original: {len(items)} items → Deduplicated: {added_count} items"
+        )
+
+        return {
+            "success": True,
+            "original_count": len(items),
+            "deduplicated_count": added_count,
+            "removed_duplicates": removed_count,
+            "consolidated_items": [item.to_dict() for item in consolidated_items],
+        }

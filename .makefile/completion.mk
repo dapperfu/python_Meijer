@@ -24,7 +24,7 @@ completion-bash:
 	@echo ""
 	@echo "    # Main make targets"
 	@echo "    if [ \$${COMP_CWORD} -eq 1 ]; then"
-	@echo "        opts=\"help venv notebook regenerate-notebooks execute-notebooks notebook-workflow demos log logs rotate-logs auth clean completion completion-bash completion-install version version-tag\""
+	@echo "        opts=\"help venv notebook regenerate-notebooks execute-notebooks notebook-workflow demos log logs auth clean completion completion-bash completion-install version version-tag\""
 	@echo "        COMPREPLY=( \$$(compgen -W \"\$$opts\" -- \$$cur) )"
 	@echo "        return 0"
 	@echo "    fi"

@@ -24,7 +24,7 @@ Routes for the main blueprint (home page, etc.).
 from flask import render_template, jsonify
 from . import bp
 
-from ...models.mock_models import MockMeijerClient
+from ...models.meijer_integration import meijer_client
 
 
 @bp.route("/")
@@ -37,7 +37,7 @@ def index():
 def api_cart_items():
     """API endpoint to get cart items as JSON."""
     try:
-        client = MockMeijerClient()
+        client = meijer_client
         cart_items = client.cart.items
 
         # Convert cart items to serializable format
@@ -72,7 +72,7 @@ def api_cart_items():
 def api_list_items():
     """API endpoint to get shopping list items as JSON."""
     try:
-        client = MockMeijerClient()
+        client = meijer_client
         items = client.list.get()
 
         # Convert items to serializable format

@@ -134,6 +134,22 @@ Options:
   -s, --show               Show list before and after defrag
 ```
 
+#### `meijer list dedup`
+Remove duplicate items from shopping list by consolidating quantities.
+
+```bash
+meijer list dedup [OPTIONS]
+
+Options:
+  -s, --show               Show list before and after dedup
+```
+
+This command identifies items with the same name (case-insensitive) and consolidates them into single entries with summed quantities. Useful for cleaning up accidentally duplicated items or consolidating lists from multiple sources.
+
+Examples:
+  meijer list dedup                    # Run dedup
+  meijer list dedup --show             # Show before/after comparison
+
 #### `meijer list export`
 Export shopping list to various formats.
 
@@ -578,6 +594,9 @@ meijer list estimate --output estimate.csv
 
 # Organize by aisle
 meijer list defrag --show
+
+# Remove duplicates
+meijer list dedup --show
 ```
 
 ### Store Operations
