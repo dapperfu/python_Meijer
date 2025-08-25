@@ -80,12 +80,15 @@ def setup_logging(verbosity: int) -> None:
 )
 @click.option(
     "--proxy",
+    "-p",
     help="Proxy server address (e.g., 127.0.0.1:8080 for mitmproxy)",
 )
 @click.option(
     "--local",
+    "-l",
     help="Local Flask API backend URL (e.g., http://127.0.0.1:5000 for development/testing)",
 )
+@click.help_option("-h", "--help")
 @click.version_option(version="1.0.0", prog_name="meijer")
 @click.pass_context
 def cli(ctx: click.Context, verbose: int, proxy: str, local: bool):

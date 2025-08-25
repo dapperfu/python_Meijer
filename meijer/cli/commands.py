@@ -28,6 +28,7 @@ from .utils import (
 
 # Email 2FA Commands
 @click.group()
+@click.help_option("-h", "--help")
 def email_2fa_group():
     """Manage email 2FA configuration and testing."""
     pass
@@ -119,6 +120,7 @@ def email_2fa_wait(timeout: int):
 
 # Shopping List Commands
 @click.group()
+@click.help_option("-h", "--help")
 def list_group():
     """Manage shopping list operations."""
     pass
@@ -941,6 +943,7 @@ def settings_command():
 
 # Coupons Commands
 @click.group()
+@click.help_option("-h", "--help")
 def coupons_group():
     """Manage coupons and offers."""
     pass
@@ -1020,6 +1023,7 @@ def coupons_list(clipped: bool, available: bool):
 
 # Stores Commands
 @click.group()
+@click.help_option("-h", "--help")
 def stores_group():
     """Manage store information and search."""
     pass
@@ -1046,6 +1050,7 @@ def stores_group():
     default="table",
     help="Output format",
 )
+@click.help_option("-h", "--help")
 def stores_search(
     city: str,
     zip: str,
@@ -1590,6 +1595,7 @@ def stores_gas(city: str, zip: str, radius: int):
 
 # Cart Commands
 @click.group()
+@click.help_option("-h", "--help")
 def cart_group():
     """Manage shopping cart and fulfillment."""
     pass
@@ -2070,6 +2076,7 @@ def cart_checkout(method: str):
 
 # Settings Commands
 @click.group()
+@click.help_option("-h", "--help")
 def settings_group():
     """Manage account settings and preferences."""
     pass
