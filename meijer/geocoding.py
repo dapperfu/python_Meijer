@@ -7,6 +7,7 @@ with authentication tokens extracted from mitmproxy logs.
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -336,19 +337,196 @@ class GoogleMobileGeocoder:
             return None
 
 
+class GoogleMapsGeocoder:
+    """
+    Google Maps Geocoding API client using the API key from the Meijer app.
+
+    This provides a reliable fallback when the Google Mobile Geocoding Service
+    is not available or tokens are expired.
+    """
+
+    def __init__(self, api_key: Optional[str] = None):
+        """
+        Initialize the Google Maps geocoder.
+
+        Args:
+            api_key: Google Maps API key, or None to use the one from the app
+        """
+        self.api_key = api_key or self._get_app_api_key()
+        self.base_url = "https://maps.googleapis.com/maps/api/geocode/json"
+
+        if not self.api_key:
+            raise ValueError("No Google Maps API key available")
+
+    def _get_app_api_key(self) -> Optional[str]:
+        """Get the Google Maps API key from the Meijer app source code or environment."""
+        # Check environment variable first
+        env_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+        if env_key:
+            logger.info("Using Google Maps API key from environment variable")
+            return env_key
+
+        # Fall back to the API key we found in the decompiled app
+        app_key = "AIzaSyDIFw-acsBB0yx-YPIkHFxVZEG6lFzxvCg"
+        logger.info("Using Google Maps API key from Meijer app source code")
+        return app_key
+
+    def geocode_zip_code(self, zip_code: str) -> Optional[Tuple[float, float]]:
+        """
+        Geocode a ZIP code to coordinates using Google Maps API.
+
+        Args:
+            zip_code: ZIP code string
+
+        Returns:
+            Tuple of (latitude, longitude) if successful, None otherwise
+        """
+        try:
+            location = f"{zip_code}, United States"
+            logger.info(f"Geocoding ZIP code via Google Maps API: {zip_code}")
+
+            params = {
+                "address": location,
+                "key": self.api_key,
+                "components": f"postal_code:{zip_code}|country:US",
+            }
+
+            response = requests.get(self.base_url, params=params, timeout=30)
+
+            if response.status_code == 200:
+                data = response.json()
+                logger.debug(f"Google Maps API response: {data}")
+
+                if data.get("status") == "OK" and data.get("results"):
+                    result = data["results"][0]
+                    location_data = result["geometry"]["location"]
+                    lat = location_data["lat"]
+                    lng = location_data["lng"]
+
+                    logger.info(f"Successfully geocoded ZIP {zip_code} to {lat}, {lng}")
+                    return (lat, lng)
+                else:
+                    status = data.get("status")
+                    error_message = data.get("error_message", "Unknown error")
+                    logger.warning(
+                        f"Google Maps API returned status: {status} - {error_message}"
+                    )
+
+                    # Log additional error details if available
+                    if status == "REQUEST_DENIED":
+                        logger.error(
+                            "API key may be invalid, restricted, or quota exceeded"
+                        )
+                        logger.error(
+                            "Try setting GOOGLE_MAPS_API_KEY environment variable with a valid key"
+                        )
+                    elif status == "OVER_QUERY_LIMIT":
+                        logger.error("API quota exceeded - try again later")
+                    elif status == "ZERO_RESULTS":
+                        logger.warning(f"No results found for ZIP code: {zip_code}")
+
+                    return None
+            else:
+                logger.warning(
+                    f"Google Maps API request failed with status {response.status_code}"
+                )
+                logger.debug(f"Error response: {response.text}")
+                return None
+
+        except Exception as e:
+            logger.error(
+                f"Error geocoding ZIP code '{zip_code}' via Google Maps API: {e}"
+            )
+            return None
+
+    def geocode_city(
+        self, city: str, state: Optional[str] = None
+    ) -> Optional[Tuple[float, float]]:
+        """
+        Geocode a city name to coordinates using Google Maps API.
+
+        Args:
+            city: City name
+            state: State name (optional)
+
+        Returns:
+            Tuple of (latitude, longitude) if successful, None otherwise
+        """
+        try:
+            if state:
+                location = f"{city}, {state}, United States"
+            else:
+                location = f"{city}, United States"
+
+            logger.info(f"Geocoding city via Google Maps API: {location}")
+
+            params = {"address": location, "key": self.api_key}
+
+            response = requests.get(self.base_url, params=params, timeout=30)
+
+            if response.status_code == 200:
+                data = response.json()
+                logger.debug(f"Google Maps API response: {data}")
+
+                if data.get("status") == "OK" and data.get("results"):
+                    result = data["results"][0]
+                    location_data = result["geometry"]["location"]
+                    lat = location_data["lat"]
+                    lng = location_data["lng"]
+
+                    logger.info(f"Successfully geocoded '{location}' to {lat}, {lng}")
+                    return (lat, lng)
+                else:
+                    status = data.get("status")
+                    error_message = data.get("error_message", "Unknown error")
+                    logger.warning(
+                        f"Google Maps API returned status: {status} - {error_message}"
+                    )
+
+                    # Log additional error details if available
+                    if status == "REQUEST_DENIED":
+                        logger.error(
+                            "API key may be invalid, restricted, or quota exceeded"
+                        )
+                        logger.error(
+                            "Try setting GOOGLE_MAPS_API_KEY environment variable with a valid key"
+                        )
+                    elif status == "OVER_QUERY_LIMIT":
+                        logger.error("API quota exceeded - try again later")
+                    elif status == "ZERO_RESULTS":
+                        logger.warning(f"No results found for location: {location}")
+
+                    return None
+            else:
+                logger.warning(
+                    f"Google Maps API request failed with status {response.status_code}"
+                )
+                logger.debug(f"Error response: {response.text}")
+                return None
+
+        except Exception as e:
+            logger.error(f"Error geocoding city '{city}' via Google Maps API: {e}")
+            return None
+
+
 def get_geocoding_service(
     auth_data: Optional[Dict[str, Any]] = None,
-) -> GoogleMobileGeocoder:
+) -> "GoogleMobileGeocoder | GoogleMapsGeocoder":
     """
-    Get a Google Mobile Geocoding Service instance.
+    Get a geocoding service instance.
+
+    Tries to use Google Mobile Geocoding Service first, falls back to Google Maps API.
 
     Args:
-        auth_data: Optional authentication data
+        auth_data: Optional authentication data for mobile service
 
     Returns:
-        GoogleMobileGeocoder instance
-
-    Raises:
-        ValueError: If no authentication data is available
+        GoogleMobileGeocoder or GoogleMapsGeocoder instance
     """
-    return GoogleMobileGeocoder(auth_data)
+    try:
+        # Try to use the mobile geocoding service first
+        return GoogleMobileGeocoder(auth_data)
+    except ValueError:
+        # Fall back to Google Maps API
+        logger.info("Falling back to Google Maps API geocoding service")
+        return GoogleMapsGeocoder()

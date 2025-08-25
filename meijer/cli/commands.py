@@ -138,8 +138,8 @@ def list_show(ctx: click.Context, completed: bool, pending: bool):
     )
 
     # Get proxy setting from context
-    proxy = ctx.obj.get('proxy') if ctx.obj else None
-    local = ctx.obj.get('local') if ctx.obj else None
+    proxy = ctx.obj.get("proxy") if ctx.obj else None
+    local = ctx.obj.get("local") if ctx.obj else None
     client = get_meijer_client(proxy=proxy, local=local)
 
     try:
@@ -286,7 +286,9 @@ def list_estimate(
         if preferred_methods:
             click.echo(f"🎯 Using methods in order: {', '.join(preferred_methods)}")
         else:
-            click.echo("🎯 Using default workflow: search → shop_scan → cart → fallback")
+            click.echo(
+                "🎯 Using default workflow: search → shop_scan → cart → fallback"
+            )
 
         # Estimate costs for all items
         from .utils import estimate_list_cost
@@ -577,11 +579,64 @@ def list_clearall():
         raise click.ClickException(f"❌ Failed to clear all items: {e}")
 
 
+@list_group.command("clear-notes")
+@click.option(
+    "--item-id",
+    help="Specific item ID to clear notes from (clears all if not specified)",
+)
+@click.confirmation_option(
+    prompt="⚠️  Are you sure you want to clear notes? This cannot be undone!"
+)
+def list_clear_notes(item_id: Optional[str]):
+    """Clear notes from shopping list items (removes location data)."""
+    client = get_meijer_client()
 
+    try:
+        if item_id:
+            # Clear notes from specific item
+            click.echo(f"🗑️  Clearing notes from item {item_id}...")
+            success = client.list.clear_notes(item_id)
+
+            if success:
+                click.echo(f"✅ Successfully cleared notes from item {item_id}")
+            else:
+                raise click.ClickException(
+                    f"❌ Failed to clear notes from item {item_id}"
+                )
+        else:
+            # Clear notes from all items
+            items = client.list.get()
+            if not items:
+                click.echo("📝 Shopping list is empty - nothing to clear!")
+                return
+
+            # Count items with notes
+            items_with_notes = [item for item in items if item.notes]
+            if not items_with_notes:
+                click.echo("📝 No items have notes to clear!")
+                return
+
+            click.echo(f"🗑️  Clearing notes from {len(items_with_notes)} items...")
+            success = client.list.clear_notes()
+
+            if success:
+                click.echo(
+                    f"✅ Successfully cleared notes from {len(items_with_notes)} items"
+                )
+                click.echo(
+                    "🗺️  All location data has been removed from your shopping list"
+                )
+            else:
+                raise click.ClickException("❌ Failed to clear notes from some items")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to clear notes: {e}")
 
 
 @list_group.command("defrag")
-@click.option("--store-id", help="Store ID for location lookup (accepts string or integer)")
+@click.option(
+    "--store-id", help="Store ID for location lookup (accepts string or integer)"
+)
 @click.option(
     "-r", "--reverse", is_flag=True, help="Sort items in reverse order (descending)"
 )
@@ -594,7 +649,9 @@ def list_clearall():
 @click.option(
     "-s", "--show", is_flag=True, help="Show shopping list before and after defrag"
 )
-def list_defrag(store_id: Optional[Union[str, int]], reverse: bool, zig: bool, show: bool):
+def list_defrag(
+    store_id: Optional[Union[str, int]], reverse: bool, zig: bool, show: bool
+):
     """Defragment shopping list by organizing items by aisle."""
     client = get_meijer_client()
 
@@ -626,17 +683,20 @@ def list_defrag(store_id: Optional[Union[str, int]], reverse: bool, zig: bool, s
             click.echo(
                 "📋 Your shopping list is now organized by aisle for efficient shopping!"
             )
-            
+
             # Show defrag statistics
             total_items = result.get("total_items", 0)
-            organized_count = sum(len(group.get("items", [])) for group in result.get("organized_by_aisle", []))
+            organized_count = sum(
+                len(group.get("items", []))
+                for group in result.get("organized_by_aisle", [])
+            )
             efficiency_gain = result.get("efficiency_gain", 0.0)
-            
-            click.echo(f"📊 Defrag Statistics:")
+
+            click.echo("📊 Defrag Statistics:")
             click.echo(f"   Total items: {total_items}")
             click.echo(f"   Organized by aisle: {organized_count}")
             click.echo(f"   Efficiency gain: {efficiency_gain:.1f}%")
-            
+
             # Show items after defrag if requested
             if show:
                 click.echo()
@@ -655,8 +715,17 @@ def list_defrag(store_id: Optional[Union[str, int]], reverse: bool, zig: bool, s
 
 @list_group.command("export")
 @click.argument("filename", type=click.Path(), default="shopping_list.txt")
-@click.option("--defrag", "-d", is_flag=True, help="Export with defragmented organization by aisle")
-@click.option("--store-id", "-s", help="Store ID for location lookup (required for defrag, accepts string or integer)")
+@click.option(
+    "--defrag",
+    "-d",
+    is_flag=True,
+    help="Export with defragmented organization by aisle",
+)
+@click.option(
+    "--store-id",
+    "-s",
+    help="Store ID for location lookup (required for defrag, accepts string or integer)",
+)
 def list_export(filename: str, defrag: bool, store_id: Optional[Union[str, int]]):
     """Export shopping list to a file with full details for round-trip import."""
     client = get_meijer_client()
@@ -665,14 +734,16 @@ def list_export(filename: str, defrag: bool, store_id: Optional[Union[str, int]]
         # If defrag is requested, use the defragmented export
         if defrag:
             if not store_id:
-                raise click.ClickException("❌ --store-id is required when using --defrag")
-            
+                raise click.ClickException(
+                    "❌ --store-id is required when using --defrag"
+                )
+
             click.echo("🔧 Exporting defragmented shopping list...")
             click.echo("⏳ This will organize items by aisle and export the results...")
-            
+
             # Use the export_defragmented method
             client.list.export_defragmented(store_id=store_id, output_path=filename)
-            
+
             click.echo(f"✅ Exported defragmented list to {filename}")
             click.echo(f"📁 File saved to: {Path(filename).absolute()}")
             return
@@ -714,9 +785,6 @@ def list_export(filename: str, defrag: bool, store_id: Optional[Union[str, int]]
 
     except Exception as e:
         raise click.ClickException(f"❌ Export failed: {e}")
-
-
-
 
 
 @list_group.command("import")
@@ -909,7 +977,6 @@ def gas_command():
         raise click.ClickException(f"❌ Failed to get gas information: {e}")
 
 
-
 @click.command()
 def settings_command():
     """Show current account settings."""
@@ -1070,8 +1137,8 @@ def stores_search(
 
     try:
         # Get proxy setting from context
-        proxy = ctx.obj.get('proxy') if ctx.obj else None
-        local = ctx.obj.get('local') if ctx.obj else None
+        proxy = ctx.obj.get("proxy") if ctx.obj else None
+        local = ctx.obj.get("local") if ctx.obj else None
         client = get_meijer_client(proxy=proxy, local=local)
         stores = []
 
@@ -1147,7 +1214,7 @@ def stores_search(
                     "phone": store.phone_number,
                     "latitude": store.latitude,
                     "longitude": store.longitude,
-                    "distance": store.distance if hasattr(store, 'distance') else None,
+                    "distance": store.distance if hasattr(store, "distance") else None,
                     "services": {
                         "curbside_pickup": store.has_curbside_pickup,
                         "delivery": store.has_delivery,
@@ -1165,8 +1232,11 @@ def stores_search(
             output = io.StringIO()
             writer = csv.writer(output)
             # Add distance column if any store has distance info
-            has_distance = any(hasattr(store, 'distance') and store.distance is not None for store in stores)
-            
+            has_distance = any(
+                hasattr(store, "distance") and store.distance is not None
+                for store in stores
+            )
+
             headers = [
                 "Unit ID",
                 "Name",
@@ -1178,12 +1248,14 @@ def stores_search(
             ]
             if has_distance:
                 headers.append("Distance")
-            headers.extend([
-                "Curbside",
-                "Delivery",
-                "Pharmacy",
-                "Gas",
-            ])
+            headers.extend(
+                [
+                    "Curbside",
+                    "Delivery",
+                    "Pharmacy",
+                    "Gas",
+                ]
+            )
             writer.writerow(headers)
             for store in stores:
                 row = [
@@ -1195,10 +1267,10 @@ def stores_search(
                     store.zip_code,
                     store.phone_number,
                 ]
-                
+
                 if has_distance:
                     # Format distance if available
-                    if hasattr(store, 'distance') and store.distance is not None:
+                    if hasattr(store, "distance") and store.distance is not None:
                         if store.distance < 1:
                             distance_str = f"{store.distance * 5280:.0f} ft"
                         elif store.distance < 10:
@@ -1208,14 +1280,16 @@ def stores_search(
                         row.append(distance_str)
                     else:
                         row.append("N/A")
-                
-                row.extend([
-                    "Yes" if store.has_curbside_pickup else "No",
-                    "Yes" if store.has_delivery else "No",
-                    "Yes" if store.has_pharmacy else "No",
-                    "Yes" if store.gas_station else "No",
-                ])
-                
+
+                row.extend(
+                    [
+                        "Yes" if store.has_curbside_pickup else "No",
+                        "Yes" if store.has_delivery else "No",
+                        "Yes" if store.has_pharmacy else "No",
+                        "Yes" if store.gas_station else "No",
+                    ]
+                )
+
                 writer.writerow(row)
             click.echo(output.getvalue())
         else:
@@ -1231,8 +1305,11 @@ def stores_search(
             )
 
             # Add distance column if any store has distance info
-            has_distance = any(hasattr(store, 'distance') and store.distance is not None for store in stores)
-            
+            has_distance = any(
+                hasattr(store, "distance") and store.distance is not None
+                for store in stores
+            )
+
             table.add_column("#", style="cyan", no_wrap=True)
             table.add_column("Name", style="cyan", no_wrap=True)
             table.add_column("Location", style="cyan", no_wrap=True)
@@ -1243,17 +1320,17 @@ def stores_search(
 
             for i, store in enumerate(stores, 1):
                 location = f"{store.city}, {store.state} {store.zip_code}"
-                
+
                 # Format distance if available
                 distance_str = "N/A"
-                if hasattr(store, 'distance') and store.distance is not None:
+                if hasattr(store, "distance") and store.distance is not None:
                     if store.distance < 1:
                         distance_str = f"{store.distance * 5280:.0f} ft"
                     elif store.distance < 10:
                         distance_str = f"{store.distance:.1f} mi"
                     else:
                         distance_str = f"{store.distance:.0f} mi"
-                
+
                 services = []
                 if store.has_curbside_pickup:
                     services.append("🚗")
@@ -1621,15 +1698,17 @@ def cart_show():
             return
 
         logger.debug("Fetching cart contents")
-        
+
         # Refresh cart data to ensure we have the latest
         try:
             client.cart.refresh()
             logger.debug("Cart refreshed successfully")
         except Exception as e:
             logger.warning(f"Could not refresh cart: {e}")
-            click.echo("⚠️ Could not refresh cart data, showing cached data if available")
-        
+            click.echo(
+                "⚠️ Could not refresh cart data, showing cached data if available"
+            )
+
         cart_items = client.cart.items
         logger.debug(f"Retrieved {len(cart_items)} cart items")
 
@@ -1658,28 +1737,30 @@ def cart_show():
         total_cost = 0.0
         for i, item in enumerate(cart_items, 1):
             # Get item details with proper fallbacks
-            item_name = getattr(item, 'name', 'Unknown Item')
-            item_qty = getattr(item, 'current_quantity', getattr(item, 'quantity', 1))
-            item_price = getattr(item, 'price', 0.0)
+            item_name = getattr(item, "name", "Unknown Item")
+            item_qty = getattr(item, "current_quantity", getattr(item, "quantity", 1))
+            item_price = getattr(item, "price", 0.0)
             item_total = item_price * item_qty if item_price else 0.0
-            item_status = "✅" if getattr(item, 'available', True) else "❌"
-            
+            item_status = "✅" if getattr(item, "available", True) else "❌"
+
             total_cost += item_total
-            
+
             price_str = f"${item_price:.2f}" if item_price else "N/A"
             total_str = f"${item_total:.2f}" if item_total else "N/A"
-            
-            table.add_row(str(i), item_name, str(item_qty), price_str, total_str, item_status)
+
+            table.add_row(
+                str(i), item_name, str(item_qty), price_str, total_str, item_status
+            )
 
         console.print(table)
-        
+
         # Show cart summary
-        click.echo(f"\n💰 Cart Summary:")
+        click.echo("\n💰 Cart Summary:")
         click.echo(f"   Total Items: {client.cart.total_quantity}")
         click.echo(f"   Unique Items: {client.cart.unique_item_count}")
         click.echo(f"   Total Cost: ${total_cost:.2f}")
-        
-        if hasattr(client.cart, 'cart_id') and client.cart.cart_id:
+
+        if hasattr(client.cart, "cart_id") and client.cart.cart_id:
             click.echo(f"   Cart ID: {client.cart.cart_id}")
 
         logger.debug(f"Displayed {len(cart_items)} cart items")
@@ -1712,13 +1793,13 @@ def cart_add(upc: str, quantity: int, store: str):
             logger.debug(f"Store ID set to {store}")
 
         logger.debug(f"Adding item with UPC {upc}, quantity {quantity}")
-        
+
         # Try to add the item
         success = client.cart.add_item_by_upc(upc, quantity)
-        
+
         if success:
             click.echo(f"✅ Successfully added {quantity}x item with UPC {upc} to cart")
-            
+
             # Refresh and show updated cart
             try:
                 client.cart.refresh()
@@ -1751,21 +1832,23 @@ def cart_remove(item_index: int, quantity: Optional[int]):
             return
 
         cart_items = client.cart.items
-        
+
         if not cart_items:
             click.echo("🛒 Your shopping cart is empty!")
             return
 
         if item_index < 1 or item_index > len(cart_items):
-            click.echo(f"❌ Invalid item index {item_index}. Cart has {len(cart_items)} items.")
+            click.echo(
+                f"❌ Invalid item index {item_index}. Cart has {len(cart_items)} items."
+            )
             return
 
         item = cart_items[item_index - 1]
-        item_name = getattr(item, 'name', f'Item #{item_index}')
-        current_qty = getattr(item, 'current_quantity', getattr(item, 'quantity', 1))
-        
+        item_name = getattr(item, "name", f"Item #{item_index}")
+        current_qty = getattr(item, "current_quantity", getattr(item, "quantity", 1))
+
         # Get the entry number for the item
-        entry_number = getattr(item, 'entry_number', None)
+        entry_number = getattr(item, "entry_number", None)
         if not entry_number:
             click.echo(f"❌ Cannot remove {item_name} - no entry number available")
             return
@@ -1785,7 +1868,9 @@ def cart_remove(item_index: int, quantity: Optional[int]):
                 click.echo(f"❌ Failed to remove {item_name} from cart")
         else:
             if quantity > current_qty:
-                click.echo(f"❌ Cannot remove {quantity}x {item_name} - only {current_qty} in cart")
+                click.echo(
+                    f"❌ Cannot remove {quantity}x {item_name} - only {current_qty} in cart"
+                )
                 return
             if quantity == current_qty:
                 # Remove all of this item
@@ -1794,18 +1879,20 @@ def cart_remove(item_index: int, quantity: Optional[int]):
             else:
                 # Update quantity to remaining amount
                 new_qty = current_qty - quantity
-                click.echo(f"🗑️ Removing {quantity}x {item_name} from cart (keeping {new_qty})")
+                click.echo(
+                    f"🗑️ Removing {quantity}x {item_name} from cart (keeping {new_qty})"
+                )
                 success = client.cart.update_item_quantity(entry_number, new_qty)
-            
+
             if success:
-                click.echo(f"✅ Successfully updated cart")
+                click.echo("✅ Successfully updated cart")
                 # Refresh cart to show updated state
                 try:
                     client.cart.refresh()
                 except Exception as e:
                     logger.warning(f"Could not refresh cart after updating item: {e}")
             else:
-                click.echo(f"❌ Failed to update cart")
+                click.echo("❌ Failed to update cart")
 
     except Exception as e:
         logger.error(f"Failed to remove item from cart: {e}", exc_info=True)
@@ -1828,7 +1915,7 @@ def cart_clear(confirm: bool):
             return
 
         cart_items = client.cart.items
-        
+
         if not cart_items:
             click.echo("🛒 Your shopping cart is already empty!")
             return
@@ -1840,13 +1927,13 @@ def cart_clear(confirm: bool):
                 return
 
         click.echo(f"🗑️ Clearing {len(cart_items)} items from cart...")
-        
+
         # Clear cart by removing items one by one
         removed_count = 0
         failed_count = 0
-        
+
         for item in cart_items:
-            entry_number = getattr(item, 'entry_number', None)
+            entry_number = getattr(item, "entry_number", None)
             if entry_number:
                 if client.cart.remove_item(entry_number):
                     removed_count += 1
@@ -1854,12 +1941,14 @@ def cart_clear(confirm: bool):
                     failed_count += 1
             else:
                 failed_count += 1
-        
+
         if failed_count == 0:
             click.echo(f"✅ Successfully cleared all {removed_count} items from cart")
         else:
-            click.echo(f"⚠️ Cleared {removed_count} items, {failed_count} failed to remove")
-        
+            click.echo(
+                f"⚠️ Cleared {removed_count} items, {failed_count} failed to remove"
+            )
+
         # Refresh cart to show updated state
         try:
             client.cart.refresh()
@@ -1891,50 +1980,54 @@ def cart_info():
             logger.debug("Cart refreshed successfully")
         except Exception as e:
             logger.warning(f"Could not refresh cart: {e}")
-            click.echo("⚠️ Could not refresh cart data, showing cached data if available")
+            click.echo(
+                "⚠️ Could not refresh cart data, showing cached data if available"
+            )
 
         cart_items = client.cart.items
-        
+
         click.echo("🛒 Cart Information")
         click.echo("=" * 50)
-        
+
         if not cart_items:
             click.echo("Your shopping cart is empty!")
             return
 
         # Basic stats
-        click.echo(f"📊 Cart Statistics:")
+        click.echo("📊 Cart Statistics:")
         click.echo(f"   Total Items: {client.cart.total_quantity}")
         click.echo(f"   Unique Items: {client.cart.unique_item_count}")
         click.echo(f"   Cart ID: {client.cart.cart_id or 'Not available'}")
         click.echo(f"   Store ID: {client.cart.store_id}")
-        
+
         # Item categories
-        if hasattr(client.cart, 'alcohol_items') and client.cart.alcohol_items:
+        if hasattr(client.cart, "alcohol_items") and client.cart.alcohol_items:
             click.echo(f"   🍷 Alcohol Items: {len(client.cart.alcohol_items)}")
-        if hasattr(client.cart, 'tobacco_items') and client.cart.tobacco_items:
+        if hasattr(client.cart, "tobacco_items") and client.cart.tobacco_items:
             click.echo(f"   🚬 Tobacco Items: {len(client.cart.tobacco_items)}")
-        if hasattr(client.cart, 'fragile_items') and client.cart.fragile_items:
+        if hasattr(client.cart, "fragile_items") and client.cart.fragile_items:
             click.echo(f"   🥚 Fragile Items: {len(client.cart.fragile_items)}")
-        if hasattr(client.cart, 'heavy_items') and client.cart.heavy_items:
+        if hasattr(client.cart, "heavy_items") and client.cart.heavy_items:
             click.echo(f"   🏋️ Heavy Items: {len(client.cart.heavy_items)}")
-        
+
         # Availability status
-        available_count = len([item for item in cart_items if getattr(item, 'available', True)])
+        available_count = len(
+            [item for item in cart_items if getattr(item, "available", True)]
+        )
         unavailable_count = len(cart_items) - available_count
-        
-        click.echo(f"\n📋 Item Status:")
+
+        click.echo("\n📋 Item Status:")
         click.echo(f"   ✅ Available: {available_count}")
         click.echo(f"   ❌ Unavailable: {unavailable_count}")
-        
+
         # Price breakdown
         total_cost = 0.0
         for item in cart_items:
-            item_price = getattr(item, 'price', 0.0)
-            item_qty = getattr(item, 'current_quantity', getattr(item, 'quantity', 1))
+            item_price = getattr(item, "price", 0.0)
+            item_qty = getattr(item, "current_quantity", getattr(item, "quantity", 1))
             total_cost += item_price * item_qty
-        
-        click.echo(f"\n💰 Price Summary:")
+
+        click.echo("\n💰 Price Summary:")
         click.echo(f"   Total Cost: ${total_cost:.2f}")
         if cart_items:
             avg_price = total_cost / client.cart.total_quantity
@@ -1966,6 +2059,7 @@ def cart_slots(date: Optional[str], delivery: bool):
         if date:
             try:
                 from datetime import datetime
+
                 target_date = datetime.strptime(date, "%Y-%m-%d")
                 logger.debug(f"Parsed target date: {target_date}")
             except ValueError:
@@ -1980,7 +2074,7 @@ def cart_slots(date: Optional[str], delivery: bool):
                 slots = client.cart.get_delivery_slots(target_date)
             else:
                 slots = client.cart.get_pickup_slots(target_date)
-            
+
             if not slots:
                 click.echo("❌ No available slots found")
                 return
@@ -2003,7 +2097,11 @@ def cart_slots(date: Optional[str], delivery: bool):
             for slot in slots:
                 time_str = f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
                 duration = f"{slot.duration_minutes} min"
-                availability = f"{slot.availability_percentage:.0f}%" if hasattr(slot, 'availability_percentage') else "N/A"
+                availability = (
+                    f"{slot.availability_percentage:.0f}%"
+                    if hasattr(slot, "availability_percentage")
+                    else "N/A"
+                )
                 peak_indicator = "🕐" if slot.peak_time else ""
 
                 table.add_row(time_str, duration, availability, peak_indicator)
@@ -2025,55 +2123,61 @@ def cart_set_store(store_id: str):
     """Set the store for cart operations."""
     logger = logging.getLogger(__name__)
     logger.debug(f"Cart set-store command called with store_id: {store_id}")
-    
+
     try:
         client = get_meijer_client()
-        
+
         if not client.cart:
             logger.warning("Cart module not available")
             click.echo("❌ Cart functionality not available")
             return
-        
+
         # Set the store ID
         client.cart.store_id = store_id
         logger.debug(f"Set store ID to: {store_id}")
-        
+
         click.echo(f"🏪 Store set to {store_id}")
         click.echo("💡 This store will be used for all future cart operations")
-        
+
     except Exception as e:
         logger.error(f"Failed to set store: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to set store: {e}")
 
 
 @cart_group.command("checkout")
-@click.option("--method", "-m", type=click.Choice(["pickup", "delivery"]), default="pickup", help="Fulfillment method")
+@click.option(
+    "--method",
+    "-m",
+    type=click.Choice(["pickup", "delivery"]),
+    default="pickup",
+    help="Fulfillment method",
+)
 def cart_checkout(method: str):
     """Proceed to checkout with current cart."""
     logger = logging.getLogger(__name__)
     logger.debug(f"Cart checkout command called with method: {method}")
-    
+
     try:
         client = get_meijer_client()
-        
+
         if not client.cart:
             logger.warning("Cart module not available")
             click.echo("❌ Cart functionality not available")
             return
-        
+
         # Check if cart has items
         cart_items = client.cart.items
         if not cart_items:
             click.echo("🛒 Your cart is empty! Add some items before checkout.")
             return
-        
+
         click.echo(f"🛒 Proceeding to checkout with {len(cart_items)} items")
         click.echo(f"📦 Method: {method}")
-        
+
         # Note: This would need checkout implementation in the cart class
         click.echo("⚠️ Checkout functionality not yet implemented in cart class")
         click.echo("💡 Use the web interface to complete your purchase")
-        
+
     except Exception as e:
         logger.error(f"Failed to proceed to checkout: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to proceed to checkout: {e}")
@@ -2091,27 +2195,27 @@ def settings_group():
 @click.group()
 def auth_group():
     """Manage Meijer authentication and tokens.
-    
+
     Authentication methods available:
-    
+
     1. LOG EXTRACTION: meijer auth log --mode <mode>
        - auto: Automatically detect best available authentication
        - full: Complete OAuth2 flow with refresh tokens (recommended)
        - quick: Quick bearer token capture for immediate use
-    
+
     2. CONFIG: meijer auth config
        - View and manage authentication configuration
        - Edit headers, timing, and other parameters
-    
+
     3. STATUS: meijer auth status
        - Show current authentication status and token information
-    
+
     4. LOGOUT: meijer auth logout
        - Clear stored tokens and logout
-    
+
     5. IMAP: meijer auth imap
        - Set up email configuration for 2FA verification codes
-    
+
     For persistent authentication: meijer auth log --mode full
     For immediate access: meijer auth log --mode quick
     """
@@ -2119,20 +2223,34 @@ def auth_group():
 
 
 @auth_group.command("log")
-@click.option("--mode", "-m", type=click.Choice(["auto", "full", "quick"]), 
-              default="auto", help="Authentication mode: auto (detect), full (complete login), quick (token only)")
-@click.option("--log-file", "-f", help="Specific mitmproxy log file to analyze (default: auto-detect)")
-@click.option("--output", "-o", default="auth.json", help="Output file for tokens (default: auth.json)")
+@click.option(
+    "--mode",
+    "-m",
+    type=click.Choice(["auto", "full", "quick"]),
+    default="auto",
+    help="Authentication mode: auto (detect), full (complete login), quick (token only)",
+)
+@click.option(
+    "--log-file",
+    "-f",
+    help="Specific mitmproxy log file to analyze (default: auto-detect)",
+)
+@click.option(
+    "--output",
+    "-o",
+    default="auth.json",
+    help="Output file for tokens (default: auth.json)",
+)
 def auth_log_command(mode: str, log_file: Optional[str], output: str):
     """Authenticate with Meijer API by extracting tokens from mitmproxy logs.
-    
+
     Two authentication modes available:
-    
+
     1. FULL LOGIN: Complete OAuth2 flow with refresh tokens
        - User needs to log out and log back into Meijer app
        - Captures all tokens (access, refresh, bearer)
        - Tokens can be refreshed automatically
-    
+
     2. QUICK TOKEN: Just capture latest bearer token
        - User just needs to use Meijer app briefly
        - Captures only the current bearer token
@@ -2147,7 +2265,9 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
     if mode == "auto":
         click.echo("🔍 Auto-detecting authentication type from logs...")
     elif mode == "full":
-        click.echo("🔐 FULL LOGIN MODE: Capturing complete OAuth2 flow with refresh tokens")
+        click.echo(
+            "🔐 FULL LOGIN MODE: Capturing complete OAuth2 flow with refresh tokens"
+        )
         click.echo("💡 This requires a complete login sequence in the Meijer app")
     elif mode == "quick":
         click.echo("⚡ QUICK TOKEN MODE: Capturing latest bearer token only")
@@ -2165,12 +2285,13 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
     else:
         # Auto-detect the most recent log file
         import glob
+
         # Look in current directory first, then in logs/ subdirectory
         log_files = glob.glob("meijer_mitm_*.log")
         if not log_files:
             # Try logs/ subdirectory
             log_files = glob.glob("logs/meijer_mitm_*.log")
-            
+
         if not log_files:
             click.echo("❌ No meijer mitmproxy log files found!")
             click.echo(
@@ -2181,91 +2302,108 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
 
         # Sort by modification time, newest first
         log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-        
+
         # Filter out empty log files
         valid_log_files = [f for f in log_files if os.path.getsize(f) > 0]
         if not valid_log_files:
             click.echo("❌ No valid (non-empty) meijer mitmproxy log files found!")
             click.echo("💡 All found log files are empty (0 bytes)")
             return
-            
+
         target_log = valid_log_files[0]
         click.echo(f"📁 Using auto-detected log file: {target_log}")
 
     # Run the integrated auth log analyzer
     try:
         from ..auth_log_analyzer import MeijerAuthLogAnalyzer
-        
+
         click.echo(f"🔍 Analyzing log file: {target_log}")
-        
+
         # Create analyzer
         analyzer = MeijerAuthLogAnalyzer(target_log)
         analyzer.auth_file = output
-        
+
         # Handle different modes with fallback logic
         if mode == "full":
-            click.echo("🔐 FULL LOGIN MODE: Attempting complete OAuth2 flow extraction...")
+            click.echo(
+                "🔐 FULL LOGIN MODE: Attempting complete OAuth2 flow extraction..."
+            )
             success = analyzer.analyze_and_extract_full_login()
-            
+
             if not success:
-                click.echo("⚠️ Full login extraction failed, falling back to Quick mode...")
-                click.echo("⚡ QUICK FALLBACK: Extracting bearer tokens from API calls...")
+                click.echo(
+                    "⚠️ Full login extraction failed, falling back to Quick mode..."
+                )
+                click.echo(
+                    "⚡ QUICK FALLBACK: Extracting bearer tokens from API calls..."
+                )
                 success = analyzer.analyze_and_extract_quick_token()
-                
+
                 if success:
                     click.echo("✅ Quick fallback successful - extracted bearer token")
                 else:
                     click.echo("❌ Both Full and Quick modes failed")
                     return
             else:
-                click.echo("✅ Full login extraction successful - got refreshable tokens")
-                
+                click.echo(
+                    "✅ Full login extraction successful - got refreshable tokens"
+                )
+
         elif mode == "quick":
-            click.echo("⚡ QUICK TOKEN MODE: Extracting bearer tokens from API calls...")
+            click.echo(
+                "⚡ QUICK TOKEN MODE: Extracting bearer tokens from API calls..."
+            )
             success = analyzer.analyze_and_extract_quick_token()
-            
+
             if not success:
                 click.echo("❌ Quick token extraction failed")
                 return
-                
+
         else:  # auto mode
             click.echo("🔍 AUTO MODE: Detecting best available authentication...")
             success = analyzer.analyze_and_extract()
-            
+
             if not success:
                 click.echo("❌ Auto-detection failed")
                 return
-        
+
         if success:
-            click.echo(f"\n🎉 SUCCESS: Auth log analysis completed successfully!")
+            click.echo("\n🎉 SUCCESS: Auth log analysis completed successfully!")
             click.echo(f"Tokens saved to: {output}")
             click.echo("Tokens extracted from log files - no API calls made")
-            
+
             # Show token summary
             if os.path.exists(output):
                 import json
-                with open(output, 'r') as f:
+
+                with open(output, "r") as f:
                     token_data = json.load(f)
-                
-                click.echo(f"\n🔑 Token Summary:")
-                click.echo(f"   Access Token: {token_data.get('access_token', 'None')[:30]}...")
-                if token_data.get('refresh_token'):
-                    click.echo(f"   Refresh Token: {token_data.get('refresh_token', 'None')[:30]}...")
-                    click.echo(f"   ✅ Tokens can be refreshed automatically")
+
+                click.echo("\n🔑 Token Summary:")
+                click.echo(
+                    f"   Access Token: {token_data.get('access_token', 'None')[:30]}..."
+                )
+                if token_data.get("refresh_token"):
+                    click.echo(
+                        f"   Refresh Token: {token_data.get('refresh_token', 'None')[:30]}..."
+                    )
+                    click.echo("   ✅ Tokens can be refreshed automatically")
                 else:
-                    click.echo(f"   ❌ No refresh token - tokens cannot be refreshed")
-                
+                    click.echo("   ❌ No refresh token - tokens cannot be refreshed")
+
                 click.echo(f"   Source: {token_data.get('source', 'Unknown')}")
-                click.echo(f"   Extracted At: {token_data.get('extracted_at', 'Unknown')}")
-                
+                click.echo(
+                    f"   Extracted At: {token_data.get('extracted_at', 'Unknown')}"
+                )
+
                 # Add note about testing tokens
-                click.echo(f"\n💡 To test the extracted tokens, run:")
-                click.echo(f"   meijer list show")
-                click.echo(f"   meijer search 'test'")
-                click.echo(f"   meijer stores")
-        
+                click.echo("\n💡 To test the extracted tokens, run:")
+                click.echo("   meijer list show")
+                click.echo("   meijer search 'test'")
+                click.echo("   meijer stores")
+
         else:
-            click.echo(f"\n❌ FAILED: Auth log analysis failed")
+            click.echo("\n❌ FAILED: Auth log analysis failed")
             click.echo("No tokens could be extracted from the log file")
             return
 
@@ -2282,11 +2420,15 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
         click.echo("\n💡 FULL LOGIN MODE - For refreshable tokens:")
         click.echo("   1. Clear your current tokens: meijer auth logout")
         click.echo("   2. Log out of the Meijer app completely")
-        click.echo("   3. Start mitmproxy capture: mitmproxy -w meijer_mitm_$(date +%s).log")
+        click.echo(
+            "   3. Start mitmproxy capture: mitmproxy -w meijer_mitm_$(date +%s).log"
+        )
         click.echo("   4. Log back into the Meijer app (username + password + 2FA)")
         click.echo("   5. Run 'meijer auth log --mode full' again")
-        click.echo("   6. This will capture the complete OAuth2 flow with refresh tokens")
-        
+        click.echo(
+            "   6. This will capture the complete OAuth2 flow with refresh tokens"
+        )
+
     elif mode == "quick":
         click.echo("\n💡 QUICK TOKEN MODE - For immediate API access:")
         click.echo("   1. Just use the Meijer app normally (browse, search, etc.)")
@@ -2294,23 +2436,27 @@ def auth_log_command(mode: str, log_file: Optional[str], output: str):
         click.echo("   3. Run 'meijer auth log --mode quick' to extract tokens")
         click.echo("   4. Tokens will work until they expire (usually 1 hour)")
         click.echo("   5. Re-run when you need fresh tokens")
-        
+
     else:  # auto mode
         click.echo("\n💡 AUTO MODE - The tool will detect the best available tokens:")
-        click.echo("   • If OAuth2 flow found: Full authentication with refresh capability")
+        click.echo(
+            "   • If OAuth2 flow found: Full authentication with refresh capability"
+        )
         click.echo("   • If only Bearer tokens: Quick token capture for immediate use")
         click.echo("   • Run 'meijer auth log --mode full' for refreshable tokens")
-        click.echo("   • Run 'meijer auth log --mode quick' for immediate token capture")
+        click.echo(
+            "   • Run 'meijer auth log --mode quick' for immediate token capture"
+        )
 
 
 @auth_group.command("imap")
 def auth_imap_command():
     """Set up email configuration for 2FA verification codes."""
     from meijer.auth import get_meijer_config_path
-    
+
     click.echo("📧 Email Configuration Setup for Meijer 2FA")
     click.echo("=" * 50)
-    
+
     # Get email provider info
     click.echo("\n🏢 Email Provider Information:")
     click.echo("Common providers:")
@@ -2318,34 +2464,34 @@ def auth_imap_command():
     click.echo("  Outlook:     outlook.office365.com (port 993, SSL)")
     click.echo("  Yahoo:       imap.mail.yahoo.com (port 993, SSL)")
     click.echo("  DreamHost:   imap.dreamhost.com (port 993, SSL)")
-    
+
     # Get configuration from user
     server = click.prompt("\n📧 IMAP Server", type=str, default="imap.gmail.com")
     port = click.prompt("🔌 Port", type=int, default=993)
     use_ssl = click.confirm("🔒 Use SSL", default=True)
     username = click.prompt("👤 Email Address", type=str)
-    
+
     # Password with confirmation
     password = click.prompt("🔑 Email Password", type=str, hide_input=True)
     password_confirm = click.prompt("🔑 Confirm Password", type=str, hide_input=True)
-    
+
     if password != password_confirm:
         click.echo("❌ Passwords do not match!")
         return
-    
+
     # Test connection
     click.echo("\n🔍 Testing email connection...")
-    
+
     try:
         from meijer.email_verification import EmailVerification
-        
+
         # Create temp config file for testing
         config_dir = get_meijer_config_path("")
         os.makedirs(config_dir, exist_ok=True)
         config_path = os.path.join(config_dir, "email.txt")
-        
+
         # Write config
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             f.write("# Email Configuration for Meijer 2FA\n")
             f.write("# Generated by Meijer CLI\n\n")
             f.write(f"server={server}\n")
@@ -2356,7 +2502,7 @@ def auth_imap_command():
             f.write("\n# Additional settings\n")
             f.write("max_wait_time=300\n")
             f.write("check_interval=10\n")
-        
+
         # Test the connection
         verifier = EmailVerification(config_path)
         if verifier.test_connection():
@@ -2367,10 +2513,9 @@ def auth_imap_command():
         else:
             click.echo("❌ Email connection test failed!")
             click.echo("💡 Please check your settings and try again")
-            
+
     except Exception as e:
         click.echo(f"❌ Error setting up email configuration: {e}")
-
 
 
 @auth_group.command("logout")
@@ -2378,10 +2523,10 @@ def auth_logout_command():
     """Logout from Meijer and clear stored tokens."""
     click.echo("🚪 Meijer Logout")
     click.echo("=" * 50)
-    
+
     try:
         from ..auth import TokenStorage
-        
+
         # Clear stored tokens
         token_storage = TokenStorage()
         if token_storage.has_tokens():
@@ -2389,75 +2534,85 @@ def auth_logout_command():
             click.echo("✅ Stored tokens cleared")
         else:
             click.echo("ℹ️ No stored tokens found")
-        
+
         # Also clear any stored credentials if they exist
         credentials_file = os.path.expanduser("~/.config/meijer/login.txt")
         if os.path.exists(credentials_file):
             os.remove(credentials_file)
             click.echo("✅ Stored credentials cleared")
-        
-        click.echo("🎉 Logout complete! You'll need to login again to use Meijer services.")
-        
+
+        click.echo(
+            "🎉 Logout complete! You'll need to login again to use Meijer services."
+        )
+
     except Exception as e:
         click.echo(f"❌ Error during logout: {e}")
 
 
 @auth_group.command("config")
-@click.option("--show-headers", "-h", is_flag=True, help="Show detailed header configuration")
+@click.option(
+    "--show-headers", "-h", is_flag=True, help="Show detailed header configuration"
+)
 @click.option("--show-timing", "-t", is_flag=True, help="Show timing configuration")
-@click.option("--edit", "-e", help="Edit a configuration value (format: key.path=value)")
+@click.option(
+    "--edit", "-e", help="Edit a configuration value (format: key.path=value)"
+)
 def auth_config_command(show_headers: bool, show_timing: bool, edit: str):
     """Show and manage authentication configuration."""
     click.echo("⚙️ Meijer Authentication Configuration")
     click.echo("=" * 50)
-    
+
     try:
         from ..headless_auth_client import HeadlessAuthClient
-        
+
         # Create client to load configuration
         client = HeadlessAuthClient()
-        
+
         if edit:
             # Parse edit command
-            if '=' not in edit:
+            if "=" not in edit:
                 click.echo("❌ Invalid edit format! Use: key.path=value")
                 click.echo("Example: oauth2.client_id=new_id")
                 return
-            
-            key_path, value = edit.split('=', 1)
+
+            key_path, value = edit.split("=", 1)
             click.echo(f"🔧 Updating configuration: {key_path} = {value}")
-            
+
             client.update_config(key_path, value)
             click.echo("✅ Configuration updated successfully!")
             return
-        
+
         # Show configuration overview
         config = client.config
-        
+
         click.echo("📋 Configuration Overview:")
         click.echo(f"  📁 Config file: {client._get_config_path()}")
         click.echo(f"  🔑 Client ID: {config['oauth2']['client_id']}")
         click.echo(f"  🌐 Meijer URL: {config['base_urls']['meijer']}")
         click.echo(f"  🔐 Okta URL: {config['base_urls']['okta']}")
         click.echo(f"  👤 User Agent: {config['user_agent'][:50]}...")
-        
+
         if show_timing:
             click.echo("\n⏱️ Timing Configuration:")
-            for step, delay in config['timing'].items():
+            for step, delay in config["timing"].items():
                 click.echo(f"  {step}: {delay} seconds")
-        
+
         if show_headers:
             click.echo("\n📋 Header Configuration:")
-            for step, headers in config['headers'].items():
+            for step, headers in config["headers"].items():
                 click.echo(f"  {step}:")
                 for header, value in headers.items():
                     if len(value) > 60:
                         value = value[:60] + "..."
                     click.echo(f"    {header}: {value}")
-        
-        click.echo("\n💡 Use 'meijer auth config --edit key.path=value' to modify configuration")
-        click.echo("💡 Use 'meijer auth config --show-headers --show-timing' for full details")
-        
+
+        click.echo(
+            "\n💡 Use 'meijer auth config --edit key.path=value' to modify configuration"
+        )
+        click.echo(
+            "💡 Use 'meijer auth config --show-headers --show-timing' for full details"
+        )
+
     except Exception as e:
         click.echo(f"❌ Error accessing configuration: {e}")
         click.echo("💡 Make sure the configuration file exists and is valid")
@@ -2468,10 +2623,10 @@ def auth_status_command():
     """Show current authentication status and token information."""
     click.echo("📊 Meijer Authentication Status")
     click.echo("=" * 50)
-    
+
     try:
         from ..auth import TokenStorage
-        
+
         token_storage = TokenStorage()
         if token_storage.has_tokens():
             tokens = token_storage.get_valid_tokens()
@@ -2481,13 +2636,16 @@ def auth_status_command():
                 if tokens.refresh_token:
                     click.echo(f"🔄 Refresh token: {tokens.refresh_token[:30]}...")
                 click.echo(f"⏰ Expires in: {tokens.expires_in} seconds")
-                
+
                 # Test if tokens are still valid
                 try:
                     from ..client import Meijer
+
                     test_client = Meijer()
                     items = test_client.list.get()
-                    click.echo(f"✅ Tokens valid - Found {len(items)} shopping list items")
+                    click.echo(
+                        f"✅ Tokens valid - Found {len(items)} shopping list items"
+                    )
                 except Exception as e:
                     click.echo(f"⚠️ Tokens may be expired: {e}")
             else:
@@ -2495,7 +2653,7 @@ def auth_status_command():
         else:
             click.echo("❌ Not authenticated")
             click.echo("💡 Use 'meijer auth login' to authenticate")
-            
+
     except Exception as e:
         click.echo(f"❌ Error checking status: {e}")
 
@@ -2553,7 +2711,3 @@ def login_selenium(headless: bool, keep_open: bool):
 
     except Exception as e:
         raise click.ClickException(f"❌ Selenium authentication failed: {e}")
-
-
-
-

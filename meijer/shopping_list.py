@@ -6,6 +6,8 @@ adding/removing items, managing favorites, and list operations.
 """
 
 import json
+import re
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
@@ -538,10 +540,10 @@ class MeijerList:
     def _normalize_store_id(self, store_id: Optional[Union[str, int]]) -> Optional[str]:
         """
         Normalize store_id to string format, accepting both string and integer inputs.
-        
+
         Args:
             store_id: Store ID as string, integer, or None
-            
+
         Returns:
             Store ID as string, or None if not provided
         """
@@ -550,13 +552,17 @@ class MeijerList:
         return str(store_id)
 
     def defrag(
-        self, store_id: Optional[Union[str, int]] = None, reverse: bool = False, zig: bool = False, noreorganize: bool = False
+        self,
+        store_id: Optional[Union[str, int]] = None,
+        reverse: bool = False,
+        zig: bool = False,
+        noreorganize: bool = False,
     ) -> Dict[str, Any]:
         """
         Defrag the shopping list by organizing items by aisle/location.
 
         Args:
-            store_id: Store ID to use for location lookup (defaults to current store). 
+            store_id: Store ID to use for location lookup (defaults to current store).
                       Accepts both string and integer formats.
             reverse: If True, sort items in reverse order (descending)
             zig: If True, alternate B aisle sorting (B1 ascending, B2 descending, etc.)
@@ -567,7 +573,7 @@ class MeijerList:
         """
         # Normalize store_id to string format
         store_id = self._normalize_store_id(store_id)
-        
+
         if not store_id:
             # Try to get store ID from current context
             try:
@@ -593,7 +599,7 @@ class MeijerList:
                 "organized_by_aisle": [],
                 "unorganized_items": [],
                 "efficiency_gain": 0.0,
-                "total_items": 0
+                "total_items": 0,
             }
 
         if not items:
@@ -603,7 +609,7 @@ class MeijerList:
                 "organized_by_aisle": [],
                 "unorganized_items": [],
                 "efficiency_gain": 0.0,
-                "total_items": 0
+                "total_items": 0,
             }
 
         self.logger.info("⏳ This may take a moment to search for product locations...")
@@ -1144,22 +1150,22 @@ class MeijerList:
         # Build organized data structure for return
         organized_by_aisle = []
         unorganized_items = []
-        
+
         # Group items by aisle
         aisle_groups = {}
         for item_data in sorted_items:
             location = item_data.get("location", {})
             aisle = location.get("aisle", "Unknown")
-            
+
             if aisle not in aisle_groups:
                 aisle_groups[aisle] = {
                     "aisle": aisle,
                     "section": location.get("section", ""),
                     "zone": location.get("zone", ""),
                     "zone_code": location.get("zone_code", ""),
-                    "items": []
+                    "items": [],
                 }
-            
+
             # Add item to aisle group
             item_info = {
                 "name": item_data["item"].name,
@@ -1167,19 +1173,21 @@ class MeijerList:
                 "notes": item_data["item"].notes,
                 "location": location,
                 "match_confidence": item_data.get("match_confidence", "Unknown"),
-                "matched_product": item_data.get("matched_product", {})
+                "matched_product": item_data.get("matched_product", {}),
             }
             aisle_groups[aisle]["items"].append(item_info)
-        
+
         # Convert to list and sort by aisle
         for aisle in sorted(aisle_groups.keys()):
             organized_by_aisle.append(aisle_groups[aisle])
-        
+
         # Calculate efficiency gain (simplified - could be enhanced)
         total_items = len(sorted_items)
         organized_count = sum(len(group["items"]) for group in organized_by_aisle)
-        efficiency_gain = (organized_count / total_items * 100) if total_items > 0 else 0.0
-        
+        efficiency_gain = (
+            (organized_count / total_items * 100) if total_items > 0 else 0.0
+        )
+
         # If noreorganize is True, return the organized data without modifying the list
         if noreorganize:
             return {
@@ -1187,7 +1195,7 @@ class MeijerList:
                 "organized_by_aisle": organized_by_aisle,
                 "unorganized_items": unorganized_items,
                 "efficiency_gain": efficiency_gain,
-                "total_items": total_items
+                "total_items": total_items,
             }
 
         # Clear the current list
@@ -1354,7 +1362,7 @@ class MeijerList:
             "organized_by_aisle": organized_by_aisle,
             "unorganized_items": unorganized_items,
             "efficiency_gain": efficiency_gain,
-            "total_items": total_items
+            "total_items": total_items,
         }
 
     # ============================================================================
@@ -1742,30 +1750,30 @@ Unable to load shopping list: `{str(e)}`
 
         return mapped_data
 
-    def _extract_location_from_item(self, item: "ListItem") -> Optional[tuple[str, str]]:
+    def _extract_location_from_item(
+        self, item: "ListItem"
+    ) -> Optional[tuple[str, str]]:
         """
         Extract location information from shopping list item notes or description.
-        
+
         This method provides 1:1 compatibility with the Rust version by parsing
         location codes from item descriptions in the format "item - LOCATION | info"
-        
+
         Args:
             item: Shopping list item to extract location from
-            
+
         Returns:
             Tuple of (aisle, section) if location found, None otherwise
         """
-        import re
-        
         # Check if the item has location information in its notes or description
         # Format: "item name - LOCATION | additional info"
-        
+
         description = item.name
-        
+
         # Look for pattern like "item - B7:15-3 | info"
         if " - " in description:
             after_dash = description.split(" - ", 1)[1]
-            
+
             # Look for location pattern (e.g., "B7:15-3")
             if " | " in after_dash:
                 location_part = after_dash.split(" | ", 1)[0]
@@ -1777,111 +1785,221 @@ Unable to load shopping list: `{str(e)}`
                 location = self._parse_location_code(after_dash)
                 if location:
                     return location
-        
+
         # Also check notes field for location information
         if item.notes:
             location = self._parse_location_code(item.notes)
             if location:
                 return location
-        
+
         return None
 
     def _parse_location_code(self, location: str) -> Optional[tuple[str, str]]:
         """
         Parse location code in format like "B7:15-3" -> ("B7", "15-3").
-        
+
         Args:
             location: Location string to parse
-            
+
         Returns:
             Tuple of (aisle, section) if valid format, None otherwise
         """
-        import re
-        
         # Handle formats like:
         # - "B7:15-3 | additional info" -> aisle: "B7", section: "15-3"
         # - "A12:5-2 | more info" -> aisle: "A12", section: "5-2"
         # - "C3:8 | description" -> aisle: "C3", section: "8"
-        
+
         location = location.strip()
-        
+
         if ":" in location:
             parts = location.split(":", 1)
             aisle = parts[0].strip()
             after_colon = parts[1]
-            
+
             # Extract section before the pipe (if any)
             if " | " in after_colon:
                 section = after_colon.split(" | ", 1)[0].strip()
             else:
                 section = after_colon.strip()
-            
+
             # Validate that we have a proper aisle format (letter + number)
             if aisle and section and self._is_valid_aisle_format(aisle):
                 return (aisle, section)
-        
+
         return None
 
     def _is_valid_aisle_format(self, aisle: str) -> bool:
         """
         Check if the aisle format is valid (e.g., "B7", "A12", "F5").
-        
+
         Args:
             aisle: Aisle string to validate
-            
+
         Returns:
             True if valid format, False otherwise
         """
         if not aisle:
             return False
-        
+
         # First character should be a letter
         if not aisle[0].isalpha():
             return False
-        
+
         # Should have at least one digit
         return any(c.isdigit() for c in aisle)
 
     def _extract_aisle_number_from_name(self, aisle_name: str) -> Optional[int]:
         """
         Extract aisle number from aisle name (e.g., "B7" -> 7, "A12" -> 12).
-        
+
         Args:
             aisle_name: Aisle name to extract number from
-            
+
         Returns:
             Aisle number if found, None otherwise
         """
-        import re
-        
         # Look for numbers in the aisle name
-        numbers = re.findall(r'\d+', aisle_name)
+        numbers = re.findall(r"\d+", aisle_name)
         if numbers:
             return int(numbers[0])
         return None
 
+    def update_item(self, item_id: Union[str, int], **kwargs) -> bool:
+        """
+        Update a shopping list item.
+
+        Args:
+            item_id: ID of the item to update
+            **kwargs: Fields to update (notes, quantity, description, etc.)
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+
+            # Get current item to merge with updates
+            current_items = self.get()
+            current_item = None
+            for item in current_items:
+                if str(item.list_item_id) == str(item_id):
+                    current_item = item
+                    break
+
+            if not current_item:
+                self.logger.error(f"Item with ID {item_id} not found")
+                return False
+
+            # Prepare update data
+            update_data = current_item.to_dict()
+            update_data.update(kwargs)
+
+            # Ensure required fields are present
+            if "listItemId" not in update_data:
+                update_data["listItemId"] = current_item.list_item_id
+
+            url = urljoin(
+                self.meijer.api_base_url,
+                self.endpoints["update_item"].format(itemId=item_id),
+            )
+            headers = self.meijer._get_api_headers()
+            headers.update(
+                {
+                    "Content-Type": "application/vnd.meijer.listManagement.list-v1.0+json",
+                    "Accept": "application/vnd.meijer.listManagement.list-v1.0+json",
+                }
+            )
+
+            response = self.meijer._make_request(
+                "PUT", url, headers=headers, json_data=update_data
+            )
+
+            if response.status_code in [200, 201]:
+                self.logger.info(f"Successfully updated item {item_id}")
+                return True
+            else:
+                self.logger.error(
+                    f"Failed to update item {item_id}: {response.status_code} - {response.text}"
+                )
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error updating item {item_id}: {e}")
+            return False
+
+    def clear_notes(self, item_id: Optional[Union[str, int]] = None) -> bool:
+        """
+        Clear notes from shopping list items.
+
+        Args:
+            item_id: Specific item ID to clear notes from, or None to clear all items
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            if not self.meijer._ensure_authenticated():
+                raise MeijerAuthenticationError("Authentication required")
+
+            if item_id is not None:
+                # Clear notes from specific item
+                success = self.update_item(item_id, notes=None)
+                if success:
+                    self.logger.info(f"Cleared notes from item {item_id}")
+                    return True
+                else:
+                    self.logger.error(f"Failed to clear notes from item {item_id}")
+                    return False
+            else:
+                # Clear notes from all items
+                items = self.get()
+                if not items:
+                    self.logger.info("No items to clear notes from")
+                    return True
+
+                success_count = 0
+                failed_count = 0
+
+                for item in items:
+                    if item.notes:  # Only update items that have notes
+                        success = self.update_item(item.list_item_id, notes=None)
+                        if success:
+                            success_count += 1
+                        else:
+                            failed_count += 1
+
+                self.logger.info(
+                    f"Cleared notes from {success_count} items, {failed_count} failed"
+                )
+                return failed_count == 0
+
+        except Exception as e:
+            self.logger.error(f"Error clearing notes: {e}")
+            return False
+
     def export_defragmented(
-        self, store_id: Optional[Union[str, int]] = None, output_path: Optional[str] = None
+        self,
+        store_id: Optional[Union[str, int]] = None,
+        output_path: Optional[str] = None,
     ) -> None:
         """
         Export defragmented list to a structured format.
-        
+
         This method provides 1:1 compatibility with the Rust version by exporting
         the defragmented shopping list with organized aisle groups and statistics.
-        
+
         Args:
             store_id: Store ID for location lookup. Accepts both string and integer formats.
             output_path: Output file path (defaults to "defragmented_shopping_list.json")
         """
-        from datetime import datetime, timezone
-        import json
-        
+
         # Normalize store_id to string format
         store_id = self._normalize_store_id(store_id)
-        
+
         # Run defrag to get organized results (without reorganizing the list)
         defrag_result = self.defrag(store_id=store_id, noreorganize=True)
-        
+
         output_path = output_path or "defragmented_shopping_list.json"
         self.logger.info(f"📤 Exporting defragmented list to: {output_path}")
 
@@ -1890,20 +2008,25 @@ Unable to load shopping list: `{str(e)}`
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "defrag_stats": {
                 "total_items": defrag_result.get("total_items", 0),
-                "organized_count": sum(len(group.get("items", [])) for group in defrag_result.get("organized_by_aisle", [])),
+                "organized_count": sum(
+                    len(group.get("items", []))
+                    for group in defrag_result.get("organized_by_aisle", [])
+                ),
                 "unorganized_count": len(defrag_result.get("unorganized_items", [])),
-                "efficiency_gain": defrag_result.get("efficiency_gain", 0.0)
+                "efficiency_gain": defrag_result.get("efficiency_gain", 0.0),
             },
             "organized_by_aisle": defrag_result.get("organized_by_aisle", []),
-            "unorganized_items": defrag_result.get("unorganized_items", [])
+            "unorganized_items": defrag_result.get("unorganized_items", []),
         }
 
         # Write to file
         try:
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 json.dump(export_data, f, indent=2)
-            
-            self.logger.info(f"✅ Successfully exported defragmented list to {output_path}")
+
+            self.logger.info(
+                f"✅ Successfully exported defragmented list to {output_path}"
+            )
             print(f"✅ Successfully exported defragmented list to {output_path}")
         except Exception as e:
             self.logger.error(f"❌ Failed to export defragmented list: {e}")
