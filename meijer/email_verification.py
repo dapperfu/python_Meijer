@@ -114,9 +114,19 @@ class EmailVerification:
         try:
             print(f"📧 Connecting to {self.config['server']}:{self.config['port']}")
             
-            # Connect to IMAP server with timeout
+            # Connect to IMAP server with timeout and SSL certificate verification disabled
             if self.config['use_ssl']:
-                mail = imaplib.IMAP4_SSL(self.config['server'], self.config['port'])
+                # Create SSL context that accepts all certificates
+                import ssl
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
+                mail = imaplib.IMAP4_SSL(
+                    self.config['server'], 
+                    self.config['port'],
+                    ssl_context=ssl_context
+                )
             else:
                 mail = imaplib.IMAP4(self.config['server'], self.config['port'])
             

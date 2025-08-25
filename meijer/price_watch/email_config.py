@@ -761,12 +761,22 @@ class EmailSender:
             html_part = MIMEText(html_body, 'html', 'utf-8')
             msg.attach(html_part)
             
-            # Connect to SMTP server
+            # Connect to SMTP server with SSL certificate verification disabled
             if smtp_config.get('use_tls', False):
                 server = smtplib.SMTP(smtp_config['host'], smtp_config['port'])
                 server.starttls()
             else:
-                server = smtplib.SMTP_SSL(smtp_config['host'], smtp_config['port'])
+                # Create SSL context that accepts all certificates
+                import ssl
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
+                server = smtplib.SMTP_SSL(
+                    smtp_config['host'], 
+                    smtp_config['port'], 
+                    context=ssl_context
+                )
             
             # Login
             server.login(smtp_config['username'], smtp_config['password'])
