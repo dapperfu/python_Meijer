@@ -46,19 +46,21 @@ def main():
     parser = argparse.ArgumentParser(description="Test UPC edge cases with Shop & Scan")
     parser.add_argument("upc", nargs="?", help="Specific UPC to test")
     parser.add_argument("--all", action="store_true", help="Test all UPCs")
-    parser.add_argument("--status", action="store_true", help="Check authentication status")
-    
+    parser.add_argument(
+        "--status", action="store_true", help="Check authentication status"
+    )
+
     args = parser.parse_args()
-    
+
     if args.status:
         check_auth_status()
         return
-    
+
     # Check authentication first
     if not check_auth_status():
         print("\nCannot run tests without authentication.")
         return
-    
+
     # Create demo instance
     try:
         meijer = Meijer()
@@ -66,7 +68,7 @@ def main():
     except Exception as e:
         print(f"Error creating demo instance: {e}")
         return
-    
+
     if args.all:
         # Run all UPC tests
         demo.run_all_upc_tests()

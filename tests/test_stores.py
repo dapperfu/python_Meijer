@@ -670,9 +670,7 @@ class TestMeijerStoreMethodsAndProperties:
         assert store.get_gas_station() is None
 
         # Test with gas station data in _raw_data
-        store._raw_data = {
-            "GasStationAmenities": [{"AmentityType": "Car Wash"}]
-        }
+        store._raw_data = {"GasStationAmenities": [{"AmentityType": "Car Wash"}]}
         assert store.has_gas_station() is True
 
         # Test with mock gas station

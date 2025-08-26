@@ -658,6 +658,7 @@ class TestStoreHours:
         # This test will help us understand the StoreHours structure
         try:
             from meijer.models.stores import StoreHours
+
             hours = StoreHours(
                 day="Monday",
                 open_time="06:00",
@@ -696,13 +697,15 @@ class TestCreateMeijerItemsFromSearch:
                 ]
             }
         }
-        
+
         try:
             items = create_meijer_items_from_search(search_data)
             assert len(items) >= 0  # May be empty if function structure differs
         except (TypeError, KeyError, AttributeError) as e:
             # Function might have different signature or expected data structure
-            pytest.skip(f"create_meijer_items_from_search not available or different structure: {e}")
+            pytest.skip(
+                f"create_meijer_items_from_search not available or different structure: {e}"
+            )
 
 
 if __name__ == "__main__":

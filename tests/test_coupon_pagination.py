@@ -222,19 +222,19 @@ class CouponPaginationTester:
         print("📊 Coupon Quality Analysis:")
         print(f"   • Total coupons: {total_coupons}")
         print(
-            f"   • Valid IDs: {valid_ids}/{total_coupons} ({valid_ids/total_coupons*100:.1f}%)"
+            f"   • Valid IDs: {valid_ids}/{total_coupons} ({valid_ids / total_coupons * 100:.1f}%)"
         )
         print(
-            f"   • Has title: {has_title}/{total_coupons} ({has_title/total_coupons*100:.1f}%)"
+            f"   • Has title: {has_title}/{total_coupons} ({has_title / total_coupons * 100:.1f}%)"
         )
         print(
-            f"   • Has description: {has_description}/{total_coupons} ({has_description/total_coupons*100:.1f}%)"
+            f"   • Has description: {has_description}/{total_coupons} ({has_description / total_coupons * 100:.1f}%)"
         )
         print(
-            f"   • Has amount: {has_amount}/{total_coupons} ({has_amount/total_coupons*100:.1f}%)"
+            f"   • Has amount: {has_amount}/{total_coupons} ({has_amount / total_coupons * 100:.1f}%)"
         )
         print(
-            f"   • Has dates: {has_dates}/{total_coupons} ({has_dates/total_coupons*100:.1f}%)"
+            f"   • Has dates: {has_dates}/{total_coupons} ({has_dates / total_coupons * 100:.1f}%)"
         )
         print(f"   • Duplicates: {duplicate_count}")
         print(f"   • Unique IDs: {len(unique_ids)}")

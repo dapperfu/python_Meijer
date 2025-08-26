@@ -104,7 +104,7 @@ class HeaderAnalyzer:
         print("\n🔐 AUTHENTICATION FLOW DETAILS")
         print("-" * 40)
         for i, flow in enumerate(self.auth_flows[:5]):  # First 5 auth flows
-            print(f"\nAuth Flow {i+1}:")
+            print(f"\nAuth Flow {i + 1}:")
             print(f"  URL: {flow.request.pretty_url}")
             print(f"  Method: {flow.request.method}")
             print(f"  Status: {flow.response.status_code if flow.response else 'N/A'}")

@@ -143,7 +143,7 @@ def main():
 
         # Show first few results
         for i, result in enumerate(results[:3]):
-            print(f"\nRequest {i+1}:")
+            print(f"\nRequest {i + 1}:")
             print(f"  Headers: {dict(result['headers'])}")
             print(f"  Body: {result['request_body']}")
     else:

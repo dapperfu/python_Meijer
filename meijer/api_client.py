@@ -38,22 +38,22 @@ class MeijerAuthConfig:
     api_base: str = "https://api.meijer.com"
     digital_base: str = "https://digital.meijer.com"
     loyalty_base: str = "https://loyalty.meijer.com"
-    
+
     def __post_init__(self):
         """Post-initialization to handle local development URLs."""
         # Check if we're using local endpoints
-        if hasattr(self, '_local_base_url') and self._local_base_url:
+        if hasattr(self, "_local_base_url") and self._local_base_url:
             self._setup_local_endpoints(self._local_base_url)
-    
+
     def _setup_local_endpoints(self, base_url: str):
         """Setup local endpoints for development/testing."""
-        base_url = base_url.rstrip('/')
+        base_url = base_url.rstrip("/")
         self.auth_url = f"{base_url}/api/meijer/oauth2/default/v1/authorize"
         self.token_url = f"{base_url}/api/meijer/oauth2/default/v1/token"
         self.api_base = f"{base_url}/api/meijer"
         self.digital_base = f"{base_url}/api/meijer"
         self.loyalty_base = f"{base_url}/api/meijer"
-    
+
     def set_local_base_url(self, base_url: str):
         """Set the base URL for local development."""
         self._local_base_url = base_url
@@ -322,56 +322,52 @@ class MeijerAPIClient:
         return response.json()
 
     def get_multiple_products_by_upc(
-        self, 
-        upcs: List[str], 
-        store_id: Optional[str] = None
+        self, upcs: List[str], store_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Get multiple products by UPC codes using the multi-UPC endpoint.
-        
+
         This endpoint provides efficient bulk UPC lookup for up to 20 products
         in a single API call, returning rich product information including
         pricing, availability, descriptions, and metadata.
-        
+
         Args:
             upcs: List of UPC codes to search for (maximum 20 per request)
             store_id: Optional store ID for store-specific pricing and availability
-            
+
         Returns:
             Dictionary containing product information for all found UPCs
-            
+
         Raises:
             ValueError: If more than 20 UPCs are provided
             requests.RequestException: If the API request fails
         """
         if len(upcs) > 20:
             raise ValueError("Maximum of 20 UPCs allowed per request")
-        
+
         if not upcs:
             return {"response": {"results": []}}
-        
+
         # Prepare request payload
-        payload = {
-            "upcs": upcs
-        }
-        
+        payload = {"upcs": upcs}
+
         # Add store ID if provided
         if store_id:
             payload["unitId"] = store_id
-        
+
         # Set headers for the multi-UPC endpoint
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json; charset=UTF-8",
-            "OCP-APIM-Subscription-Key": "a10bc58ac484478d9b3958b1742c3a03"
+            "OCP-APIM-Subscription-Key": "a10bc58ac484478d9b3958b1742c3a03",
         }
-        
+
         # Make the request to the multi-UPC endpoint
         url = f"{self.config.api_base}/digital/multi-upc/v1/upcs"
-        
+
         response = self.session.post(url, json=payload, headers=headers)
         response.raise_for_status()
-        
+
         return response.json()
 
 

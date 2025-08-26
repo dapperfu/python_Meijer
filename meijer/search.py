@@ -38,13 +38,15 @@ class Search:
     def set_local_base_url(self, base_url: str):
         """
         Set the base URL for local development/testing.
-        
+
         Args:
             base_url: Base URL for local server (e.g., "http://127.0.0.1:5000")
         """
-        base_url = base_url.rstrip('/')
+        base_url = base_url.rstrip("/")
         self.constructor_base_url = f"{base_url}/api/meijer"
-        self.logger.info(f"Using local constructor base URL: {self.constructor_base_url}")
+        self.logger.info(
+            f"Using local constructor base URL: {self.constructor_base_url}"
+        )
 
     def reset_to_default_urls(self):
         """Reset URLs back to default Meijer endpoints."""
@@ -331,66 +333,59 @@ class Search:
             return None
 
     def search_multiple_upcs(
-        self, 
-        upcs: List[str], 
-        store_id: Optional[str] = None
+        self, upcs: List[str], store_id: Optional[str] = None
     ) -> List[MeijerItem]:
         """
         Search for multiple products by UPC codes using the multi-UPC endpoint.
-        
+
         This method provides efficient bulk UPC lookup by making a single API call
         instead of multiple individual searches.
-        
+
         Args:
             upcs: List of UPC codes to search for (max 20 per request)
             store_id: Optional store ID for store-specific pricing and availability
-            
+
         Returns:
             List of MeijerItem objects for found products
-            
+
         Raises:
             ValueError: If more than 20 UPCs are provided
             Exception: If the API request fails
         """
         if len(upcs) > 20:
             raise ValueError("Maximum of 20 UPCs allowed per request")
-        
+
         if not upcs:
             return []
-        
+
         try:
             # Use the multi-UPC endpoint for efficient bulk lookup
             url = f"{self.meijer.config.api_base}/digital/multi-upc/v1/upcs"
-            
+
             # Prepare request payload
-            payload = {
-                "upcs": upcs
-            }
-            
+            payload = {"upcs": upcs}
+
             # Add store ID if provided
             if store_id:
                 payload["unitId"] = store_id
-            
+
             # Set headers for the multi-UPC endpoint
             headers = {
                 "Accept": "application/json",
                 "Content-Type": "application/json; charset=UTF-8",
-                "OCP-APIM-Subscription-Key": "a10bc58ac484478d9b3958b1742c3a03"
+                "OCP-APIM-Subscription-Key": "a10bc58ac484478d9b3958b1742c3a03",
             }
-            
+
             self.logger.info(
                 f"Searching for {len(upcs)} UPCs using multi-UPC endpoint "
                 f"(store: {store_id or 'all'})"
             )
-            
+
             # Make the request
             response = self.meijer._make_request(
-                "POST", 
-                url, 
-                json=payload,
-                headers=headers
+                "POST", url, json=payload, headers=headers
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 return self._parse_multi_upc_response(data, upcs)
@@ -400,38 +395,36 @@ class Search:
                 )
                 # Fallback to individual searches if multi-UPC fails
                 return self._fallback_multiple_upc_search(upcs, store_id)
-                
+
         except Exception as e:
             self.logger.error(f"Error during multi-UPC search: {e}")
             # Fallback to individual searches
             return self._fallback_multiple_upc_search(upcs, store_id)
-    
+
     def _parse_multi_upc_response(
-        self, 
-        response_data: Dict[str, Any], 
-        requested_upcs: List[str]
+        self, response_data: Dict[str, Any], requested_upcs: List[str]
     ) -> List[MeijerItem]:
         """
         Parse the response from the multi-UPC endpoint.
-        
+
         Args:
             response_data: Raw response from the multi-UPC API
             requested_upcs: Original list of UPCs that were requested
-            
+
         Returns:
             List of MeijerItem objects
         """
         try:
             results = []
             response_results = response_data.get("response", {}).get("results", [])
-            
+
             # Create a mapping of UPC to result for efficient lookup
             upc_to_result = {}
             for result in response_results:
                 if "data" in result and "id" in result["data"]:
                     upc = str(result["data"]["id"])
                     upc_to_result[upc] = result
-            
+
             # Process each requested UPC
             for upc in requested_upcs:
                 if upc in upc_to_result:
@@ -444,37 +437,35 @@ class Search:
                 else:
                     # UPC not found in response
                     self.logger.debug(f"UPC {upc} not found in multi-UPC response")
-            
+
             self.logger.info(
                 f"Multi-UPC search returned {len(results)} products "
                 f"out of {len(requested_upcs)} requested UPCs"
             )
-            
+
             return results
-            
+
         except Exception as e:
             self.logger.error(f"Error parsing multi-UPC response: {e}")
             return []
-    
+
     def _create_meijer_item_from_multi_upc(
-        self, 
-        result: Dict[str, Any], 
-        upc: str
+        self, result: Dict[str, Any], upc: str
     ) -> Optional[MeijerItem]:
         """
         Create a MeijerItem from a multi-UPC response result.
-        
+
         Args:
             result: Individual result from multi-UPC response
             upc: UPC code for the item
-            
+
         Returns:
             MeijerItem if successfully created, None otherwise
         """
         try:
             data = result.get("data", {})
             value = result.get("value", "")
-            
+
             # Extract basic product information
             item = MeijerItem(
                 id=data.get("id", upc),
@@ -485,86 +476,90 @@ class Search:
                 image_url=data.get("image_url"),
                 large_image_url=data.get("image_url"),  # Use same image for now
                 price=data.get("price"),
-                sale_price=data.get("discountSalePriceValue") if data.get("sale") else None,
+                sale_price=data.get("discountSalePriceValue")
+                if data.get("sale")
+                else None,
                 unit_price=data.get("priceUnit"),
                 is_weighted=data.get("priceByWeight", False),
                 weight_unit=data.get("productUnit"),
                 is_available=data.get("stockLevelStatus") != "outOfStock",
                 store_id=data.get("unitId"),
-                raw_data=data
+                raw_data=data,
             )
-            
+
             # Ensure price is properly set (bypass the property system for direct initialization)
             if data.get("price") is not None:
                 item._price = data.get("price")
-            
+
             # Set additional fields from the multi-UPC response
-            if hasattr(item, 'data_ean'):
+            if hasattr(item, "data_ean"):
                 item.data_ean = data.get("ean")
-            if hasattr(item, 'data_isbopas'):
+            if hasattr(item, "data_isbopas"):
                 item.data_isbopas = data.get("isBopas")
-            if hasattr(item, 'data_isbuyable'):
+            if hasattr(item, "data_isbuyable"):
                 item.data_isbuyable = data.get("isBuyable")
-            if hasattr(item, 'data_isalcohol'):
+            if hasattr(item, "data_isalcohol"):
                 item.data_isalcohol = data.get("isAlcohol")
-            if hasattr(item, 'data_hasmperks'):
+            if hasattr(item, "data_hasmperks"):
                 item.data_hasmperks = data.get("hasMPerks")
-            if hasattr(item, 'data_specialbuy'):
+            if hasattr(item, "data_specialbuy"):
                 item.data_specialbuy = data.get("specialBuy")
-            if hasattr(item, 'data_deactivated'):
+            if hasattr(item, "data_deactivated"):
                 item.data_deactivated = data.get("deactivated")
-            if hasattr(item, 'data_productunit'):
+            if hasattr(item, "data_productunit"):
                 item.data_productunit = data.get("productUnit")
-            if hasattr(item, 'data_qtyincrement'):
+            if hasattr(item, "data_qtyincrement"):
                 item.data_qtyincrement = data.get("qtyIncrement")
-            if hasattr(item, 'data_chokinghazard'):
+            if hasattr(item, "data_chokinghazard"):
                 item.data_chokinghazard = data.get("chokingHazard")
-            if hasattr(item, 'data_ispurchasable'):
+            if hasattr(item, "data_ispurchasable"):
                 item.data_ispurchasable = data.get("isPurchasable")
-            if hasattr(item, 'data_pricebyweight'):
+            if hasattr(item, "data_pricebyweight"):
                 item.data_pricebyweight = data.get("priceByWeight")
-            if hasattr(item, 'data_mperksofferid'):
+            if hasattr(item, "data_mperksofferid"):
                 item.data_mperksofferid = data.get("MPerksOfferID")
-            if hasattr(item, 'data_isagerestricted'):
+            if hasattr(item, "data_isagerestricted"):
                 item.data_isagerestricted = data.get("isAgeRestricted")
-            if hasattr(item, 'data_ebtfoodstampable'):
+            if hasattr(item, "data_ebtfoodstampable"):
                 item.data_ebtfoodstampable = data.get("ebtFoodstampable")
-            if hasattr(item, 'data_pickupavailableflag'):
+            if hasattr(item, "data_pickupavailableflag"):
                 item.data_pickupavailableflag = data.get("pickupAvailableFlag")
-            if hasattr(item, 'data_homedeliverynotavailable'):
-                item.data_homedeliverynotavailable = data.get("homeDeliveryNotAvailable")
-            if hasattr(item, 'data_requiresdiscreteinventorytracking'):
-                item.data_requiresdiscreteinventorytracking = data.get("requiresDiscreteInventoryTracking")
-            if hasattr(item, 'data_ismap'):
+            if hasattr(item, "data_homedeliverynotavailable"):
+                item.data_homedeliverynotavailable = data.get(
+                    "homeDeliveryNotAvailable"
+                )
+            if hasattr(item, "data_requiresdiscreteinventorytracking"):
+                item.data_requiresdiscreteinventorytracking = data.get(
+                    "requiresDiscreteInventoryTracking"
+                )
+            if hasattr(item, "data_ismap"):
                 item.data_ismap = data.get("isMap")
-            
+
             return item
-            
+
         except Exception as e:
             self.logger.error(f"Error creating MeijerItem from multi-UPC result: {e}")
             return None
-    
+
     def _fallback_multiple_upc_search(
-        self, 
-        upcs: List[str], 
-        store_id: Optional[str] = None
+        self, upcs: List[str], store_id: Optional[str] = None
     ) -> List[MeijerItem]:
         """
         Fallback method for multiple UPC search using individual searches.
-        
+
         This is used when the multi-UPC endpoint fails or is unavailable.
-        
+
         Args:
             upcs: List of UPC codes to search for
             store_id: Optional store ID for store-specific pricing
-            
+
         Returns:
             List of MeijerItem objects for found products
         """
         self.logger.info(
             f"Falling back to individual UPC searches for {len(upcs)} UPCs"
         )
-        
+
         results = []
         for upc in upcs:
             try:
@@ -573,12 +568,12 @@ class Search:
                     results.append(item)
             except Exception as e:
                 self.logger.error(f"Error searching for UPC {upc}: {e}")
-        
+
         self.logger.info(
             f"Fallback search completed: {len(results)} products found "
             f"out of {len(upcs)} requested UPCs"
         )
-        
+
         return results
 
     def browse(
@@ -727,9 +722,11 @@ class Search:
             # Generate session and user IDs if not provided
             if not session_id:
                 import uuid
+
                 session_id = str(uuid.uuid4())
             if not user_id:
                 import uuid
+
                 user_id = str(uuid.uuid4())
 
             # Parameters based on real workflow analysis
@@ -742,19 +739,23 @@ class Search:
                 "ui": user_id,
                 "s": "1",
                 "c": "cioand-2.31.0",  # Client version
-                "_dt": str(int(datetime.now().timestamp() * 1000))
+                "_dt": str(int(datetime.now().timestamp() * 1000)),
             }
 
             # Use a generic click_through endpoint
             url = f"{self.constructor_base_url}/autocomplete/product/click_through"
 
             response = self.meijer._make_request("GET", url, params=params)
-            
+
             if response.status_code == 200:
-                self.logger.info(f"Successfully tracked product click for '{product_name}'")
+                self.logger.info(
+                    f"Successfully tracked product click for '{product_name}'"
+                )
                 return response.json()
             else:
-                self.logger.warning(f"Product click tracking returned {response.status_code}")
+                self.logger.warning(
+                    f"Product click tracking returned {response.status_code}"
+                )
                 return {"status": "tracked", "response_code": response.status_code}
 
         except Exception as e:
@@ -766,7 +767,7 @@ class Search:
         product_id: str,
         size: str = "0600",
         quality: str = "A1C1",
-        base_url: str = "https://www.meijer.com/content/dam/meijer"
+        base_url: str = "https://www.meijer.com/content/dam/meijer",
     ) -> List[str]:
         """
         Generate product image URLs based on Meijer's CDN pattern.
@@ -782,20 +783,19 @@ class Search:
         """
         # Image pattern: /product/XXXX/XX/XXXX/XX/XXXXXXXXXX_X_A1C1_XXXX.jpg
         # Example: /product/0850/00/9173/35/0850009173355_0_A1C1_0600.jpg
-        
+
         # For demonstration, create sample image URLs based on product ID
         # In a real implementation, this would parse the actual product ID format
         sample_images = [
             f"{base_url}/product/0850/00/9173/35/0850009173355_0_{quality}_{size}.jpg",
             f"{base_url}/product/0860/00/9046/02/0860009046023_1_{quality}_{size}.png",
-            f"{base_url}/product/0051/00/0293/44/0051000293442_1_{quality}_{size}.jpg"
+            f"{base_url}/product/0051/00/0293/44/0051000293442_1_{quality}_{size}.jpg",
         ]
-        
+
         return sample_images
 
     def get_department_icons(
-        self,
-        base_url: str = "https://www.meijer.com/content/dam/meijer"
+        self, base_url: str = "https://www.meijer.com/content/dam/meijer"
     ) -> List[str]:
         """
         Get department navigation icons from Meijer's CDN.
@@ -806,25 +806,17 @@ class Search:
         Returns:
             List of department icon URLs
         """
-        departments = [
-            "Grocery-Cereal",
-            "Electronics",
-            "LawnGarden",
-            "Baby"
-        ]
-        
+        departments = ["Grocery-Cereal", "Electronics", "LawnGarden", "Baby"]
+
         icons = []
         for dept in departments:
             icon_url = f"{base_url}/departments/generic/main-departments/D-WF-Dept-{dept}-217x217.png"
             icons.append(icon_url)
-        
+
         return icons
 
     def get_sponsored_products(
-        self,
-        keywords: str,
-        customer_id: str = "13266596",
-        region_id: str = "19"
+        self, keywords: str, customer_id: str = "13266596", region_id: str = "19"
     ) -> Dict[str, Any]:
         """
         Get sponsored products from Meijer API.
@@ -840,7 +832,7 @@ class Search:
         try:
             # Endpoint from workflow analysis
             url = "https://api.meijer.com/digital/sponsored-products/v1/products"
-            
+
             params = {
                 "retailer-visitor-id": "80302125742400638755997629905461482680",
                 "customer-id": customer_id,
@@ -848,34 +840,41 @@ class Search:
                 "event-type": "viewSearchResult",
                 "regionId": region_id,
                 "keywords": keywords,
-                "environment": "aa"
+                "environment": "aa",
             }
-            
+
             # Authentication headers based on successful workflow analysis
             headers = {
                 "Content-Type": "application/json",
                 "ocp-apim-subscription-key": "a10bc58ac484478d9b3958b1742c3a03",
                 "User-Agent": "Meijer/102800000 okhttp/5.1.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)",
-                "Cookie": "ROUTE=.api-c67474cf6-g678l"
+                "Cookie": "ROUTE=.api-c67474cf6-g678l",
             }
-            
-            response = self.meijer._make_request("GET", url, params=params, headers=headers)
-            
+
+            response = self.meijer._make_request(
+                "GET", url, params=params, headers=headers
+            )
+
             if response.status_code == 200:
-                self.logger.info(f"Successfully retrieved sponsored products for '{keywords}'")
+                self.logger.info(
+                    f"Successfully retrieved sponsored products for '{keywords}'"
+                )
                 return response.json()
             else:
-                self.logger.warning(f"Sponsored products request returned {response.status_code}")
-                return {"error": f"HTTP {response.status_code}", "status_code": response.status_code}
-                
+                self.logger.warning(
+                    f"Sponsored products request returned {response.status_code}"
+                )
+                return {
+                    "error": f"HTTP {response.status_code}",
+                    "status_code": response.status_code,
+                }
+
         except Exception as e:
             self.logger.error(f"Failed to get sponsored products: {e}")
             return {"error": str(e)}
 
     def get_complex_promotions(
-        self,
-        customer_id: str = "67341940946",
-        region_id: str = "19"
+        self, customer_id: str = "67341940946", region_id: str = "19"
     ) -> Dict[str, Any]:
         """
         Get complex promotions from Meijer API.
@@ -890,25 +889,32 @@ class Search:
         try:
             # Endpoint from workflow analysis
             url = f"https://api.meijer.com/digital/complexpromos/v1/{customer_id}/{region_id}"
-            
+
             # Authentication headers based on successful workflow analysis
             headers = {
                 "Accept": "application/json",
                 "Content-Type": "application/json",
                 "ocp-apim-subscription-key": "a10bc58ac484478d9b3958b1742c3a03",
                 "User-Agent": "Meijer/102800000 okhttp/5.1.0 Dalvik/2.1.0 (Linux; U; Android 10; One Build/QQ3A.200705.002)",
-                "Cookie": "ROUTE=.api-c67474cf6-g678l"
+                "Cookie": "ROUTE=.api-c67474cf6-g678l",
             }
-            
+
             response = self.meijer._make_request("GET", url, headers=headers)
-            
+
             if response.status_code == 200:
-                self.logger.info(f"Successfully retrieved complex promotions for customer {customer_id}")
+                self.logger.info(
+                    f"Successfully retrieved complex promotions for customer {customer_id}"
+                )
                 return response.json()
             else:
-                self.logger.warning(f"Complex promotions request returned {response.status_code}")
-                return {"error": f"HTTP {response.status_code}", "status_code": response.status_code}
-                
+                self.logger.warning(
+                    f"Complex promotions request returned {response.status_code}"
+                )
+                return {
+                    "error": f"HTTP {response.status_code}",
+                    "status_code": response.status_code,
+                }
+
         except Exception as e:
             self.logger.error(f"Failed to get complex promotions: {e}")
             return {"error": str(e)}

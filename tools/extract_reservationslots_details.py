@@ -123,7 +123,7 @@ def main():
         # Show a summary of the request structure
         print("\n=== REQUEST STRUCTURE SUMMARY ===")
         for i, result in enumerate(results[:3]):  # Show first 3
-            print(f"\nRequest {i+1}:")
+            print(f"\nRequest {i + 1}:")
             print(f"  Content-Length: {result['content_length']}")
             print(f"  Headers: {dict(result['headers'])}")
             print(f"  Body: {result['request_body']}")

@@ -38,7 +38,7 @@ def extract_reservationslots_headers():
         print("Looking for reservationslots requests...")
 
         for i, path_match in enumerate(path_matches):
-            print(f"\n=== Reservationslots Request {i+1} ===")
+            print(f"\n=== Reservationslots Request {i + 1} ===")
 
             # Get context around this path match
             start_pos = max(0, path_match.start() - 2000)

@@ -33,6 +33,7 @@ import time
 
 # Import from the core Meijer API
 from meijer.search import Search
+
 MEIJER_AVAILABLE = True
 
 # Import local modules
@@ -41,19 +42,15 @@ from .search_engine import EnhancedSearchEngine, SearchQuery, SearchResult
 from .storage_manager import DualPathStorageManager
 
 
-
-
-
-
-
-
 class PriceMonitor:
     """Main price monitoring system for Meijer products."""
-    
-    def __init__(self, meijer_client: Optional[Any] = None, data_dir: Optional[Path] = None):
+
+    def __init__(
+        self, meijer_client: Optional[Any] = None, data_dir: Optional[Path] = None
+    ):
         """
         Initialize the price monitor.
-        
+
         Parameters
         ----------
         meijer_client : Any, optional
@@ -63,74 +60,78 @@ class PriceMonitor:
         """
         self.meijer = meijer_client
         self.logger = logging.getLogger(__name__)
-        
+
         # Set up data directory
         if data_dir is None:
             data_dir = Path("./price_data")
         self.data_dir = Path(data_dir)
-        
+
         # Initialize dual-path storage manager
         self.storage_manager = DualPathStorageManager(data_dir)
-        
+
         # Initialize enhanced search engine
         self.search_engine = EnhancedSearchEngine(meijer_client)
-        
+
         # Initialize database directly for backward compatibility
         self.database = self.storage_manager.database
-        
+
         # Create legacy subdirectories for backward compatibility
         self.results_dir = self.data_dir / "results"
         self.history_dir = self.data_dir / "history"
         self.config_dir = self.data_dir / "config"
-        
+
         for directory in [self.results_dir, self.history_dir, self.config_dir]:
             directory.mkdir(exist_ok=True)
-        
+
         # Load existing configurations
         self.configs = self._load_configs()
-        
+
         # Initialize legacy search and stores
         if not meijer_client:
-            raise RuntimeError("Meijer client is required. Please provide an authenticated Meijer client.")
-        
+            raise RuntimeError(
+                "Meijer client is required. Please provide an authenticated Meijer client."
+            )
+
         self.search = Search(meijer_client)
         self.stores = meijer_client  # Use the client itself for store operations
-    
+
     def _load_configs(self) -> Dict[str, Dict[str, Any]]:
         """Load existing monitoring configurations."""
         configs = {}
         config_file = self.config_dir / "monitors.json"
-        
+
         if config_file.exists():
             try:
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     configs = json.load(f)
-                self.logger.info(f"Loaded {len(configs)} existing monitoring configurations")
+                self.logger.info(
+                    f"Loaded {len(configs)} existing monitoring configurations"
+                )
             except Exception as e:
                 self.logger.error(f"Failed to load configurations: {e}")
-        
+
         return configs
-    
+
     def _save_configs(self) -> None:
         """Save monitoring configurations to file."""
         config_file = self.config_dir / "monitors.json"
         try:
-            with open(config_file, 'w') as f:
+            with open(config_file, "w") as f:
                 json.dump(self.configs, f, indent=2)
         except Exception as e:
             self.logger.error(f"Failed to save configurations: {e}")
-    
+
     def create_monitor(
         self,
         name: str,
         search_query: str,
         location: str,
         radius: int = 50,
-        stores: Optional[List[str]] = None
+        stores: Optional[List[str]] = None,
     ) -> str:
         """
         Create a new price monitoring configuration.
-        
+
         Parameters
         ----------
         name : str
@@ -143,42 +144,48 @@ class PriceMonitor:
             Search radius in miles (default: 50)
         stores : List[str], optional
             Specific store IDs to monitor (if None, finds stores automatically)
-        
+
         Returns
         -------
         str
             Monitor ID for future reference
         """
         monitor_id = f"{name}_{int(time.time())}"
-        
+
         # Find stores if not specified
         if stores is None and self.stores:
             stores = self._find_stores_near_location(location, radius)
         elif stores is None:
-            raise RuntimeError("No stores specified and store search not available. Please provide store IDs or ensure Meijer API is properly initialized.")
-        
+            raise RuntimeError(
+                "No stores specified and store search not available. Please provide store IDs or ensure Meijer API is properly initialized."
+            )
+
         config = {
-            'name': name,
-            'search_query': search_query,
-            'location': location,
-            'radius': radius,
-            'stores': stores,
-            'created_at': datetime.now().isoformat(),
-            'last_run': None,
-            'enabled': True
+            "name": name,
+            "search_query": search_query,
+            "location": location,
+            "radius": radius,
+            "stores": stores,
+            "created_at": datetime.now().isoformat(),
+            "last_run": None,
+            "enabled": True,
         }
-        
+
         self.configs[monitor_id] = config
         self._save_configs()
-        
-        self.logger.info(f"Created monitor '{name}' (ID: {monitor_id}) for {len(stores)} stores")
+
+        self.logger.info(
+            f"Created monitor '{name}' (ID: {monitor_id}) for {len(stores)} stores"
+        )
         return monitor_id
-    
+
     def _find_stores_near_location(self, location: str, radius: int) -> List[str]:
         """Find stores near the specified location."""
         if not self.stores:
-            raise RuntimeError("Store search not available. Please ensure Meijer API is properly initialized.")
-        
+            raise RuntimeError(
+                "Store search not available. Please ensure Meijer API is properly initialized."
+            )
+
         try:
             # Search for stores near the location
             nearby_stores = self.stores.find_stores_nearby(location, radius=radius)
@@ -188,16 +195,16 @@ class PriceMonitor:
         except Exception as e:
             self.logger.error(f"Failed to find stores near {location}: {e}")
             raise RuntimeError(f"Failed to find stores near {location}: {e}")
-    
+
     def run_monitor(self, monitor_id: str) -> Dict[str, Any]:
         """
         Run a price monitoring scan for the specified monitor.
-        
+
         Parameters
         ----------
         monitor_id : str
             ID of the monitor to run
-        
+
         Returns
         -------
         Dict[str, Any]
@@ -205,63 +212,66 @@ class PriceMonitor:
         """
         if monitor_id not in self.configs:
             raise ValueError(f"Monitor {monitor_id} not found")
-        
+
         config = self.configs[monitor_id]
-        self.logger.info(f"Running monitor '{config['name']}' for query: {config['search_query']}")
-        
+        self.logger.info(
+            f"Running monitor '{config['name']}' for query: {config['search_query']}"
+        )
+
         results = {
-            'monitor_id': monitor_id,
-            'timestamp': datetime.now().isoformat(),
-            'search_query': config['search_query'],
-            'stores_scanned': len(config['stores']),
-            'products_found': 0,
-            'price_records': [],
-            'errors': []
+            "monitor_id": monitor_id,
+            "timestamp": datetime.now().isoformat(),
+            "search_query": config["search_query"],
+            "stores_scanned": len(config["stores"]),
+            "products_found": 0,
+            "price_records": [],
+            "errors": [],
         }
-        
+
         # Search for products at each store
-        for store_id in config['stores']:
+        for store_id in config["stores"]:
             try:
                 store_results = self._search_store_products(
-                    config['search_query'], 
-                    store_id,
-                    config['name']
+                    config["search_query"], store_id, config["name"]
                 )
-                results['price_records'].extend(store_results)
-                results['products_found'] += len(store_results)
-                
+                results["price_records"].extend(store_results)
+                results["products_found"] += len(store_results)
+
             except Exception as e:
                 error_msg = f"Store {store_id}: {str(e)}"
-                results['errors'].append(error_msg)
+                results["errors"].append(error_msg)
                 self.logger.error(error_msg)
-        
+
         # Save results
         self._save_results(monitor_id, results)
-        
+
         # Update price history
-        self._update_price_history(results['price_records'])
-        
+        self._update_price_history(results["price_records"])
+
         # Update monitor config
-        config['last_run'] = datetime.now().isoformat()
+        config["last_run"] = datetime.now().isoformat()
         self._save_configs()
-        
-        self.logger.info(f"Monitor '{config['name']}' completed: {results['products_found']} products found")
+
+        self.logger.info(
+            f"Monitor '{config['name']}' completed: {results['products_found']} products found"
+        )
         return results
-    
+
     def _search_store_products(
-        self, 
-        query: str, 
-        store_id: str, 
-        monitor_name: str
+        self, query: str, store_id: str, monitor_name: str
     ) -> List[PriceRecord]:
         """Search for products at a specific store."""
         if not self.search:
-            raise RuntimeError("Meijer search not available. Please ensure Meijer API is properly initialized.")
-        
+            raise RuntimeError(
+                "Meijer search not available. Please ensure Meijer API is properly initialized."
+            )
+
         try:
             # Search for products
-            search_results = self.search.search(query, store_id=store_id, results_per_page=100)
-            
+            search_results = self.search.search(
+                query, store_id=store_id, results_per_page=100
+            )
+
             price_records = []
             for item in search_results.results:
                 # Create price record
@@ -275,78 +285,80 @@ class PriceMonitor:
                     is_clearance=item.is_clearance,
                     is_on_sale=item.is_on_sale,
                     availability=item.availability,
-                    search_query=query
+                    search_query=query,
                 )
                 price_records.append(record)
-            
+
             return price_records
-            
+
         except Exception as e:
             self.logger.error(f"Failed to search store {store_id}: {e}")
             raise RuntimeError(f"Failed to search store {store_id}: {e}")
-    
+
     def _save_results(self, monitor_id: str, results: Dict[str, Any]) -> None:
         """Save monitoring results to file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{monitor_id}_{timestamp}.json"
         filepath = self.results_dir / filename
-        
+
         try:
             # Convert PriceRecord objects to dictionaries for JSON serialization
             serializable_results = results.copy()
-            serializable_results['price_records'] = [
-                record.to_dict() if hasattr(record, 'to_dict') else record
-                for record in results['price_records']
+            serializable_results["price_records"] = [
+                record.to_dict() if hasattr(record, "to_dict") else record
+                for record in results["price_records"]
             ]
-            
-            with open(filepath, 'w') as f:
+
+            with open(filepath, "w") as f:
                 json.dump(serializable_results, f, indent=2)
             self.logger.debug(f"Saved results to {filepath}")
         except Exception as e:
             self.logger.error(f"Failed to save results: {e}")
-    
+
     def _update_price_history(self, price_records: List[PriceRecord]) -> None:
         """Update price history with new records."""
         for record in price_records:
             history_key = f"{record.product_id}_{record.store_id}"
             history_file = self.history_dir / f"{history_key}.json"
-            
+
             # Load existing history or create new
             if history_file.exists():
                 try:
-                    with open(history_file, 'r') as f:
+                    with open(history_file, "r") as f:
                         history_data = json.load(f)
                     history = PriceHistory(
-                        product_id=history_data['product_id'],
-                        store_id=history_data['store_id'],
-                        price_records=[]
+                        product_id=history_data["product_id"],
+                        store_id=history_data["store_id"],
+                        price_records=[],
                     )
                     # Reconstruct PriceRecord objects
-                    for rec_data in history_data['price_records']:
-                        rec_data['timestamp'] = datetime.fromisoformat(rec_data['timestamp'])
+                    for rec_data in history_data["price_records"]:
+                        rec_data["timestamp"] = datetime.fromisoformat(
+                            rec_data["timestamp"]
+                        )
                         history.price_records.append(PriceRecord(**rec_data))
                 except Exception as e:
                     self.logger.error(f"Failed to load history for {history_key}: {e}")
                     history = PriceHistory(record.product_id, record.store_id)
             else:
                 history = PriceHistory(record.product_id, record.store_id)
-            
+
             # Add new record
             history.add_price(record)
-            
+
             # Save updated history
             try:
                 # Use the to_dict method for proper serialization
                 history_dict = history.to_dict()
-                with open(history_file, 'w') as f:
+                with open(history_file, "w") as f:
                     json.dump(history_dict, f, indent=2)
             except Exception as e:
                 self.logger.error(f"Failed to save history for {history_key}: {e}")
-    
+
     def list_monitors(self) -> Dict[str, Dict[str, Any]]:
         """List all configured monitors."""
         return self.configs
-    
+
     def delete_monitor(self, monitor_id: str) -> bool:
         """Delete a monitoring configuration."""
         if monitor_id in self.configs:
@@ -355,136 +367,138 @@ class PriceMonitor:
             self.logger.info(f"Deleted monitor {monitor_id}")
             return True
         return False
-    
+
     def get_price_history(
-        self, 
-        product_id: str, 
-        store_id: str
+        self, product_id: str, store_id: str
     ) -> Optional[PriceHistory]:
         """Get price history for a specific product at a specific store."""
         history_key = f"{product_id}_{store_id}"
         history_file = self.history_dir / f"{history_key}.json"
-        
+
         if not history_file.exists():
             return None
-        
+
         try:
-            with open(history_file, 'r') as f:
+            with open(history_file, "r") as f:
                 history_data = json.load(f)
-            
+
             history = PriceHistory(
-                product_id=history_data['product_id'],
-                store_id=history_data['store_id'],
-                price_records=[]
+                product_id=history_data["product_id"],
+                store_id=history_data["store_id"],
+                price_records=[],
             )
-            
-            for rec_data in history_data['price_records']:
-                rec_data['timestamp'] = datetime.fromisoformat(rec_data['timestamp'])
+
+            for rec_data in history_data["price_records"]:
+                rec_data["timestamp"] = datetime.fromisoformat(rec_data["timestamp"])
                 history.price_records.append(PriceRecord(**rec_data))
-            
+
             return history
         except Exception as e:
             self.logger.error(f"Failed to load price history: {e}")
             return None
-    
+
     def find_clearance_deals(
-        self, 
-        min_discount_percent: float = 20.0,
-        max_price: Optional[float] = None
+        self, min_discount_percent: float = 20.0, max_price: Optional[float] = None
     ) -> List[Dict[str, Any]]:
         """
         Find products with significant price drops.
-        
+
         Parameters
         ----------
         min_discount_percent : float
             Minimum discount percentage to consider
         max_price : float, optional
             Maximum price to consider
-        
+
         Returns
         -------
         List[Dict[str, Any]]
             List of clearance deals
         """
         deals = []
-        
+
         # Scan all history files
         for history_file in self.history_dir.glob("*.json"):
             try:
-                with open(history_file, 'r') as f:
+                with open(history_file, "r") as f:
                     history_data = json.load(f)
-                
-                if len(history_data['price_records']) < 2:
+
+                if len(history_data["price_records"]) < 2:
                     continue
-                
+
                 # Calculate price change
-                oldest_price = history_data['price_records'][-1]['price']
-                newest_price = history_data['price_records'][0]['price']
-                
+                oldest_price = history_data["price_records"][-1]["price"]
+                newest_price = history_data["price_records"][0]["price"]
+
                 if newest_price >= oldest_price:
                     continue
-                
+
                 discount_percent = ((oldest_price - newest_price) / oldest_price) * 100
-                
+
                 if discount_percent >= min_discount_percent:
                     if max_price is None or newest_price <= max_price:
                         deal = {
-                            'product_id': history_data['product_id'],
-                            'store_id': history_data['store_id'],
-                            'oldest_price': oldest_price,
-                            'current_price': newest_price,
-                            'discount_percent': discount_percent,
-                            'price_drop': oldest_price - newest_price,
-                            'last_updated': history_data['price_records'][0]['timestamp']
+                            "product_id": history_data["product_id"],
+                            "store_id": history_data["store_id"],
+                            "oldest_price": oldest_price,
+                            "current_price": newest_price,
+                            "discount_percent": discount_percent,
+                            "price_drop": oldest_price - newest_price,
+                            "last_updated": history_data["price_records"][0][
+                                "timestamp"
+                            ],
                         }
                         deals.append(deal)
-            
+
             except Exception as e:
                 self.logger.error(f"Failed to process history file {history_file}: {e}")
-        
+
         # Sort by discount percentage (highest first)
-        deals.sort(key=lambda x: x['discount_percent'], reverse=True)
+        deals.sort(key=lambda x: x["discount_percent"], reverse=True)
         return deals
-    
-    def analyze_price_drops(self, min_drop_percent: float = 5.0) -> List[PriceDropAnalysis]:
+
+    def analyze_price_drops(
+        self, min_drop_percent: float = 5.0
+    ) -> List[PriceDropAnalysis]:
         """
         Analyze price drops between monitoring runs.
-        
+
         Parameters
         ----------
         min_drop_percent : float
             Minimum price drop percentage to include in analysis
-        
+
         Returns
         -------
         List[PriceDropAnalysis]
             List of price drop analyses
         """
         price_drops = []
-        
+
         # Scan all history files
         for history_file in self.history_dir.glob("*.json"):
             try:
                 history = self.get_price_history(
-                    history_file.stem.split('_')[0],  # product_id
-                    history_file.stem.split('_')[1]   # store_id
+                    history_file.stem.split("_")[0],  # product_id
+                    history_file.stem.split("_")[1],  # store_id
                 )
-                
+
                 if not history or len(history.price_records) < 2:
                     continue
-                
+
                 # Get the two most recent price records
                 current_record = history.price_records[0]
                 previous_record = history.price_records[1]
-                
+
                 # Calculate price drop
                 price_drop = previous_record.price - current_record.price
                 price_drop_percent = (price_drop / previous_record.price) * 100
-                
+
                 if price_drop_percent >= min_drop_percent:
-                    days_since_last = (current_record.timestamp - previous_record.timestamp).days
-                    
+                    days_since_last = (
+                        current_record.timestamp - previous_record.timestamp
+                    ).days
+
                     analysis = PriceDropAnalysis(
                         product_id=current_record.product_id,
                         product_name=current_record.product_name,
@@ -499,26 +513,25 @@ class PriceMonitor:
                         days_since_last_check=days_since_last,
                         is_clearance=current_record.is_clearance,
                         is_on_sale=current_record.is_on_sale,
-                        search_query=current_record.search_query
+                        search_query=current_record.search_query,
                     )
                     price_drops.append(analysis)
-            
+
             except Exception as e:
-                self.logger.error(f"Failed to analyze price drops for {history_file}: {e}")
-        
+                self.logger.error(
+                    f"Failed to analyze price drops for {history_file}: {e}"
+                )
+
         # Sort by price drop percentage (highest first)
         price_drops.sort(key=lambda x: x.price_drop_percent, reverse=True)
         return price_drops
-    
+
     def verify_price_with_shopnscan(
-        self, 
-        upc: str, 
-        store_id: str,
-        expected_price: Optional[float] = None
+        self, upc: str, store_id: str, expected_price: Optional[float] = None
     ) -> Optional[ShopnScanPrice]:
         """
         Verify a product's price using Shop'n'Scan.
-        
+
         Parameters
         ----------
         upc : str
@@ -527,7 +540,7 @@ class PriceMonitor:
             Store identifier
         expected_price : float, optional
             Expected price to compare against
-        
+
         Returns
         -------
         Optional[ShopnScanPrice]
@@ -537,7 +550,7 @@ class PriceMonitor:
             if not MEIJER_AVAILABLE:
                 # Mock Shop'n'Scan verification for testing
                 self.logger.warning("Using mock Shop'n'Scan verification for testing")
-                
+
                 # Generate mock data based on the test UPC you mentioned
                 if upc == "713733252843" and store_id == "71":
                     return ShopnScanPrice(
@@ -549,7 +562,7 @@ class PriceMonitor:
                         original_price=24.99,
                         is_clearance=True,
                         is_on_sale=True,
-                        verification_status="verified"
+                        verification_status="verified",
                     )
                 else:
                     return ShopnScanPrice(
@@ -561,28 +574,30 @@ class PriceMonitor:
                         original_price=19.99,
                         is_clearance=False,
                         is_on_sale=False,
-                        verification_status="verified"
+                        verification_status="verified",
                     )
-            
+
             # TODO: Implement actual Shop'n'Scan integration
             # This would involve calling the Meijer API to get Shop'n'Scan data
             # For now, we'll use mock data
-            self.logger.info(f"Shop'n'Scan verification not yet implemented for UPC {upc}")
+            self.logger.info(
+                f"Shop'n'Scan verification not yet implemented for UPC {upc}"
+            )
             return None
-            
+
         except Exception as e:
             self.logger.error(f"Failed to verify price with Shop'n'Scan: {e}")
             return None
-    
+
     def get_latest_price_records(self, monitor_id: str) -> List[PriceRecord]:
         """
         Get the latest price records for a specific monitor.
-        
+
         Parameters
         ----------
         monitor_id : str
             Monitor identifier
-        
+
         Returns
         -------
         List[PriceRecord]
@@ -590,36 +605,38 @@ class PriceMonitor:
         """
         if monitor_id not in self.configs:
             return []
-        
+
         # Find the most recent results file for this monitor
         monitor_prefix = monitor_id
         results_files = list(self.results_dir.glob(f"{monitor_prefix}_*.json"))
-        
+
         if not results_files:
             return []
-        
+
         # Sort by timestamp and get the most recent
         latest_file = max(results_files, key=lambda x: x.stat().st_mtime)
-        
+
         try:
-            with open(latest_file, 'r') as f:
+            with open(latest_file, "r") as f:
                 results_data = json.load(f)
-            
+
             # Convert back to PriceRecord objects
             price_records = []
-            for record_data in results_data['price_records']:
-                record_data['timestamp'] = datetime.fromisoformat(record_data['timestamp'])
+            for record_data in results_data["price_records"]:
+                record_data["timestamp"] = datetime.fromisoformat(
+                    record_data["timestamp"]
+                )
                 price_records.append(PriceRecord(**record_data))
-            
+
             return price_records
-            
+
         except Exception as e:
             self.logger.error(f"Failed to load latest price records: {e}")
             return []
-    
+
     def search_products_enhanced(
-        self, 
-        query_text: str, 
+        self,
+        query_text: str,
         max_results: int = 100,
         min_results: int = 5,
         stores: Optional[List[str]] = None,
@@ -627,11 +644,11 @@ class PriceMonitor:
         include_out_of_stock: bool = False,
         price_min: Optional[float] = None,
         price_max: Optional[float] = None,
-        progress_callback: Optional[callable] = None
+        progress_callback: Optional[callable] = None,
     ) -> List[SearchResult]:
         """
         Enhanced product search with pagination and UPC tracking.
-        
+
         Parameters
         ----------
         query_text : str
@@ -652,7 +669,7 @@ class PriceMonitor:
             Maximum price filter
         progress_callback : callable, optional
             Callback function for progress updates
-        
+
         Returns
         -------
         List[SearchResult]
@@ -667,29 +684,31 @@ class PriceMonitor:
             include_clearance=include_clearance,
             include_out_of_stock=include_out_of_stock,
             price_min=price_min,
-            price_max=price_max
+            price_max=price_max,
         )
-        
+
         # Perform search
         results = self.search_engine.search_products(search_query, progress_callback)
-        
+
         # Store results using dual-path storage
         storage_summary = self.storage_manager.store_search_results(
             search_query, results
         )
-        
-        self.logger.info(f"Enhanced search completed: {len(results)} results found and stored")
+
+        self.logger.info(
+            f"Enhanced search completed: {len(results)} results found and stored"
+        )
         return results
-    
+
     def verify_prices_with_shopnscan_enhanced(
-        self, 
-        upcs: List[str], 
+        self,
+        upcs: List[str],
         store_id: str,
-        progress_callback: Optional[callable] = None
+        progress_callback: Optional[callable] = None,
     ) -> Dict[str, Any]:
         """
         Enhanced price verification using Shop'n'Scan with cart fallback.
-        
+
         Parameters
         ----------
         upcs : List[str]
@@ -698,7 +717,7 @@ class PriceMonitor:
             Store identifier
         progress_callback : callable, optional
             Callback function for progress updates
-        
+
         Returns
         -------
         Dict[str, Any]
@@ -708,63 +727,71 @@ class PriceMonitor:
         verification_results = self.search_engine.verify_prices_with_shopnscan(
             upcs, store_id, progress_callback
         )
-        
+
         # Convert verification results to ShopnScanPrice objects
         verifications = []
         for upc, result in verification_results.items():
-            if result['method'] in ['shopnscan', 'cart'] and result['result']:
+            if result["method"] in ["shopnscan", "cart"] and result["result"]:
                 # Create ShopnScanPrice object from verification result
                 verification = ShopnScanPrice(
                     upc=upc,
-                    product_name=result['result'].get('product_name', f'Product {upc}'),
+                    product_name=result["result"].get("product_name", f"Product {upc}"),
                     store_id=store_id,
-                    current_price=result['result'].get('verified_price', result['result'].get('cart_price', 0.0)),
-                    sale_price=result['result'].get('sale_price'),
-                    original_price=result['result'].get('original_price'),
-                    is_clearance=result['result'].get('is_clearance', False),
-                    is_on_sale=result['result'].get('is_on_sale', False),
-                    verification_status=result['result'].get('verification_status', 'verified')
+                    current_price=result["result"].get(
+                        "verified_price", result["result"].get("cart_price", 0.0)
+                    ),
+                    sale_price=result["result"].get("sale_price"),
+                    original_price=result["result"].get("original_price"),
+                    is_clearance=result["result"].get("is_clearance", False),
+                    is_on_sale=result["result"].get("is_on_sale", False),
+                    verification_status=result["result"].get(
+                        "verification_status", "verified"
+                    ),
                 )
                 verifications.append(verification)
-        
+
         # Store verifications using dual-path storage
         if verifications:
-            storage_summary = self.storage_manager.store_shopnscan_verifications(verifications)
-            self.logger.info(f"Price verifications stored: {len(verifications)} verifications")
-        
+            storage_summary = self.storage_manager.store_shopnscan_verifications(
+                verifications
+            )
+            self.logger.info(
+                f"Price verifications stored: {len(verifications)} verifications"
+            )
+
         return verification_results
-    
+
     def get_storage_statistics(self) -> Dict[str, Any]:
         """
         Get comprehensive storage statistics.
-        
+
         Returns
         -------
         Dict[str, Any]
             Storage statistics for both JSON files and database
         """
         return self.storage_manager.get_storage_stats()
-    
+
     def create_backup(self) -> Dict[str, Any]:
         """
         Create a backup of all data.
-        
+
         Returns
         -------
         Dict[str, Any]
             Backup summary information
         """
         return self.storage_manager.create_backup()
-    
+
     def export_data(
-        self, 
-        export_type: str, 
+        self,
+        export_type: str,
         filters: Optional[Dict[str, Any]] = None,
-        format: str = "json"
+        format: str = "json",
     ) -> Dict[str, Any]:
         """
         Export data in various formats.
-        
+
         Parameters
         ----------
         export_type : str
@@ -773,7 +800,7 @@ class PriceMonitor:
             Filters to apply
         format : str
             Export format
-        
+
         Returns
         -------
         Dict[str, Any]

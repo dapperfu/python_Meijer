@@ -19,6 +19,7 @@ from .auth import MeijerAuth, TokenStorage
 from .coupon_operations import CouponOperations
 from .coupons import CouponManager
 from .exceptions import MeijerAPIError, MeijerAuthenticationError
+from .favorites import FavoritesManager
 from .feedback import MeijerFeedback
 from .models import AuthTokens, ListItem, MeijerItem, SearchResult
 from .models.coupons import Coupon
@@ -257,6 +258,25 @@ class Meijer:
         self.product_ops = ProductOperations(self)
         self.search = Search(self)
         self.shop_scan = ShopNScan(self)
+        self.favorites = FavoritesManager(self)
+
+        # Initialize categories manager
+        try:
+            from .categories import CategoriesManager
+
+            self.categories = CategoriesManager(self)
+        except ImportError:
+            self.logger.warning("Categories module not available")
+            self.categories = None
+
+        # Initialize category browser
+        try:
+            from .category_browser import MeijerCategoryBrowser
+
+            self.category_browser = MeijerCategoryBrowser
+        except ImportError:
+            self.logger.warning("Category browser module not available")
+            self.category_browser = None
 
         # Initialize mPerks with proper client connection
         from .mperks import MPerksClient
@@ -760,7 +780,9 @@ class Meijer:
                             self.logger.warning("❌ Tokens are expired")
                             return False
                         else:
-                            self.logger.info("✅ Tokens are valid (no refresh capability)")
+                            self.logger.info(
+                                "✅ Tokens are valid (no refresh capability)"
+                            )
                             return True
 
                     # Check if token is close to expiring
@@ -2454,3 +2476,457 @@ class Meijer:
         # This method is intentionally empty for now
         # Headers are set in the constructor and updated as needed
         pass
+
+    def search_stores_by_name(
+        self,
+        name: str,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        radius: int = 100,
+        max_results: int = 50,
+    ) -> List[MeijerStore]:
+        """
+        Search for stores by name or partial name.
+
+        This method searches for stores within a specified radius and filters
+        results by name matching (case-insensitive, partial matching).
+
+        Parameters
+        ----------
+        name : str
+            Store name or partial name to search for
+        latitude : float, optional
+            Search latitude (defaults to center of Michigan if not provided)
+        longitude : float, optional
+            Search longitude (defaults to center of Michigan if not provided)
+        radius : int, optional
+            Search radius in miles (default: 100)
+        max_results : int, optional
+            Maximum number of stores to return (default: 50)
+
+        Returns
+        -------
+        List[MeijerStore]
+            List of stores matching the name criteria, sorted by distance
+
+        Examples
+        --------
+        >>> # Search for stores with "Grand Rapids" in the name
+        >>> stores = client.search_stores_by_name("Grand Rapids", radius=50)
+        >>>
+        >>> # Search for stores with "Express" in the name near specific coordinates
+        >>> stores = client.search_stores_by_name("Express", lat=42.9634, lng=-85.6681, radius=25)
+        """
+        try:
+            # Use provided coordinates or default to center of Michigan
+            if latitude is None or longitude is None:
+                latitude = 44.3148  # Center of Michigan
+                longitude = -85.6024
+
+            self.logger.info(
+                f"Searching for stores with name '{name}' within {radius} miles of ({latitude}, {longitude})"
+            )
+
+            # Get stores in the specified radius
+            stores = self.get_stores(
+                latitude=latitude,
+                longitude=longitude,
+                radius=radius,
+                max_results=max_results * 2,  # Get more stores initially for filtering
+            )
+
+            if not stores:
+                self.logger.info(f"No stores found within {radius} miles")
+                return []
+
+            # Filter stores by name (case-insensitive, partial matching)
+            matching_stores = []
+            name_lower = name.lower()
+
+            for store in stores:
+                if name_lower in store.name.lower():
+                    matching_stores.append(store)
+                    if len(matching_stores) >= max_results:
+                        break
+
+            # Sort by distance and limit results
+            matching_stores.sort(key=lambda s: s.distance or float("inf"))
+            matching_stores = matching_stores[:max_results]
+
+            self.logger.info(
+                f"Found {len(matching_stores)} stores matching name '{name}'"
+            )
+            return matching_stores
+
+        except Exception as e:
+            self.logger.error(f"Error searching stores by name: {e}")
+            return []
+
+    def search_stores_by_services_enhanced(
+        self,
+        required_services: List[str],
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        radius: int = 100,
+        max_results: int = 50,
+        sort_by: str = "distance",
+    ) -> List[MeijerStore]:
+        """
+        Enhanced search for stores offering specific services.
+
+        This method provides advanced service filtering with multiple sorting options
+        and better service detection.
+
+        Parameters
+        ----------
+        required_services : List[str]
+            List of required services (e.g., ['pharmacy', 'gas_station', 'curbside_pickup'])
+        latitude : float, optional
+            Search latitude (defaults to center of Michigan if not provided)
+        longitude : float, optional
+            Search longitude (defaults to center of Michigan if not provided)
+        radius : int, optional
+            Search radius in miles (default: 100)
+        max_results : int, optional
+            Maximum number of stores to return (default: 50)
+        sort_by : str, optional
+            Sort order: 'distance', 'name', 'services_count' (default: 'distance')
+
+        Returns
+        -------
+        List[MeijerStore]
+            List of stores offering the required services, sorted as specified
+
+        Examples
+        --------
+        >>> # Find stores with pharmacy and gas station
+        >>> stores = client.search_stores_by_services_enhanced(['pharmacy', 'gas_station'], radius=50)
+        >>>
+        >>> # Find stores with curbside pickup, sorted by name
+        >>> stores = client.search_stores_by_services_enhanced(['curbside_pickup'], sort_by='name')
+        """
+        try:
+            # Use provided coordinates or default to center of Michigan
+            if latitude is None or longitude is None:
+                latitude = 44.3148  # Center of Michigan
+                longitude = -85.6024
+
+            self.logger.info(
+                f"Searching for stores with services {required_services} within {radius} miles of ({latitude}, {longitude})"
+            )
+
+            # Get stores with service filtering
+            stores = self.find_stores_with_services(
+                latitude, longitude, radius, required_services
+            )
+
+            if not stores:
+                self.logger.info(
+                    f"No stores found with required services: {required_services}"
+                )
+                return []
+
+            # Limit results
+            stores = stores[:max_results]
+
+            # Sort stores based on specified criteria
+            if sort_by == "distance":
+                stores.sort(key=lambda s: s.distance or float("inf"))
+            elif sort_by == "name":
+                stores.sort(key=lambda s: s.name.lower())
+            elif sort_by == "services_count":
+                # Sort by number of available services (descending)
+                def service_count(store):
+                    available_services = []
+                    if store.has_pharmacy:
+                        available_services.append("pharmacy")
+                    if store.gas_station:
+                        available_services.append("gas_station")
+                    if store.has_curbside_pickup:
+                        available_services.append("curbside_pickup")
+                    if store.has_delivery:
+                        available_services.append("delivery")
+                    return len(available_services)
+
+                stores.sort(key=service_count, reverse=True)
+
+            self.logger.info(
+                f"Found {len(stores)} stores with required services: {required_services}"
+            )
+            return stores
+
+        except Exception as e:
+            self.logger.error(f"Error searching stores by services: {e}")
+            return []
+
+    def search_stores_by_location_enhanced(
+        self,
+        location: str,
+        radius: int = 50,
+        max_results: int = 50,
+        required_services: Optional[List[str]] = None,
+    ) -> List[MeijerStore]:
+        """
+        Enhanced location-based store search with intelligent parsing.
+
+        This method provides intelligent location parsing for various input formats
+        and combines location search with service filtering.
+
+        Parameters
+        ----------
+        location : str
+            Location string in various formats:
+            - ZIP code: "48104"
+            - City, State: "Ann Arbor, MI" or "Ann Arbor MI"
+            - City only: "Ann Arbor"
+            - Coordinates: "42.2808,-83.7430"
+        radius : int, optional
+            Search radius in miles (default: 50)
+        max_results : int, optional
+            Maximum number of stores to return (default: 50)
+        required_services : List[str], optional
+            List of required services to filter results
+
+        Returns
+        -------
+        List[MeijerStore]
+            List of stores near the specified location
+
+        Examples
+        --------
+        >>> # Search by ZIP code
+        >>> stores = client.search_stores_by_location_enhanced("48104", radius=25)
+        >>>
+        >>> # Search by city, state
+        >>> stores = client.search_stores_by_location_enhanced("Ann Arbor, MI", radius=30)
+        >>>
+        >>> # Search by coordinates
+        >>> stores = client.search_stores_by_location_enhanced("42.2808,-83.7430", radius=20)
+        >>>
+        >>> # Search with service requirements
+        >>> stores = client.search_stores_by_location_enhanced("Lansing, MI", radius=40, required_services=['pharmacy', 'gas_station'])
+        """
+        try:
+            self.logger.info(f"Enhanced location search for: {location}")
+
+            # Check if location is coordinates
+            if (
+                "," in location
+                and location.replace(".", "")
+                .replace("-", "")
+                .replace(",", "")
+                .isdigit()
+            ):
+                try:
+                    lat_str, lng_str = location.split(",")
+                    latitude = float(lat_str.strip())
+                    longitude = float(lng_str.strip())
+                    self.logger.info(f"Parsed coordinates: {latitude}, {longitude}")
+
+                    stores = self.get_stores(
+                        latitude=latitude,
+                        longitude=longitude,
+                        radius=radius,
+                        max_results=max_results,
+                        required_services=required_services,
+                    )
+                    return stores
+                except ValueError:
+                    self.logger.warning(f"Could not parse coordinates from: {location}")
+
+            # Check if location is ZIP code
+            if location.isdigit() and len(location) == 5:
+                self.logger.info(f"Treating as ZIP code: {location}")
+                stores = self.get_stores(
+                    zip_code=location,
+                    radius=radius,
+                    max_results=max_results,
+                    required_services=required_services,
+                )
+                return stores
+
+            # Parse city and state
+            city = location
+            state = None
+
+            if "," in location:
+                parts = location.split(",")
+                if len(parts) == 2:
+                    city = parts[0].strip()
+                    state = parts[1].strip()
+                    self.logger.info(f"Parsed city: {city}, state: {state}")
+                elif len(parts) > 2:
+                    # Handle cases like "Grand Rapids, Kent County, MI"
+                    city = parts[0].strip()
+                    state = parts[-1].strip()
+                    self.logger.info(f"Parsed city: {city}, state: {state}")
+
+            # Search by city and state
+            if state:
+                # Try city, state format first
+                stores = self.get_stores(
+                    city=f"{city}, {state}",
+                    radius=radius,
+                    max_results=max_results,
+                    required_services=required_services,
+                )
+
+                if stores:
+                    self.logger.info(f"Found {len(stores)} stores in {city}, {state}")
+                    return stores
+
+            # Fallback to city-only search
+            self.logger.info(f"Searching by city: {city}")
+            stores = self.get_stores(
+                city=city,
+                radius=radius,
+                max_results=max_results,
+                required_services=required_services,
+            )
+
+            if stores:
+                self.logger.info(f"Found {len(stores)} stores in {city}")
+                return stores
+
+            self.logger.warning(f"No stores found for location: {location}")
+            return []
+
+        except Exception as e:
+            self.logger.error(f"Error in enhanced location search: {e}")
+            return []
+
+    def get_categories(self, store_id: Optional[str] = None) -> List[Any]:
+        """
+        Get all product categories and departments.
+
+        This method provides access to the categories API endpoint used for
+        "Browse Departments" functionality in the mobile app.
+
+        Parameters
+        ----------
+        store_id : Optional[str], default=None
+            Store ID to filter categories by availability
+
+        Returns
+        -------
+        List[Any]
+            List of top-level categories and departments
+
+        Examples
+        --------
+        >>> # Get all categories
+        >>> categories = client.get_categories()
+        >>>
+        >>> # Get categories for specific store
+        >>> categories = client.get_categories(store_id="71")
+        """
+        if not self.categories:
+            raise MeijerAPIError("Categories module not available")
+
+        return self.categories.get_categories(store_id)
+
+    def get_category_products(
+        self,
+        category_id: str,
+        store_id: Optional[str] = None,
+        page: int = 1,
+        limit: int = 24,
+        sort_by: str = "relevance",
+        **kwargs,
+    ) -> List[Any]:
+        """
+        Get products within a specific category.
+
+        Parameters
+        ----------
+        category_id : str
+            Category identifier
+        store_id : Optional[str], default=None
+            Store ID to filter products by availability
+        page : int, default=1
+            Page number for pagination
+        limit : int, default=24
+            Number of products per page
+        sort_by : str, default="relevance"
+            Sort method for products
+        **kwargs : Any
+            Additional query parameters
+
+        Returns
+        -------
+        List[Any]
+            List of products in the category
+
+        Examples
+        --------
+        >>> # Get first page of products in Electronics category
+        >>> products = client.get_category_products("electronics", limit=12)
+        >>>
+        >>> # Get products sorted by price
+        >>> products = client.get_category_products("electronics", sort_by="price_asc")
+        """
+        if not self.categories:
+            raise MeijerAPIError("Categories module not available")
+
+        return self.categories.get_category_products(
+            category_id, store_id, page, limit, sort_by, **kwargs
+        )
+
+    def browse_categories(self, store_id: Optional[str] = None) -> None:
+        """
+        Launch the interactive category browser TUI.
+
+        This method starts the terminal user interface for browsing
+        Meijer departments and adding products to cart.
+
+        Parameters
+        ----------
+        store_id : Optional[str], default=None
+            Store ID for filtering categories and products
+
+        Examples
+        --------
+        >>> # Browse all categories
+        >>> client.browse_categories()
+        >>>
+        >>> # Browse categories for specific store
+        >>> client.browse_categories(store_id="71")
+        """
+        if not self.category_browser:
+            raise MeijerAPIError("Category browser module not available")
+
+        browser = self.category_browser(self, store_id)
+        browser.run()
+
+    def search_categories(
+        self, query: str, store_id: Optional[str] = None, limit: int = 20
+    ) -> List[Any]:
+        """
+        Search for categories by name or description.
+
+        Parameters
+        ----------
+        query : str
+            Search query string
+        store_id : Optional[str], default=None
+            Store ID to filter results
+        limit : int, default=20
+            Maximum number of results
+
+        Returns
+        -------
+        List[Any]
+            List of matching categories
+
+        Examples
+        --------
+        >>> # Search for electronics-related categories
+        >>> results = client.search_categories("electronics")
+        >>>
+        >>> # Search with store filtering
+        >>> results = client.search_categories("food", store_id="71")
+        """
+        if not self.categories:
+            raise MeijerAPIError("Categories module not available")
+
+        return self.categories.search_categories(query, store_id, limit)

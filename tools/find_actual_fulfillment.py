@@ -38,7 +38,7 @@ def find_actual_fulfillment():
 
         if path_matches:
             for i, path_match in enumerate(path_matches):
-                print(f"\n=== Fulfillment Endpoint Call {i+1} ===")
+                print(f"\n=== Fulfillment Endpoint Call {i + 1} ===")
                 print(f"Position: {path_match.start()}")
 
                 # Get context around this path match
@@ -155,7 +155,7 @@ def find_actual_fulfillment():
                     start_pos = max(0, match.start() - 1000)
                     end_pos = min(len(decoded_content), match.end() + 1000)
                     context = decoded_content[start_pos:end_pos]
-                    print(f"  Mention {i+1}: {context[:200]}...")
+                    print(f"  Mention {i + 1}: {context[:200]}...")
 
     except Exception as e:
         print(f"Error processing log: {e}")

@@ -93,13 +93,18 @@ class TestFeedbackFormData:
     def test_feedback_form_data_creation(self):
         """Test creating FeedbackFormData with all required fields."""
         # Create the required dynamic_data structure
-        from meijer.feedback import FeedbackComponent, FeedbackPage, FeedbackCustomParam, FeedbackDynamicData
-        
+        from meijer.feedback import (
+            FeedbackComponent,
+            FeedbackPage,
+            FeedbackCustomParam,
+            FeedbackDynamicData,
+        )
+
         custom_params = [FeedbackCustomParam(unique_name="test", value="data")]
         components = [FeedbackComponent(id=1, type="text", unique_name="test")]
         pages = [FeedbackPage(components=components)]
         dynamic_data = FeedbackDynamicData(custom_params=custom_params, pages=pages)
-        
+
         form_data = FeedbackFormData(
             form_id=9234,
             trigger_type="live",
@@ -116,13 +121,18 @@ class TestFeedbackFormData:
     def test_feedback_form_data_optional_fields(self):
         """Test creating FeedbackFormData with only required fields."""
         # Create the required dynamic_data structure
-        from meijer.feedback import FeedbackComponent, FeedbackPage, FeedbackCustomParam, FeedbackDynamicData
-        
+        from meijer.feedback import (
+            FeedbackComponent,
+            FeedbackPage,
+            FeedbackCustomParam,
+            FeedbackDynamicData,
+        )
+
         custom_params = [FeedbackCustomParam(unique_name="test", value="data")]
         components = [FeedbackComponent(id=1, type="text", unique_name="test")]
         pages = [FeedbackPage(components=components)]
         dynamic_data = FeedbackDynamicData(custom_params=custom_params, pages=pages)
-        
+
         form_data = FeedbackFormData(
             form_id=9234,
             trigger_type="live",
@@ -174,13 +184,18 @@ class TestMeijerFeedback:
     def sample_form_data(self):
         """Create sample form data for testing."""
         # Create the required dynamic_data structure
-        from meijer.feedback import FeedbackComponent, FeedbackPage, FeedbackCustomParam, FeedbackDynamicData
-        
+        from meijer.feedback import (
+            FeedbackComponent,
+            FeedbackPage,
+            FeedbackCustomParam,
+            FeedbackDynamicData,
+        )
+
         custom_params = [FeedbackCustomParam(unique_name="test", value="data")]
         components = [FeedbackComponent(id=1, type="text", unique_name="test")]
         pages = [FeedbackPage(components=components)]
         dynamic_data = FeedbackDynamicData(custom_params=custom_params, pages=pages)
-        
+
         return FeedbackFormData(
             form_id=9234,
             trigger_type="live",
@@ -205,12 +220,12 @@ class TestMeijerFeedback:
         mock_response.status_code = 200
         mock_response.json.return_value = {"uuid": "test-uuid-123"}
 
-        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(
+            return_value=mock_response
+        )
 
         # Submit feedback
-        result = feedback_client.submit_feedback(
-            sample_form_data, sample_device_data
-        )
+        result = feedback_client.submit_feedback(sample_form_data, sample_device_data)
 
         # Verify result
         assert result["uuid"] == "test-uuid-123"
@@ -220,7 +235,10 @@ class TestMeijerFeedback:
         call_args = feedback_client.meijer_client._make_request.call_args
 
         assert call_args[0][0] == "POST"
-        assert call_args[0][1] == "https://meijer.md-apis.medallia.com/mobileSDK/v2/feedback"
+        assert (
+            call_args[0][1]
+            == "https://meijer.md-apis.medallia.com/mobileSDK/v2/feedback"
+        )
         assert call_args[1]["headers"]["Content-Type"] == "application/json"
         assert call_args[1]["headers"]["Accept"] == "application/json"
 
@@ -242,7 +260,9 @@ class TestMeijerFeedback:
         mock_response = MagicMock()
         mock_response.status_code = 500
 
-        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(
+            return_value=mock_response
+        )
 
         # Submit feedback should raise FeedbackError
         with pytest.raises(FeedbackError, match="Feedback submission failed: 500"):
@@ -263,16 +283,16 @@ class TestMeijerFeedback:
         ):
             feedback_client.submit_feedback(sample_form_data, sample_device_data)
 
-    def test_submit_store_search_feedback(
-        self, feedback_client, sample_device_data
-    ):
+    def test_submit_store_search_feedback(self, feedback_client, sample_device_data):
         """Test store search feedback submission."""
         # Mock successful API response
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"uuid": "store-search-uuid"}
 
-        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(
+            return_value=mock_response
+        )
 
         # Submit store search feedback using the actual method
         result = feedback_client.submit_store_feedback(
@@ -294,16 +314,16 @@ class TestMeijerFeedback:
         assert payload["triggerType"] == "live"
         assert payload["formLanguage"] == "en"
 
-    def test_submit_registration_feedback(
-        self, feedback_client, sample_device_data
-    ):
+    def test_submit_registration_feedback(self, feedback_client, sample_device_data):
         """Test registration feedback submission."""
         # Mock successful API response
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"uuid": "registration-uuid"}
 
-        feedback_client.meijer_client._make_request = MagicMock(return_value=mock_response)
+        feedback_client.meijer_client._make_request = MagicMock(
+            return_value=mock_response
+        )
 
         # Submit registration feedback using the actual method
         result = feedback_client.submit_general_feedback(

@@ -165,7 +165,7 @@ def find_successful_fulfillment():
                         path_value = path_match.group(2)
                         if len(path_value) >= path_length:
                             actual_path = path_value[:path_length]
-                            print(f"  Success {i+1}: {actual_path}")
+                            print(f"  Success {i + 1}: {actual_path}")
 
     except Exception as e:
         print(f"Error processing log: {e}")

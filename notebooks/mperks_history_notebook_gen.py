@@ -201,7 +201,7 @@ The history functionality provides comprehensive tracking of all your mPerks poi
         access_code,
         balance_section,
         balance_code,
-        summary_section
+        summary_section,
     ]
 
     # Add metadata
@@ -209,20 +209,17 @@ The history functionality provides comprehensive tracking of all your mPerks poi
         "kernelspec": {
             "display_name": "Python 3",
             "language": "python",
-            "name": "python3"
+            "name": "python3",
         },
         "language_info": {
-            "codemirror_mode": {
-                "name": "ipython",
-                "version": 3
-            },
+            "codemirror_mode": {"name": "ipython", "version": 3},
             "file_extension": ".py",
             "mimetype": "text/x-python",
             "name": "python",
             "nbconvert_exporter": "python",
             "pygments_lexer": "ipython3",
-            "version": "3.8.0"
-        }
+            "version": "3.8.0",
+        },
     }
 
     return nb
@@ -231,13 +228,13 @@ The history functionality provides comprehensive tracking of all your mPerks poi
 def main():
     """Generate the mPerks history notebook."""
     print("🔧 Generating updated mPerks notebook with history functionality...")
-    
+
     nb = create_mperks_history_notebook()
-    
+
     # Write the notebook to file
     output_file = "14_mperks.ipynb"
     nbf.write(nb, output_file)
-    
+
     print(f"✅ Successfully generated: {output_file}")
     print("📚 The notebook now includes comprehensive mPerks history functionality!")
 

@@ -40,7 +40,9 @@ class TestCLIFunctions:
                 client = get_meijer_client()
 
                 assert client == mock_client
-                mock_meijer_class.assert_called_once_with(auth="~/.config/meijer/auth.json")
+                mock_meijer_class.assert_called_once_with(
+                    auth="~/.config/meijer/auth.json"
+                )
 
     def test_get_meijer_client_auth_failure(self):
         """Test client initialization with auth failure."""

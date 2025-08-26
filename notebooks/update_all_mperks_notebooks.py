@@ -13,18 +13,18 @@ import nbformat as nbf
 
 def add_history_section_to_notebook(notebook_path, output_path):
     """Add history section to existing mPerks notebook."""
-    
+
     # Read the existing notebook
-    with open(notebook_path, 'r') as f:
+    with open(notebook_path, "r") as f:
         notebook = json.load(f)
-    
+
     # Find the Summary section or end of notebook
-    insert_index = len(notebook['cells'])
-    for i, cell in enumerate(notebook['cells']):
-        if cell['cell_type'] == 'markdown' and '## Summary' in str(cell['source']):
+    insert_index = len(notebook["cells"])
+    for i, cell in enumerate(notebook["cells"]):
+        if cell["cell_type"] == "markdown" and "## Summary" in str(cell["source"]):
             insert_index = i
             break
-    
+
     # Create the history section cells
     history_markdown = nbf.v4.new_markdown_cell("""## mPerks Points History
 
@@ -74,26 +74,26 @@ except Exception as e:
     print(f"❌ Failed to get mPerks history: {e}")""")
 
     # Insert the history cells before the summary or at the end
-    notebook['cells'].insert(insert_index, history_markdown)
-    notebook['cells'].insert(insert_index + 1, history_code)
-    
+    notebook["cells"].insert(insert_index, history_markdown)
+    notebook["cells"].insert(insert_index + 1, history_code)
+
     # Write the updated notebook
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(notebook, f, indent=1)
-    
+
     return True
 
 
 def update_notebook_with_history(notebook_path):
     """Update a single notebook with history functionality."""
-    
+
     # Create backup
     backup_path = f"{notebook_path}.backup"
     shutil.copy2(notebook_path, backup_path)
-    
+
     # Update the notebook
     success = add_history_section_to_notebook(notebook_path, notebook_path)
-    
+
     if success:
         print(f"✅ Updated: {notebook_path}")
         return True
@@ -106,23 +106,23 @@ def update_notebook_with_history(notebook_path):
 
 def main():
     """Update all mPerks notebooks with history functionality."""
-    
+
     # List of mPerks notebooks to update
     mperks_notebooks = [
         "14_mperks.ipynb",
-        "30_demo_mperks_earn.ipynb", 
+        "30_demo_mperks_earn.ipynb",
         "31_demo_mperks_reward_coupons.ipynb",
         "34_mperks_demo.ipynb",
         "demo_mperks_earn.ipynb",
-        "demo_mperks_reward_coupons.ipynb"
+        "demo_mperks_reward_coupons.ipynb",
     ]
-    
+
     print("🔧 Updating all mPerks notebooks with history functionality...")
     print("=" * 70)
-    
+
     updated_count = 0
     total_count = len(mperks_notebooks)
-    
+
     for notebook_path in mperks_notebooks:
         if os.path.exists(notebook_path):
             print(f"📚 Processing: {notebook_path}")
@@ -130,13 +130,17 @@ def main():
                 updated_count += 1
         else:
             print(f"⚠️  Not found: {notebook_path}")
-    
+
     print("=" * 70)
-    print(f"🎉 Update complete! {updated_count}/{total_count} notebooks updated successfully.")
+    print(
+        f"🎉 Update complete! {updated_count}/{total_count} notebooks updated successfully."
+    )
     print("📚 All mPerks notebooks now include comprehensive history functionality!")
-    
+
     if updated_count < total_count:
-        print("⚠️  Some notebooks could not be updated. Check the output above for details.")
+        print(
+            "⚠️  Some notebooks could not be updated. Check the output above for details."
+        )
 
 
 if __name__ == "__main__":

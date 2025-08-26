@@ -556,30 +556,32 @@ class SearchResult:
             "sortBy": self.sort_by,
         }
 
-    def filter_by_price_range(self, min_price: Optional[float] = None, max_price: Optional[float] = None) -> "SearchResult":
+    def filter_by_price_range(
+        self, min_price: Optional[float] = None, max_price: Optional[float] = None
+    ) -> "SearchResult":
         """
         Filter results by price range.
-        
+
         Args:
             min_price: Minimum price (inclusive)
             max_price: Maximum price (inclusive)
-            
+
         Returns:
             New SearchResult with filtered results
         """
         filtered_results = []
-        
+
         for item in self.results:
             if item.price is None:
                 continue
-                
+
             if min_price is not None and item.price < min_price:
                 continue
             if max_price is not None and item.price > max_price:
                 continue
-                
+
             filtered_results.append(item)
-        
+
         return SearchResult(
             total_results=len(filtered_results),
             results=filtered_results,
@@ -588,27 +590,28 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=self.sort_by,
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def filter_by_category(self, category: str) -> "SearchResult":
         """
         Filter results by category.
-        
+
         Args:
             category: Category to filter by
-            
+
         Returns:
             New SearchResult with filtered results
         """
         filtered_results = []
         category_lower = category.lower()
-        
+
         for item in self.results:
-            if (item.category and category_lower in item.category.lower()) or \
-               (item.subcategory and category_lower in item.subcategory.lower()):
+            if (item.category and category_lower in item.category.lower()) or (
+                item.subcategory and category_lower in item.subcategory.lower()
+            ):
                 filtered_results.append(item)
-        
+
         return SearchResult(
             total_results=len(filtered_results),
             results=filtered_results,
@@ -617,26 +620,26 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=self.sort_by,
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def filter_by_brand(self, brand: str) -> "SearchResult":
         """
         Filter results by brand.
-        
+
         Args:
             brand: Brand to filter by
-            
+
         Returns:
             New SearchResult with filtered results
         """
         filtered_results = []
         brand_lower = brand.lower()
-        
+
         for item in self.results:
             if item.brand and brand_lower in item.brand.lower():
                 filtered_results.append(item)
-        
+
         return SearchResult(
             total_results=len(filtered_results),
             results=filtered_results,
@@ -645,18 +648,18 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=self.sort_by,
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def filter_on_sale(self) -> "SearchResult":
         """
         Filter results to show only items on sale.
-        
+
         Returns:
             New SearchResult with only sale items
         """
         filtered_results = [item for item in self.results if item.on_sale]
-        
+
         return SearchResult(
             total_results=len(filtered_results),
             results=filtered_results,
@@ -665,18 +668,18 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=self.sort_by,
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def filter_in_stock(self) -> "SearchResult":
         """
         Filter results to show only items in stock.
-        
+
         Returns:
             New SearchResult with only in-stock items
         """
         filtered_results = [item for item in self.results if item.is_available]
-        
+
         return SearchResult(
             total_results=len(filtered_results),
             results=filtered_results,
@@ -685,29 +688,29 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=self.sort_by,
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def sort_by_price(self, ascending: bool = True) -> "SearchResult":
         """
         Sort results by price.
-        
+
         Args:
             ascending: True for low to high, False for high to low
-            
+
         Returns:
             New SearchResult with sorted results
         """
         sorted_results = sorted(
             [item for item in self.results if item.price is not None],
             key=lambda x: x.price,
-            reverse=not ascending
+            reverse=not ascending,
         )
-        
+
         # Add items without prices at the end
         no_price_items = [item for item in self.results if item.price is None]
         sorted_results.extend(no_price_items)
-        
+
         return SearchResult(
             total_results=len(sorted_results),
             results=sorted_results,
@@ -716,25 +719,25 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=f"price_{'asc' if ascending else 'desc'}",
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def sort_by_name(self, ascending: bool = True) -> "SearchResult":
         """
         Sort results by name/title.
-        
+
         Args:
             ascending: True for A to Z, False for Z to A
-            
+
         Returns:
             New SearchResult with sorted results
         """
         sorted_results = sorted(
             self.results,
             key=lambda x: x.title.lower() if x.title else "",
-            reverse=not ascending
+            reverse=not ascending,
         )
-        
+
         return SearchResult(
             total_results=len(sorted_results),
             results=sorted_results,
@@ -743,22 +746,20 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=f"name_{'asc' if ascending else 'desc'}",
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def sort_by_relevance(self) -> "SearchResult":
         """
         Sort results by relevance score.
-        
+
         Returns:
             New SearchResult with results sorted by relevance
         """
         sorted_results = sorted(
-            self.results,
-            key=lambda x: x.search_relevance_score,
-            reverse=True
+            self.results, key=lambda x: x.search_relevance_score, reverse=True
         )
-        
+
         return SearchResult(
             total_results=len(sorted_results),
             results=sorted_results,
@@ -767,21 +768,21 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by="relevance",
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def get_top_results(self, limit: int) -> "SearchResult":
         """
         Get top N results from current page.
-        
+
         Args:
             limit: Maximum number of results to return
-            
+
         Returns:
             New SearchResult with limited results
         """
         limited_results = self.results[:limit]
-        
+
         return SearchResult(
             total_results=len(limited_results),
             results=limited_results,
@@ -790,13 +791,13 @@ class SearchResult:
             query=self.query,
             filters=self.filters,
             sort_by=self.sort_by,
-            raw_data=self.raw_data
+            raw_data=self.raw_data,
         )
 
     def get_statistics(self) -> Dict[str, Any]:
         """
         Get statistical information about the search results.
-        
+
         Returns:
             Dictionary containing various statistics
         """
@@ -809,7 +810,7 @@ class SearchResult:
             "filter_count": self.filter_count,
             "sort_method": self.sort_by,
         }
-        
+
         if self.results:
             # Price statistics
             prices = [item.price for item in self.results if item.price is not None]
@@ -818,64 +819,68 @@ class SearchResult:
                     "min_price": min(prices),
                     "max_price": max(prices),
                     "avg_price": sum(prices) / len(prices),
-                    "price_range": max(prices) - min(prices)
+                    "price_range": max(prices) - min(prices),
                 }
-            
+
             # Availability statistics
             stats["availability_stats"] = {
                 "in_stock": len([item for item in self.results if item.is_available]),
-                "out_of_stock": len([item for item in self.results if not item.is_available]),
-                "on_sale": len([item for item in self.results if item.on_sale])
+                "out_of_stock": len(
+                    [item for item in self.results if not item.is_available]
+                ),
+                "on_sale": len([item for item in self.results if item.on_sale]),
             }
-            
+
             # Content statistics
             stats["content_stats"] = {
                 "with_images": len([item for item in self.results if item.has_image]),
-                "with_descriptions": len([item for item in self.results if item.description]),
-                "with_brands": len([item for item in self.results if item.brand])
+                "with_descriptions": len(
+                    [item for item in self.results if item.description]
+                ),
+                "with_brands": len([item for item in self.results if item.brand]),
             }
-            
+
             # Category distribution
             categories = {}
             for item in self.results:
                 if item.category:
                     categories[item.category] = categories.get(item.category, 0) + 1
             stats["category_distribution"] = categories
-            
+
             # Brand distribution
             brands = {}
             for item in self.results:
                 if item.brand:
                     brands[item.brand] = brands.get(item.brand, 0) + 1
             stats["brand_distribution"] = brands
-        
+
         return stats
 
     def export_to_csv(self, filename: str) -> None:
         """
         Export search results to CSV file.
-        
+
         Args:
             filename: Output CSV filename
         """
         import csv
-        
+
         if not self.results:
             return
-        
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
             # Get all possible fields from the first item
             fieldnames = set()
             for item in self.results:
                 item_dict = item.to_dict()
                 fieldnames.update(item_dict.keys())
-            
+
             # Convert to sorted list for consistent ordering
             fieldnames = sorted(list(fieldnames))
-            
+
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            
+
             for item in self.results:
                 item_dict = item.to_dict()
                 # Ensure all fields are present (fill missing with empty string)
@@ -885,12 +890,12 @@ class SearchResult:
     def export_to_json(self, filename: str) -> None:
         """
         Export search results to JSON file.
-        
+
         Args:
             filename: Output JSON filename
         """
         import json
-        
+
         export_data = {
             "query": self.query,
             "total_results": self.total_results,
@@ -899,10 +904,10 @@ class SearchResult:
             "sort_by": self.sort_by,
             "filters": self.filters,
             "results": [item.to_dict() for item in self.results],
-            "statistics": self.get_statistics()
+            "statistics": self.get_statistics(),
         }
-        
-        with open(filename, 'w', encoding='utf-8') as jsonfile:
+
+        with open(filename, "w", encoding="utf-8") as jsonfile:
             json.dump(export_data, jsonfile, indent=2, ensure_ascii=False)
 
 

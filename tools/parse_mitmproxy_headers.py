@@ -278,7 +278,7 @@ class MitmproxyHeaderParser:
         print("\n🔐 AUTHENTICATION FLOW DETAILS")
         print("-" * 40)
         for i, flow in enumerate(report["auth_flow_details"][:5]):
-            print(f"\nAuth Flow {i+1}:")
+            print(f"\nAuth Flow {i + 1}:")
             print(f"  Path: {flow['path']}")
             print(f"  Method: {flow['method']}")
             print(f"  Status: {flow['response_status']}")
@@ -304,7 +304,7 @@ class MitmproxyHeaderParser:
         print("-" * 40)
         for i, flow in enumerate(report["sample_flows"][:3]):
             request = flow.get("request", {})
-            print(f"\nFlow {i+1}:")
+            print(f"\nFlow {i + 1}:")
             print(f"  Path: {request.get('path', 'N/A')}")
             print(f"  Method: {request.get('method', 'N/A')}")
             print(f"  Headers: {len(request.get('headers', {}))} headers")

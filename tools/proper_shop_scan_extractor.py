@@ -138,103 +138,117 @@ def done():
 def analyze_log_file(log_file: str) -> Dict[str, Any]:
     """Analyze a single log file using mitmdump."""
     print(f"🔍 Analyzing {log_file}...")
-    
+
     # Create temporary script
     temp_script = "/tmp/shop_scan_extractor.py"
     script_content = create_mitmdump_script()
-    
-    with open(temp_script, 'w') as f:
+
+    with open(temp_script, "w") as f:
         f.write(script_content)
-    
+
     try:
         # Run mitmdump with the script
         cmd = f"venv/bin/mitmdump -q -s {temp_script} -- {log_file}"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        
+
         if result.returncode != 0:
             print(f"   ❌ Error running mitmdump: {result.stderr}")
             return {}
-        
+
         # Read results from temporary file
         try:
-            with open('/tmp/shop_scan_results.json', 'r') as f:
+            with open("/tmp/shop_scan_results.json", "r") as f:
                 results = json.load(f)
-            results['log_file'] = log_file
+            results["log_file"] = log_file
             return results
         except FileNotFoundError:
             print("   ❌ No results file generated")
             return {}
-            
+
     except Exception as e:
         print(f"   ❌ Error: {e}")
         return {}
     finally:
         # Clean up
         Path(temp_script).unlink(missing_ok=True)
-        Path('/tmp/shop_scan_results.json').unlink(missing_ok=True)
+        Path("/tmp/shop_scan_results.json").unlink(missing_ok=True)
 
 
 def main():
     """Main function to extract shop and scan endpoints."""
     print("🛒 Proper Shop & Scan Endpoint Extractor")
     print("=" * 50)
-    
+
     # Find all log files
     log_files = list(Path(".").glob("*.log"))
     print(f"Found {len(log_files)} log files to analyze")
-    
+
     all_results = {}
-    
+
     for log_file in log_files:
         print(f"\n📁 Analyzing {log_file.name}...")
         results = analyze_log_file(str(log_file))
         if results:
             all_results[log_file.name] = results
-            print(f"   ✅ Found {results.get('summary', {}).get('total_unique_endpoints', 0)} endpoints")
+            print(
+                f"   ✅ Found {results.get('summary', {}).get('total_unique_endpoints', 0)} endpoints"
+            )
         else:
             print("   ❌ Failed to analyze")
-    
+
     # Generate comprehensive report
     print("\n📊 Generating comprehensive report...")
-    
+
     comprehensive_report = {
-        'analysis_summary': {
-            'total_log_files': len(log_files),
-            'successfully_analyzed': len(all_results),
-            'total_unique_endpoints': set(),
-            'total_shop_scan_endpoints': 0,
-            'all_methods': set(),
-            'all_status_codes': set()
+        "analysis_summary": {
+            "total_log_files": len(log_files),
+            "successfully_analyzed": len(all_results),
+            "total_unique_endpoints": set(),
+            "total_shop_scan_endpoints": 0,
+            "all_methods": set(),
+            "all_status_codes": set(),
         },
-        'endpoint_analysis': {},
-        'implementation_gaps': []
+        "endpoint_analysis": {},
+        "implementation_gaps": [],
     }
-    
+
     # Aggregate results
     for log_name, results in all_results.items():
-        comprehensive_report['endpoint_analysis'][log_name] = results
-        
-        if 'summary' in results:
-            comprehensive_report['analysis_summary']['total_unique_endpoints'].update(
-                results.get('shop_scan_endpoints', {}).keys()
+        comprehensive_report["endpoint_analysis"][log_name] = results
+
+        if "summary" in results:
+            comprehensive_report["analysis_summary"]["total_unique_endpoints"].update(
+                results.get("shop_scan_endpoints", {}).keys()
             )
-            comprehensive_report['analysis_summary']['total_shop_scan_endpoints'] += results.get('summary', {}).get('total_shop_scan_endpoints', 0)
-            comprehensive_report['analysis_summary']['all_methods'].update(results.get('summary', {}).get('methods_found', []))
-            comprehensive_report['analysis_summary']['all_status_codes'].update(results.get('summary', {}).get('status_codes_found', []))
-    
+            comprehensive_report["analysis_summary"]["total_shop_scan_endpoints"] += (
+                results.get("summary", {}).get("total_shop_scan_endpoints", 0)
+            )
+            comprehensive_report["analysis_summary"]["all_methods"].update(
+                results.get("summary", {}).get("methods_found", [])
+            )
+            comprehensive_report["analysis_summary"]["all_status_codes"].update(
+                results.get("summary", {}).get("status_codes_found", [])
+            )
+
     # Convert sets to lists for JSON serialization
-    for key in ['total_unique_endpoints', 'all_methods', 'all_status_codes']:
-        comprehensive_report['analysis_summary'][key] = list(comprehensive_report['analysis_summary'][key])
-    
+    for key in ["total_unique_endpoints", "all_methods", "all_status_codes"]:
+        comprehensive_report["analysis_summary"][key] = list(
+            comprehensive_report["analysis_summary"][key]
+        )
+
     # Save comprehensive report
     with open("proper_shop_scan_analysis.json", "w") as f:
         json.dump(comprehensive_report, f, indent=2, default=str)
-    
+
     print("\n✅ Analysis complete!")
     print("📄 Comprehensive report saved to: proper_shop_scan_analysis.json")
-    print(f"🔍 Found {len(comprehensive_report['analysis_summary']['total_unique_endpoints'])} unique endpoints")
-    print(f"🏪 Found {comprehensive_report['analysis_summary']['total_shop_scan_endpoints']} total shop/scan endpoint calls")
-    
+    print(
+        f"🔍 Found {len(comprehensive_report['analysis_summary']['total_unique_endpoints'])} unique endpoints"
+    )
+    print(
+        f"🏪 Found {comprehensive_report['analysis_summary']['total_shop_scan_endpoints']} total shop/scan endpoint calls"
+    )
+
     return comprehensive_report
 
 

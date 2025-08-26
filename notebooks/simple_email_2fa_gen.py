@@ -5,12 +5,13 @@ Generate Jupyter notebook for Meijer email 2FA
 
 import nbformat as nbf
 
+
 def create_email_2fa_notebook():
     """Create the email 2FA notebook"""
-    
+
     # Create notebook
     nb = nbf.v4.new_notebook()
-    
+
     # Title cell
     title_cell = nbf.v4.new_markdown_cell("""# Meijer Email 2FA
 
@@ -23,7 +24,7 @@ This notebook demonstrates the email-based two-factor authentication functionali
 - Security features and best practices
 
 *Generated on: 2025-08-21*""")
-    
+
     # Setup cell
     setup_cell = nbf.v4.new_code_cell("""# Import required libraries
 import logging
@@ -33,7 +34,7 @@ from datetime import datetime, timedelta
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 print("Dependencies imported successfully")""")
-    
+
     # Client cell
     client_cell = nbf.v4.new_code_cell("""# Initialize Meijer client
 from meijer import Meijer
@@ -43,7 +44,7 @@ try:
     print("Meijer client initialized successfully")
 except Exception as e:
     print(f"Failed to initialize client: {e}")""")
-    
+
     # 2FA setup cell
     setup_2fa_cell = nbf.v4.new_code_cell("""# Email 2FA setup example
 print("Setting up email 2FA authentication...")
@@ -68,7 +69,7 @@ for key, value in email_config.items():
 # 4. Handle code verification and validation
 
 print("Email 2FA setup complete")""")
-    
+
     # Authentication flow cell
     flow_cell = nbf.v4.new_code_cell("""# 2FA authentication flow example
 print("Demonstrating 2FA authentication flow...")
@@ -88,17 +89,18 @@ for i, step in enumerate(steps, 1):
     print(f"  {i}. {step}")
 
 print("\\n2FA flow demonstration complete")""")
-    
+
     # Add cells to notebook
     nb.cells = [title_cell, setup_cell, client_cell, setup_2fa_cell, flow_cell]
-    
+
     # Write notebook
     output_file = "email_2fa.ipynb"
     with open(output_file, "w", encoding="utf-8") as f:
         nbf.write(nb, f)
-    
+
     print(f"Email 2FA notebook generated: {output_file}")
     return output_file
+
 
 if __name__ == "__main__":
     create_email_2fa_notebook()

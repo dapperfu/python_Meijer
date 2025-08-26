@@ -140,7 +140,7 @@ class OKTAIDXAuthenticator:
         """
         # First, visit the main Meijer login page to get initial cookies
         login_page_url = "https://id.meijer.com/login/default"
-        
+
         headers = {
             "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
@@ -152,10 +152,10 @@ class OKTAIDXAuthenticator:
             "Sec-Fetch-User": "?1",
             "Upgrade-Insecure-Requests": "1",
         }
-        
+
         print("🌐 Bootstrapping session with initial login page visit...")
         response = self.session.get(login_page_url, headers=headers)
-        
+
         if response.status_code == 200:
             print("✅ Login page visited successfully")
             print(f"🍪 Bootstrap cookies: {len(self.session.cookies)} cookies")
@@ -219,7 +219,7 @@ class OKTAIDXAuthenticator:
 
         print(f"🔍 OAuth2 response URL: {response.url}")
         print(f"🔍 Response status: {response.status_code}")
-        
+
         # Debug session cookies
         print(f"🍪 Session cookies after OAuth2: {len(self.session.cookies)} cookies")
         for cookie in self.session.cookies:
@@ -289,18 +289,18 @@ class OKTAIDXAuthenticator:
             "Accept": "application/ion+json; okta-version=1.0.0",
             "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
             "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36",
-            "Content-Type": "application/ion+json; okta-version=1.0.0", 
+            "Content-Type": "application/ion+json; okta-version=1.0.0",
             "Origin": "https://id.meijer.com",
             "X-Requested-With": "com.meijer.mobile.meijer",
             "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-Mode": "cors", 
+            "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Dest": "empty",
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9",
         }
-        
+
         # Add device fingerprint if available
-        if hasattr(self, 'device_fingerprint') and self.device_fingerprint:
+        if hasattr(self, "device_fingerprint") and self.device_fingerprint:
             headers["X-Device-Fingerprint"] = self.device_fingerprint
 
         data = {"stateToken": state_token}
@@ -357,18 +357,18 @@ class OKTAIDXAuthenticator:
             "Accept": "application/ion+json; okta-version=1.0.0",
             "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
             "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36",
-            "Content-Type": "application/ion+json; okta-version=1.0.0", 
+            "Content-Type": "application/ion+json; okta-version=1.0.0",
             "Origin": "https://id.meijer.com",
             "X-Requested-With": "com.meijer.mobile.meijer",
             "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-Mode": "cors", 
+            "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Dest": "empty",
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9",
         }
-        
+
         # Add device fingerprint if available
-        if hasattr(self, 'device_fingerprint') and self.device_fingerprint:
+        if hasattr(self, "device_fingerprint") and self.device_fingerprint:
             headers["X-Device-Fingerprint"] = self.device_fingerprint
 
         data = {"identifier": username, "stateHandle": state_handle}
@@ -419,18 +419,18 @@ class OKTAIDXAuthenticator:
             "Accept": "application/ion+json; okta-version=1.0.0",
             "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
             "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36",
-            "Content-Type": "application/ion+json; okta-version=1.0.0", 
+            "Content-Type": "application/ion+json; okta-version=1.0.0",
             "Origin": "https://id.meijer.com",
             "X-Requested-With": "com.meijer.mobile.meijer",
             "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-Mode": "cors", 
+            "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Dest": "empty",
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9",
         }
-        
+
         # Add device fingerprint if available
-        if hasattr(self, 'device_fingerprint') and self.device_fingerprint:
+        if hasattr(self, "device_fingerprint") and self.device_fingerprint:
             headers["X-Device-Fingerprint"] = self.device_fingerprint
 
         data = {"credentials": {"passcode": password}, "stateHandle": state_handle}
@@ -526,10 +526,12 @@ class OKTAIDXAuthenticator:
         # This method handles the case where challenge returns a state handle
         # instead of a redirect URL. We need to continue the IDX flow.
         print(f"🔍 Challenge returned state handle: {state_handle[:20]}...")
-        
+
         # For now, this is a placeholder - the actual implementation depends on
         # what the next step in the IDX flow should be
-        raise OKTAError("State handle flow not yet implemented - need to analyze actual response")
+        raise OKTAError(
+            "State handle flow not yet implemented - need to analyze actual response"
+        )
 
     def _exchange_token(
         self, authorization_code: str, code_verifier: str
@@ -590,18 +592,18 @@ class OKTAIDXAuthenticator:
             "Accept": "application/ion+json; okta-version=1.0.0",
             "X-Okta-User-Agent-Extended": "okta-auth-js/7.11.0 okta-signin-widget-g3-7.34.1-ga64d459",
             "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36",
-            "Content-Type": "application/ion+json; okta-version=1.0.0", 
+            "Content-Type": "application/ion+json; okta-version=1.0.0",
             "Origin": "https://id.meijer.com",
             "X-Requested-With": "com.meijer.mobile.meijer",
             "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-Mode": "cors", 
+            "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Dest": "empty",
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9",
         }
-        
+
         # Add device fingerprint if available
-        if hasattr(self, 'device_fingerprint') and self.device_fingerprint:
+        if hasattr(self, "device_fingerprint") and self.device_fingerprint:
             headers["X-Device-Fingerprint"] = self.device_fingerprint
 
         # Try to start IDX flow without a state token
@@ -667,29 +669,29 @@ class OKTAIDXAuthenticator:
             # Try the real OKTA IDX flow first
             try:
                 print("🔄 Attempting real OKTA IDX authentication flow...")
-                
+
                 # Bootstrap session with initial login page visit
                 self._bootstrap_session()
-                
+
                 # Initiate OAuth2 and get state token - use immediately!
                 state_token = self._initiate_oauth2(code_verifier, code_challenge)
                 print("✅ OAuth2 initiation successful")
                 print(f"🔍 Got state token: {state_token[:20]}...")
-                
+
                 # CRITICAL: Use the state token immediately to avoid expiration
-                
+
                 # Start IDX flow with introspect
                 state_handle = self._idx_introspect(state_token)
                 print("✅ IDX introspect successful")
-                
+
                 # Identify user
                 state_handle = self._idx_identify(username, state_handle)
                 print("✅ User identification successful")
-                
+
                 # Answer password challenge
                 result = self._idx_challenge(password, state_handle)
                 print("✅ Password challenge successful")
-                
+
                 # Get authorization code
                 if isinstance(result, str) and result.startswith("http"):
                     # This is a redirect URL
@@ -697,19 +699,19 @@ class OKTAIDXAuthenticator:
                 else:
                     # This is a state handle for next step
                     auth_code = self._get_authorization_code_from_state(result)
-                
+
                 print("✅ Authorization code obtained")
-                
+
                 # Exchange for tokens
                 tokens = self._exchange_token(auth_code, code_verifier)
                 print("✅ Token exchange successful")
-                
+
                 return tokens
-                
+
             except Exception as e:
                 print(f"❌ Real OKTA flow failed: {e}")
                 print("🔄 Falling back to simulated authentication...")
-                
+
                 # Simulate successful authentication with placeholder tokens
                 # In a real implementation, this would be the actual token exchange
                 tokens = {
@@ -722,7 +724,9 @@ class OKTAIDXAuthenticator:
                 }
 
                 print("✅ Fallback authentication completed")
-                print("⚠️  Note: This is a simulated authentication for testing purposes")
+                print(
+                    "⚠️  Note: This is a simulated authentication for testing purposes"
+                )
                 print(
                     "   The actual OKTA IDX flow needs to be debugged for session management"
                 )
@@ -739,7 +743,7 @@ class OKTAIDXAuthenticator:
     ) -> Dict[str, str]:
         """
         Authenticate using hybrid approach: browser for bot detection, requests for token extraction.
-        
+
         This method uses Selenium to handle the initial OKTA flow and bot detection,
         then extracts tokens programmatically for API usage.
 
@@ -758,7 +762,7 @@ class OKTAIDXAuthenticator:
             print(f"🔄 Starting hybrid authentication for {username}...")
             print("🌐 Using browser for bot detection and OKTA flow...")
             print("📡 Extracting tokens programmatically...")
-            
+
             # Import Selenium here to avoid dependency issues
             try:
                 from selenium import webdriver
@@ -767,59 +771,75 @@ class OKTAIDXAuthenticator:
                 from selenium.webdriver.support import expected_conditions as EC
                 from selenium.webdriver.firefox.options import Options
             except ImportError:
-                raise AuthenticationError("Selenium not available. Install with: pip install selenium")
-            
+                raise AuthenticationError(
+                    "Selenium not available. Install with: pip install selenium"
+                )
+
             # Generate PKCE
             code_verifier, code_challenge = self._generate_pkce()
             print("✅ Generated PKCE challenge")
-            
+
             # Get device nonce
             self._get_device_nonce()
             print("✅ Obtained device nonce")
-            
+
             # Set up Firefox options
             firefox_options = Options()
             if headless:
                 firefox_options.add_argument("--headless")
             firefox_options.add_argument("--no-sandbox")
             firefox_options.add_argument("--disable-dev-shm-usage")
-            
+
             # Initialize browser
             driver = webdriver.Firefox(options=firefox_options)
-            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-            
+            driver.execute_script(
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+            )
+
             try:
                 print("🌐 Browser initialized, starting OKTA flow...")
-                print(f"🔍 Browser will remain open for inspection (headless: {headless})")
-                
+                print(
+                    f"🔍 Browser will remain open for inspection (headless: {headless})"
+                )
+
                 # Start with OAuth2 authorization
                 oauth_url = self._build_oauth_url(code_challenge)
                 print(f"🌐 Navigating to: {oauth_url}")
                 driver.get(oauth_url)
-                
+
                 # Wait for page to load and extract stateToken
                 print("⏳ Waiting for page to load...")
                 wait = WebDriverWait(driver, 30)  # Longer timeout for debugging
-                
+
                 # HYBRID APPROACH: Use browser to establish session, then extract state for requests
-                print("🔄 HYBRID MODE: Browser establishes session, requests completes authentication")
-                
+                print(
+                    "🔄 HYBRID MODE: Browser establishes session, requests completes authentication"
+                )
+
                 # Step 1: Let browser handle bot detection and get to login form
-                print("🌐 Step 1: Browser handling bot detection and session establishment...")
-                
+                print(
+                    "🌐 Step 1: Browser handling bot detection and session establishment..."
+                )
+
                 # Wait for the login form to appear (this establishes the session)
                 print("⏳ Waiting for login form to appear...")
                 try:
                     # Look for username/email input field
                     username_input = wait.until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="identifier"], input[type="email"], input[placeholder*="email"], input[placeholder*="Email"]'))
+                        EC.presence_of_element_located(
+                            (
+                                By.CSS_SELECTOR,
+                                'input[name="identifier"], input[type="email"], input[placeholder*="email"], input[placeholder*="Email"]',
+                            )
+                        )
                     )
                     print("✅ Found username input field - session established!")
-                    
+
                     # IMPORTANT: Wait for OKTA JavaScript to fully initialize
                     import time
+
                     print("⏳ Waiting for OKTA JavaScript to fully initialize...")
-                    
+
                     # Wait for OKTA client-side initialization to complete
                     for attempt in range(15):  # Wait up to 15 seconds
                         # Check if OKTA objects are properly initialized
@@ -831,58 +851,78 @@ class OKTAIDXAuthenticator:
                                 document.readyState === 'complete'
                             );
                         """)
-                        
+
                         if okta_ready:
-                            print(f"✅ OKTA JavaScript initialized after {attempt + 1} seconds")
+                            print(
+                                f"✅ OKTA JavaScript initialized after {attempt + 1} seconds"
+                            )
                             break
-                        
-                        print(f"   Attempt {attempt + 1}: OKTA still initializing, waiting 1 second...")
+
+                        print(
+                            f"   Attempt {attempt + 1}: OKTA still initializing, waiting 1 second..."
+                        )
                         time.sleep(1)
                     else:
                         print("⚠️  OKTA JavaScript may not be fully initialized")
-                    
+
                     # Additional wait to ensure transaction storage gets populated
-                    print("⏳ Waiting additional 3 seconds for transaction initialization...")
+                    print(
+                        "⏳ Waiting additional 3 seconds for transaction initialization..."
+                    )
                     time.sleep(3)
-                    
+
                     # Step 2: Extract the working session state from browser
                     print("📡 Step 2: Extracting working session state from browser...")
-                    
+
                     # Get all cookies from the browser session
                     browser_cookies = driver.get_cookies()
                     print(f"🍪 Browser has {len(browser_cookies)} cookies")
-                    
+
                     # Transfer cookies to our requests session
                     for cookie in browser_cookies:
-                        self.session.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'])
+                        self.session.cookies.set(
+                            cookie["name"], cookie["value"], domain=cookie["domain"]
+                        )
                     print("✅ Transferred browser cookies to requests session")
-                    
+
                     # Debug: Show exactly what cookies were transferred
-                    print(f"🔍 Requests session now has {len(self.session.cookies)} cookies:")
+                    print(
+                        f"🔍 Requests session now has {len(self.session.cookies)} cookies:"
+                    )
                     for cookie in self.session.cookies:
-                        print(f"   {cookie.name}: {cookie.value[:30]}... (domain: {cookie.domain})")
-                    
+                        print(
+                            f"   {cookie.name}: {cookie.value[:30]}... (domain: {cookie.domain})"
+                        )
+
                     # Try to capture additional session state from JavaScript
                     print("🔍 Capturing additional session state from JavaScript...")
                     try:
                         # Check for localStorage items
-                        local_storage = driver.execute_script("return Object.keys(localStorage);")
+                        local_storage = driver.execute_script(
+                            "return Object.keys(localStorage);"
+                        )
                         if local_storage:
                             print(f"📦 Found localStorage keys: {local_storage}")
                             for key in local_storage:
-                                value = driver.execute_script(f"return localStorage.getItem('{key}');")
+                                value = driver.execute_script(
+                                    f"return localStorage.getItem('{key}');"
+                                )
                                 if value and len(value) < 100:  # Only show short values
                                     print(f"   {key}: {value[:50]}...")
-                        
+
                         # Check for sessionStorage items
-                        session_storage = driver.execute_script("return Object.keys(sessionStorage);")
+                        session_storage = driver.execute_script(
+                            "return Object.keys(sessionStorage);"
+                        )
                         if session_storage:
                             print(f"📦 Found sessionStorage keys: {session_storage}")
                             for key in session_storage:
-                                value = driver.execute_script(f"return sessionStorage.getItem('{key}');")
+                                value = driver.execute_script(
+                                    f"return sessionStorage.getItem('{key}');"
+                                )
                                 if value and len(value) < 100:  # Only show short values
                                     print(f"   {key}: {value[:50]}...")
-                        
+
                         # Check for any global variables that might contain session info
                         global_vars = driver.execute_script("""
                             return Object.keys(window).filter(key => 
@@ -894,48 +934,77 @@ class OKTAIDXAuthenticator:
                         """)
                         if global_vars:
                             print(f"🌐 Found relevant global variables: {global_vars}")
-                        
+
                         # CRITICAL: Wait for OKTA transaction storage to be populated
-                        print("⏳ Waiting for OKTA transaction storage to be populated...")
+                        print(
+                            "⏳ Waiting for OKTA transaction storage to be populated..."
+                        )
                         okta_storage = None
                         for attempt in range(10):  # Wait up to 10 seconds
-                            okta_storage = driver.execute_script("return sessionStorage.getItem('okta-transaction-storage');")
-                            if okta_storage and okta_storage != '{}':
-                                print(f"✅ OKTA transaction storage populated after {attempt + 1} attempts")
+                            okta_storage = driver.execute_script(
+                                "return sessionStorage.getItem('okta-transaction-storage');"
+                            )
+                            if okta_storage and okta_storage != "{}":
+                                print(
+                                    f"✅ OKTA transaction storage populated after {attempt + 1} attempts"
+                                )
                                 break
-                            print(f"   Attempt {attempt + 1}: Still empty, waiting 1 second...")
+                            print(
+                                f"   Attempt {attempt + 1}: Still empty, waiting 1 second..."
+                            )
                             time.sleep(1)
-                        
-                        if okta_storage and okta_storage != '{}':
-                            print(f"🔑 Found okta-transaction-storage: {okta_storage[:200]}...")
+
+                        if okta_storage and okta_storage != "{}":
+                            print(
+                                f"🔑 Found okta-transaction-storage: {okta_storage[:200]}..."
+                            )
                             try:
                                 okta_data = json.loads(okta_storage)
-                                print(f"📊 Parsed OKTA storage data keys: {list(okta_data.keys())}")
-                                
+                                print(
+                                    f"📊 Parsed OKTA storage data keys: {list(okta_data.keys())}"
+                                )
+
                                 # Look for any transaction IDs or state information
                                 for key, value in okta_data.items():
-                                    if isinstance(value, dict) and 'stateHandle' in value:
-                                        print(f"🎯 Found stateHandle in {key}: {value['stateHandle'][:20]}...")
-                                    if isinstance(value, dict) and 'stateToken' in value:
-                                        print(f"🎯 Found stateToken in {key}: {value['stateToken'][:20]}...")
-                                        
+                                    if (
+                                        isinstance(value, dict)
+                                        and "stateHandle" in value
+                                    ):
+                                        print(
+                                            f"🎯 Found stateHandle in {key}: {value['stateHandle'][:20]}..."
+                                        )
+                                    if (
+                                        isinstance(value, dict)
+                                        and "stateToken" in value
+                                    ):
+                                        print(
+                                            f"🎯 Found stateToken in {key}: {value['stateToken'][:20]}..."
+                                        )
+
                             except json.JSONDecodeError:
-                                print("⚠️  Could not parse okta-transaction-storage as JSON")
+                                print(
+                                    "⚠️  Could not parse okta-transaction-storage as JSON"
+                                )
                         else:
-                            print("⚠️  OKTA transaction storage remained empty after 10 seconds")
-                            print("🔍 This indicates OKTA transaction initialization may have failed")
-                            
+                            print(
+                                "⚠️  OKTA transaction storage remained empty after 10 seconds"
+                            )
+                            print(
+                                "🔍 This indicates OKTA transaction initialization may have failed"
+                            )
+
                     except Exception as e:
                         print(f"⚠️  Could not capture JavaScript session state: {e}")
-                    
+
                     # Get the current page state
                     current_url = driver.current_url
                     page_source = driver.page_source
-                    
+
                     # Extract stateToken from the current page
                     state_token = None
                     if "stateToken" in page_source:
                         import re
+
                         # Try multiple patterns to find stateToken
                         patterns = [
                             r'stateToken["\']?\s*:\s*["\']([^"\']+)["\']',
@@ -943,68 +1012,78 @@ class OKTAIDXAuthenticator:
                             r'["\']stateToken["\']\s*:\s*["\']([^"\']+)["\']',
                             r'stateToken["\']?\s*:\s*["\']([^"\']+)["\']',
                         ]
-                        
+
                         for pattern in patterns:
                             match = re.search(pattern, page_source)
                             if match:
                                 state_token = match.group(1)
-                                print(f"✅ Extracted stateToken with pattern: {pattern}")
+                                print(
+                                    f"✅ Extracted stateToken with pattern: {pattern}"
+                                )
                                 print(f"✅ Extracted stateToken: {state_token[:20]}...")
                                 break
-                    
+
                     if not state_token:
                         print("⚠️  No stateToken found on current page")
                         print("🔍 Browser will remain open for inspection")
                         print("🔄 Falling back to simulated authentication...")
                         return self._get_simulated_tokens()
-                    
+
                     # Step 3: Use requests session with browser-established session to complete auth
-                    print("📡 Step 3: Using requests with browser session to complete authentication...")
-                    print("⚡ Minimizing delay between browser session and requests usage...")
-                    
+                    print(
+                        "📡 Step 3: Using requests with browser session to complete authentication..."
+                    )
+                    print(
+                        "⚡ Minimizing delay between browser session and requests usage..."
+                    )
+
                     try:
                         # Now use the extracted stateToken with our requests session (which has the browser cookies)
                         state_handle = self._idx_introspect(state_token)
                         print("✅ IDX introspect successful with browser session!")
-                        
+
                         state_handle = self._idx_identify(username, state_handle)
                         print("✅ User identification successful!")
-                        
+
                         result = self._idx_challenge(password, state_handle)
                         print("✅ Password challenge successful!")
-                        
+
                         # Get authorization code
                         if isinstance(result, str) and result.startswith("http"):
                             auth_code = self._get_authorization_code(result)
                         else:
                             auth_code = self._get_authorization_code_from_state(result)
-                        
+
                         print("✅ Authorization code obtained!")
-                        
+
                         # Exchange for tokens
                         tokens = self._exchange_token(auth_code, code_verifier)
                         print("✅ Token exchange successful!")
-                        
+
                         print("🎉 HYBRID AUTHENTICATION COMPLETE!")
-                        print("🌐 Browser established session, requests completed authentication")
+                        print(
+                            "🌐 Browser established session, requests completed authentication"
+                        )
                         print("🔍 Browser will remain open for inspection")
                         print("💡 Close the browser manually when done debugging")
-                        
+
                         return tokens
-                        
+
                     except Exception as e:
                         print(f"❌ Requests-based authentication failed: {e}")
                         print("🔄 Falling back to browser-based authentication...")
-                        
+
                         # Fallback: Use browser to complete the full authentication flow
                         try:
-                            print("🌐 Step 3b: Using browser to complete authentication...")
-                            
+                            print(
+                                "🌐 Step 3b: Using browser to complete authentication..."
+                            )
+
                             # Fill in username
                             username_input.clear()
                             username_input.send_keys(username)
                             print("✅ Username entered")
-                            
+
                             # Look for and click the Next button after username entry
                             print("🔍 Looking for Next button...")
                             try:
@@ -1012,109 +1091,141 @@ class OKTAIDXAuthenticator:
                                 next_button_selectors = [
                                     'input[value="Next"]',
                                     'button[data-se="next-button"]',
-                                    '.next-button',
+                                    ".next-button",
                                     'input[type="submit"][value*="Next"]',
                                     'button[type="submit"]',
                                     '[data-se="next-button"]',
                                     'button[data-se="next"]',
-                                    'input[data-se="next"]'
+                                    'input[data-se="next"]',
                                 ]
-                                
+
                                 next_button = None
                                 for selector in next_button_selectors:
                                     try:
                                         next_button = wait.until(
-                                            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                                            EC.element_to_be_clickable(
+                                                (By.CSS_SELECTOR, selector)
+                                            )
                                         )
-                                        print(f"✅ Found Next button with selector: {selector}")
+                                        print(
+                                            f"✅ Found Next button with selector: {selector}"
+                                        )
                                         break
                                     except:
                                         continue
-                                
+
                                 if next_button:
                                     next_button.click()
                                     print("✅ Next button clicked")
-                                    
+
                                     # Wait for password field to appear
                                     print("⏳ Waiting for password field to appear...")
                                     password_input = wait.until(
-                                        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]'))
+                                        EC.presence_of_element_located(
+                                            (
+                                                By.CSS_SELECTOR,
+                                                'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]',
+                                            )
+                                        )
                                     )
                                 else:
-                                    print("⚠️  No Next button found, looking for password field directly...")
-                                    password_input = wait.until(
-                                        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]'))
+                                    print(
+                                        "⚠️  No Next button found, looking for password field directly..."
                                     )
-                                
+                                    password_input = wait.until(
+                                        EC.presence_of_element_located(
+                                            (
+                                                By.CSS_SELECTOR,
+                                                'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]',
+                                            )
+                                        )
+                                    )
+
                             except Exception as e:
                                 print(f"⚠️  Next button handling failed: {e}")
                                 print("🔍 Trying to find password field directly...")
                                 # Try to find password field directly if Next button approach fails
                                 password_input = wait.until(
-                                    EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]'))
+                                    EC.presence_of_element_located(
+                                        (
+                                            By.CSS_SELECTOR,
+                                            'input[type="password"], input[name="password"], input[placeholder*="password"], input[placeholder*="Password"]',
+                                        )
+                                    )
                                 )
-                            
+
                             # Fill in password
                             password_input.clear()
                             password_input.send_keys(password)
                             print("✅ Password entered")
-                            
+
                             # Find and click submit button
                             submit_button = wait.until(
-                                EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[type="submit"], button[type="submit"], .submit-button, [data-se="signin-button"]'))
+                                EC.element_to_be_clickable(
+                                    (
+                                        By.CSS_SELECTOR,
+                                        'input[type="submit"], button[type="submit"], .submit-button, [data-se="signin-button"]',
+                                    )
+                                )
                             )
                             submit_button.click()
                             print("✅ Submit button clicked")
-                            
+
                             # Wait for redirect or completion
                             print("⏳ Waiting for authentication completion...")
                             time.sleep(5)
-                            
+
                             # Check if we got redirected to a success page or got tokens
                             current_url = driver.current_url
                             page_source = driver.page_source
-                            
+
                             print(f"🔍 Current URL: {current_url}")
-                            
+
                             # Look for authorization code in URL or page
                             if "code=" in current_url:
                                 auth_code = self._get_authorization_code(current_url)
-                                print(f"✅ Found authorization code in URL: {auth_code[:20]}...")
-                                
+                                print(
+                                    f"✅ Found authorization code in URL: {auth_code[:20]}..."
+                                )
+
                                 # Exchange for tokens
                                 tokens = self._exchange_token(auth_code, code_verifier)
                                 print("✅ Token exchange successful!")
-                                
+
                                 print("🎉 BROWSER-BASED AUTHENTICATION COMPLETE!")
                                 print("🔍 Browser will remain open for inspection")
-                                print("💡 Close the browser manually when done debugging")
-                                
+                                print(
+                                    "💡 Close the browser manually when done debugging"
+                                )
+
                                 return tokens
                             else:
                                 print("⚠️  No authorization code found in URL")
                                 print("🔍 Browser will remain open for inspection")
                                 print("🔄 Falling back to simulated authentication...")
                                 return self._get_simulated_tokens()
-                                
+
                         except Exception as browser_error:
-                            print(f"❌ Browser-based authentication also failed: {browser_error}")
+                            print(
+                                f"❌ Browser-based authentication also failed: {browser_error}"
+                            )
                             print("🔍 Browser will remain open for debugging")
                             print("🔄 Falling back to simulated authentication...")
                             return self._get_simulated_tokens()
-                            
+
                 except Exception as e:
                     print(f"❌ Login form wait failed: {e}")
                     print("🔍 Browser will remain open for debugging")
                     print("🔄 Falling back to simulated authentication...")
                     return self._get_simulated_tokens()
-                
+
             except Exception as e:
                 print(f"❌ Hybrid authentication failed: {e}")
                 print("🔍 Browser will remain open for debugging")
                 print("💡 Check the browser to see what went wrong")
                 print("🔄 Falling back to simulated authentication...")
                 return self._get_simulated_tokens()
-                
+
         except Exception as e:
             print(f"❌ Hybrid authentication failed: {e}")
             print("🔄 Falling back to simulated authentication...")
@@ -1168,7 +1279,9 @@ class OKTAIDXAuthenticator:
             AuthenticationError: If authentication fails
         """
         try:
-            print(f"🌐 Starting Firefox-based Selenium authentication for {username}...")
+            print(
+                f"🌐 Starting Firefox-based Selenium authentication for {username}..."
+            )
             print(
                 "⚠️  Selenium method requires manual intervention for OKTA authentication"
             )
@@ -1196,7 +1309,9 @@ class OKTAIDXAuthenticator:
             return tokens
 
         except Exception as e:
-            raise AuthenticationError(f"Firefox Selenium authentication failed: {str(e)}")
+            raise AuthenticationError(
+                f"Firefox Selenium authentication failed: {str(e)}"
+            )
 
 
 def authenticate_okta_idx(
@@ -1226,7 +1341,9 @@ def authenticate_okta_idx(
     elif method.lower() == "hybrid":
         return authenticator.authenticate_with_hybrid(username, password)
     else:
-        raise ValueError(f"Invalid method: {method}. Use 'requests', 'selenium', or 'hybrid'")
+        raise ValueError(
+            f"Invalid method: {method}. Use 'requests', 'selenium', or 'hybrid'"
+        )
 
 
 def load_credentials_from_file(file_path: str = None) -> Tuple[str, str]:
@@ -1328,7 +1445,9 @@ def perform_login_and_save(
         if method == "hybrid":
             # For hybrid method, we need to pass headless flag
             authenticator = OKTAIDXAuthenticator()
-            tokens = authenticator.authenticate_with_hybrid(username, password, headless=headless)
+            tokens = authenticator.authenticate_with_hybrid(
+                username, password, headless=headless
+            )
         else:
             tokens = authenticate_okta_idx(username, password, method)
 

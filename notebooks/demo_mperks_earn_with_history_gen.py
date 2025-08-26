@@ -12,22 +12,22 @@ import nbformat as nbf
 
 def add_history_section_to_notebook(notebook_path, output_path):
     """Add history section to existing mPerks earn demo notebook."""
-    
+
     # Read the existing notebook
-    with open(notebook_path, 'r') as f:
+    with open(notebook_path, "r") as f:
         notebook = json.load(f)
-    
+
     # Find the Summary section
     summary_cell_index = None
-    for i, cell in enumerate(notebook['cells']):
-        if cell['cell_type'] == 'markdown' and '## Summary' in cell['source'][0]:
+    for i, cell in enumerate(notebook["cells"]):
+        if cell["cell_type"] == "markdown" and "## Summary" in cell["source"][0]:
             summary_cell_index = i
             break
-    
+
     if summary_cell_index is None:
         print("❌ Could not find Summary section in notebook")
         return False
-    
+
     # Create the history section cells
     history_markdown = nbf.v4.new_markdown_cell("""## 8. mPerks Points History
 
@@ -81,36 +81,38 @@ except Exception as e:
     print(f"[X] Failed to get mPerks history: {e}")""")
 
     # Insert the history cells before the summary
-    notebook['cells'].insert(summary_cell_index, history_markdown)
-    notebook['cells'].insert(summary_cell_index + 1, history_code)
-    
+    notebook["cells"].insert(summary_cell_index, history_markdown)
+    notebook["cells"].insert(summary_cell_index + 1, history_code)
+
     # Update the summary to mention history
-    summary_cell = notebook['cells'][summary_cell_index + 2]
-    if 'source' in summary_cell and isinstance(summary_cell['source'], list):
+    summary_cell = notebook["cells"][summary_cell_index + 2]
+    if "source" in summary_cell and isinstance(summary_cell["source"], list):
         # Update the first line to include history
-        if summary_cell['source'] and '## Summary' in summary_cell['source'][0]:
-            summary_cell['source'][0] = "## Summary\n"
-        
+        if summary_cell["source"] and "## Summary" in summary_cell["source"][0]:
+            summary_cell["source"][0] = "## Summary\n"
+
         # Find and update the "What We've Covered" section
-        for i, line in enumerate(summary_cell['source']):
+        for i, line in enumerate(summary_cell["source"]):
             if "**What We've Covered**" in line:
                 # Insert history item after the existing items
-                history_item = "8. **Points History** - Complete transaction history and analysis"
-                summary_cell['source'].insert(i + 8, f"   {history_item}\n")
+                history_item = (
+                    "8. **Points History** - Complete transaction history and analysis"
+                )
+                summary_cell["source"].insert(i + 8, f"   {history_item}\n")
                 break
-        
+
         # Find and update the "API Endpoints" section
-        for i, line in enumerate(summary_cell['source']):
+        for i, line in enumerate(summary_cell["source"]):
             if "**API Endpoints**" in line:
                 # Add history endpoint
                 history_endpoint = "- `GET /loyalty/mPerks/api/points/history` - Points transaction history"
-                summary_cell['source'].insert(i + 5, f"   {history_endpoint}\n")
+                summary_cell["source"].insert(i + 5, f"   {history_endpoint}\n")
                 break
-    
+
     # Write the updated notebook
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(notebook, f, indent=1)
-    
+
     return True
 
 
@@ -118,21 +120,22 @@ def main():
     """Main function to update the demo notebook."""
     input_file = "30_demo_mperks_earn.ipynb"
     output_file = "30_demo_mperks_earn.ipynb"
-    
+
     print("🔧 Adding mPerks history functionality to demo notebook...")
-    
+
     try:
         success = add_history_section_to_notebook(input_file, output_file)
-        
+
         if success:
             print(f"✅ Successfully updated: {output_file}")
             print("📚 The demo notebook now includes mPerks history functionality!")
         else:
             print("❌ Failed to update notebook")
-            
+
     except Exception as e:
         print(f"❌ Error updating notebook: {e}")
         import traceback
+
         traceback.print_exc()
 
 

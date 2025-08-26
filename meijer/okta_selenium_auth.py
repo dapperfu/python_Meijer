@@ -35,7 +35,14 @@ except ImportError:
 class OktaSeleniumAuth:
     """Selenium-based authentication that bypasses Akamai protection."""
 
-    def __init__(self, username: str, password: str, headless: bool = True, proxy_host: str = None, proxy_port: int = None):
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        headless: bool = True,
+        proxy_host: str = None,
+        proxy_port: int = None,
+    ):
         self.username = username
         self.password = password
         self.headless = headless
@@ -45,7 +52,7 @@ class OktaSeleniumAuth:
         self.oauth_authorize_url = f"{self.base_url}/oauth2/default/v1/authorize"
         self.driver = None
         self.logger = logging.getLogger(__name__)
-        
+
         # Store PKCE parameters
         self.code_verifier = None
         self.code_challenge = None
@@ -68,16 +75,18 @@ class OktaSeleniumAuth:
                 timestamp = int(time.time())
                 current_url = self.driver.current_url
                 page_title = self.driver.title
-                
+
                 # Create a safe filename
-                safe_title = "".join(c for c in page_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-                safe_title = safe_title.replace(' ', '_')[:50]  # Limit length
-                
+                safe_title = "".join(
+                    c for c in page_title if c.isalnum() or c in (" ", "-", "_")
+                ).rstrip()
+                safe_title = safe_title.replace(" ", "_")[:50]  # Limit length
+
                 filename = f"/tmp/meijer_auth_{step_name}_{safe_title}_{timestamp}.html"
-                
+
                 # Get page source
                 page_source = self.driver.page_source
-                
+
                 # Create HTML with metadata
                 html_content = f"""<!DOCTYPE html>
 <html>
@@ -95,26 +104,26 @@ class OktaSeleniumAuth:
         <p><strong>Timestamp:</strong> {timestamp}</p>
         <p><strong>URL:</strong> {current_url}</p>
         <p><strong>Title:</strong> {page_title}</p>
-        <p><strong>Capture Time:</strong> {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}</p>
+        <p><strong>Capture Time:</strong> {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))}</p>
     </div>
     <hr>
     {page_source}
 </body>
 </html>"""
-                
+
                 # Write to file
-                with open(filename, 'w', encoding='utf-8') as f:
+                with open(filename, "w", encoding="utf-8") as f:
                     f.write(html_content)
-                
+
                 print(f"📄 HTML page captured: {filename}")
                 print(f"   URL: {current_url}")
                 print(f"   Title: {page_title}")
-                
+
                 return filename
             else:
                 print("⚠️ No driver available for HTML capture")
                 return None
-                
+
         except Exception as e:
             print(f"⚠️ Failed to capture HTML page: {e}")
             return None
@@ -124,9 +133,13 @@ class OktaSeleniumAuth:
         if not self.code_verifier:
             self.code_verifier = secrets.token_urlsafe(32)
         if not self.code_challenge:
-            self.code_challenge = base64.urlsafe_b64encode(
-                hashlib.sha256(self.code_verifier.encode()).digest()
-            ).decode().rstrip('=')
+            self.code_challenge = (
+                base64.urlsafe_b64encode(
+                    hashlib.sha256(self.code_verifier.encode()).digest()
+                )
+                .decode()
+                .rstrip("=")
+            )
         return self.code_challenge
 
     def _generate_state(self) -> str:
@@ -149,49 +162,62 @@ class OktaSeleniumAuth:
                 "try again later",
                 "access denied",
                 "forbidden",
-                "403"
+                "403",
             ]
-            
+
             # First check for the exact div structure
             try:
-                rate_limit_div = self.driver.find_element(By.CSS_SELECTOR, 'div[class*="MuiBox-root"]')
-                if rate_limit_div and "There was an unexpected internal error. Please try again." in rate_limit_div.text:
+                rate_limit_div = self.driver.find_element(
+                    By.CSS_SELECTOR, 'div[class*="MuiBox-root"]'
+                )
+                if (
+                    rate_limit_div
+                    and "There was an unexpected internal error. Please try again."
+                    in rate_limit_div.text
+                ):
                     print("🚫 RATE LIMITING DETECTED!")
-                    print("💡 Found exact error div: 'There was an unexpected internal error. Please try again.'")
+                    print(
+                        "💡 Found exact error div: 'There was an unexpected internal error. Please try again.'"
+                    )
                     print("⏰ This means you are being rate limited.")
                     print("💡 Please try logging in again in a few hours.")
                     return True
             except:
                 pass
-            
+
             # Check page title for rate limiting indicators
             page_title = self.driver.title.lower()
-            if any(text in page_title for text in ["error", "denied", "forbidden", "rate limit"]):
+            if any(
+                text in page_title
+                for text in ["error", "denied", "forbidden", "rate limit"]
+            ):
                 print("🚫 RATE LIMITING DETECTED!")
                 print(f"💡 Page title indicates rate limiting: '{self.driver.title}'")
                 print("⏰ This means you are being rate limited.")
                 print("💡 Please try logging in again in a few hours.")
-                
+
                 # Capture the rate-limited page for analysis
                 self._capture_html_page("rate_limited")
                 print("📄 Rate-limited page HTML captured to /tmp/ for analysis")
-                
+
                 return True
-            
+
             # Check URL for error indicators
             current_url = self.driver.current_url.lower()
-            if any(text in current_url for text in ["error", "denied", "forbidden", "403"]):
+            if any(
+                text in current_url for text in ["error", "denied", "forbidden", "403"]
+            ):
                 print("🚫 RATE LIMITING DETECTED!")
                 print(f"💡 URL indicates rate limiting: '{self.driver.current_url}'")
                 print("⏰ This means you are being rate limited.")
                 print("💡 Please try logging in again in a few hours.")
-                
+
                 # Capture the rate-limited page for analysis
                 self._capture_html_page("rate_limited_url")
                 print("📄 Rate-limited page HTML captured to /tmp/ for analysis")
-                
+
                 return True
-            
+
             # Fallback to text search in page source
             page_text = self.driver.page_source.lower()
             for text in rate_limit_texts:
@@ -201,9 +227,9 @@ class OktaSeleniumAuth:
                     print("⏰ This means you are being rate limited.")
                     print("💡 Please try logging in again in a few hours.")
                     return True
-            
+
             return False
-            
+
         except Exception as e:
             print(f"⚠️ Error checking for rate limiting: {e}")
             return False
@@ -236,13 +262,13 @@ class OktaSeleniumAuth:
             # Take screenshot and capture HTML of the OAuth2 page
             self._take_screenshot("oauth2_page_loaded")
             self._capture_html_page("oauth2_page_loaded")
-            
+
             # Check for rate limiting errors
             if self._check_for_rate_limiting():
                 print("🚫 Authentication stopped due to rate limiting")
                 print("📄 HTML page captured for analysis in /tmp/")
                 return None
-            
+
             # Check if the page is trying to navigate to introspect endpoint
             print("🔍 Checking for introspect endpoint navigation...")
             current_url = self.driver.current_url
@@ -252,19 +278,21 @@ class OktaSeleniumAuth:
                 print("   This suggests the OAuth2 page is redirecting incorrectly")
                 print("   Capturing the introspect page for analysis...")
                 self._capture_html_page("introspect_redirect")
-                
+
                 # Try to go back to the OAuth2 page
                 print("🔄 Attempting to return to OAuth2 page...")
                 self.driver.back()
                 time.sleep(2)
-                
+
                 # Check if we're back on the OAuth2 page
                 if "introspect" not in self.driver.current_url:
                     print("✅ Successfully returned to OAuth2 page")
                 else:
-                    print("❌ Still on introspect page - this may indicate a flow issue")
+                    print(
+                        "❌ Still on introspect page - this may indicate a flow issue"
+                    )
                     return None
-            
+
             # Start navigation monitoring to catch any introspect redirects
             print("🔍 Starting navigation monitoring...")
             self.monitor_navigation(timeout=10)  # Monitor for 10 seconds
@@ -277,7 +305,7 @@ class OktaSeleniumAuth:
             # Take screenshot and capture HTML after credential submission
             self._take_screenshot("credentials_submitted")
             self._capture_html_page("credentials_submitted")
-            
+
             # Check for rate limiting errors after credential submission
             if self._check_for_rate_limiting():
                 print("🚫 Authentication stopped due to rate limiting after login")
@@ -286,7 +314,10 @@ class OktaSeleniumAuth:
 
             # Step 4: Handle email verification if required
             print("📡 Step 4: Checking for email verification...")
-            if "verification" in self.driver.title.lower() or "verify" in self.driver.title.lower():
+            if (
+                "verification" in self.driver.title.lower()
+                or "verify" in self.driver.title.lower()
+            ):
                 print("📧 Email verification detected - handling verification flow...")
                 if not self._handle_email_verification():
                     return None
@@ -350,9 +381,11 @@ class OktaSeleniumAuth:
                     proxy_string = f"{self.proxy_host}:{self.proxy_port}"
                     print(f"🌐 Configuring proxy: {proxy_string}")
                     options.add_argument(f"--proxy-server={proxy_string}")
-                    
+
                     # Additional proxy-related options for better compatibility
-                    options.add_argument("--ignore-certificate-errors")  # Handle mitmproxy cert issues
+                    options.add_argument(
+                        "--ignore-certificate-errors"
+                    )  # Handle mitmproxy cert issues
                     options.add_argument("--ignore-ssl-errors")
                     options.add_argument("--allow-running-insecure-content")
                     print("✅ Proxy configuration added")
@@ -364,29 +397,27 @@ class OktaSeleniumAuth:
                 options.add_argument(
                     "--user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36"
                 )
-                
+
                 # Comprehensive mobile device emulation
                 options.add_argument("--window-size=375,812")  # iPhone X dimensions
                 options.add_argument("--viewport-size=375,812")
-                
+
                 # Mobile-specific options
                 options.add_argument("--touch-events=enabled")
                 options.add_argument("--enable-touch-drag-drop")
                 options.add_argument("--disable-features=VizDisplayCompositor")
-                
+
                 # Additional options to appear more human-like
                 options.add_argument("--disable-blink-features=AutomationControlled")
-                options.add_experimental_option("excludeSwitches", ["enable-automation"])
+                options.add_experimental_option(
+                    "excludeSwitches", ["enable-automation"]
+                )
                 options.add_experimental_option("useAutomationExtension", False)
-                
+
                 # Mobile device emulation
                 mobile_emulation = {
-                    "deviceMetrics": {
-                        "width": 375,
-                        "height": 812,
-                        "pixelRatio": 3.0
-                    },
-                    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36"
+                    "deviceMetrics": {"width": 375, "height": 812, "pixelRatio": 3.0},
+                    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.0.0 Mobile Safari/537.36",
                 }
                 options.add_experimental_option("mobileEmulation", mobile_emulation)
 
@@ -408,7 +439,7 @@ class OktaSeleniumAuth:
                     self.driver.execute_script(
                         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
                     )
-                
+
                 # Comprehensive mobile device spoofing
                 self.driver.execute_script("""
                     // Remove automation indicators
@@ -503,18 +534,28 @@ class OktaSeleniumAuth:
                     if self.proxy_host and self.proxy_port:
                         proxy_string = f"{self.proxy_host}:{self.proxy_port}"
                         print(f"🌐 Configuring Firefox proxy: {proxy_string}")
-                        
+
                         # Firefox proxy configuration
                         options.set_preference("network.proxy.type", 1)  # Manual proxy
                         options.set_preference("network.proxy.http", self.proxy_host)
-                        options.set_preference("network.proxy.http_port", self.proxy_port)
+                        options.set_preference(
+                            "network.proxy.http_port", self.proxy_port
+                        )
                         options.set_preference("network.proxy.ssl", self.proxy_host)
-                        options.set_preference("network.proxy.ssl_port", self.proxy_port)
-                        options.set_preference("network.proxy.share_proxy_settings", True)
-                        
+                        options.set_preference(
+                            "network.proxy.ssl_port", self.proxy_port
+                        )
+                        options.set_preference(
+                            "network.proxy.share_proxy_settings", True
+                        )
+
                         # Handle mitmproxy certificate issues
-                        options.set_preference("security.cert_verification.enabled", False)
-                        options.set_preference("security.enterprise_roots.enabled", True)
+                        options.set_preference(
+                            "security.cert_verification.enabled", False
+                        )
+                        options.set_preference(
+                            "security.enterprise_roots.enabled", True
+                        )
                         print("✅ Firefox proxy configuration added")
 
                     self.driver = webdriver.Firefox(options=options)
@@ -548,7 +589,7 @@ class OktaSeleniumAuth:
                 "redirect_uri": "com.meijer.mobile.meijer:/login",  # Working redirect_uri
                 "response_type": "code",
                 "state": self._generate_state(),
-                "nonce": self._generate_nonce()
+                "nonce": self._generate_nonce(),
             }
 
             url = f"{self.oauth_authorize_url}?{urlencode(params)}"
@@ -567,7 +608,7 @@ class OktaSeleniumAuth:
             # Add small human-like delay to avoid appearing robotic
             print("⏸️ Adding 3 second human-like delay...")
             time.sleep(3)
-            
+
             # Skip session warming - it's causing bot detection issues
             print("⏭️ Skipping session warming to avoid bot detection")
 
@@ -586,18 +627,23 @@ class OktaSeleniumAuth:
 
             # Wait for the page to be completely ready
             wait = WebDriverWait(self.driver, 15)
-            
+
             # Wait for page to finish loading
-            wait.until(lambda driver: driver.execute_script("return document.readyState") == "complete")
+            wait.until(
+                lambda driver: driver.execute_script("return document.readyState")
+                == "complete"
+            )
             print("✅ Page fully loaded")
-            
+
             # Additional wait for OKTA JavaScript to initialize
-            wait.until(lambda driver: driver.execute_script("""
+            wait.until(
+                lambda driver: driver.execute_script("""
                 return (
                     document.querySelector('input[name="identifier"]') !== null &&
                     document.readyState === 'complete'
                 );
-            """))
+            """)
+            )
             print("✅ OKTA form elements ready")
 
             # For debugging: add a pause to see the page
@@ -607,16 +653,20 @@ class OktaSeleniumAuth:
 
             # STEP 1: Fill username field directly - no need to search
             print("📡 Step 1: Filling username field...")
-            
+
             # Wait for form to be ready for interaction
-            if not self._wait_for_form_ready(["input[name='identifier']", "button[data-se='save']"], timeout=15):
+            if not self._wait_for_form_ready(
+                ["input[name='identifier']", "button[data-se='save']"], timeout=15
+            ):
                 print("❌ Form not ready for interaction")
                 return False
-            
+
             # Direct access to username field
-            username_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='identifier']")
+            username_field = self.driver.find_element(
+                By.CSS_SELECTOR, "input[name='identifier']"
+            )
             print("✅ Username field found and ready")
-            
+
             # Debug: show field details
             print("🔍 Username field details:")
             print(f"   ID: {username_field.get_attribute('id')}")
@@ -628,9 +678,13 @@ class OktaSeleniumAuth:
             # Fill username
             print("🔑 Entering username...")
             username_field.clear()
-            print(f"   Field cleared, current value: '{username_field.get_attribute('value')}'")
+            print(
+                f"   Field cleared, current value: '{username_field.get_attribute('value')}'"
+            )
             username_field.send_keys(self.username)
-            print(f"   Field after send_keys, current value: '{username_field.get_attribute('value')}'")
+            print(
+                f"   Field after send_keys, current value: '{username_field.get_attribute('value')}'"
+            )
             print(f"👤 Username entered: {self.username}")
 
             # Minimal delay to avoid triggering rate limiting
@@ -643,30 +697,34 @@ class OktaSeleniumAuth:
 
             # STEP 2: Click Next button to go to password page
             print("📡 Step 2: Clicking Next button...")
-            
+
             # Use the exact button selector from the user's form
             try:
                 # Primary selector: button with data-se="save" and text "Next"
-                next_button = self.driver.find_element(By.CSS_SELECTOR, "button[data-se='save']")
+                next_button = self.driver.find_element(
+                    By.CSS_SELECTOR, "button[data-se='save']"
+                )
                 print("✅ Next button found using data-se='save' selector")
             except:
                 try:
                     # Fallback: button with type="submit" and text "Next"
-                    next_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                    next_button = self.driver.find_element(
+                        By.CSS_SELECTOR, "button[type='submit']"
+                    )
                     print("✅ Next button found using type='submit' selector")
                 except:
                     # Last resort: find any button that might be the Next button
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
                     next_button = None
                     for btn in buttons:
-                        if btn.text.lower() in ['next', 'continue', 'submit']:
+                        if btn.text.lower() in ["next", "continue", "submit"]:
                             next_button = btn
                             break
-                    
+
                     if not next_button:
                         print("❌ Next button not found")
                         return False
-            
+
             print("✅ Next button found and ready")
 
             if not next_button:
@@ -676,7 +734,7 @@ class OktaSeleniumAuth:
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
                     for i, btn in enumerate(buttons):
                         print(
-                            f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                            f"   Button {i + 1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
                         )
 
                     # Also look for submit inputs
@@ -685,7 +743,7 @@ class OktaSeleniumAuth:
                     )
                     for i, inp in enumerate(submit_inputs):
                         print(
-                            f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
+                            f"   Submit Input {i + 1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
                         )
 
                 except Exception as e:
@@ -702,12 +760,19 @@ class OktaSeleniumAuth:
             # Wait for password page to load by checking for password field presence
             print("⏳ Waiting for password page to load...")
             try:
-                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='credentials.passcode']")))
+                wait.until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, "input[name='credentials.passcode']")
+                    )
+                )
                 print("✅ Password page loaded - password field detected")
             except TimeoutException:
                 print("⚠️ Password field not found, checking page state...")
                 # Fallback: check if page title changed
-                if "password" in self.driver.title.lower() or "passcode" in self.driver.title.lower():
+                if (
+                    "password" in self.driver.title.lower()
+                    or "passcode" in self.driver.title.lower()
+                ):
                     print("✅ Password page detected by title")
                 else:
                     print("❌ Password page not detected")
@@ -723,12 +788,17 @@ class OktaSeleniumAuth:
             print("📡 Step 3: Filling password field...")
 
             # Wait for password form to be ready
-            if not self._wait_for_form_ready(["input[name='credentials.passcode']", "button[type='submit']"], timeout=15):
+            if not self._wait_for_form_ready(
+                ["input[name='credentials.passcode']", "button[type='submit']"],
+                timeout=15,
+            ):
                 print("❌ Password form not ready for interaction")
                 return False
 
             # Direct access to password field - we know exactly what it is
-            password_field = self.driver.find_element(By.CSS_SELECTOR, "input[name='credentials.passcode']")
+            password_field = self.driver.find_element(
+                By.CSS_SELECTOR, "input[name='credentials.passcode']"
+            )
             print("✅ Password field found and ready")
 
             if not password_field:
@@ -738,7 +808,7 @@ class OktaSeleniumAuth:
                     inputs = self.driver.find_elements(By.TAG_NAME, "input")
                     for i, inp in enumerate(inputs):
                         print(
-                            f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
+                            f"   Input {i + 1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
                         )
 
                     # Also look for any password-like elements
@@ -771,24 +841,35 @@ class OktaSeleniumAuth:
 
             # STEP 4: Click final Submit button
             print("📡 Step 4: Clicking final Submit button...")
-            
+
             # Direct access to submit button - usually the submit button or button with "Sign In" text
             try:
                 # Try common submit button selectors
-                final_submit_button = self.driver.find_element(By.CSS_SELECTOR, "button:contains('Sign In'), button:contains('Log In'), button:contains('Submit')")
+                final_submit_button = self.driver.find_element(
+                    By.CSS_SELECTOR,
+                    "button:contains('Sign In'), button:contains('Log In'), button:contains('Submit')",
+                )
             except:
                 try:
                     # Fallback to submit button
-                    final_submit_button = self.driver.find_element(By.CSS_SELECTOR, "input[type='submit'], button[type='submit']")
+                    final_submit_button = self.driver.find_element(
+                        By.CSS_SELECTOR, "input[type='submit'], button[type='submit']"
+                    )
                 except:
                     # Last resort: find any button that might be the submit button
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
                     final_submit_button = None
                     for btn in buttons:
-                        if btn.text.lower() in ['sign in', 'log in', 'submit', 'sign', 'login']:
+                        if btn.text.lower() in [
+                            "sign in",
+                            "log in",
+                            "submit",
+                            "sign",
+                            "login",
+                        ]:
                             final_submit_button = btn
                             break
-                    
+
                     if not final_submit_button:
                         print("❌ Final Submit button not found")
                         print("🔍 Available buttons on password page:")
@@ -796,7 +877,7 @@ class OktaSeleniumAuth:
                             buttons = self.driver.find_elements(By.TAG_NAME, "button")
                             for i, btn in enumerate(buttons):
                                 print(
-                                    f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                                    f"   Button {i + 1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
                                 )
 
                             # Also look for submit inputs
@@ -805,7 +886,7 @@ class OktaSeleniumAuth:
                             )
                             for i, inp in enumerate(submit_inputs):
                                 print(
-                                    f"   Submit Input {i+1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
+                                    f"   Submit Input {i + 1}: value={inp.get_attribute('value')}, class={inp.get_attribute('class')}"
                                 )
 
                         except Exception as e:
@@ -814,7 +895,7 @@ class OktaSeleniumAuth:
                         # Take screenshot for debugging
                         self._take_screenshot("final_submit_button_not_found")
                         return False
-            
+
             print("✅ Final Submit button found and ready")
 
             # Submit the final form
@@ -833,45 +914,58 @@ class OktaSeleniumAuth:
 
             # STEP 5: Handle 2FA selection page
             print("📡 Step 5: Looking for 2FA selection page...")
-            
+
             # Wait for the 2FA selection page to load
-            wait.until(lambda driver: driver.execute_script("""
+            wait.until(
+                lambda driver: driver.execute_script("""
                 return (
                     document.querySelector('button[data-se="authenticator-button"]') !== null &&
                     document.readyState === 'complete'
                 );
-            """))
+            """)
+            )
             print("✅ 2FA selection page loaded")
 
             # Find and click the "Send Email" button
-            email_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-se="authenticator-button"]')
+            email_button = self.driver.find_element(
+                By.CSS_SELECTOR, 'button[data-se="authenticator-button"]'
+            )
             print("✅ Found 'Send Email' button")
-            
+
             # Verify it's the right button by checking the text
             if "Send Email" in email_button.text:
                 print("✅ Confirmed correct button - clicking 'Send Email'...")
                 email_button.click()
-                
+
                 # Wait for the email confirmation page to load
                 print("📡 Step 6: Waiting for email confirmation page...")
                 try:
-                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-se="save"]')))
+                    wait.until(
+                        EC.presence_of_element_located(
+                            (By.CSS_SELECTOR, 'button[data-se="save"]')
+                        )
+                    )
                     print("✅ Email confirmation page loaded - button detected")
                 except TimeoutException:
-                    print("⚠️ Email confirmation button not found, checking page state...")
+                    print(
+                        "⚠️ Email confirmation button not found, checking page state..."
+                    )
                     # Fallback: check if page title indicates confirmation page
-                    if "confirm" in self.driver.title.lower() or "email" in self.driver.title.lower():
+                    if (
+                        "confirm" in self.driver.title.lower()
+                        or "email" in self.driver.title.lower()
+                    ):
                         print("✅ Email confirmation page detected by title")
                     else:
                         print("❌ Email confirmation page not detected")
                         return False
-                
+
                 print(f"📄 After Send Email click - URL: {self.driver.current_url}")
                 print(f"📄 Page title: {self.driver.title}")
-                
+
                 # Take screenshot of email confirmation page
                 self._take_screenshot("email_confirmation_page")
-                
+
                 # Now handle the email confirmation page
                 print("📡 Step 7: Handling email confirmation page...")
                 return self._handle_email_confirmation_page()
@@ -887,51 +981,61 @@ class OktaSeleniumAuth:
         """Handle the email verification flow after clicking 'Send Me an Email'."""
         try:
             print("📧 Handling email verification flow...")
-            
+
             # Wait for the verification page to stabilize
             wait = WebDriverWait(self.driver, 15)
-            wait.until(lambda driver: driver.execute_script("return document.readyState === 'complete'"))
-            
+            wait.until(
+                lambda driver: driver.execute_script(
+                    "return document.readyState === 'complete'"
+                )
+            )
+
             print(f"📄 Email verification page - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
-            
+
             # Look for verification code input field
             print("🔍 Looking for verification code input field...")
-            
+
             # Wait for verification code field to appear
-            wait.until(lambda driver: driver.execute_script("""
+            wait.until(
+                lambda driver: driver.execute_script("""
                 return (
                     document.querySelector('input[type="text"], input[placeholder*="code"], input[placeholder*="Code"], input[name*="code"], input[id*="code"]') !== null &&
                     document.readyState === 'complete'
                 );
-            """))
+            """)
+            )
             print("✅ Verification code field ready")
-            
+
             # Find the verification code input field
-            code_field = self.driver.find_element(By.CSS_SELECTOR, 'input[type="text"], input[placeholder*="code"], input[placeholder*="Code"], input[name*="code"], input[id*="code"]')
+            code_field = self.driver.find_element(
+                By.CSS_SELECTOR,
+                'input[type="text"], input[placeholder*="code"], input[placeholder*="Code"], input[name*="code"], input[id*="code"]',
+            )
             print("✅ Verification code field found")
-            
+
             # Take screenshot of verification page
             self._take_screenshot("verification_code_page")
-            
+
             print("📧 Email verification page loaded successfully")
             print("💡 Now polling email for verification code...")
-            
+
             # Poll email for verification code using simple interface
             from .email_verification import get_code
+
             verification_code = get_code(timeout=300)
             if verification_code:
                 print(f"✅ Verification code found: {verification_code}")
-                
+
                 # Enter the verification code
                 print("🔑 Entering verification code...")
                 code_field.clear()
                 code_field.send_keys(verification_code)
                 print("✅ Verification code entered")
-                
+
                 # Look for and click the submit/verify button
                 print("📡 Looking for submit/verify button...")
-                
+
                 # Try multiple selectors for the submit button
                 submit_button = None
                 submit_selectors = [
@@ -943,49 +1047,66 @@ class OktaSeleniumAuth:
                     'button:contains("Log In")',
                     'input[type="submit"]',
                     'button[data-se="verify"]',
-                    'button[data-se="submit"]'
+                    'button[data-se="submit"]',
                 ]
-                
+
                 for selector in submit_selectors:
                     try:
-                        submit_button = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        submit_button = self.driver.find_element(
+                            By.CSS_SELECTOR, selector
+                        )
                         print(f"✅ Submit button found with selector: {selector}")
                         break
                     except:
                         continue
-                
+
                 if not submit_button:
                     # Fallback: find any button that looks like a submit button
                     buttons = self.driver.find_elements(By.TAG_NAME, "button")
                     for btn in buttons:
                         btn_text = btn.text.lower()
-                        if any(word in btn_text for word in ['verify', 'submit', 'continue', 'sign in', 'log in']):
+                        if any(
+                            word in btn_text
+                            for word in [
+                                "verify",
+                                "submit",
+                                "continue",
+                                "sign in",
+                                "log in",
+                            ]
+                        ):
                             submit_button = btn
                             print(f"✅ Found submit button with text: {btn.text}")
                             break
-                
+
                 if submit_button:
-                    print("✅ Submit button found - clicking to complete verification...")
+                    print(
+                        "✅ Submit button found - clicking to complete verification..."
+                    )
                     submit_button.click()
-                    
+
                     # Wait for verification to complete and page to load
                     print("⏳ Waiting for verification to complete...")
                     time.sleep(5)  # Give more time for the page to process
-                    
+
                     # Wait for page to stabilize
                     try:
                         WebDriverWait(self.driver, 15).until(
-                            lambda driver: driver.execute_script("return document.readyState === 'complete'")
+                            lambda driver: driver.execute_script(
+                                "return document.readyState === 'complete'"
+                            )
                         )
                     except:
-                        print("⚠️ Page ready state check timed out, continuing anyway...")
-                    
+                        print(
+                            "⚠️ Page ready state check timed out, continuing anyway..."
+                        )
+
                     print(f"📄 After verification - URL: {self.driver.current_url}")
                     print(f"📄 Page title: {self.driver.title}")
-                    
+
                     # Take screenshot of completion
                     self._take_screenshot("verification_completed")
-                    
+
                     return True
                 else:
                     print("❌ Submit button not found after verification code entry")
@@ -993,29 +1114,31 @@ class OktaSeleniumAuth:
                     try:
                         buttons = self.driver.find_elements(By.TAG_NAME, "button")
                         for i, btn in enumerate(buttons):
-                            print(f"   Button {i+1}: text='{btn.text}', type={btn.get_attribute('type')}, class={btn.get_attribute('class')}")
+                            print(
+                                f"   Button {i + 1}: text='{btn.text}', type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                            )
                     except Exception as e:
                         print(f"   Error listing buttons: {e}")
-                    
+
                     # Take screenshot for debugging
                     self._take_screenshot("submit_button_not_found")
                     return False
-                
+
                 # Wait for verification to complete
                 print("⏳ Waiting for verification to complete...")
                 time.sleep(3)
-                
+
                 print(f"📄 After verification - URL: {self.driver.current_url}")
                 print(f"📄 Page title: {self.driver.title}")
-                
+
                 # Take screenshot of completion
                 self._take_screenshot("verification_completed")
-                
+
                 return True
             else:
                 print("❌ No verification code found in email after timeout")
                 return False
-            
+
         except Exception as e:
             print(f"❌ Error handling email verification: {e}")
             return False
@@ -1024,61 +1147,83 @@ class OktaSeleniumAuth:
         """Handle the email confirmation page after clicking 'Send Email'."""
         try:
             print("📧 Handling email confirmation page...")
-            
+
             # Wait for the confirmation page to stabilize
             wait = WebDriverWait(self.driver, 15)
-            wait.until(lambda driver: driver.execute_script("return document.readyState === 'complete'"))
-            
+            wait.until(
+                lambda driver: driver.execute_script(
+                    "return document.readyState === 'complete'"
+                )
+            )
+
             print(f"📄 Email confirmation page - URL: {self.driver.current_url}")
             print(f"📄 Page title: {self.driver.title}")
-            
+
             # Look for the "Send Me an Email" button
             print("🔍 Looking for 'Send Me an Email' button...")
-            
+
             # Wait for the button to appear
-            wait.until(lambda driver: driver.execute_script("""
+            wait.until(
+                lambda driver: driver.execute_script("""
                 return (
                     document.querySelector('button[data-se="save"]') !== null &&
                     document.readyState === 'complete'
                 );
-            """))
+            """)
+            )
             print("✅ Email confirmation button ready")
-            
+
             # Find and click the "Send Me an Email" button
-            confirm_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-se="save"]')
+            confirm_button = self.driver.find_element(
+                By.CSS_SELECTOR, 'button[data-se="save"]'
+            )
             print("✅ Found 'Send Me an Email' button")
-            
+
             # Verify it's the right button by checking the text
             if "Send Me an Email" in confirm_button.text:
                 print("✅ Confirmed correct button - clicking 'Send Me an Email'...")
                 confirm_button.click()
-                
+
                 # Wait for the email verification page to load
                 print("📡 Step 8: Waiting for email verification page...")
                 try:
-                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="text"], input[placeholder*="code"], input[name*="code"]')))
-                    print("✅ Email verification page loaded - code input field detected")
+                    wait.until(
+                        EC.presence_of_element_located(
+                            (
+                                By.CSS_SELECTOR,
+                                'input[type="text"], input[placeholder*="code"], input[name*="code"]',
+                            )
+                        )
+                    )
+                    print(
+                        "✅ Email verification page loaded - code input field detected"
+                    )
                 except TimeoutException:
-                    print("⚠️ Email verification code field not found, checking page state...")
+                    print(
+                        "⚠️ Email verification code field not found, checking page state..."
+                    )
                     # Fallback: check if page title indicates verification page
-                    if "verification" in self.driver.title.lower() or "verify" in self.driver.title.lower():
+                    if (
+                        "verification" in self.driver.title.lower()
+                        or "verify" in self.driver.title.lower()
+                    ):
                         print("✅ Email verification page detected by title")
                     else:
                         print("❌ Email verification page not detected")
                         return False
-                
+
                 print(f"📄 After confirmation click - URL: {self.driver.current_url}")
                 print(f"📄 Page title: {self.driver.title}")
-                
+
                 # Take screenshot of email verification page
                 self._take_screenshot("email_verification_page")
-                
+
                 print("📧 Email verification initiated - waiting for email...")
                 return True
             else:
                 print(f"❌ Unexpected button text: {confirm_button.text}")
                 return False
-            
+
         except Exception as e:
             print(f"❌ Error handling email confirmation page: {e}")
             return False
@@ -1087,76 +1232,82 @@ class OktaSeleniumAuth:
         """Poll email for verification code with 5 minute timeout."""
         try:
             print("📧 Polling email for verification code...")
-            
+
             # Read email configuration
             email_config = self._read_email_config()
             if not email_config:
                 print("❌ Failed to read email configuration")
                 return None
-            
-            print(f"📧 Connecting to IMAP server: {email_config['server']}:{email_config['port']}")
-            
+
+            print(
+                f"📧 Connecting to IMAP server: {email_config['server']}:{email_config['port']}"
+            )
+
             # Connect to IMAP server
-            if email_config['use_ssl']:
-                mail = imaplib.IMAP4_SSL(email_config['server'], email_config['port'])
+            if email_config["use_ssl"]:
+                mail = imaplib.IMAP4_SSL(email_config["server"], email_config["port"])
             else:
-                mail = imaplib.IMAP4(email_config['server'], email_config['port'])
-            
+                mail = imaplib.IMAP4(email_config["server"], email_config["port"])
+
             # Login
-            mail.login(email_config['username'], email_config['password'])
+            mail.login(email_config["username"], email_config["password"])
             print("✅ Connected to email server")
-            
+
             # Select inbox
-            mail.select('INBOX')
-            
+            mail.select("INBOX")
+
             # Poll for verification code with 5 minute timeout
             max_wait_time = 300  # 5 minutes
-            check_interval = 10   # Check every 10 seconds
+            check_interval = 10  # Check every 10 seconds
             elapsed_time = 0
-            
-            print(f"⏳ Polling email for verification code (timeout: {max_wait_time}s)...")
-            
+
+            print(
+                f"⏳ Polling email for verification code (timeout: {max_wait_time}s)..."
+            )
+
             while elapsed_time < max_wait_time:
                 print(f"   Checking email... (elapsed: {elapsed_time}s)")
-                
+
                 # Search for recent emails from Meijer
-                _, message_numbers = mail.search(None, '(FROM "meijer" SUBJECT "verification" SINCE "1 hour ago")')
-                
+                _, message_numbers = mail.search(
+                    None, '(FROM "meijer" SUBJECT "verification" SINCE "1 hour ago")'
+                )
+
                 if message_numbers[0]:
                     # Get the most recent email
                     latest_email_num = message_numbers[0].split()[-1]
-                    _, msg_data = mail.fetch(latest_email_num, '(RFC822)')
-                    email_body = msg_data[0][1].decode('utf-8', errors='ignore')
-                    
+                    _, msg_data = mail.fetch(latest_email_num, "(RFC822)")
+                    email_body = msg_data[0][1].decode("utf-8", errors="ignore")
+
                     # Extract verification code using regex - look for "Code: *XXXXXX*" pattern
                     code_patterns = [
-                        r'Code:\s*\*?(\d{6})\*?',  # "Code: *123456*" or "Code: 123456"
-                        r'code[:\s]*(\d{6})',       # "code 123456"
-                        r'verification code[:\s]*(\d{6})',  # "verification code 123456"
+                        r"Code:\s*\*?(\d{6})\*?",  # "Code: *123456*" or "Code: 123456"
+                        r"code[:\s]*(\d{6})",  # "code 123456"
+                        r"verification code[:\s]*(\d{6})",  # "verification code 123456"
                     ]
-                    
+
                     verification_code = None
                     for pattern in code_patterns:
                         code_match = re.search(pattern, email_body, re.IGNORECASE)
                         if code_match:
                             verification_code = code_match.group(1)
                             break
-                    
+
                     if verification_code:
                         print(f"✅ Found verification code: {verification_code}")
                         mail.close()
                         mail.logout()
                         return verification_code
-                
+
                 # Wait before next check
                 time.sleep(check_interval)
                 elapsed_time += check_interval
-            
+
             print("❌ Timeout waiting for verification code")
             mail.close()
             mail.logout()
             return None
-            
+
         except Exception as e:
             print(f"❌ Error polling email: {e}")
             return None
@@ -1165,10 +1316,10 @@ class OktaSeleniumAuth:
         """Extract tokens from the current page source."""
         try:
             print("🔍 Attempting to extract tokens from page...")
-            
+
             # Try to extract tokens from JavaScript variables
             tokens = {}
-            
+
             # Check for common token patterns in JavaScript
             js_patterns = [
                 r'access_token["\']?\s*[:=]\s*["\']([^"\']+)["\']',
@@ -1176,20 +1327,20 @@ class OktaSeleniumAuth:
                 r'id_token["\']?\s*[:=]\s*["\']([^"\']+)["\']',
                 r'token["\']?\s*[:=]\s*["\']([^"\']+)["\']',
             ]
-            
+
             page_source = self.driver.page_source
             for pattern in js_patterns:
                 matches = re.findall(pattern, page_source, re.IGNORECASE)
                 if matches:
-                    if 'access_token' in pattern:
-                        tokens['access_token'] = matches[0]
-                    elif 'refresh_token' in pattern:
-                        tokens['refresh_token'] = matches[0]
-                    elif 'id_token' in pattern:
-                        tokens['id_token'] = matches[0]
-                    elif 'token' in pattern:
-                        tokens['token'] = matches[0]
-            
+                    if "access_token" in pattern:
+                        tokens["access_token"] = matches[0]
+                    elif "refresh_token" in pattern:
+                        tokens["refresh_token"] = matches[0]
+                    elif "id_token" in pattern:
+                        tokens["id_token"] = matches[0]
+                    elif "token" in pattern:
+                        tokens["token"] = matches[0]
+
             # Also try to execute JavaScript to get tokens from localStorage/sessionStorage
             try:
                 local_storage_tokens = self.driver.execute_script("""
@@ -1199,11 +1350,11 @@ class OktaSeleniumAuth:
                         id_token: localStorage.getItem('id_token')
                     }
                 """)
-                
+
                 for key, value in local_storage_tokens.items():
                     if value and key not in tokens:
                         tokens[key] = value
-                
+
                 session_storage_tokens = self.driver.execute_script("""
                     return {
                         access_token: sessionStorage.getItem('access_token') || sessionStorage.getItem('token'),
@@ -1211,21 +1362,21 @@ class OktaSeleniumAuth:
                         id_token: sessionStorage.getItem('id_token')
                     }
                 """)
-                
+
                 for key, value in session_storage_tokens.items():
                     if value and key not in tokens:
                         tokens[key] = value
-                        
+
             except Exception as e:
                 print(f"⚠️ Could not extract from storage: {e}")
-            
+
             if tokens:
                 print(f"✅ Extracted tokens: {list(tokens.keys())}")
                 return tokens
             else:
                 print("⚠️ No tokens found in page")
                 return None
-                
+
         except Exception as e:
             print(f"❌ Error extracting tokens from page: {e}")
             return None
@@ -1234,18 +1385,21 @@ class OktaSeleniumAuth:
         """Extract tokens from browser storage (cookies, localStorage, sessionStorage)."""
         try:
             print("🔍 Attempting to extract tokens from browser storage...")
-            
+
             tokens = {}
-            
+
             # Try to get tokens from cookies
             try:
                 cookies = self.driver.get_cookies()
                 for cookie in cookies:
-                    if 'token' in cookie['name'].lower() or 'auth' in cookie['name'].lower():
-                        tokens[f"cookie_{cookie['name']}"] = cookie['value']
+                    if (
+                        "token" in cookie["name"].lower()
+                        or "auth" in cookie["name"].lower()
+                    ):
+                        tokens[f"cookie_{cookie['name']}"] = cookie["value"]
             except Exception as e:
                 print(f"⚠️ Could not extract cookies: {e}")
-            
+
             # Try localStorage and sessionStorage
             try:
                 local_storage = self.driver.execute_script("""
@@ -1257,11 +1411,11 @@ class OktaSeleniumAuth:
                         auth_token: localStorage.getItem('auth_token')
                     }
                 """)
-                
+
                 for key, value in local_storage.items():
                     if value and key not in tokens:
                         tokens[key] = value
-                        
+
                 session_storage = self.driver.execute_script("""
                     return {
                         access_token: sessionStorage.getItem('access_token') || sessionStorage.getItem('token'),
@@ -1271,60 +1425,62 @@ class OktaSeleniumAuth:
                         auth_token: sessionStorage.getItem('auth_token')
                     }
                 """)
-                
+
                 for key, value in session_storage.items():
                     if value and key not in tokens:
                         tokens[key] = value
-                        
+
             except Exception as e:
                 print(f"⚠️ Could not extract from storage: {e}")
-            
+
             if tokens:
                 print(f"✅ Extracted tokens from storage: {list(tokens.keys())}")
                 return tokens
             else:
                 print("⚠️ No tokens found in storage")
                 return None
-                
+
         except Exception as e:
             print(f"❌ Error extracting tokens from storage: {e}")
             return None
 
-    def _save_tokens_to_auth_json(self, tokens: Dict[str, str], auth_code: str = None, state: str = None) -> bool:
+    def _save_tokens_to_auth_json(
+        self, tokens: Dict[str, str], auth_code: str = None, state: str = None
+    ) -> bool:
         """Save extracted tokens to auth.json file."""
         try:
             import os
             import json
-            
+
             print("💾 Saving tokens to auth.json...")
-            
+
             # Get the Meijer config directory
             config_dir = os.path.expanduser("~/.config/meijer")
             os.makedirs(config_dir, exist_ok=True)
-            
+
             auth_file = os.path.join(config_dir, "auth.json")
-            
+
             # Prepare the auth data
             auth_data = {
                 "timestamp": int(time.time()),
                 "username": self.username,
                 "tokens": tokens,
                 "source": "selenium_2fa",
-                "browser_url": self.driver.current_url if self.driver else None
+                "browser_url": self.driver.current_url if self.driver else None,
             }
-            
+
             if auth_code:
                 auth_data["authorization_code"] = auth_code
             if state:
                 auth_data["state"] = state
-            
+
             # Save to file
-            with open(auth_file, 'w') as f:
+            with open(auth_file, "w") as f:
                 json.dump(auth_data, f, indent=2)
-            
+
             print(f"✅ Tokens saved to: {auth_file}")
             return True
-            
+
         except Exception as e:
             print(f"❌ Error saving tokens to auth.json: {e}")
             return False
@@ -1333,43 +1489,46 @@ class OktaSeleniumAuth:
         """Read email configuration from ~/.config/meijer/email.txt."""
         try:
             import os
+
             email_config_path = os.path.expanduser("~/.config/meijer/email.txt")
-            
+
             if not os.path.exists(email_config_path):
                 print(f"❌ Email config file not found: {email_config_path}")
                 return None
-            
+
             config = {}
-            with open(email_config_path, 'r') as f:
+            with open(email_config_path, "r") as f:
                 lines = f.readlines()
-                
+
             # Parse configuration (simple key=value format)
             for line in lines:
                 line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
                     config[key.strip()] = value.strip()
-            
+
             # Validate required fields
-            required_fields = ['server', 'port', 'username', 'password']
+            required_fields = ["server", "port", "username", "password"]
             for field in required_fields:
                 if field not in config:
                     print(f"❌ Missing required email config field: {field}")
                     return None
-            
+
             # Convert port to int
             try:
-                config['port'] = int(config['port'])
+                config["port"] = int(config["port"])
             except ValueError:
                 print(f"❌ Invalid port number: {config['port']}")
                 return None
-            
+
             # Set SSL flag
-            config['use_ssl'] = config.get('use_ssl', 'true').lower() == 'true'
-            
-            print(f"✅ Email configuration loaded: {config['username']}@{config['server']}:{config['port']}")
+            config["use_ssl"] = config.get("use_ssl", "true").lower() == "true"
+
+            print(
+                f"✅ Email configuration loaded: {config['username']}@{config['server']}:{config['port']}"
+            )
             return config
-            
+
         except Exception as e:
             print(f"❌ Error reading email config: {e}")
             return None
@@ -1562,7 +1721,7 @@ class OktaSeleniumAuth:
                                 )
                                 for i, btn in enumerate(buttons):
                                     print(
-                                        f"   Button {i+1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
+                                        f"   Button {i + 1}: text={btn.text}, type={btn.get_attribute('type')}, class={btn.get_attribute('class')}"
                                     )
                             except Exception as e:
                                 print(f"   Error listing buttons: {e}")
@@ -1638,7 +1797,7 @@ class OktaSeleniumAuth:
                         inputs = self.driver.find_elements(By.TAG_NAME, "input")
                         for i, inp in enumerate(inputs):
                             print(
-                                f"   Input {i+1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
+                                f"   Input {i + 1}: type={inp.get_attribute('type')}, name={inp.get_attribute('name')}, id={inp.get_attribute('id')}, placeholder={inp.get_attribute('placeholder')}"
                             )
 
                         # Also look for any verification-related elements
@@ -1753,7 +1912,7 @@ class OktaSeleniumAuth:
                         try:
                             text = elem.text.strip()
                             if text:
-                                print(f"   Option {i+1}: {elem.tag_name} - {text}")
+                                print(f"   Option {i + 1}: {elem.tag_name} - {text}")
                         except:
                             continue
                 except Exception as e:
@@ -1787,7 +1946,7 @@ class OktaSeleniumAuth:
                 "access_token" in page_source.lower(),
                 "authorization_code" in page_source.lower(),
                 "meijer.com" in current_url,  # Redirected to Meijer site
-                "signin" in current_url,      # Sign-in callback
+                "signin" in current_url,  # Sign-in callback
             ]
 
             if any(success_indicators):
@@ -1797,37 +1956,37 @@ class OktaSeleniumAuth:
                 if "code=" in current_url:
                     code_match = current_url.split("code=")[1].split("&")[0]
                     print(f"🔑 Found authorization code: {code_match[:20]}...")
-                    
+
                     # Extract state parameter if present
                     state_param = None
                     if "state=" in current_url:
                         state_match = current_url.split("state=")[1].split("&")[0]
                         state_param = state_match
                         print(f"🔑 Found state parameter: {state_match[:20]}...")
-                    
+
                     # Try to extract tokens from the page or cookies
                     tokens = self._extract_tokens_from_page()
-                    
+
                     result = {
                         "success": True,
                         "authorization_code": code_match,
                         "state": state_param,
                         "url": current_url,
                         "title": page_title,
-                        "tokens": tokens
+                        "tokens": tokens,
                     }
-                    
+
                     # Save tokens to auth.json if we have them
                     if tokens:
                         self._save_tokens_to_auth_json(tokens, code_match, state_param)
-                    
+
                     return result
 
                 # Look for tokens in page source
                 if "access_token" in page_source:
                     print("🔑 Found access token in page source")
                     tokens = self._extract_tokens_from_page()
-                    
+
                     result = {
                         "success": True,
                         "has_tokens": True,
@@ -1835,29 +1994,31 @@ class OktaSeleniumAuth:
                         "url": current_url,
                         "title": page_title,
                     }
-                    
+
                     # Save tokens to auth.json if we have them
                     if tokens:
                         self._save_tokens_to_auth_json(tokens)
-                    
+
                     return result
 
                 # Check if we're on a successful page but need to extract tokens differently
                 if "meijer.com" in current_url or "signin" in current_url:
-                    print("🔍 On Meijer site - attempting to extract tokens from cookies/localStorage")
+                    print(
+                        "🔍 On Meijer site - attempting to extract tokens from cookies/localStorage"
+                    )
                     tokens = self._extract_tokens_from_storage()
-                    
+
                     result = {
                         "success": True,
                         "url": current_url,
                         "title": page_title,
-                        "tokens": tokens
+                        "tokens": tokens,
                     }
-                    
+
                     # Save tokens to auth.json if we have them
                     if tokens:
                         self._save_tokens_to_auth_json(tokens)
-                    
+
                     return result
 
                 return {"success": True, "url": current_url, "title": page_title}
@@ -1880,8 +2041,10 @@ class OktaSeleniumAuth:
             if self.driver:
                 print("🧹 Cleaning up browser...")
                 # NEVER close browser when debugging - let human close it
-                if hasattr(self, '_keep_open') and self._keep_open:
-                    print("🔍 Keeping browser open for debugging - not calling driver.quit()")
+                if hasattr(self, "_keep_open") and self._keep_open:
+                    print(
+                        "🔍 Keeping browser open for debugging - not calling driver.quit()"
+                    )
                     print("🔒 Browser will remain open until you manually close it")
                     return  # Exit without doing anything
                 else:
@@ -1889,7 +2052,7 @@ class OktaSeleniumAuth:
                     self.driver = None
         except Exception as e:
             print(f"⚠️ Error during cleanup: {e}")
-    
+
     def close_browser(self):
         """Manually close the browser when done debugging."""
         try:
@@ -1902,7 +2065,7 @@ class OktaSeleniumAuth:
                 print("ℹ️ No browser to close")
         except Exception as e:
             print(f"❌ Error closing browser: {e}")
-    
+
     def keep_browser_open(self):
         """Keep the browser open for debugging purposes."""
         print("🔍 Browser will remain open for debugging")
@@ -1913,7 +2076,7 @@ class OktaSeleniumAuth:
         """Capture the current page HTML to /tmp/ for analysis."""
         if not step_name:
             step_name = f"manual_capture_{int(time.time())}"
-        
+
         filename = self._capture_html_page(step_name)
         if filename:
             print(f"📄 Current page HTML captured: {filename}")
@@ -1926,77 +2089,82 @@ class OktaSeleniumAuth:
         print("🔍 Starting navigation monitoring...")
         start_time = time.time()
         last_url = self.driver.current_url
-        
+
         while time.time() - start_time < timeout:
             current_url = self.driver.current_url
-            
+
             # Check for unexpected navigation to introspect endpoint
             if current_url != last_url:
                 print(f"🔄 Navigation detected: {last_url} -> {current_url}")
-                
+
                 if "introspect" in current_url:
                     print("⚠️ WARNING: Navigation to introspect endpoint detected!")
                     print("   This endpoint expects POST requests, not GET")
                     print("   Capturing the page for analysis...")
                     self._capture_html_page("introspect_navigation")
-                    
+
                     # Check if this is a GET request (which will fail)
                     if "method" not in current_url.lower():
                         print("💡 This appears to be a GET request - will likely fail")
-                        print("   The introspect endpoint requires POST with stateToken")
-                    
+                        print(
+                            "   The introspect endpoint requires POST with stateToken"
+                        )
+
                     # Try to prevent further navigation
                     print("🔄 Attempting to return to previous page...")
                     self.driver.back()
                     time.sleep(2)
-                    
+
                     if "introspect" not in self.driver.current_url:
                         print("✅ Successfully returned from introspect endpoint")
                     else:
                         print("❌ Still on introspect endpoint - flow may be broken")
                         return False
-                
+
                 last_url = current_url
-            
+
             time.sleep(1)
-        
+
         print("✅ Navigation monitoring completed")
         return True
 
     def __del__(self):
         """Destructor - only close browser if not keeping it open for debugging."""
         try:
-            if hasattr(self, '_keep_open') and self._keep_open and self.driver:
+            if hasattr(self, "_keep_open") and self._keep_open and self.driver:
                 print("🔍 Destructor called but keeping browser open for debugging")
                 print("💡 Close the browser manually when done")
-            elif hasattr(self, 'driver') and self.driver:
+            elif hasattr(self, "driver") and self.driver:
                 print("🧹 Destructor closing browser...")
                 self.driver.quit()
         except Exception:
             # Ignore errors during cleanup
             pass
 
-    def _wait_for_page_load(self, expected_elements: list, timeout: int = 15, page_description: str = "page") -> bool:
+    def _wait_for_page_load(
+        self, expected_elements: list, timeout: int = 15, page_description: str = "page"
+    ) -> bool:
         """
         Wait for page to load by checking multiple indicators.
-        
+
         Args:
             expected_elements: List of CSS selectors to wait for
             timeout: Maximum time to wait in seconds
             page_description: Description of the page for logging
-            
+
         Returns:
             True if page loaded successfully, False otherwise
         """
         print(f"⏳ Waiting for {page_description} to load...")
-        
+
         try:
             # Wait for page ready state
             WebDriverWait(self.driver, timeout).until(
-                lambda driver: driver.execute_script("return document.readyState") == "complete"
+                lambda driver: driver.execute_script("return document.readyState")
+                == "complete"
             )
             print(f"✅ {page_description} - DOM ready state complete")
-            
+
             # Wait for expected elements to appear
             for selector in expected_elements:
                 try:
@@ -2005,9 +2173,11 @@ class OktaSeleniumAuth:
                     )
                     print(f"✅ {page_description} - Expected element found: {selector}")
                 except TimeoutException:
-                    print(f"⚠️ {page_description} - Expected element not found: {selector}")
+                    print(
+                        f"⚠️ {page_description} - Expected element not found: {selector}"
+                    )
                     continue
-            
+
             # Check if at least one expected element was found
             found_elements = []
             for selector in expected_elements:
@@ -2016,14 +2186,16 @@ class OktaSeleniumAuth:
                         found_elements.append(selector)
                 except:
                     continue
-            
+
             if found_elements:
-                print(f"✅ {page_description} loaded successfully with {len(found_elements)} expected elements")
+                print(
+                    f"✅ {page_description} loaded successfully with {len(found_elements)} expected elements"
+                )
                 return True
             else:
                 print(f"❌ {page_description} - No expected elements found")
                 return False
-                
+
         except TimeoutException:
             print(f"❌ {page_description} - Page load timeout after {timeout} seconds")
             return False
@@ -2031,55 +2203,58 @@ class OktaSeleniumAuth:
             print(f"❌ {page_description} - Error during page load detection: {e}")
             return False
 
-    def _wait_for_page_transition(self, old_url: str, old_title: str, timeout: int = 10) -> bool:
+    def _wait_for_page_transition(
+        self, old_url: str, old_title: str, timeout: int = 10
+    ) -> bool:
         """
         Wait for page to transition to a new state.
-        
+
         Args:
             old_url: Previous URL to detect change
             old_title: Previous title to detect change
             timeout: Maximum time to wait in seconds
-            
+
         Returns:
             True if page transitioned, False otherwise
         """
         print("⏳ Waiting for page transition...")
-        
+
         start_time = time.time()
         while time.time() - start_time < timeout:
             current_url = self.driver.current_url
             current_title = self.driver.title
-            
+
             if current_url != old_url or current_title != old_title:
                 print("✅ Page transition detected:")
                 print(f"   URL: {old_url} → {current_url}")
                 print(f"   Title: {old_title} → {current_title}")
                 return True
-            
+
             time.sleep(0.5)  # Check every 500ms
-        
+
         print("❌ Page transition timeout - no change detected")
         return False
 
     def _wait_for_form_ready(self, form_selectors: list, timeout: int = 15) -> bool:
         """
         Wait for form to be ready for interaction.
-        
+
         Args:
             form_selectors: List of CSS selectors for form elements
             timeout: Maximum time to wait in seconds
-            
+
         Returns:
             True if form is ready, False otherwise
         """
         print("⏳ Waiting for form to be ready for interaction...")
-        
+
         try:
             # Wait for page ready state
             WebDriverWait(self.driver, timeout).until(
-                lambda driver: driver.execute_script("return document.readyState") == "complete"
+                lambda driver: driver.execute_script("return document.readyState")
+                == "complete"
             )
-            
+
             # Wait for form elements to be present and enabled
             for selector in form_selectors:
                 try:
@@ -2090,7 +2265,7 @@ class OktaSeleniumAuth:
                 except TimeoutException:
                     print(f"⚠️ Form element not ready: {selector}")
                     continue
-            
+
             # Check if at least one form element is ready
             ready_elements = []
             for selector in form_selectors:
@@ -2100,14 +2275,14 @@ class OktaSeleniumAuth:
                         ready_elements.append(selector)
                 except:
                     continue
-            
+
             if ready_elements:
                 print(f"✅ Form ready with {len(ready_elements)} interactive elements")
                 return True
             else:
                 print("❌ Form not ready - no interactive elements found")
                 return False
-                
+
         except TimeoutException:
             print(f"❌ Form ready timeout after {timeout} seconds")
             return False
@@ -2118,34 +2293,40 @@ class OktaSeleniumAuth:
     def _wait_for_ajax_complete(self, timeout: int = 10) -> bool:
         """
         Wait for AJAX requests to complete.
-        
+
         Args:
             timeout: Maximum time to wait in seconds
-            
+
         Returns:
             True if AJAX is complete, False otherwise
         """
         print("⏳ Waiting for AJAX requests to complete...")
-        
+
         try:
             # Wait for jQuery AJAX to complete (if jQuery is present)
             WebDriverWait(self.driver, timeout).until(
-                lambda driver: driver.execute_script("return typeof jQuery === 'undefined' || jQuery.active === 0")
+                lambda driver: driver.execute_script(
+                    "return typeof jQuery === 'undefined' || jQuery.active === 0"
+                )
             )
-            
+
             # Wait for AngularJS to complete (if Angular is present)
             WebDriverWait(self.driver, timeout).until(
-                lambda driver: driver.execute_script("return typeof angular === 'undefined' || angular.element(document).injector().get('$http').pendingRequests.length === 0")
+                lambda driver: driver.execute_script(
+                    "return typeof angular === 'undefined' || angular.element(document).injector().get('$http').pendingRequests.length === 0"
+                )
             )
-            
+
             # Wait for React to complete (if React is present)
             WebDriverWait(self.driver, timeout).until(
-                lambda driver: driver.execute_script("return typeof React === 'undefined' || true")  # React doesn't have a built-in way to check pending requests
+                lambda driver: driver.execute_script(
+                    "return typeof React === 'undefined' || true"
+                )  # React doesn't have a built-in way to check pending requests
             )
-            
+
             print("✅ AJAX requests completed")
             return True
-            
+
         except TimeoutException:
             print("⚠️ AJAX completion timeout - continuing anyway")
             return True  # Don't fail on AJAX timeout
@@ -2155,8 +2336,12 @@ class OktaSeleniumAuth:
 
 
 def authenticate_with_selenium(
-    username: str, password: str, headless: bool = True, keep_open: bool = False, 
-    proxy_host: str = None, proxy_port: int = None
+    username: str,
+    password: str,
+    headless: bool = True,
+    keep_open: bool = False,
+    proxy_host: str = None,
+    proxy_port: int = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Authenticate using Selenium WebDriver.
@@ -2173,31 +2358,35 @@ def authenticate_with_selenium(
         Authentication result dict if successful, None otherwise
     """
     auth = OktaSeleniumAuth(username, password, headless, proxy_host, proxy_port)
-    
+
     if keep_open:
         print("🔍 Browser will be kept open for debugging")
         print("💡 Use auth.close_browser() when done")
         auth._keep_open = True  # Set flag to prevent cleanup from closing browser
-    
+
     result = auth.authenticate()
-    
+
     if keep_open:
         print("🔍 Browser window remains open for debugging")
         print("💡 Use auth.close_browser() to close it when done")
         print("📄 Use auth.capture_current_page('step_name') to capture HTML to /tmp/")
-        
+
         # Keep the process running indefinitely
         print("🔒 Process will remain active until you manually close the browser")
         print("💡 The authentication process is complete - you can inspect the browser")
         print("⏸️ Waiting for you to close the browser...")
         while True:
             time.sleep(1)  # Keep alive until user closes browser
-    
+
     return result
 
 
 def authenticate_with_selenium_and_keep_open(
-    username: str, password: str, headless: bool = False, proxy_host: str = None, proxy_port: int = None
+    username: str,
+    password: str,
+    headless: bool = False,
+    proxy_host: str = None,
+    proxy_port: int = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Authenticate using Selenium WebDriver and keep browser open for debugging.
@@ -2212,7 +2401,14 @@ def authenticate_with_selenium_and_keep_open(
     Returns:
         Authentication result dict if successful, None otherwise
     """
-    return authenticate_with_selenium(username, password, headless, keep_open=True, proxy_host=proxy_host, proxy_port=proxy_port)
+    return authenticate_with_selenium(
+        username,
+        password,
+        headless,
+        keep_open=True,
+        proxy_host=proxy_host,
+        proxy_port=proxy_port,
+    )
 
 
 if __name__ == "__main__":
@@ -2220,7 +2416,9 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 3:
-        print("Usage: python okta_selenium_auth.py <username> <password> [headless] [keep_open] [proxy_host] [proxy_port]")
+        print(
+            "Usage: python okta_selenium_auth.py <username> <password> [headless] [keep_open] [proxy_host] [proxy_port]"
+        )
         print("  headless: true/false (default: true)")
         print("  keep_open: true/false (default: false)")
         print("  proxy_host: proxy host (default: none)")
@@ -2238,17 +2436,21 @@ if __name__ == "__main__":
     print(f"🔍 Headless: {headless}, Keep open: {keep_open}")
     if proxy_host and proxy_port:
         print(f"�� Proxy: {proxy_host}:{proxy_port}")
-    
+
     if keep_open:
         print("🔍 Using keep-open mode - browser will stay open for debugging")
-        result = authenticate_with_selenium_and_keep_open(username, password, headless, proxy_host, proxy_port)
+        result = authenticate_with_selenium_and_keep_open(
+            username, password, headless, proxy_host, proxy_port
+        )
     else:
-        result = authenticate_with_selenium(username, password, headless, proxy_host=proxy_host, proxy_port=proxy_port)
+        result = authenticate_with_selenium(
+            username, password, headless, proxy_host=proxy_host, proxy_port=proxy_port
+        )
 
     if result:
         print("🎉 Authentication successful!")
         print(f"Result: {result}")
-        
+
         if keep_open:
             print("\n🔍 Browser window is still open for debugging")
             print("💡 Close it manually when done")

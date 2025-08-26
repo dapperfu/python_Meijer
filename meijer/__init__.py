@@ -5,7 +5,6 @@ This package provides a comprehensive client for interacting with Meijer's APIs,
 including shopping lists, coupons, product search, and Shop & Scan functionality.
 """
 
-
 __author__ = "Meijer API Client Contributors"
 
 # Import main client
@@ -16,8 +15,15 @@ from .auth import (
     extract_bearer_token_from_mitmproxy,
     load_auth_from_config_file,
 )
+
+# Import categories functionality
+from .categories import CategoriesManager, Category, CategoryProduct
+from .category_browser import MeijerCategoryBrowser
 from .cli import cli
 from .client import Meijer
+
+# Import new enhanced modules
+from .enhanced_cart import CartItem, CartModification, CartSummary, EnhancedCart
 
 # Import enums
 from .enums import AuthenticationStatus
@@ -52,6 +58,14 @@ from .mperks import (
     MCardInfo,
     MPerksEarnedRewards,
 )
+from .orders import (
+    OrderDetails,
+    OrderItem,
+    OrderManager,
+    OrderStatus,
+    OrderSummary,
+    OrderType,
+)
 from .search import Search
 from .settings import (
     CustomerPreference,
@@ -65,25 +79,22 @@ from .shop_scan import ShopNScan
 from .shopping_list import MeijerList
 from .stores import MeijerStore, create_meijer_stores_from_response
 
-# Import new enhanced modules
-from .enhanced_cart import EnhancedCart, CartItem, CartSummary, CartModification
-from .orders import OrderManager, OrderDetails, OrderSummary, OrderItem, OrderStatus, OrderType
 # Temporarily commented out due to syntax errors
 # from .homecards import (
-#     HomeCardsManager, HomeCard, DepartmentCard, BuyAgainCard, 
+#     HomeCardsManager, HomeCard, DepartmentCard, BuyAgainCard,
 #     MarketingCarouselCard, SeasonalCard, FavoritesOnSaleCard, CardType, ListType
 # )
 
 # Import Phase 3 advanced features - Temporarily commented out due to syntax errors
 # from .recommendations import (
-#     RecommendationsManager, RecommendationSet, RecommendationItem, 
+#     RecommendationsManager, RecommendationSet, RecommendationItem,
 #     RecommendationType, RecommendationSource, CustomerPreferences
 # )
 # from .product_operations import ProductOperations, EnhancedProductInfo
 
 # Import Phase 4 specialized features - Temporarily commented out due to syntax errors
 # from .notifications import (
-#     NotificationManager, Notification, NotificationTemplate, 
+#     NotificationManager, Notification, NotificationTemplate,
 #     NotificationPreference, NotificationType, NotificationCategory,
 #     NotificationPriority, NotificationStatus, NotificationDelivery
 # )
@@ -106,7 +117,6 @@ __all__ = [
     # Data models
     "MeijerItem",
     "ListItem",
-
     "Store",
     "StoreHours",
     "SearchResult",
@@ -128,6 +138,12 @@ __all__ = [
     "MeijerFeedback",
     "FeedbackFormData",
     "MobileDeviceData",
+    "FavoritesManager",
+    # Categories functionality
+    "Category",
+    "CategoryProduct",
+    "CategoriesManager",
+    "MeijerCategoryBrowser",
     # Settings
     "MeijerSettings",
     "VehicleInformation",
@@ -146,7 +162,7 @@ __all__ = [
     "load_auth_from_config_file",
     # Enhanced modules (Phase 1-2)
     "EnhancedCart",
-    "CartItem", 
+    "CartItem",
     "CartSummary",
     "CartModification",
     "OrderManager",
@@ -203,4 +219,5 @@ __all__ = [
 ]
 
 from . import _version
-__version__ = _version.get_versions()['version']
+
+__version__ = _version.get_versions()["version"]

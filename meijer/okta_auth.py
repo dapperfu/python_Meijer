@@ -216,7 +216,7 @@ class OktaAuthenticator:
                                     name = item.get("name", "unknown")
                                     href = item.get("href", "no-href")
                                     method = item.get("method", "no-method")
-                                    print(f"     {i+1}. {name} -> {method} {href}")
+                                    print(f"     {i + 1}. {name} -> {method} {href}")
 
                     # Extract stateHandle from the response
                     state_handle = response_data.get("stateHandle")

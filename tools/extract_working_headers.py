@@ -109,7 +109,7 @@ def extract_working_headers():
 
                 # Look at the first few request sections
                 for i, request_section in enumerate(request_matches[:3]):
-                    print(f"\nRequest section {i+1}:")
+                    print(f"\nRequest section {i + 1}:")
                     print(f"Raw: {request_section[:200]}...")
 
                     # Look for path information

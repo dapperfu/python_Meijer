@@ -3324,3 +3324,224 @@ def login_selenium(headless: bool, keep_open: bool):
 
     except Exception as e:
         raise click.ClickException(f"❌ Selenium authentication failed: {e}")
+
+
+# Categories Commands
+@click.group()
+@click.help_option("-h", "--help")
+def categories_group():
+    """Browse Meijer product categories and departments."""
+    pass
+
+
+@categories_group.command("list")
+@click.option("--store", "-s", help="Store ID to filter categories")
+@click.option("--limit", "-l", default=20, help="Maximum number of categories to show")
+def categories_list(store: Optional[str], limit: int):
+    """List available product categories and departments."""
+    try:
+        client = get_meijer_client()
+
+        click.echo("🔄 Loading categories...")
+        categories = client.get_categories(store_id=store)
+
+        if not categories:
+            click.echo("⚠️ No categories found")
+            return
+
+        click.echo(f"✅ Found {len(categories)} categories")
+
+        # Display categories in a table
+        from rich import box
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console()
+
+        table = Table(
+            title="Available Categories",
+            show_header=True,
+            header_style="bold magenta",
+            border_style="blue",
+            box=box.ROUNDED,
+        )
+
+        table.add_column("Name", style="cyan", no_wrap=True)
+        table.add_column("ID", style="yellow")
+        table.add_column("Products", justify="right", style="green")
+        table.add_column("Subcategories", justify="right", style="red")
+        table.add_column("Description", style="white")
+
+        for category in categories[:limit]:
+            subcategory_count = (
+                len(category.subcategories) if category.subcategories else 0
+            )
+            description = category.description or "No description"
+
+            table.add_row(
+                category.name,
+                category.id,
+                str(category.product_count),
+                str(subcategory_count),
+                description[:40] + "..." if len(description) > 40 else description,
+            )
+
+        console.print(table)
+
+        if len(categories) > limit:
+            click.echo(f"... and {len(categories) - limit} more categories")
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to list categories: {e}")
+
+
+@categories_group.command("products")
+@click.argument("category_id")
+@click.option("--store", "-s", help="Store ID to filter products")
+@click.option("--page", "-p", default=1, help="Page number (default: 1)")
+@click.option("--limit", "-l", default=10, help="Products per page (default: 10)")
+@click.option(
+    "--sort",
+    default="relevance",
+    help="Sort method (relevance, price_asc, price_desc, name_asc, name_desc)",
+)
+def categories_products(
+    category_id: str, store: Optional[str], page: int, limit: int, sort: str
+):
+    """Show products in a specific category."""
+    try:
+        client = get_meijer_client()
+
+        click.echo(f"🔄 Loading products for category {category_id}...")
+        products = client.get_category_products(
+            category_id=category_id,
+            store_id=store,
+            page=page,
+            limit=limit,
+            sort_by=sort,
+        )
+
+        if not products:
+            click.echo("⚠️ No products found in this category")
+            return
+
+        click.echo(f"✅ Found {len(products)} products")
+
+        # Display products in a table
+        from rich import box
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console()
+
+        table = Table(
+            title=f"Products in Category (Page {page})",
+            show_header=True,
+            header_style="bold magenta",
+            border_style="green",
+            box=box.ROUNDED,
+        )
+
+        table.add_column("Name", style="cyan", no_wrap=True)
+        table.add_column("Price", justify="right", style="green")
+        table.add_column("Brand", style="yellow")
+        table.add_column("On Sale", justify="center", style="red")
+        table.add_column("UPC", style="blue")
+
+        for product in products:
+            price_text = f"${product.price:.2f}" if product.price else "N/A"
+            if product.is_on_sale and product.original_price:
+                price_text += f" (was ${product.original_price:.2f})"
+
+            table.add_row(
+                product.name[:40] + "..." if len(product.name) > 40 else product.name,
+                price_text,
+                product.brand or "N/A",
+                "🆕" if product.is_on_sale else "✓",
+                product.upc or "N/A",
+            )
+
+        console.print(table)
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to get category products: {e}")
+
+
+@categories_group.command("search")
+@click.argument("query")
+@click.option("--store", "-s", help="Store ID to filter results")
+@click.option("--limit", "-l", default=10, help="Maximum number of results")
+def categories_search(query: str, store: Optional[str], limit: int):
+    """Search for categories by name or description."""
+    try:
+        client = get_meijer_client()
+
+        click.echo(f"🔍 Searching for categories matching '{query}'...")
+        results = client.search_categories(query, store_id=store, limit=limit)
+
+        if not results:
+            click.echo("🔍 No categories found matching your search")
+            return
+
+        click.echo(f"✅ Found {len(results)} matching categories")
+
+        # Display search results
+        from rich import box
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console()
+
+        table = Table(
+            title="Search Results",
+            show_header=True,
+            header_style="bold magenta",
+            border_style="yellow",
+            box=box.ROUNDED,
+        )
+
+        table.add_column("Name", style="cyan", no_wrap=True)
+        table.add_column("ID", style="yellow")
+        table.add_column("Products", justify="right", style="green")
+        table.add_column("Description", style="white")
+
+        for category in results:
+            description = category.description or "No description"
+
+            table.add_row(
+                category.name,
+                category.id,
+                str(category.product_count),
+                description[:50] + "..." if len(description) > 50 else description,
+            )
+
+        console.print(table)
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Search failed: {e}")
+
+
+@categories_group.command("browse")
+@click.option("--store", "-s", help="Store ID for filtering")
+def categories_browse(store: Optional[str]):
+    """Launch the interactive category browser TUI."""
+    try:
+        client = get_meijer_client()
+
+        click.echo("🚀 Launching interactive category browser...")
+        click.echo("💡 Use the following commands in the TUI:")
+        click.echo("  • Type category names or numbers to browse")
+        click.echo("  • Use 's' to search categories")
+        click.echo("  • Use 'a' to add products to cart")
+        click.echo("  • Use 'h' to go back/up one level")
+        click.echo("  • Use 'q' to quit")
+        click.echo("  • Use '?' for help")
+
+        click.echo("\n⏸️ Press Enter to launch...")
+        input()
+
+        # Launch the category browser
+        client.browse_categories(store_id=store)
+
+    except Exception as e:
+        raise click.ClickException(f"❌ Failed to launch category browser: {e}")

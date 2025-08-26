@@ -95,7 +95,7 @@ class TestMeijerAuth(unittest.TestCase):
     def test_meijer_auth(self):
         """Test MeijerAuth authentication."""
         from meijer.auth import TokenStorage
-        
+
         # Create real token storage
         storage = TokenStorage("test_tokens.pkl")
         auth = MeijerAuth(storage)
@@ -133,7 +133,9 @@ class TestMeijer(unittest.TestCase):
     def test_basic_client_properties(self):
         """Test basic client properties."""
         self.assertIsNotNone(self.client.subscription_key)
-        self.assertEqual(self.client.subscription_key, "a10bc58ac484478d9b3958b1742c3a03")
+        self.assertEqual(
+            self.client.subscription_key, "a10bc58ac484478d9b3958b1742c3a03"
+        )
 
     def test_authentication_status(self):
         """Test authentication status property."""
@@ -150,41 +152,41 @@ class TestMeijer(unittest.TestCase):
     def test_get_stores_method(self):
         """Test that get_stores method exists."""
         # Test that the method exists (don't call it as it requires real auth)
-        self.assertTrue(hasattr(self.client, 'get_stores'))
+        self.assertTrue(hasattr(self.client, "get_stores"))
         self.assertTrue(callable(self.client.get_stores))
 
     def test_get_coupons_method(self):
         """Test that get_coupons method exists."""
         # Test that the method exists (don't call it as it requires real auth)
-        self.assertTrue(hasattr(self.client, 'get_coupons'))
+        self.assertTrue(hasattr(self.client, "get_coupons"))
         self.assertTrue(callable(self.client.get_coupons))
 
     def test_get_offers_method(self):
         """Test that get_offers method exists."""
         # Test that the method exists (don't call it as it requires real auth)
-        self.assertTrue(hasattr(self.client, 'get_offers'))
+        self.assertTrue(hasattr(self.client, "get_offers"))
         self.assertTrue(callable(self.client.get_offers))
 
     def test_shopping_list_component(self):
         """Test shopping list component initialization."""
         self.assertIsNotNone(self.client.shopping_list)
-        self.assertTrue(hasattr(self.client.shopping_list, 'get'))
+        self.assertTrue(hasattr(self.client.shopping_list, "get"))
 
     def test_coupons_component(self):
         """Test coupons component initialization."""
         self.assertIsNotNone(self.client.coupons)
-        self.assertTrue(hasattr(self.client.coupons, 'clip_coupon'))
-        self.assertTrue(hasattr(self.client.coupons, 'unclip_coupon'))
+        self.assertTrue(hasattr(self.client.coupons, "clip_coupon"))
+        self.assertTrue(hasattr(self.client.coupons, "unclip_coupon"))
 
     def test_search_component(self):
         """Test search component initialization."""
         self.assertIsNotNone(self.client.search)
-        self.assertTrue(hasattr(self.client.search, 'search'))
+        self.assertTrue(hasattr(self.client.search, "search"))
 
     def test_mperks_component(self):
         """Test mperks component initialization."""
         self.assertIsNotNone(self.client.mperks)
-        self.assertTrue(hasattr(self.client.mperks, 'get_earned_rewards'))
+        self.assertTrue(hasattr(self.client.mperks, "get_earned_rewards"))
 
 
 if __name__ == "__main__":

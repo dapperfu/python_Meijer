@@ -3,7 +3,7 @@ import json
 from meijer.models.base import AuthTokens
 
 # Load the current auth.json
-with open('auth.json', 'r') as f:
+with open("auth.json", "r") as f:
     data = json.load(f)
 
 print("Data loaded:")
@@ -23,4 +23,5 @@ try:
 except Exception as e:
     print(f"❌ Error creating AuthTokens: {e}")
     import traceback
+
     traceback.print_exc()

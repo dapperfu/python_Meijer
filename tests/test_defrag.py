@@ -60,9 +60,7 @@ def test_defrag() -> None:
         # Check authentication
         if client.auth_status.name != "AUTHENTICATED":
             print("❌ Authentication failed!")
-            print(
-                "   Please ensure you have ~/.config/meijer/auth.json configured"
-            )
+            print("   Please ensure you have ~/.config/meijer/auth.json configured")
             return
 
         print("✅ Successfully authenticated!")
@@ -167,7 +165,7 @@ def test_defrag() -> None:
         print(f"   Total items: {len(defragged_items)}")
         print(f"   Items with aisle info: {items_with_aisle}")
         print(
-            f"   Location coverage: {(items_with_aisle/len(defragged_items)*100):.1f}%"
+            f"   Location coverage: {(items_with_aisle / len(defragged_items) * 100):.1f}%"
         )
 
         if aisle_summary:

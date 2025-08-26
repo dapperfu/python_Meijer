@@ -403,7 +403,7 @@ class TestMeijerClient:
 
 class TestMeijerClientLive:
     """Test the main Meijer client class with live API endpoints.
-    
+
     These tests require a working authentication token and will make real API calls.
     Use with caution in CI/CD environments.
     """
@@ -423,10 +423,10 @@ class TestMeijerClientLive:
         """Test getting stores with default parameters using live API."""
         stores = self.client.get_stores()
         assert len(stores) > 0
-        assert all(hasattr(store, 'unit_id') for store in stores)
-        assert all(hasattr(store, 'name') for store in stores)
-        assert all(hasattr(store, 'city') for store in stores)
-        assert all(hasattr(store, 'state') for store in stores)
+        assert all(hasattr(store, "unit_id") for store in stores)
+        assert all(hasattr(store, "name") for store in stores)
+        assert all(hasattr(store, "city") for store in stores)
+        assert all(hasattr(store, "state") for store in stores)
 
     def test_live_get_stores_by_city(self):
         """Test getting stores by city name using live API."""
@@ -435,7 +435,10 @@ class TestMeijerClientLive:
         assert len(stores) > 0
         # All stores should be in Grand Rapids
         for store in stores:
-            assert "grand rapids" in store.city.lower() or "grandrapids" in store.city.lower().replace(" ", "")
+            assert (
+                "grand rapids" in store.city.lower()
+                or "grandrapids" in store.city.lower().replace(" ", "")
+            )
 
         # Test with "holland"
         stores = self.client.get_stores(city="holland")
@@ -455,13 +458,11 @@ class TestMeijerClientLive:
         """Test finding stores near coordinates using live API."""
         # Test with coordinates near Ann Arbor, MI
         stores = self.client.find_stores_nearby(
-            latitude=42.2808, 
-            longitude=-83.7430, 
-            radius_miles=50
+            latitude=42.2808, longitude=-83.7430, radius_miles=50
         )
         assert len(stores) > 0
         assert len(stores) <= 50  # Should respect max_results
-        assert all(hasattr(store, 'unit_id') for store in stores)
+        assert all(hasattr(store, "unit_id") for store in stores)
 
     def test_live_get_store_by_id(self):
         """Test getting a specific store by ID using live API."""
@@ -477,7 +478,7 @@ class TestMeijerClientLive:
         """Test getting coupons using live API."""
         coupons = self.client.get_coupons()
         assert len(coupons) > 0
-        assert all(hasattr(coupon, 'meijer_offer_id') for coupon in coupons)
+        assert all(hasattr(coupon, "meijer_offer_id") for coupon in coupons)
 
     def test_live_shopping_list(self):
         """Test getting shopping list using live API."""
@@ -490,9 +491,9 @@ class TestMeijerClientLive:
         # Test with a common product search
         search_results = self.client.search_products("milk")
         # Search returns a SearchResult object with results list
-        assert hasattr(search_results, 'results')
+        assert hasattr(search_results, "results")
         assert isinstance(search_results.results, list)
-        assert hasattr(search_results, 'total_results')
+        assert hasattr(search_results, "total_results")
         assert search_results.total_results > 0
 
 

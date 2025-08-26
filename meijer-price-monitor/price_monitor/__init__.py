@@ -26,6 +26,18 @@ the core Meijer Python API when available.
 __version__ = "1.0.0"
 __author__ = "Meijer Price Monitor Team"
 
-from .core import PriceMonitor, PriceRecord, PriceHistory, PriceDropAnalysis, ShopnScanPrice
+from .core import (
+    PriceMonitor,
+    PriceRecord,
+    PriceHistory,
+    PriceDropAnalysis,
+    ShopnScanPrice,
+)
 
-__all__ = ["PriceMonitor", "PriceRecord", "PriceHistory", "PriceDropAnalysis", "ShopnScanPrice"]
+__all__ = [
+    "PriceMonitor",
+    "PriceRecord",
+    "PriceHistory",
+    "PriceDropAnalysis",
+    "ShopnScanPrice",
+]

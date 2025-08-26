@@ -70,15 +70,15 @@ class PickupSlot:
     def available(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the availability status for this slot.
-        
+
         When called with a value, sets the available flag.
         When called without arguments, returns the current available status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New available status
-            
+
         Returns
         -------
         bool
@@ -91,15 +91,15 @@ class PickupSlot:
     def peak_time(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the peak time status for this slot.
-        
+
         When called with a value, sets the peak time flag.
         When called without arguments, returns the current peak time status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New peak time status
-            
+
         Returns
         -------
         bool
@@ -154,15 +154,15 @@ class DeliverySlot:
     def available(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the availability status for this slot.
-        
+
         When called with a value, sets the available flag.
         When called without arguments, returns the current available status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New available status
-            
+
         Returns
         -------
         bool
@@ -175,15 +175,15 @@ class DeliverySlot:
     def free_delivery(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the free delivery status for this slot.
-        
+
         When called with a value, sets the free delivery flag.
         When called without arguments, returns the current free delivery status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New free delivery status
-            
+
         Returns
         -------
         bool
@@ -509,7 +509,7 @@ class CartItem:
     def bogo_detected(self) -> bool:
         """Check if this item has BOGO (Buy One Get One) pricing detected."""
         # This property will be set by the shop_scan module when BOGO is detected
-        return getattr(self, '_bogo_detected', False)
+        return getattr(self, "_bogo_detected", False)
 
     @bogo_detected.setter
     def bogo_detected(self, value: bool) -> None:
@@ -519,7 +519,7 @@ class CartItem:
     @property
     def bogo_type(self) -> Optional[str]:
         """Get the type of BOGO deal detected (e.g., 'BOGO40', 'BOGO50')."""
-        return getattr(self, '_bogo_type', None)
+        return getattr(self, "_bogo_type", None)
 
     @bogo_type.setter
     def bogo_type(self, value: Optional[str]) -> None:
@@ -529,7 +529,7 @@ class CartItem:
     @property
     def bogo_savings_percentage(self) -> float:
         """Get the percentage savings from BOGO pricing."""
-        return getattr(self, '_bogo_savings_percentage', 0.0)
+        return getattr(self, "_bogo_savings_percentage", 0.0)
 
     @bogo_savings_percentage.setter
     def bogo_savings_percentage(self, value: float) -> None:
@@ -539,7 +539,7 @@ class CartItem:
     @property
     def optimal_bogo_quantity(self) -> Optional[int]:
         """Get the optimal quantity for maximum BOGO savings."""
-        return getattr(self, '_optimal_bogo_quantity', None)
+        return getattr(self, "_optimal_bogo_quantity", None)
 
     @optimal_bogo_quantity.setter
     def optimal_bogo_quantity(self, value: Optional[int]) -> None:
@@ -618,10 +618,10 @@ class CartItem:
     def set_as_backup(self) -> bool:
         """
         Set this item as a backup item with quantity 30.
-        
+
         Backup items are typically high-quantity items that serve as
         emergency supplies or bulk purchases.
-        
+
         Returns
         -------
         bool
@@ -636,13 +636,15 @@ class CartItem:
         except (ValueError, RuntimeError):
             return False
 
-    def add_backup_item(self, upc: str, product_name: str = "", brand: str = "") -> bool:
+    def add_backup_item(
+        self, upc: str, product_name: str = "", brand: str = ""
+    ) -> bool:
         """
         Add a backup/fallback item for substitution when this item is unavailable.
-        
+
         Backup items are alternative products that can replace this item
         if it becomes unavailable (e.g., different brand, variant, or vendor).
-        
+
         Parameters
         ----------
         upc : str
@@ -651,7 +653,7 @@ class CartItem:
             Name/description of the backup item
         brand : str, optional
             Brand of the backup item
-            
+
         Returns
         -------
         bool
@@ -659,25 +661,27 @@ class CartItem:
         """
         if not upc or upc in self._backup_items:
             return False
-        
+
         # Add the UPC to backup items list
         self._backup_items.append(upc)
-        
+
         # Log the backup item addition
-        if self._cart_api and hasattr(self._cart_api, 'logger'):
-            self._cart_api.logger.info(f"Added backup item UPC {upc} for {self.product_name or self.product_code}")
-        
+        if self._cart_api and hasattr(self._cart_api, "logger"):
+            self._cart_api.logger.info(
+                f"Added backup item UPC {upc} for {self.product_name or self.product_code}"
+            )
+
         return True
 
     def remove_backup_item(self, upc: str) -> bool:
         """
         Remove a backup/fallback item from the substitution list.
-        
+
         Parameters
         ----------
         upc : str
             UPC code of the backup item to remove
-            
+
         Returns
         -------
         bool
@@ -691,7 +695,7 @@ class CartItem:
     def get_backup_items(self) -> List[str]:
         """
         Get the list of backup/fallback item UPCs.
-        
+
         Returns
         -------
         List[str]
@@ -703,7 +707,7 @@ class CartItem:
     def backups(self) -> List[str]:
         """
         Alias for backup_items property for better compatibility.
-        
+
         Returns
         -------
         List[str]
@@ -727,15 +731,15 @@ class CartItem:
     def quantity(self, value: Optional[int] = None) -> int:
         """
         Set or get the quantity for this item.
-        
+
         When called with a value, sets the quantity (same as current_quantity setter).
         When called without arguments, returns the current quantity.
-        
+
         Parameters
         ----------
         value : int, optional
             New quantity value (must be positive and within limits)
-            
+
         Returns
         -------
         int
@@ -748,15 +752,15 @@ class CartItem:
     def heavy(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the heavy status for this item.
-        
+
         When called with a value, sets the heavy flag.
         When called without arguments, returns the current heavy status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New heavy status
-            
+
         Returns
         -------
         bool
@@ -771,15 +775,15 @@ class CartItem:
     def fragile(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the fragile status for this item.
-        
+
         When called with a value, sets the fragile flag.
         When called without arguments, returns the current fragile status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New fragile status
-            
+
         Returns
         -------
         bool
@@ -794,15 +798,15 @@ class CartItem:
     def available(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the availability status for this item.
-        
+
         When called with a value, sets the available flag.
         When called without arguments, returns the current available status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New available status
-            
+
         Returns
         -------
         bool
@@ -931,8 +935,8 @@ class CartItem:
                     ">Product Details</div>
                     <div style="color: #7f8c8d; font-size: 14px;">
                         <strong>Code:</strong> {self.product_code}<br>
-                        <strong>Brand:</strong> {self.brand or 'N/A'}<br>
-                        <strong>Category:</strong> {self.category or 'N/A'}
+                        <strong>Brand:</strong> {self.brand or "N/A"}<br>
+                        <strong>Category:</strong> {self.category or "N/A"}
                     </div>
                 </div>
 
@@ -948,7 +952,7 @@ class CartItem:
                         margin-bottom: 4px;
                     ">Item Properties</div>
                     <div style="color: #7f8c8d; font-size: 14px;">
-                        <strong>Weight:</strong> {self.weight_display or 'N/A'}<br>
+                        <strong>Weight:</strong> {self.weight_display or "N/A"}<br>
                         <strong>Unit Price:</strong> ${self.unit_price:.2f}<br>
                         <strong>Total Value:</strong> ${self.total_value:.2f}
                     </div>
@@ -960,13 +964,13 @@ class CartItem:
                 gap: 8px;
                 flex-wrap: wrap;
             ">
-                {'<span style="background: #ff6b6b; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🚫 Unavailable</span>' if not self.available else ''}
-                {'<span style="background: #ff9ff3; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🍷 Alcohol</span>' if self.alcohol else ''}
-                {'<span style="background: #feca57; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🚬 Tobacco</span>' if self.tobacco else ''}
-                {'<span style="background: #ff9ff3; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚠️ Fragile</span>' if self.fragile else ''}
-                {'<span style="background: #54a0ff; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🏋️ Heavy</span>' if self.heavy else ''}
-                {'<span style="background: #1dd1a1; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚖️ Weighted</span>' if self.weighted else ''}
-                {'<span style="background: #5f27cd; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🔞 Age Restricted</span>' if self.age_restricted else ''}
+                {'<span style="background: #ff6b6b; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🚫 Unavailable</span>' if not self.available else ""}
+                {'<span style="background: #ff9ff3; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🍷 Alcohol</span>' if self.alcohol else ""}
+                {'<span style="background: #feca57; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🚬 Tobacco</span>' if self.tobacco else ""}
+                {'<span style="background: #ff9ff3; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚠️ Fragile</span>' if self.fragile else ""}
+                {'<span style="background: #54a0ff; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🏋️ Heavy</span>' if self.heavy else ""}
+                {'<span style="background: #1dd1a1; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚖️ Weighted</span>' if self.weighted else ""}
+                {'<span style="background: #5f27cd; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">🔞 Age Restricted</span>' if self.age_restricted else ""}
             </div>
         </div>
         """
@@ -992,9 +996,9 @@ class CartItem:
 **Product Code:** `{self.product_code}`
 
 ### Details
-- **Brand:** {self.brand or 'N/A'}
-- **Category:** {self.category or 'N/A'}
-- **Weight:** {self.weight_display or 'N/A'}
+- **Brand:** {self.brand or "N/A"}
+- **Category:** {self.category or "N/A"}
+- **Weight:** {self.weight_display or "N/A"}
 - **Unit Price:** ${self.unit_price:.2f}
 - **Total Value:** ${self.total_value:.2f}
 
@@ -1473,23 +1477,25 @@ class MeijerCart:
             # Try multiple possible cart endpoints based on common patterns
             possible_endpoints = [
                 "/digital/occ/v3/carts/current/entries",
-                "/digital/hybris/v3/cart/entries", 
+                "/digital/hybris/v3/cart/entries",
                 "/digital/cart/entries",
                 "/cart/entries",
-                "/digital/occ/v3/carts/entries"
+                "/digital/occ/v3/carts/entries",
             ]
-            
+
             for endpoint in possible_endpoints:
                 try:
                     url = f"{self.api_client.api_base_url}{endpoint}"
                     self.logger.info(f"Trying cart endpoint: {url}")
-                    
+
                     response = self.api_client._make_request(
                         "POST", url, json_data=request_data, headers=headers
                     )
-                    
+
                     if response.status_code in [200, 201]:
-                        self.logger.info(f"Successfully added item with UPC {upc} to cart via {endpoint}")
+                        self.logger.info(
+                            f"Successfully added item with UPC {upc} to cart via {endpoint}"
+                        )
                         # Clear cached cart data to force refresh
                         self._clear_cache()
                         return True
@@ -1497,13 +1503,15 @@ class MeijerCart:
                         self.logger.debug(f"Endpoint {endpoint} not available (404)")
                         continue
                     else:
-                        self.logger.warning(f"Endpoint {endpoint} failed: {response.status_code} - {response.text}")
+                        self.logger.warning(
+                            f"Endpoint {endpoint} failed: {response.status_code} - {response.text}"
+                        )
                         continue
-                        
+
                 except Exception as e:
                     self.logger.debug(f"Endpoint {endpoint} failed with error: {e}")
                     continue
-            
+
             # If we get here, none of the endpoints worked
             self.logger.warning(f"All cart endpoints failed for UPC {upc}")
             return False
@@ -1512,10 +1520,12 @@ class MeijerCart:
             self.logger.error(f"Error adding item to cart: {e}")
             raise CartError(f"Failed to add item with UPC {upc}: {str(e)}")
 
-    def add_item_by_upc_with_backup(self, upc: str, quantity: int = 1, backup: bool = False) -> bool:
+    def add_item_by_upc_with_backup(
+        self, upc: str, quantity: int = 1, backup: bool = False
+    ) -> bool:
         """
         Add an item to the cart by UPC code with backup selection option.
-        
+
         When backup=True is selected, the item is added with quantity 30
         to serve as emergency supplies or bulk backup.
 
@@ -1537,9 +1547,13 @@ class MeijerCart:
             # If backup is selected, override quantity to 30
             if backup:
                 quantity = 30
-                self.logger.info(f"Adding item with UPC {upc} as BACKUP with quantity {quantity}")
+                self.logger.info(
+                    f"Adding item with UPC {upc} as BACKUP with quantity {quantity}"
+                )
             else:
-                self.logger.info(f"Adding item with UPC {upc}, quantity {quantity} to cart")
+                self.logger.info(
+                    f"Adding item with UPC {upc}, quantity {quantity} to cart"
+                )
 
             # Build request body for adding item
             request_data = {
@@ -1548,7 +1562,7 @@ class MeijerCart:
                 "quantity": quantity,
                 "productCodeType": "UPCA",
             }
-            
+
             # Add backup flag if this is a backup selection
             if backup:
                 request_data["backup"] = True
@@ -1570,7 +1584,9 @@ class MeijerCart:
 
             if response.status_code == 200:
                 if backup:
-                    self.logger.info(f"Successfully added item with UPC {upc} as BACKUP to cart")
+                    self.logger.info(
+                        f"Successfully added item with UPC {upc} as BACKUP to cart"
+                    )
                 else:
                     self.logger.info(f"Successfully added item with UPC {upc} to cart")
                 # Clear cached cart data to force refresh
@@ -1578,7 +1594,9 @@ class MeijerCart:
                 return True
             elif response.status_code == 404:
                 # Cart API endpoint not available - this is expected in some cases
-                self.logger.debug(f"Cart API endpoint not available (404) for UPC {upc}")
+                self.logger.debug(
+                    f"Cart API endpoint not available (404) for UPC {upc}"
+                )
                 return False
             else:
                 self.logger.warning(
@@ -1593,16 +1611,16 @@ class MeijerCart:
     def add_item_to_cart(self, upc: str, quantity: int = 1) -> bool:
         """
         User-friendly helper to add an item to cart by UPC code with detailed feedback.
-        
+
         This method provides detailed status messages and error handling for adding items.
-        
+
         Parameters
         ----------
         upc : str
             UPC code of the product to add
         quantity : int, optional
             Quantity to add (default: 1)
-            
+
         Returns
         -------
         bool
@@ -1611,10 +1629,10 @@ class MeijerCart:
         try:
             self.logger.info(f"Adding {quantity}x item with UPC {upc}...")
             success = self.add_item_by_upc(upc, quantity)
-            
+
             if success:
                 self.logger.info(f"Successfully added {quantity}x item with UPC {upc}")
-                
+
                 # Refresh cart to show updated contents
                 try:
                     self.refresh()
@@ -1631,7 +1649,7 @@ class MeijerCart:
                 self.logger.info("  - API endpoint not accessible")
                 self.logger.info("  - Authentication issues")
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"Error adding item to cart: {e}")
             return False
@@ -1639,17 +1657,17 @@ class MeijerCart:
     def update_item_quantity_by_index(self, item_index: int, new_quantity: int) -> bool:
         """
         Update the quantity of an item in cart by its index position.
-        
+
         This method provides a user-friendly way to update items by their position
         in the cart instead of using entry numbers.
-        
+
         Parameters
         ----------
         item_index : int
             1-based index of the item in the cart
         new_quantity : int
             New quantity for the item
-            
+
         Returns
         -------
         bool
@@ -1659,27 +1677,35 @@ class MeijerCart:
             if self.empty:
                 self.logger.error("Cart is empty - no items to update")
                 return False
-            
+
             if item_index < 1 or item_index > len(self._cart_items):
-                self.logger.error(f"Invalid item index {item_index}. Cart has {len(self._cart_items)} items.")
+                self.logger.error(
+                    f"Invalid item index {item_index}. Cart has {len(self._cart_items)} items."
+                )
                 return False
-            
+
             item = self._cart_items[item_index - 1]
             entry_number = item.entry_number
             current_qty = item.current_quantity
-            item_name = getattr(item, 'name', f'Item {item_index}')
-            
+            item_name = getattr(item, "name", f"Item {item_index}")
+
             if not entry_number:
-                self.logger.error(f"Cannot update {item_name} - no entry number available")
+                self.logger.error(
+                    f"Cannot update {item_name} - no entry number available"
+                )
                 return False
-            
-            self.logger.info(f"Updating {item_name} from quantity {current_qty} to {new_quantity}")
-            
+
+            self.logger.info(
+                f"Updating {item_name} from quantity {current_qty} to {new_quantity}"
+            )
+
             success = self.update_item_quantity(entry_number, new_quantity)
-            
+
             if success:
-                self.logger.info(f"Successfully updated {item_name} quantity to {new_quantity}")
-                
+                self.logger.info(
+                    f"Successfully updated {item_name} quantity to {new_quantity}"
+                )
+
                 # Refresh cart to show updated contents
                 try:
                     self.refresh()
@@ -1691,7 +1717,7 @@ class MeijerCart:
             else:
                 self.logger.error(f"Failed to update {item_name} quantity")
                 return False
-            
+
         except Exception as e:
             self.logger.error(f"Error updating item quantity: {e}")
             return False
@@ -1699,15 +1725,15 @@ class MeijerCart:
     def remove_item_by_index(self, item_index: int) -> bool:
         """
         Remove an item from cart by its index position.
-        
+
         This method provides a user-friendly way to remove items by their position
         in the cart instead of using entry numbers.
-        
+
         Parameters
         ----------
         item_index : int
             1-based index of the item in the cart
-            
+
         Returns
         -------
         bool
@@ -1717,26 +1743,30 @@ class MeijerCart:
             if self.empty:
                 self.logger.error("Cart is empty - no items to remove")
                 return False
-            
+
             if item_index < 1 or item_index > len(self._cart_items):
-                self.logger.error(f"Invalid item index {item_index}. Cart has {len(self._cart_items)} items.")
+                self.logger.error(
+                    f"Invalid item index {item_index}. Cart has {len(self._cart_items)} items."
+                )
                 return False
-            
+
             item = self._cart_items[item_index - 1]
             entry_number = item.entry_number
-            item_name = getattr(item, 'name', f'Item {item_index}')
-            
+            item_name = getattr(item, "name", f"Item {item_index}")
+
             if not entry_number:
-                self.logger.error(f"Cannot remove {item_name} - no entry number available")
+                self.logger.error(
+                    f"Cannot remove {item_name} - no entry number available"
+                )
                 return False
-            
+
             self.logger.info(f"Removing {item_name} from cart")
-            
+
             success = self.remove_item(entry_number)
-            
+
             if success:
                 self.logger.info(f"Successfully removed {item_name} from cart")
-                
+
                 # Refresh cart to show updated contents
                 try:
                     self.refresh()
@@ -1748,7 +1778,7 @@ class MeijerCart:
             else:
                 self.logger.error(f"Failed to remove {item_name} from cart")
                 return False
-            
+
         except Exception as e:
             self.logger.error(f"Error removing item from cart: {e}")
             return False
@@ -1756,15 +1786,15 @@ class MeijerCart:
     def set_cart_store(self, store_id: str) -> bool:
         """
         Set the store for cart operations with detailed feedback.
-        
+
         This method provides a user-friendly way to change the store with
         automatic cart refresh for the new store.
-        
+
         Parameters
         ----------
         store_id : str
             New store ID for cart operations
-            
+
         Returns
         -------
         bool
@@ -1773,12 +1803,12 @@ class MeijerCart:
         try:
             old_store = self._store_id
             self.logger.info(f"Changing store from {old_store} to {store_id}")
-            
+
             self.store_id = store_id
-            
+
             self.logger.info(f"Store changed to {self._store_id}")
             self.logger.info("Cart data will be refreshed for the new store")
-            
+
             # Clear cart cache for new store
             try:
                 self.refresh()
@@ -1787,7 +1817,7 @@ class MeijerCart:
             except Exception as e:
                 self.logger.warning(f"Could not refresh cart: {e}")
                 return True  # Store was changed, just couldn't refresh
-            
+
         except Exception as e:
             self.logger.error(f"Error setting store: {e}")
             return False
@@ -1795,10 +1825,10 @@ class MeijerCart:
     def demonstrate_cart_workflow(self) -> Dict[str, Any]:
         """
         Demonstrate a complete cart workflow with detailed step-by-step operations.
-        
+
         This method provides a comprehensive example of cart operations including
         store setting, item addition, quantity updates, and removal operations.
-        
+
         Returns
         -------
         Dict[str, Any]
@@ -1808,87 +1838,89 @@ class MeijerCart:
             "workflow_started": datetime.now().isoformat(),
             "steps": {},
             "success": True,
-            "errors": []
+            "errors": [],
         }
-        
+
         self.logger.info("=== COMPLETE CART WORKFLOW DEMO ===")
-        
+
         try:
             # Step 1: Set store
             self.logger.info("1️⃣ Setting store to 217 (default)")
             results["steps"]["set_store"] = self.set_cart_store("217")
-            
+
             # Step 2: Show initial cart
             self.logger.info("2️⃣ Showing initial cart contents")
             initial_item_count = self.item_count
             results["steps"]["initial_cart"] = {
                 "item_count": initial_item_count,
                 "total_quantity": self.total_quantity,
-                "empty": self.empty
+                "empty": self.empty,
             }
-            
+
             # Step 3: Add a test item (using a placeholder UPC)
             test_upc = "0000000000000"  # Placeholder UPC
             self.logger.info(f"3️⃣ Adding test item with UPC {test_upc}")
             add_result = self.add_item_to_cart(test_upc, 2)
             results["steps"]["add_item"] = add_result
-            
+
             if not add_result:
                 results["errors"].append("Failed to add test item")
-            
+
             # Step 4: Show updated cart
             self.logger.info("4️⃣ Showing updated cart contents")
             results["steps"]["updated_cart"] = {
                 "item_count": self.item_count,
                 "total_quantity": self.total_quantity,
-                "empty": self.empty
+                "empty": self.empty,
             }
-            
+
             # Step 5: Update quantity (if we have items)
             if self.has_items:
                 self.logger.info("5️⃣ Updating item quantity")
                 update_result = self.update_item_quantity_by_index(1, 3)
                 results["steps"]["update_quantity"] = update_result
-                
+
                 if not update_result:
                     results["errors"].append("Failed to update item quantity")
             else:
                 self.logger.info("5️⃣ Skipping quantity update - no items in cart")
                 results["steps"]["update_quantity"] = "skipped"
-            
+
             # Step 6: Remove item (if we have items)
             if self.has_items:
                 self.logger.info("6️⃣ Removing item from cart")
                 remove_result = self.remove_item_by_index(1)
                 results["steps"]["remove_item"] = remove_result
-                
+
                 if not remove_result:
                     results["errors"].append("Failed to remove item")
             else:
                 self.logger.info("6️⃣ Skipping item removal - no items in cart")
                 results["steps"]["remove_item"] = "skipped"
-            
+
             # Step 7: Final cart state
             self.logger.info("7️⃣ Final cart state")
             results["steps"]["final_cart"] = {
                 "item_count": self.item_count,
                 "total_quantity": self.total_quantity,
-                "empty": self.empty
+                "empty": self.empty,
             }
-            
+
             self.logger.info("=== WORKFLOW COMPLETE ===")
-            
+
             if results["errors"]:
                 results["success"] = False
-                self.logger.warning(f"Workflow completed with {len(results['errors'])} errors")
+                self.logger.warning(
+                    f"Workflow completed with {len(results['errors'])} errors"
+                )
             else:
                 self.logger.info("Workflow completed successfully")
-            
+
         except Exception as e:
             self.logger.error(f"Workflow failed: {e}")
             results["success"] = False
             results["errors"].append(str(e))
-        
+
         results["workflow_completed"] = datetime.now().isoformat()
         return results
 
@@ -1913,21 +1945,25 @@ class MeijerCart:
             # Try multiple possible cart endpoints based on common patterns
             possible_endpoints = [
                 f"/digital/occ/v3/carts/current/entries/{entry_number}",
-                f"/digital/hybris/v3/cart/entries/{entry_number}", 
+                f"/digital/hybris/v3/cart/entries/{entry_number}",
                 f"/digital/cart/entries/{entry_number}",
                 f"/cart/entries/{entry_number}",
-                f"/digital/occ/v3/carts/entries/{entry_number}"
+                f"/digital/occ/v3/carts/entries/{entry_number}",
             ]
-            
+
             for endpoint in possible_endpoints:
                 try:
                     url = f"{self.api_client.api_base_url}{endpoint}"
                     self.logger.info(f"Trying remove endpoint: {url}")
-                    
-                    response = self.api_client._make_request("DELETE", url, headers=headers)
-                    
+
+                    response = self.api_client._make_request(
+                        "DELETE", url, headers=headers
+                    )
+
                     if response.status_code in [200, 204]:
-                        self.logger.info(f"Successfully removed cart item {entry_number} via {endpoint}")
+                        self.logger.info(
+                            f"Successfully removed cart item {entry_number} via {endpoint}"
+                        )
                         # Remove from local list and clear cache
                         self._cart_items = [
                             item
@@ -1937,16 +1973,22 @@ class MeijerCart:
                         self._clear_cache()
                         return True
                     elif response.status_code == 404:
-                        self.logger.debug(f"Remove endpoint {endpoint} not available (404)")
+                        self.logger.debug(
+                            f"Remove endpoint {endpoint} not available (404)"
+                        )
                         continue
                     else:
-                        self.logger.warning(f"Remove endpoint {endpoint} failed: {response.status_code} - {response.text}")
+                        self.logger.warning(
+                            f"Remove endpoint {endpoint} failed: {response.status_code} - {response.text}"
+                        )
                         continue
-                        
+
                 except Exception as e:
-                    self.logger.debug(f"Remove endpoint {endpoint} failed with error: {e}")
+                    self.logger.debug(
+                        f"Remove endpoint {endpoint} failed with error: {e}"
+                    )
                     continue
-            
+
             # If we get here, none of the endpoints worked
             self.logger.warning(f"All remove endpoints failed for entry {entry_number}")
             return False
@@ -1982,25 +2024,27 @@ class MeijerCart:
             # Try multiple possible cart endpoints based on common patterns
             possible_endpoints = [
                 f"/digital/occ/v3/carts/current/entries/{entry_number}",
-                f"/digital/hybris/v3/cart/entries/{entry_number}", 
+                f"/digital/hybris/v3/cart/entries/{entry_number}",
                 f"/digital/cart/entries/{entry_number}",
                 f"/cart/entries/{entry_number}",
-                f"/digital/occ/v3/carts/entries/{entry_number}"
+                f"/digital/occ/v3/carts/entries/{entry_number}",
             ]
-            
+
             for endpoint in possible_endpoints:
                 try:
                     url = f"{self.api_client.api_base_url}{endpoint}"
                     self.logger.info(f"Trying update endpoint: {url}")
-                    
+
                     request_data = {"quantity": quantity}
-                    
+
                     response = self.api_client._make_request(
                         "PUT", url, json_data=request_data, headers=headers
                     )
-                    
+
                     if response.status_code in [200, 201]:
-                        self.logger.info(f"Successfully updated quantity for cart item {entry_number} via {endpoint}")
+                        self.logger.info(
+                            f"Successfully updated quantity for cart item {entry_number} via {endpoint}"
+                        )
                         # Update local item and clear cache
                         for item in self._cart_items:
                             if item.entry_number == entry_number:
@@ -2009,16 +2053,22 @@ class MeijerCart:
                         self._clear_cache()
                         return True
                     elif response.status_code == 404:
-                        self.logger.debug(f"Update endpoint {endpoint} not available (404)")
+                        self.logger.debug(
+                            f"Update endpoint {endpoint} not available (404)"
+                        )
                         continue
                     else:
-                        self.logger.debug(f"Update endpoint {endpoint} failed: {response.status_code} - {response.text}")
+                        self.logger.debug(
+                            f"Update endpoint {endpoint} failed: {response.status_code} - {response.text}"
+                        )
                         continue
-                        
+
                 except Exception as e:
-                    self.logger.debug(f"Update endpoint {endpoint} failed with error: {e}")
+                    self.logger.debug(
+                        f"Update endpoint {endpoint} failed with error: {e}"
+                    )
                     continue
-            
+
             # If we get here, none of the endpoints worked
             self.logger.warning(f"All update endpoints failed for entry {entry_number}")
             return False
@@ -2069,15 +2119,15 @@ class MeijerCart:
     def stale(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the stale status for this cart.
-        
+
         When called with a value, sets the stale flag (useful for testing).
         When called without arguments, returns the current stale status.
-        
+
         Parameters
         ----------
         value : bool, optional
             New stale status
-            
+
         Returns
         -------
         bool
@@ -2095,15 +2145,15 @@ class MeijerCart:
     def ready_for_checkout(self, value: Optional[bool] = None) -> bool:
         """
         Set or get the ready for checkout status for this cart.
-        
+
         When called with a value, attempts to prepare the cart for checkout.
         When called without arguments, returns the current ready status.
-        
+
         Parameters
         ----------
         value : bool, optional
             If True, attempts to prepare cart for checkout
-            
+
         Returns
         -------
         bool
@@ -2569,8 +2619,8 @@ class MeijerCart:
                         <div style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">
                             <div><strong>Average Price:</strong> ${avg_price:.2f}</div>
                             <div><strong>Currency:</strong> {self.currency}</div>
-                            <div><strong>Last Updated:</strong> {self.last_updated.strftime('%Y-%m-%d %H:%M') if self.last_updated else 'Never'}</div>
-                            <div><strong>Data Fresh:</strong> {'✅ Fresh' if not self.stale else '⚠️ Stale'}</div>
+                            <div><strong>Last Updated:</strong> {self.last_updated.strftime("%Y-%m-%d %H:%M") if self.last_updated else "Never"}</div>
+                            <div><strong>Data Fresh:</strong> {"✅ Fresh" if not self.stale else "⚠️ Stale"}</div>
                         </div>
                     </div>
 
@@ -2585,7 +2635,7 @@ class MeijerCart:
                             <div><strong>Age Restricted:</strong> {restricted_count} items</div>
                             <div><strong>Fragile:</strong> {fragile_count} items</div>
                             <div><strong>Heavy:</strong> {heavy_count} items</div>
-                            <div><strong>Special Handling:</strong> {'Yes' if self.requires_special_handling else 'No'}</div>
+                            <div><strong>Special Handling:</strong> {"Yes" if self.requires_special_handling else "No"}</div>
                         </div>
                     </div>
 
@@ -2597,9 +2647,9 @@ class MeijerCart:
                     ">
                         <h3 style="margin: 0 0 16px 0; color: #2c3e50; font-size: 18px;">✅ Cart Status</h3>
                         <div style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">
-                            <div><strong>Ready for Checkout:</strong> {'✅ Yes' if self.ready_for_checkout else '❌ No'}</div>
-                            <div><strong>All Items Available:</strong> {'✅ Yes' if all(item.available for item in self._cart_items) else '❌ No'}</div>
-                            <div><strong>Estimated Weight:</strong> {f'{self.estimated_weight:.1f} lbs' if self.estimated_weight else 'N/A'}</div>
+                            <div><strong>Ready for Checkout:</strong> {"✅ Yes" if self.ready_for_checkout else "❌ No"}</div>
+                            <div><strong>All Items Available:</strong> {"✅ Yes" if all(item.available for item in self._cart_items) else "❌ No"}</div>
+                            <div><strong>Estimated Weight:</strong> {f"{self.estimated_weight:.1f} lbs" if self.estimated_weight else "N/A"}</div>
                             <div><strong>Store ID:</strong> {self.store_id}</div>
                         </div>
                     </div>
@@ -2656,19 +2706,19 @@ Your cart is currently empty.
 - **Unique Products:** {self.unique_item_count}
 - **Average Price:** ${avg_price:.2f}
 - **Currency:** {self.currency}
-- **Last Updated:** {self.last_updated.strftime('%Y-%m-%d %H:%M') if self.last_updated else 'Never'}
+- **Last Updated:** {self.last_updated.strftime("%Y-%m-%d %H:%M") if self.last_updated else "Never"}
 
 ### ⚠️ Special Handling Required
 - **Age Restricted Items:** {restricted_count}
 - **Fragile Items:** {fragile_count}
 - **Heavy Items:** {heavy_count}
-- **Requires Special Handling:** {'Yes' if self.requires_special_handling else 'No'}
+- **Requires Special Handling:** {"Yes" if self.requires_special_handling else "No"}
 
 ### ✅ Cart Status
-- **Ready for Checkout:** {'Yes' if self.ready_for_checkout else 'No'}
-- **All Items Available:** {'Yes' if all(item.available for item in self._cart_items) else 'No'}
-- **Estimated Weight:** {f'{self.estimated_weight:.1f} lbs' if self.estimated_weight else 'N/A'}
-- **Data Fresh:** {'Yes' if not self.stale else 'No'}
+- **Ready for Checkout:** {"Yes" if self.ready_for_checkout else "No"}
+- **All Items Available:** {"Yes" if all(item.available for item in self._cart_items) else "No"}
+- **Estimated Weight:** {f"{self.estimated_weight:.1f} lbs" if self.estimated_weight else "N/A"}
+- **Data Fresh:** {"Yes" if not self.stale else "No"}
 
 ---
 *Cart contains {self.item_count} items with a total value of ${self.final_total:.2f}*
@@ -2716,13 +2766,19 @@ Your cart is currently empty.
                     f"  Last Updated: {self.last_updated.strftime('%Y-%m-%d %H:%M') if self.last_updated else 'Never'}"
                 )
 
-    def add_backup_item_to_cart_item(self, entry_number: str, backup_upc: str, product_name: str = "", brand: str = "") -> bool:
+    def add_backup_item_to_cart_item(
+        self,
+        entry_number: str,
+        backup_upc: str,
+        product_name: str = "",
+        brand: str = "",
+    ) -> bool:
         """
         Add a backup/fallback item to an existing cart item for substitution.
-        
+
         This allows you to specify alternative products that can replace
         the original item if it becomes unavailable.
-        
+
         Parameters
         ----------
         entry_number : str
@@ -2733,7 +2789,7 @@ Your cart is currently empty.
             Name/description of the backup item
         brand : str, optional
             Brand of the backup item
-            
+
         Returns
         -------
         bool
@@ -2746,21 +2802,27 @@ Your cart is currently empty.
                 if item.entry_number == entry_number:
                     cart_item = item
                     break
-            
+
             if not cart_item:
-                self.logger.warning(f"Cart item with entry number {entry_number} not found")
+                self.logger.warning(
+                    f"Cart item with entry number {entry_number} not found"
+                )
                 return False
-            
+
             # Add the backup item to the cart item
             success = cart_item.add_backup_item(backup_upc, product_name, brand)
-            
+
             if success:
-                self.logger.info(f"Added backup item UPC {backup_upc} to cart item {entry_number}")
+                self.logger.info(
+                    f"Added backup item UPC {backup_upc} to cart item {entry_number}"
+                )
                 return True
             else:
-                self.logger.warning(f"Failed to add backup item UPC {backup_upc} to cart item {entry_number}")
+                self.logger.warning(
+                    f"Failed to add backup item UPC {backup_upc} to cart item {entry_number}"
+                )
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"Error adding backup item to cart item: {e}")
             return False
@@ -2768,12 +2830,12 @@ Your cart is currently empty.
     def get_cart_item_backups(self, entry_number: str) -> List[str]:
         """
         Get the list of backup/fallback items for a specific cart item.
-        
+
         Parameters
         ----------
         entry_number : str
             Entry number of the cart item
-            
+
         Returns
         -------
         List[str]
@@ -2784,17 +2846,19 @@ Your cart is currently empty.
                 return item.get_backup_items()
         return []
 
-    def remove_backup_item_from_cart_item(self, entry_number: str, backup_upc: str) -> bool:
+    def remove_backup_item_from_cart_item(
+        self, entry_number: str, backup_upc: str
+    ) -> bool:
         """
         Remove a backup/fallback item from a specific cart item.
-        
+
         Parameters
         ----------
         entry_number : str
             Entry number of the cart item
         backup_upc : str
             UPC code of the backup item to remove
-            
+
         Returns
         -------
         bool
@@ -2807,33 +2871,46 @@ Your cart is currently empty.
                 if item.entry_number == entry_number:
                     cart_item = item
                     break
-            
+
             if not cart_item:
-                self.logger.warning(f"Cart item with entry number {entry_number} not found")
+                self.logger.warning(
+                    f"Cart item with entry number {entry_number} not found"
+                )
                 return False
-            
+
             # Remove the backup item from the cart item
             success = cart_item.remove_backup_item(backup_upc)
-            
+
             if success:
-                self.logger.info(f"Removed backup item UPC {backup_upc} from cart item {entry_number}")
+                self.logger.info(
+                    f"Removed backup item UPC {backup_upc} from cart item {entry_number}"
+                )
                 return True
             else:
-                self.logger.warning(f"Failed to remove backup item UPC {backup_upc} from cart item {entry_number}")
+                self.logger.warning(
+                    f"Failed to remove backup item UPC {backup_upc} from cart item {entry_number}"
+                )
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"Error removing backup item from cart item: {e}")
             return False
 
-    def add_backup_item_with_substitution(self, entry_number: str, backup_upc: str, quantity: int = 4, product_name: str = "", brand: str = "") -> bool:
+    def add_backup_item_with_substitution(
+        self,
+        entry_number: str,
+        backup_upc: str,
+        quantity: int = 4,
+        product_name: str = "",
+        brand: str = "",
+    ) -> bool:
         """
         Add a backup item with substitution workflow (as seen in the logs).
-        
+
         This method implements the backup item addition workflow that was observed
         in the mitmproxy logs, including setting appropriate quantities and marking
         items as backup selections.
-        
+
         Parameters
         ----------
         entry_number : str
@@ -2846,7 +2923,7 @@ Your cart is currently empty.
             Name/description of the backup item
         brand : str, optional
             Brand of the backup item
-            
+
         Returns
         -------
         bool
@@ -2854,21 +2931,29 @@ Your cart is currently empty.
         """
         try:
             # First add the backup item to the cart item's substitution list
-            if not self.add_backup_item_to_cart_item(entry_number, backup_upc, product_name, brand):
+            if not self.add_backup_item_to_cart_item(
+                entry_number, backup_upc, product_name, brand
+            ):
                 return False
-            
+
             # Then add the actual backup item to the cart with the specified quantity
             # This matches the workflow seen in the logs where backup items are added
             # as separate cart items with specific quantities
-            success = self.add_item_by_upc_with_backup(backup_upc, quantity, backup=True)
-            
+            success = self.add_item_by_upc_with_backup(
+                backup_upc, quantity, backup=True
+            )
+
             if success:
-                self.logger.info(f"Successfully added backup item {backup_upc} with quantity {quantity} and substitution to cart item {entry_number}")
+                self.logger.info(
+                    f"Successfully added backup item {backup_upc} with quantity {quantity} and substitution to cart item {entry_number}"
+                )
                 return True
             else:
-                self.logger.warning(f"Failed to add backup item {backup_upc} to cart for substitution")
+                self.logger.warning(
+                    f"Failed to add backup item {backup_upc} to cart for substitution"
+                )
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"Error in backup item substitution workflow: {e}")
             return False
@@ -2880,10 +2965,10 @@ Your cart is currently empty.
     def calculate_cart_savings(self) -> float:
         """
         Calculate the total savings across all cart items.
-        
+
         This method calculates the difference between base prices and actual prices,
         accounting for discounts, promotions, and bulk pricing.
-        
+
         Returns
         -------
         float
@@ -2891,22 +2976,24 @@ Your cart is currently empty.
         """
         try:
             total_savings = 0.0
-            
+
             for item in self._cart_items:
                 # Calculate potential savings for this item
                 base_total = item.base_price * item.current_quantity
                 actual_total = item.total_price
-                
+
                 # If there's a difference, it represents savings
                 if base_total > actual_total:
                     item_savings = base_total - actual_total
                     total_savings += item_savings
-                    
-                    self.logger.debug(f"Item {item.product_name}: Base ${base_total:.2f}, Actual ${actual_total:.2f}, Savings ${item_savings:.2f}")
-            
+
+                    self.logger.debug(
+                        f"Item {item.product_name}: Base ${base_total:.2f}, Actual ${actual_total:.2f}, Savings ${item_savings:.2f}"
+                    )
+
             self.logger.info(f"Total cart savings calculated: ${total_savings:.2f}")
             return total_savings
-            
+
         except Exception as e:
             self.logger.error(f"Error calculating cart savings: {e}")
             return 0.0
@@ -2914,7 +3001,7 @@ Your cart is currently empty.
     def get_savings_breakdown(self) -> Dict[str, float]:
         """
         Get a detailed breakdown of savings by item.
-        
+
         Returns
         -------
         Dict[str, float]
@@ -2922,18 +3009,19 @@ Your cart is currently empty.
         """
         try:
             savings_breakdown = {}
-            
+
             for item in self._cart_items:
                 base_total = item.base_price * item.current_quantity
                 actual_total = item.total_price
-                
+
                 if base_total > actual_total:
                     item_savings = base_total - actual_total
-                    savings_breakdown[item.product_name or item.product_code] = item_savings
-            
+                    savings_breakdown[item.product_name or item.product_code] = (
+                        item_savings
+                    )
+
             return savings_breakdown
-            
+
         except Exception as e:
             self.logger.error(f"Error getting savings breakdown: {e}")
             return {}
-

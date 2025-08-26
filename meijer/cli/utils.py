@@ -34,7 +34,7 @@ def get_meijer_client(proxy: str = None, local: str = None) -> Meijer:
     try:
         # Use the new token storage system instead of local auth files
         logger.debug("Using token storage system for authentication")
-        
+
         # Create client with local backend if specified
         if local:
             logger.debug(f"Creating client with local Flask backend: {local}")
@@ -463,7 +463,7 @@ def import_from_excel(client, file_path: Path) -> List[tuple]:
 
     items = []
     workbook = openpyxl.load_workbook(file_path)
-    
+
     # Try to find the first sheet with data
     sheet = None
     for sheet_name in workbook.sheetnames:
@@ -471,7 +471,7 @@ def import_from_excel(client, file_path: Path) -> List[tuple]:
         if ws.max_row > 1:  # More than just headers
             sheet = ws
             break
-    
+
     if not sheet:
         logger.warning("No data found in Excel file")
         return items
@@ -489,7 +489,7 @@ def import_from_excel(client, file_path: Path) -> List[tuple]:
     name_col = None
     quantity_col = None
     notes_col = None
-    
+
     for i, header in enumerate(headers):
         if "item" in header or "name" in header:
             name_col = i + 1
@@ -507,7 +507,7 @@ def import_from_excel(client, file_path: Path) -> List[tuple]:
         name = sheet.cell(row=row_num, column=name_col).value
         if name and str(name).strip():
             name = str(name).strip()
-            
+
             # Get quantity (default to 1 if not found)
             quantity = 1
             if quantity_col:
@@ -517,7 +517,7 @@ def import_from_excel(client, file_path: Path) -> List[tuple]:
                         quantity = int(qty_value)
                     except (ValueError, TypeError):
                         quantity = 1
-            
+
             # Get notes
             notes = ""
             if notes_col:
@@ -607,25 +607,27 @@ def estimate_list_cost(
 
             # New workflow: Search first to get UPC, then try cart methods with that UPC
             cost_found = False
-            
+
             print(f"🔍 Starting new search-first workflow for '{item_name}'")
             logger.info(f"🔍 Starting new search-first workflow for '{item_name}'")
 
             try:
                 # Step 1: Search to get UPC and initial price
                 print(f"🔍 Step 1: Searching for '{item_name}' to get UPC and price...")
-                search_upc, search_price, search_product, search_location = _search_for_product(
-                    client, item, store_id, include_location
+                search_upc, search_price, search_product, search_location = (
+                    _search_for_product(client, item, store_id, include_location)
                 )
-                print(f"🔍 Search results: UPC={search_upc}, Price={search_price}, Product='{search_product}', Location='{search_location}'")
-                
+                print(
+                    f"🔍 Search results: UPC={search_upc}, Price={search_price}, Product='{search_product}', Location='{search_location}'"
+                )
+
                 if search_upc:
                     print(f"🔍 Found UPC from search: {search_upc}")
                     logger.info(f"🔍 Found UPC from search: {search_upc}")
-                    
+
                     # Step 2: Try cart methods with the UPC
                     print(f"🔍 Step 2: Trying cart methods with UPC {search_upc}...")
-                    
+
                     # Try Shop & Scan first
                     print(f"🔍 Calling Shop & Scan method with UPC {search_upc}...")
                     cart_price = _try_shop_scan_with_upc(client, search_upc, store_id)
@@ -634,32 +636,40 @@ def estimate_list_cost(
                         print(f"🔍 Got Shop & Scan price: ${cart_price:.2f}")
                         item_cost_data["estimated_cost"] = cart_price
                         item_cost_data["methodology"] = "shop_scan"
-                        item_cost_data["method_details"] = f"Shop & Scan via search UPC {search_upc}"
+                        item_cost_data["method_details"] = (
+                            f"Shop & Scan via search UPC {search_upc}"
+                        )
                         item_cost_data["match_confidence"] = "High"
                         cost_found = True
                     else:
                         # Try regular cart method
-                        cart_price = _try_cart_with_upc(client, search_upc, store_id, quantity)
+                        cart_price = _try_cart_with_upc(
+                            client, search_upc, store_id, quantity
+                        )
                         if cart_price:
                             print(f"🔍 Got cart price: ${cart_price:.2f}")
                             item_cost_data["estimated_cost"] = cart_price
                             item_cost_data["methodology"] = "cart"
-                            item_cost_data["method_details"] = f"Cart via search UPC {search_upc}"
+                            item_cost_data["method_details"] = (
+                                f"Cart via search UPC {search_upc}"
+                            )
                             item_cost_data["match_confidence"] = "High"
                             cost_found = True
-                    
+
                     # Step 3: Use search data for product info and location
                     if search_product:
                         item_cost_data["matched_product"] = search_product
                     if search_location:
                         item_cost_data["location"] = search_location
-                    
+
                     # Step 4: Fall back to search price if cart methods failed
                     if not cost_found and search_price:
                         print(f"🔍 Falling back to search price: ${search_price:.2f}")
                         item_cost_data["estimated_cost"] = search_price
                         item_cost_data["methodology"] = "search"
-                        item_cost_data["method_details"] = f"Search result price for UPC {search_upc}"
+                        item_cost_data["method_details"] = (
+                            f"Search result price for UPC {search_upc}"
+                        )
                         item_cost_data["match_confidence"] = "Medium"
                         cost_found = True
 
@@ -672,7 +682,9 @@ def estimate_list_cost(
                     logger.info(f"🔍 No UPC found in search results for '{item_name}'")
 
             except Exception as e:
-                logger.error(f"❌ Error in search-first workflow for '{item_name}': {e}")
+                logger.error(
+                    f"❌ Error in search-first workflow for '{item_name}': {e}"
+                )
                 print(f"❌ Error in search-first workflow for '{item_name}': {e}")
 
             # If no method worked, set to N/A
@@ -691,6 +703,7 @@ def estimate_list_cost(
             logger.error(f"❌ Error processing item '{item_name}': {e}")
             logger.error(f"❌ Exception details: {type(e).__name__}: {str(e)}")
             import traceback
+
             logger.error(f"❌ Traceback: {traceback.format_exc()}")
             # Add error item with default values
             cost_data.append(
@@ -726,41 +739,42 @@ def estimate_list_cost(
 def _search_for_product(client, item, store_id: str, include_location: bool) -> tuple:
     """
     Search for a product to get UPC, price, product name, and location.
-    
+
     Returns:
         tuple: (upc, price, product_name, location)
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         item_name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
         search_query = item_name.split(",")[0].strip()
-        
+
         from ..search import Search
+
         search_client = Search(client)
-        
+
         search_results = search_client.search(
             query=search_query, results_per_page=3, store_id=store_id
         )
-        
+
         if search_results and search_results.results:
             top_result = search_results.results[0]
-            
+
             # Extract UPC
             upc = None
             if hasattr(top_result, "ean") and top_result.ean:
                 upc = str(top_result.ean)
             elif hasattr(top_result, "upc") and top_result.upc:
                 upc = str(top_result.upc)
-            
+
             # Extract price
             price = None
             if hasattr(top_result, "price") and top_result.price:
                 price = float(top_result.price)
-            
+
             # Extract product name
             product_name = getattr(top_result, "title", "")
-            
+
             # Extract location from group_ids
             location = ""
             if include_location and hasattr(top_result, "raw_data"):
@@ -770,26 +784,26 @@ def _search_for_product(client, item, store_id: str, include_location: bool) -> 
                     l3_groups = [g for g in group_ids if g.startswith("L3-")]
                     if l3_groups:
                         location = l3_groups[0]
-            
+
             return upc, price, product_name, location
-            
+
     except Exception as e:
         logger.debug(f"Search failed: {e}")
-    
+
     return None, None, None, None
 
 
 def _try_shop_scan_with_upc(client, upc: str, store_id: str) -> Optional[float]:
     """
     Try to get price using Shop & Scan functionality.
-    
+
     The Shop & Scan methods now automatically manage sessions via decorators.
-    
+
     Returns:
         Optional[float]: Unit price if found, None otherwise
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Check if Shop & Scan is available
         if not hasattr(client, "shop_scan"):
@@ -800,7 +814,7 @@ def _try_shop_scan_with_upc(client, upc: str, store_id: str) -> Optional[float]:
         if not upc:
             logger.debug(f"Invalid UPC format: {upc}")
             return None
-        
+
         # Convert UPC to string and validate format
         upc_str = str(upc)
         if not upc_str.startswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
@@ -812,8 +826,10 @@ def _try_shop_scan_with_upc(client, upc: str, store_id: str) -> Optional[float]:
         # Step 1: Add multiple items to get accurate pricing (helps with sales/BOGO)
         test_quantity = 10  # Use 10 items to get accurate unit pricing
         print(f"📱 Adding {test_quantity} items with UPC {upc} to Shop & Scan cart...")
-        logger.debug(f"📱 Adding {test_quantity} items with UPC {upc} to Shop & Scan cart...")
-        
+        logger.debug(
+            f"📱 Adding {test_quantity} items with UPC {upc} to Shop & Scan cart..."
+        )
+
         # The decorator will automatically start a session if needed
         if not client.shop_scan.add_to_cart(upc, test_quantity, store_id):
             print(f"📱 Failed to add UPC {upc} to Shop & Scan cart")
@@ -824,7 +840,7 @@ def _try_shop_scan_with_upc(client, upc: str, store_id: str) -> Optional[float]:
         print("📱 Getting detailed cart information...")
         logger.debug("📱 Getting detailed cart information...")
         cart_data = client.shop_scan.get_cart_detailed(store_id)
-        
+
         if not cart_data:
             print("📱 Failed to get cart details")
             logger.debug("📱 Failed to get cart details")
@@ -833,7 +849,7 @@ def _try_shop_scan_with_upc(client, upc: str, store_id: str) -> Optional[float]:
         # Step 3: Extract pricing information from cart
         total_price = None
         actual_quantity = None
-        
+
         # Try to extract pricing from various cart data structures
         if "total" in cart_data:
             total_price = float(cart_data["total"])
@@ -856,17 +872,21 @@ def _try_shop_scan_with_upc(client, upc: str, store_id: str) -> Optional[float]:
         unit_price = None
         if total_price is not None and total_price > 0:
             unit_price = total_price / (actual_quantity or test_quantity)
-            print(f"📱 Got total price: ${total_price:.2f} for {test_quantity} items = ${unit_price:.2f} each")
-            logger.info(f"✅ Shop & Scan succeeded for UPC {upc}: ${unit_price:.2f} (from {test_quantity} items @ ${total_price:.2f} total)")
+            print(
+                f"📱 Got total price: ${total_price:.2f} for {test_quantity} items = ${unit_price:.2f} each"
+            )
+            logger.info(
+                f"✅ Shop & Scan succeeded for UPC {upc}: ${unit_price:.2f} (from {test_quantity} items @ ${total_price:.2f} total)"
+            )
 
         # Step 5: Clean up - remove items from cart
         print("📱 Cleaning up Shop & Scan cart...")
         logger.debug("📱 Cleaning up Shop & Scan cart...")
         client.shop_scan.remove_from_cart(upc, store_id)
-        
+
         # End the session to clean up
         client.shop_scan.end_session()
-        
+
         return unit_price
 
     except Exception as e:
@@ -881,19 +901,21 @@ def _try_shop_scan_with_upc(client, upc: str, store_id: str) -> Optional[float]:
         return None
 
 
-def _try_cart_with_upc(client, upc: str, store_id: str, quantity: int) -> Optional[float]:
+def _try_cart_with_upc(
+    client, upc: str, store_id: str, quantity: int
+) -> Optional[float]:
     """
     Try to get price by adding UPC to cart and checking cost difference.
-    
+
     Returns:
         Optional[float]: Unit price if found, None otherwise
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         if not hasattr(client, "cart") or not hasattr(client.cart, "add_item_by_upc"):
             return None
-            
+
         # Get initial cart subtotal
         try:
             current_cart = client.cart.get_current_cart()
@@ -901,19 +923,19 @@ def _try_cart_with_upc(client, upc: str, store_id: str, quantity: int) -> Option
         except Exception as e:
             logger.debug(f"Cannot access cart: {e}")
             return None
-        
+
         # Add item to cart
         success = client.cart.add_item_by_upc(upc, quantity)
         if success:
             # Get updated cart to see new subtotal
             updated_cart = client.cart.get_current_cart()
             new_subtotal = client.cart.subtotal
-            
+
             # Calculate cost difference
             cost_difference = new_subtotal - initial_subtotal
             if cost_difference > 0:
                 unit_cost = cost_difference / quantity
-                
+
                 # Remove item from cart to restore original state
                 try:
                     cart_items = client.cart.items
@@ -923,12 +945,12 @@ def _try_cart_with_upc(client, upc: str, store_id: str, quantity: int) -> Option
                             break
                 except Exception:
                     logger.warning("⚠️  Failed to remove test item from cart")
-                
+
                 return unit_cost
-                
+
     except Exception as e:
         logger.debug(f"Cart method failed for UPC {upc}: {e}")
-    
+
     return None
 
 
@@ -982,7 +1004,9 @@ def _try_cart_method(
                     and search_results.results
                     and hasattr(search_results.results[0], "ean")
                 ):
-                    upc = str(search_results.results[0].ean)  # Constructor.io uses 'ean' field
+                    upc = str(
+                        search_results.results[0].ean
+                    )  # Constructor.io uses 'ean' field
             except Exception:
                 pass
 
@@ -1063,18 +1087,23 @@ def _try_cart_method(
 
 
 def _try_shop_scan_method(
-    client, item, item_cost_data: Dict[str, Any], store_id: str, include_location: bool, upc: str = None
+    client,
+    item,
+    item_cost_data: Dict[str, Any],
+    store_id: str,
+    include_location: bool,
+    upc: str = None,
 ) -> bool:
     """
     Try to get cost using Shop & Scan cart functionality.
-    
+
     Creates a new Shop & Scan cart, adds the product, gets the price, then cleans up.
 
     Returns:
         bool: True if cost was found, False otherwise
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Check if Shop & Scan is available
         if not hasattr(client, "shop_scan"):
@@ -1082,18 +1111,24 @@ def _try_shop_scan_method(
             return False
 
         item_name = getattr(item, "name", getattr(item, "item_description", "Unknown"))
-        
+
         # Get UPC from parameter or try to extract from item
         if not upc:
             if hasattr(item, "item_part_number") and item.item_part_number:
                 upc = item.item_part_number
             else:
-                logger.debug(f"📱 Shop & Scan skipped: no UPC available for '{item_name}'")
+                logger.debug(
+                    f"📱 Shop & Scan skipped: no UPC available for '{item_name}'"
+                )
                 return False
 
         # Validate UPC format
-        if not upc or not upc.startswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
-            logger.debug(f"📱 Shop & Scan skipped: invalid UPC format '{upc}' for '{item_name}'")
+        if not upc or not upc.startswith(
+            ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+        ):
+            logger.debug(
+                f"📱 Shop & Scan skipped: invalid UPC format '{upc}' for '{item_name}'"
+            )
             return False
 
         logger.info(f"📱 Shop & Scan: Testing UPC {upc} for '{item_name}'...")
@@ -1106,8 +1141,10 @@ def _try_shop_scan_method(
 
         # Step 2: Add multiple items to get accurate pricing (helps with sales/BOGO)
         test_quantity = 10  # Use 10 items to get accurate unit pricing
-        logger.debug(f"📱 Adding {test_quantity} items with UPC {upc} to Shop & Scan cart...")
-        
+        logger.debug(
+            f"📱 Adding {test_quantity} items with UPC {upc} to Shop & Scan cart..."
+        )
+
         if not client.shop_scan.add_to_cart(upc, test_quantity, store_id):
             logger.debug(f"📱 Failed to add UPC {upc} to Shop & Scan cart")
             return False
@@ -1115,7 +1152,7 @@ def _try_shop_scan_method(
         # Step 3: Get detailed cart information to extract pricing
         logger.debug("📱 Getting detailed cart information...")
         cart_data = client.shop_scan.get_cart_detailed(store_id)
-        
+
         if not cart_data:
             logger.debug("📱 Failed to get cart details")
             # Clean up before returning
@@ -1126,7 +1163,7 @@ def _try_shop_scan_method(
         total_price = None
         actual_quantity = None
         product_name = None
-        
+
         # Try to extract pricing from various cart data structures
         if "total" in cart_data:
             total_price = float(cart_data["total"])
@@ -1145,7 +1182,7 @@ def _try_shop_scan_method(
         # Step 5: Calculate unit price
         if total_price is not None and total_price > 0:
             unit_price = total_price / (actual_quantity or test_quantity)
-            
+
             item_cost_data["estimated_cost"] = unit_price
             item_cost_data["matched_product"] = product_name or item_name
             item_cost_data["methodology"] = "shop_scan"
@@ -1176,11 +1213,15 @@ def _try_shop_scan_method(
             # Step 6: Clean up - clear the cart
             logger.debug("📱 Cleaning up Shop & Scan cart...")
             client.shop_scan.clear_cart(store_id)
-            
-            logger.info(f"✅ Shop & Scan succeeded for '{item_name}': ${unit_price:.2f}")
+
+            logger.info(
+                f"✅ Shop & Scan succeeded for '{item_name}': ${unit_price:.2f}"
+            )
             return True
         else:
-            logger.debug(f"📱 No pricing information found in cart data for '{item_name}'")
+            logger.debug(
+                f"📱 No pricing information found in cart data for '{item_name}'"
+            )
             # Clean up before returning
             client.shop_scan.clear_cart(store_id)
             return False
@@ -1243,19 +1284,23 @@ def _try_search_method(
                         upc = str(raw_data["data"]["product_code"])
                     elif "data" in raw_data and "upc" in raw_data["data"]:
                         upc = str(raw_data["data"]["upc"])
-                
+
                 logger.debug(f"🔍 Extracted UPC: {upc}")
                 logger.debug(f"🔍 Search result attributes: {dir(top_result)}")
-                logger.debug(f"🔍 Search result ean: {getattr(top_result, 'ean', 'N/A')}")
-                logger.debug(f"🔍 Search result upc: {getattr(top_result, 'upc', 'N/A')}")
-                logger.debug(f"🔍 Search result price: {getattr(top_result, 'price', 'N/A')}")
-                
+                logger.debug(
+                    f"🔍 Search result ean: {getattr(top_result, 'ean', 'N/A')}"
+                )
+                logger.debug(
+                    f"🔍 Search result upc: {getattr(top_result, 'upc', 'N/A')}"
+                )
+                logger.debug(
+                    f"🔍 Search result price: {getattr(top_result, 'price', 'N/A')}"
+                )
+
                 # Try to get product detail if we have a UPC
                 if upc:
                     try:
-                        product_detail = client.get_product_detail(
-                            upc, store_id
-                        )
+                        product_detail = client.get_product_detail(upc, store_id)
                         if (
                             product_detail
                             and hasattr(product_detail, "price")
@@ -1318,7 +1363,7 @@ def _try_search_method(
                                 item_cost_data["location"] = l3_groups[0]
 
                     return True
-                
+
                 # If we have a UPC but no price, still mark as found but with N/A price
                 if upc:
                     item_cost_data["estimated_cost"] = 0.0  # N/A
@@ -1328,7 +1373,7 @@ def _try_search_method(
                         f"Text search found product but no price: '{search_query}' -> UPC {upc}"
                     )
                     item_cost_data["match_confidence"] = "Medium"
-                    
+
                     if include_location and hasattr(top_result, "raw_data"):
                         # Try to extract location from search result data
                         raw_data = top_result.raw_data
@@ -1337,7 +1382,7 @@ def _try_search_method(
                             l3_groups = [g for g in group_ids if g.startswith("L3-")]
                             if l3_groups:
                                 item_cost_data["location"] = l3_groups[0]
-                    
+
                     return True
 
         except ImportError:

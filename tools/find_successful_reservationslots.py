@@ -161,9 +161,9 @@ def find_successful_reservationslots():
                     status_match = re.search(r"11:status_code;(\d+):(\d+)", context)
                     if status_match:
                         status_code = status_match.group(2)
-                        print(f"  Mention {i+1}: Status {status_code}")
+                        print(f"  Mention {i + 1}: Status {status_code}")
                     else:
-                        print(f"  Mention {i+1}: No status code found")
+                        print(f"  Mention {i + 1}: No status code found")
 
     except Exception as e:
         print(f"Error processing log: {e}")

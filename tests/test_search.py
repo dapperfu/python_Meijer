@@ -876,9 +876,7 @@ class TestSearch:
 
         # Test tracking search behavior with correct parameters
         result = self.search.track_search_behavior(
-            search_term="milk",
-            num_results=10,
-            customer_ids=["customer123"]
+            search_term="milk", num_results=10, customer_ids=["customer123"]
         )
 
         # Method doesn't return a boolean, it tracks behavior
@@ -893,10 +891,7 @@ class TestSearch:
         self.mock_client._make_request.return_value = mock_response
 
         # Test with minimal required parameters
-        result = self.search.track_search_behavior(
-            search_term="milk",
-            num_results=5
-        )
+        result = self.search.track_search_behavior(search_term="milk", num_results=5)
 
         assert result is None
 
@@ -905,10 +900,7 @@ class TestSearch:
         self.mock_client._make_request.side_effect = Exception("Network error")
 
         # Should handle exceptions gracefully
-        result = self.search.track_search_behavior(
-            search_term="milk",
-            num_results=5
-        )
+        result = self.search.track_search_behavior(search_term="milk", num_results=5)
 
         assert result is None
 
@@ -917,7 +909,7 @@ class TestSearch:
         # Check if there's a module-level browse function
         try:
             from meijer.search import browse as module_browse
-            
+
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {
@@ -938,7 +930,9 @@ class TestSearch:
 
             self.mock_client._make_request.return_value = mock_response
 
-            result = module_browse(self.mock_client, "category:beverages", results_per_page=24, page=1)
+            result = module_browse(
+                self.mock_client, "category:beverages", results_per_page=24, page=1
+            )
 
             assert result.total_results == 1
             assert len(result.results) == 1
@@ -977,7 +971,7 @@ class TestSearch:
 
         # Test various sort options
         sort_options = ["relevance", "price_asc", "price_desc", "name_asc", "name_desc"]
-        
+
         for sort_by in sort_options:
             result = self.search.search("test", sort_by=sort_by)
             assert result.sort_by == sort_by

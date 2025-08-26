@@ -21,12 +21,13 @@ def check_file_length(file_path: str, max_lines: int = 1024) -> bool:
         True if file is within limit, False if it exceeds limit
     """
     # Skip documentation and generated files
-    if any(skip_pattern in file_path for skip_pattern in [
-        'docs/', '.html', 'search.js', '.ipynb'
-    ]):
+    if any(
+        skip_pattern in file_path
+        for skip_pattern in ["docs/", ".html", "search.js", ".ipynb"]
+    ):
         print(f"⏭️  {file_path}: Skipping documentation/generated file")
         return True
-    
+
     try:
         # Use wc -l to count lines
         result = subprocess.run(

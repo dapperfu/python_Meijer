@@ -31,12 +31,13 @@ from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 
 def create_cart_notebook() -> nbf.NotebookNode:
     """Create a working cart notebook."""
-    
+
     # Create notebook
     nb = new_notebook()
-    
+
     # Title and description
-    nb.cells.append(new_markdown_cell("""# Meijer Client - Shopping Cart Management
+    nb.cells.append(
+        new_markdown_cell("""# Meijer Client - Shopping Cart Management
 
 This notebook covers **working** shopping cart functionality:
 - ✅ Viewing cart contents
@@ -47,11 +48,13 @@ This notebook covers **working** shopping cart functionality:
 - ✅ Complete cart workflow demonstration
 
 **Note**: This notebook demonstrates actual cart functionality based on real API endpoints found in mitmproxy logs.
-"""))
+""")
+    )
 
     # Import and setup
     nb.cells.append(new_markdown_cell("## Import and Setup"))
-    nb.cells.append(new_code_cell("""# Import required modules
+    nb.cells.append(
+        new_code_cell("""# Import required modules
 from meijer.client import Meijer
 import logging
 
@@ -60,11 +63,13 @@ logging.basicConfig(level=logging.INFO)
 
 # Initialize client
 client = Meijer()
-print("✅ Client initialized")"""))
+print("✅ Client initialized")""")
+    )
 
     # Check cart availability
     nb.cells.append(new_markdown_cell("## Check Cart Availability"))
-    nb.cells.append(new_code_cell("""# Check if cart functionality is available
+    nb.cells.append(
+        new_code_cell("""# Check if cart functionality is available
 if hasattr(client, 'cart') and client.cart:
     print("✅ Cart functionality available")
     print(f"🏪 Current store: {client.cart.store_id}")
@@ -77,11 +82,13 @@ else:
     print("💡 This might be due to:")
     print("   - Client not properly initialized")
     print("   - Cart module not loaded")
-    print("   - Authentication issues")"""))
+    print("   - Authentication issues")""")
+    )
 
     # View current cart
     nb.cells.append(new_markdown_cell("## View Current Cart"))
-    nb.cells.append(new_code_cell("""# Get current cart contents
+    nb.cells.append(
+        new_code_cell("""# Get current cart contents
 try:
     if hasattr(client, 'cart') and client.cart:
         cart_items = client.cart.items
@@ -118,11 +125,13 @@ except Exception as e:
     print("💡 This might be due to:")
     print("   - Authentication issues")
     print("   - API endpoint not accessible")
-    print("   - Network connectivity problems")"""))
+    print("   - Network connectivity problems")""")
+    )
 
     # Add item to cart
     nb.cells.append(new_markdown_cell("## Add Item to Cart"))
-    nb.cells.append(new_code_cell("""# Add an item to cart by UPC
+    nb.cells.append(
+        new_code_cell("""# Add an item to cart by UPC
 def add_item_to_cart(upc: str, quantity: int = 1):
     \"\"\"Add an item to cart by UPC code.\"\"\"
     try:
@@ -161,11 +170,13 @@ def add_item_to_cart(upc: str, quantity: int = 1):
 # add_item_to_cart("0000000000000", 2)
 
 # Test with a real UPC (uncomment and modify as needed)
-# add_item_to_cart("0000000000000", 1)"""))
+# add_item_to_cart("0000000000000", 1)""")
+    )
 
     # Update item quantity
     nb.cells.append(new_markdown_cell("## Update Item Quantity"))
-    nb.cells.append(new_code_cell("""# Update the quantity of an item in cart
+    nb.cells.append(
+        new_code_cell("""# Update the quantity of an item in cart
 def update_item_quantity(item_index: int, new_quantity: int):
     \"\"\"Update the quantity of an item in cart.\"\"\"
     try:
@@ -215,11 +226,13 @@ def update_item_quantity(item_index: int, new_quantity: int):
         return False
 
 # Example: Update first item to quantity 5 (uncomment when cart has items)
-# update_item_quantity(1, 5)"""))
+# update_item_quantity(1, 5)""")
+    )
 
     # Remove item from cart
     nb.cells.append(new_markdown_cell("## Remove Item from Cart"))
-    nb.cells.append(new_code_cell("""# Remove an item from cart
+    nb.cells.append(
+        new_code_cell("""# Remove an item from cart
 def remove_item_from_cart(item_index: int):
     \"\"\"Remove an item from cart.\"\"\"
     try:
@@ -268,11 +281,13 @@ def remove_item_from_cart(item_index: int):
         return False
 
 # Example: Remove first item (uncomment when cart has items)
-# remove_item_from_cart(1)"""))
+# remove_item_from_cart(1)""")
+    )
 
     # Set store for cart operations
     nb.cells.append(new_markdown_cell("## Set Store for Cart Operations"))
-    nb.cells.append(new_code_cell("""# Set the store for cart operations
+    nb.cells.append(
+        new_code_cell("""# Set the store for cart operations
 def set_cart_store(store_id: str):
     \"\"\"Set the store for cart operations.\"\"\"
     try:
@@ -305,11 +320,13 @@ def set_cart_store(store_id: str):
 # set_cart_store("217")
 
 # Example: Set store to a different location
-# set_cart_store("123")"""))
+# set_cart_store("123")""")
+    )
 
     # Complete cart workflow
     nb.cells.append(new_markdown_cell("## Complete Cart Workflow Example"))
-    nb.cells.append(new_code_cell("""# Complete cart workflow demonstration
+    nb.cells.append(
+        new_code_cell("""# Complete cart workflow demonstration
 def demonstrate_cart_workflow():
     \"\"\"Demonstrate a complete cart workflow.\"\"\"
     print("🔄 === COMPLETE CART WORKFLOW DEMO ===")
@@ -354,11 +371,13 @@ def demonstrate_cart_workflow():
         print(f"❌ Error in cart workflow demo: {e}")
 
 # Uncomment to run the complete workflow demo
-# demonstrate_cart_workflow()"""))
+# demonstrate_cart_workflow()""")
+    )
 
     # Cart management tips
     nb.cells.append(new_markdown_cell("## Cart Management Tips"))
-    nb.cells.append(new_code_cell("""# Tips for successful cart management:
+    nb.cells.append(
+        new_code_cell("""# Tips for successful cart management:
 print("💡 Cart Management Tips:")
 print("1. Always authenticate first with 'meijer login'")
 print("2. Set the correct store ID for your location")
@@ -369,11 +388,13 @@ print("6. Use the refresh() method to get latest cart data")
 print("7. Handle entry numbers carefully for updates/removals")
 print("8. Test with small quantities first")
 print("9. Keep track of entry numbers for cart operations")
-print("10. Use the CLI commands for quick cart management")"""))
+print("10. Use the CLI commands for quick cart management")""")
+    )
 
     # Troubleshooting
     nb.cells.append(new_markdown_cell("## Troubleshooting Common Issues"))
-    nb.cells.append(new_code_cell("""# Common cart issues and solutions
+    nb.cells.append(
+        new_code_cell("""# Common cart issues and solutions
 print("🔧 Troubleshooting Common Cart Issues:")
 print()
 print("❌ 'Cart functionality not available'")
@@ -403,11 +424,13 @@ print("❌ 'API endpoint not accessible'")
 print("   → Check network connectivity")
 print("   → Verify API base URL is correct")
 print("   → Check if endpoints have changed")
-print("   → Ensure proper headers are sent")"""))
+print("   → Ensure proper headers are sent")""")
+    )
 
     # CLI commands reference
     nb.cells.append(new_markdown_cell("## CLI Commands Reference"))
-    nb.cells.append(new_code_cell("""# Available CLI commands for cart management
+    nb.cells.append(
+        new_code_cell("""# Available CLI commands for cart management
 print("🖥️ Available CLI Commands:")
 print()
 print("📋 View cart contents:")
@@ -435,11 +458,13 @@ print("📅 Show delivery/pickup slots:")
 print("   meijer cart slots")
 print()
 print("💳 Proceed to checkout:")
-print("   meijer cart checkout")"""))
+print("   meijer cart checkout")""")
+    )
 
     # Testing section
     nb.cells.append(new_markdown_cell("## Testing Cart Functionality"))
-    nb.cells.append(new_code_cell("""# Test cart functionality step by step
+    nb.cells.append(
+        new_code_cell("""# Test cart functionality step by step
 print("🧪 Testing Cart Functionality Step by Step")
 print("=" * 50)
 
@@ -471,7 +496,8 @@ if hasattr(client, 'cart') and client.cart:
         else:
             print(f"   ❌ {prop}: Not available")
 
-print("\\n✅ Cart functionality testing completed!")"""))
+print("\\n✅ Cart functionality testing completed!")""")
+    )
 
     return nb
 
@@ -479,15 +505,15 @@ print("\\n✅ Cart functionality testing completed!")"""))
 def main() -> None:
     """Generate the cart notebook."""
     print("🚀 Generating working cart notebook...")
-    
+
     try:
         # Create notebook
         nb = create_cart_notebook()
-        
+
         # Save notebook
         output_file = "12_cart_working.ipynb"
         nbf.write(nb, output_file)
-        
+
         print(f"✅ Cart notebook generated successfully: {output_file}")
         print("📝 The notebook demonstrates:")
         print("   - Adding items to cart")
@@ -497,7 +523,7 @@ def main() -> None:
         print("   - Complete cart workflow")
         print("   - Troubleshooting common issues")
         print("   - CLI commands reference")
-        
+
     except Exception as e:
         print(f"❌ Failed to generate cart notebook: {e}")
 

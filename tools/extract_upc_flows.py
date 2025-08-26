@@ -17,72 +17,82 @@ class UPCFlowExtractor:
         self.target_upcs = target_upcs
         self.flows = []
         self.upc_flows = {upc: [] for upc in target_upcs}
-        
+
     def request(self, flow: http.HTTPFlow) -> None:
         """Process incoming request."""
         # Check if request contains any target UPCs
         if flow.request.content:
-            content_str = flow.request.content.decode('utf-8', errors='ignore')
+            content_str = flow.request.content.decode("utf-8", errors="ignore")
             for upc in self.target_upcs:
                 if upc in content_str:
-                    self.upc_flows[upc].append({
-                        'type': 'request',
-                        'method': flow.request.method,
-                        'url': flow.request.pretty_url,
-                        'headers': dict(flow.request.headers),
-                        'content': content_str,
-                        'timestamp': flow.request.timestamp_start
-                    })
-        
+                    self.upc_flows[upc].append(
+                        {
+                            "type": "request",
+                            "method": flow.request.method,
+                            "url": flow.request.pretty_url,
+                            "headers": dict(flow.request.headers),
+                            "content": content_str,
+                            "timestamp": flow.request.timestamp_start,
+                        }
+                    )
+
         # Check URL for UPCs
         url = flow.request.pretty_url
         for upc in self.target_upcs:
             if upc in url:
-                self.upc_flows[upc].append({
-                    'type': 'request',
-                    'method': flow.request.method,
-                    'url': url,
-                    'headers': dict(flow.request.headers),
-                    'content': flow.request.content.decode('utf-8', errors='ignore') if flow.request.content else '',
-                    'timestamp': flow.request.timestamp_start
-                })
-    
+                self.upc_flows[upc].append(
+                    {
+                        "type": "request",
+                        "method": flow.request.method,
+                        "url": url,
+                        "headers": dict(flow.request.headers),
+                        "content": flow.request.content.decode("utf-8", errors="ignore")
+                        if flow.request.content
+                        else "",
+                        "timestamp": flow.request.timestamp_start,
+                    }
+                )
+
     def response(self, flow: http.HTTPFlow) -> None:
         """Process incoming response."""
         # Check if response contains any target UPCs
         if flow.response and flow.response.content:
-            content_str = flow.response.content.decode('utf-8', errors='ignore')
+            content_str = flow.response.content.decode("utf-8", errors="ignore")
             for upc in self.target_upcs:
                 if upc in content_str:
-                    self.upc_flows[upc].append({
-                        'type': 'response',
-                        'status_code': flow.response.status_code,
-                        'url': flow.request.pretty_url,
-                        'headers': dict(flow.response.headers),
-                        'content': content_str,
-                        'timestamp': flow.response.timestamp_start
-                    })
-    
+                    self.upc_flows[upc].append(
+                        {
+                            "type": "response",
+                            "status_code": flow.response.status_code,
+                            "url": flow.request.pretty_url,
+                            "headers": dict(flow.response.headers),
+                            "content": content_str,
+                            "timestamp": flow.response.timestamp_start,
+                        }
+                    )
+
     def get_results(self) -> Dict[str, List[Dict[str, Any]]]:
         """Get the extracted UPC flows."""
         return self.upc_flows
 
 
-def analyze_log_file(log_file_path: str, target_upcs: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+def analyze_log_file(
+    log_file_path: str, target_upcs: List[str]
+) -> Dict[str, List[Dict[str, Any]]]:
     """
     Analyze a mitmproxy log file for specific UPC flows.
-    
+
     Args:
         log_file_path: Path to the mitmproxy log file
         target_upcs: List of UPCs to search for
-        
+
     Returns:
         Dictionary mapping UPCs to their associated flows
     """
     try:
         # Use mitmdump to process the log file
         import subprocess
-        
+
         # Create a temporary script to extract flows
         temp_script = f"""
 import sys
@@ -134,28 +144,28 @@ class UPCExtractor:
 
 extractor = UPCExtractor()
 """
-        
+
         # Write temporary script
         temp_script_path = "/tmp/upc_extractor.py"
-        with open(temp_script_path, 'w') as f:
+        with open(temp_script_path, "w") as f:
             f.write(temp_script)
-        
+
         # Run mitmdump with the temporary script
         cmd = f"venv/bin/mitmdump -q -s {temp_script_path} -- {log_file_path}"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        
+
         # Clean up
         Path(temp_script_path).unlink(missing_ok=True)
-        
+
         if result.returncode != 0:
             print(f"Error running mitmdump: {result.stderr}")
             return {}
-        
+
         # Parse the output to extract flows
         # This is a simplified approach - in practice, you'd want to use the proper mitmproxy API
-        
+
         return {}
-        
+
     except Exception as e:
         print(f"Error analyzing log file: {e}")
         return {}
@@ -166,38 +176,48 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python extract_upc_flows.py <log_file> [upc1] [upc2] ...")
         sys.exit(1)
-    
+
     log_file = sys.argv[1]
-    target_upcs = sys.argv[2:] if len(sys.argv) > 2 else [
-        "629307040245", "842595131277", "822279082910", 
-        "070896523112", "713733252843", "016000275263", "046100001899"
-    ]
-    
+    target_upcs = (
+        sys.argv[2:]
+        if len(sys.argv) > 2
+        else [
+            "629307040245",
+            "842595131277",
+            "822279082910",
+            "070896523112",
+            "713733252843",
+            "016000275263",
+            "046100001899",
+        ]
+    )
+
     print(f"Analyzing log file: {log_file}")
     print(f"Searching for UPCs: {', '.join(target_upcs)}")
-    
+
     # Try to use existing analysis tools first
     try:
         # Use the existing analyze_meijer3_log.py script
         import subprocess
+
         cmd = f"venv/bin/python tools/analyze_meijer3_log.py {log_file}"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        
+
         if result.returncode == 0:
             output = result.stdout
             print("Found flows using existing analysis tool:")
-            
+
             for upc in target_upcs:
                 upc_flows = []
-                lines = output.split('\n')
+                lines = output.split("\n")
                 for i, line in enumerate(lines):
                     if upc in line:
                         # Get context around the UPC
-                        context_start = max(0, i-2)
-                        context_end = min(len(lines), i+3)
+                        context_start = max(0, i - 2)
+                        context_end = min(len(lines), i + 3)
                         context = lines[context_start:context_end]
-                        upc_flows.append('\n'.join(context))
-                
+                        upc_flows.append("\n".join(context))
+
                 if upc_flows:
                     print(f"\n=== UPC {upc} ===")
                     for flow in upc_flows[:5]:  # Show first 5 flows
@@ -207,17 +227,17 @@ def main():
                     print(f"\nNo flows found for UPC {upc}")
         else:
             print(f"Error running analysis tool: {result.stderr}")
-            
+
     except Exception as e:
         print(f"Error using existing analysis tool: {e}")
         print("Falling back to basic log analysis...")
-        
+
         # Basic log analysis
         try:
-            with open(log_file, 'rb') as f:
+            with open(log_file, "rb") as f:
                 content = f.read()
-                content_str = content.decode('utf-8', errors='ignore')
-                
+                content_str = content.decode("utf-8", errors="ignore")
+
                 for upc in target_upcs:
                     if upc in content_str:
                         print(f"\nUPC {upc} found in log file")
@@ -229,7 +249,7 @@ def main():
                         print(f"Context: {context}")
                     else:
                         print(f"\nUPC {upc} not found in log file")
-                        
+
         except Exception as e:
             print(f"Error reading log file: {e}")
 

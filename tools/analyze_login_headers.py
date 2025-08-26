@@ -354,7 +354,7 @@ class LoginHeaderAnalyzer:
         print("\n📝 SAMPLE LOGIN EVENTS")
         print("-" * 40)
         for i, event in enumerate(report["login_events"][:3]):
-            print(f"\nEvent {i+1}:")
+            print(f"\nEvent {i + 1}:")
             print(f"  URL: {event['url']}")
             print(f"  Method: {event['method']}")
             print(f"  Status: {event['response_status']}")
@@ -364,7 +364,7 @@ class LoginHeaderAnalyzer:
             print("\n✅ SUCCESSFUL LOGIN DETAILS")
             print("-" * 40)
             for i, event in enumerate(report["successful_login_details"][:2]):
-                print(f"\nSuccessful Login {i+1}:")
+                print(f"\nSuccessful Login {i + 1}:")
                 print(f"  URL: {event['url']}")
                 print(f"  Method: {event['method']}")
                 print(f"  Status: {event['response_status']}")

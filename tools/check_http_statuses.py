@@ -59,7 +59,7 @@ def check_http_statuses():
                 start_pos = max(0, pos - 1000)
                 end_pos = min(len(decoded_content), pos + 1000)
                 context = decoded_content[start_pos:end_pos]
-                print(f"\nSuccess {i+1} at position {pos}:")
+                print(f"\nSuccess {i + 1} at position {pos}:")
                 print(f"  Context: {context[:300]}...")
         else:
             print("\nNo 200 responses found")
@@ -77,7 +77,7 @@ def check_http_statuses():
                 start_pos = max(0, pos - 1000)
                 end_pos = min(len(decoded_content), pos + 1000)
                 context = decoded_content[start_pos:end_pos]
-                print(f"\n400 Error {i+1} at position {pos}:")
+                print(f"\n400 Error {i + 1} at position {pos}:")
                 print(f"  Context: {context[:300]}...")
 
         # Look for other common status codes

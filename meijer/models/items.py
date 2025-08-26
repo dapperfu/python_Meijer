@@ -29,20 +29,21 @@ if TYPE_CHECKING:
 def async_property(func):
     """
     Decorator for async properties that caches the result.
-    
+
     This allows properties to be async while maintaining the property interface.
     The result is cached after the first call to avoid repeated API calls.
     """
+
     @functools.wraps(func)
     def wrapper(self):
-        if not hasattr(self, '_async_cache'):
+        if not hasattr(self, "_async_cache"):
             self._async_cache = {}
-        
+
         cache_key = func.__name__
         if cache_key not in self._async_cache:
             # Create a future to store the result
             self._async_cache[cache_key] = asyncio.Future()
-            
+
             # Schedule the async function
             async def populate():
                 try:
@@ -50,7 +51,7 @@ def async_property(func):
                     self._async_cache[cache_key].set_result(result)
                 except Exception as e:
                     self._async_cache[cache_key].set_exception(e)
-            
+
             # Run in background if event loop is running
             try:
                 loop = asyncio.get_event_loop()
@@ -61,7 +62,7 @@ def async_property(func):
             except RuntimeError:
                 # No event loop, run synchronously
                 asyncio.run(populate())
-        
+
         # Return the cached result or raise the exception
         future = self._async_cache[cache_key]
         if future.done():
@@ -71,22 +72,24 @@ def async_property(func):
         else:
             # Still loading, return None for now
             return None
-    
+
     return property(wrapper)
 
 
 def lazy_property(func):
     """
     Decorator for lazy-loaded properties that are computed on first access.
-    
+
     This is useful for expensive operations that should only be performed when needed.
     """
+
     @functools.wraps(func)
     def wrapper(self):
-        cache_name = f'_cached_{func.__name__}'
+        cache_name = f"_cached_{func.__name__}"
         if not hasattr(self, cache_name):
             setattr(self, cache_name, func(self))
         return getattr(self, cache_name)
+
     return property(wrapper)
 
 
@@ -94,45 +97,41 @@ def create_meijer_item(
     upc: str,
     title: Optional[str] = None,
     meijer_client: Optional["Meijer"] = None,
-    **kwargs
+    **kwargs,
 ) -> "MeijerItem":
     """
     Factory function to create a MeijerItem with proper client reference.
-    
+
     This function creates a MeijerItem instance and sets up the client reference
     for async data population. The item will automatically populate data using
     fallback methods when accessed.
-    
+
     Args:
         upc: The UPC code for the item
         title: Optional title for the item
         meijer_client: Optional Meijer client instance for async operations
         **kwargs: Additional fields to set on the item
-        
+
     Returns:
         MeijerItem instance with client reference set up
-        
+
     Example:
         >>> item = create_meijer_item("629307040245", meijer_client=client)
         >>> # Data will be populated asynchronously
         >>> await item.populated_price  # This will trigger data population
     """
     # Generate a unique ID if not provided
-    item_id = kwargs.get('id', f"item_{upc}")
-    
+    item_id = kwargs.get("id", f"item_{upc}")
+
     # Set default title if not provided
     if not title:
         title = f"Product {upc}"
-    
+
     # Create the item with client reference
     item = MeijerItem(
-        id=item_id,
-        title=title,
-        upc=upc,
-        _meijer_client=meijer_client,
-        **kwargs
+        id=item_id, title=title, upc=upc, _meijer_client=meijer_client, **kwargs
     )
-    
+
     return item
 
 
@@ -145,155 +144,157 @@ class MeijerItem:
     1. First tries search API for basic info
     2. Falls back to shop'n'scan for pricing
     3. Falls back to cart operations for final pricing
-    
+
     All data is populated asynchronously and cached for performance.
     """
 
     # Core identification
     id: str
     """Unique product identifier"""
-    
+
     title: str
     """Product title/name"""
-    
+
     upc: Optional[str] = None
     """Universal Product Code"""
-    
+
     sku: Optional[str] = None
     """Stock Keeping Unit"""
 
     # Optional fields with defaults
     description: Optional[str] = None
     """Product description"""
-    
+
     brand: Optional[str] = None
     """Product brand name"""
-    
+
     category: Optional[str] = None
     """Product category"""
-    
+
     subcategory: Optional[str] = None
     """Product subcategory"""
-    
+
     image_url: Optional[str] = None
     """URL to product image"""
-    
+
     large_image_url: Optional[str] = None
     """URL to large product image"""
-    
+
     price: Optional[float] = None
     """Current product price"""
-    
+
     sale_price: Optional[float] = None
     """Sale price if on sale"""
-    
+
     unit_price: Optional[str] = None
     """Price per unit (e.g., per ounce)"""
-    
+
     is_weighted: bool = False
     """Whether product is sold by weight"""
-    
+
     weight_unit: Optional[str] = None
     """Unit of weight measurement"""
-    
+
     weight_amount: Optional[float] = None
     """Weight amount"""
-    
+
     is_available: bool = True
     """Whether product is currently available"""
-    
+
     store_id: Optional[str] = None
     """Store ID where product is located"""
-    
+
     department_id: Optional[str] = None
     """Department ID"""
-    
+
     sub_department_id: Optional[str] = None
     """Sub-department ID"""
-    
+
     tags: List[str] = field(default_factory=list)
     """List of product tags"""
-    
+
     raw_data: Optional[Dict[str, Any]] = None
     """Raw API response data"""
 
     # Constructor.io specific fields
     data_id: Optional[str] = None
     """Constructor.io data ID"""
-    
+
     data_ean: Optional[int] = None
     """European Article Number"""
-    
+
     data_isbopas: Optional[bool] = None
     """Buy One, Get One at Same Price flag"""
-    
+
     data_isbuyable: Optional[bool] = None
     """Whether product can be purchased"""
-    
+
     data_isalcohol: Optional[bool] = None
     """Whether product contains alcohol"""
-    
+
     data_hasmperks: Optional[bool] = None
     """Whether product has mPerks offers"""
-    
+
     data_specialbuy: Optional[bool] = None
     """Whether product is a special buy"""
-    
+
     data_deactivated: Optional[bool] = None
     """Whether product is deactivated"""
-    
+
     data_productunit: Optional[str] = None
     """Product unit description"""
-    
+
     data_qtyincrement: Optional[int] = None
     """Quantity increment for ordering"""
-    
+
     data_chokinghazard: Optional[bool] = None
     """Whether product is a choking hazard"""
-    
+
     data_ispurchasable: Optional[bool] = None
     """Whether product can be purchased"""
-    
+
     data_pricebyweight: Optional[bool] = None
     """Whether product is priced by weight"""
-    
+
     data_mperksofferid: Optional[List[Any]] = None
     """List of mPerks offer IDs"""
-    
+
     data_isagerestricted: Optional[bool] = None
     """Whether product has age restrictions"""
-    
+
     data_ebtfoodstampable: Optional[bool] = None
     """Whether product can be purchased with EBT"""
-    
+
     data_pickupavailableflag: Optional[bool] = None
     """Whether pickup is available"""
-    
+
     data_homedeliverynotavailable: Optional[bool] = None
     """Whether home delivery is not available"""
-    
+
     data_requiresdiscreteinventorytracking: Optional[bool] = None
     """Whether product requires discrete inventory tracking"""
-    
+
     data_ismap: Optional[bool] = None
     """Whether product has MAP pricing"""
 
     # Item state properties
     _is_favorite: bool = field(default=False, repr=False, compare=False)
     """Internal favorite state"""
-    
+
     _is_in_list: bool = field(default=False, repr=False, compare=False)
     """Internal list state"""
-    
+
     _is_in_cart: bool = field(default=False, repr=False, compare=False)
     """Internal cart state"""
-    
+
     _cart_quantity: int = field(default=0, repr=False, compare=False)
     """Quantity in cart"""
 
     # Internal fields for async operations
     _meijer_client: Optional["Meijer"] = field(default=None, repr=False, compare=False)
-    _async_cache: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
+    _async_cache: Dict[str, Any] = field(
+        default_factory=dict, repr=False, compare=False
+    )
     _logger: Optional[logging.Logger] = field(default=None, repr=False, compare=False)
     _price: Optional[float] = field(default=None, repr=False, compare=False)
     _price_population_triggered: bool = field(default=False, repr=False, compare=False)
@@ -304,31 +305,28 @@ class MeijerItem:
             self._logger = self._meijer_client.logger
         else:
             self._logger = logging.getLogger(__name__)
-        
+
         # Initialize price from the dataclass field
         self._price = self.price
 
     @classmethod
     def from_upc(
-        cls,
-        upc: str,
-        meijer_client: Optional["Meijer"] = None,
-        **kwargs
+        cls, upc: str, meijer_client: Optional["Meijer"] = None, **kwargs
     ) -> "MeijerItem":
         """
         Create a MeijerItem from a UPC code.
-        
+
         This is a convenience method that creates an item with minimal information
         and sets up the client reference for async data population.
-        
+
         Args:
             upc: The UPC code for the item
             meijer_client: Optional Meijer client instance for async operations
             **kwargs: Additional fields to set on the item
-            
+
         Returns:
             MeijerItem instance ready for async data population
-            
+
         Example:
             >>> item = MeijerItem.from_upc("629307040245", meijer_client=client)
             >>> # Data will be populated asynchronously when accessed
@@ -338,7 +336,7 @@ class MeijerItem:
             title=f"Product {upc}",
             upc=upc,
             _meijer_client=meijer_client,
-            **kwargs
+            **kwargs,
         )
 
     @property
@@ -350,30 +348,29 @@ class MeijerItem:
     def price(self) -> Optional[float]:
         """
         Get the current price, automatically triggering population if needed.
-        
+
         This property will:
         1. Return existing price if available
         2. Trigger async population in the background if no price exists
         3. Return None initially, then the populated price on subsequent calls
-        
+
         Returns:
             Current price or None if still loading
         """
         if self._price is not None:
             return self._price
-        
+
         # Trigger background population if we have a client and UPC
-        if (self._meijer_client and self.upc and 
-            not self._price_population_triggered):
+        if self._meijer_client and self.upc and not self._price_population_triggered:
             self._price_population_triggered = True
-            
+
             # Schedule background population
             async def populate_in_background():
                 try:
                     await self._populate_price_data()
                 except Exception as e:
                     self.logger.error(f"Background price population failed: {e}")
-            
+
             # Run in background if event loop is running
             try:
                 loop = asyncio.get_event_loop()
@@ -384,7 +381,7 @@ class MeijerItem:
             except RuntimeError:
                 # No event loop, run synchronously
                 asyncio.run(populate_in_background())
-        
+
         return self._price
 
     @price.setter
@@ -401,12 +398,12 @@ class MeijerItem:
     def favorite(self, value: bool) -> None:
         """
         Set whether the item is marked as a favorite.
-        
+
         Args:
             value: True to mark as favorite, False to remove from favorites
         """
         self._is_favorite = value
-        if self._meijer_client and hasattr(self._meijer_client, 'mperks'):
+        if self._meijer_client and hasattr(self._meijer_client, "mperks"):
             try:
                 if value:
                     # Add to favorites
@@ -426,12 +423,12 @@ class MeijerItem:
     def list(self, value: bool) -> None:
         """
         Set whether the item is in a shopping list.
-        
+
         Args:
             value: True to add to list, False to remove from list
         """
         self._is_in_list = value
-        if self._meijer_client and hasattr(self._meijer_client, 'shopping_list'):
+        if self._meijer_client and hasattr(self._meijer_client, "shopping_list"):
             try:
                 if value:
                     # Add to shopping list
@@ -451,7 +448,7 @@ class MeijerItem:
     def cart(self, value: bool) -> None:
         """
         Set whether the item is in the shopping cart.
-        
+
         Args:
             value: True to add to cart, False to remove from cart
         """
@@ -459,7 +456,7 @@ class MeijerItem:
             # Add to cart
             self._is_in_cart = True
             self._cart_quantity = 1
-            if self._meijer_client and hasattr(self._meijer_client, 'cart'):
+            if self._meijer_client and hasattr(self._meijer_client, "cart"):
                 try:
                     self._meijer_client.cart.add_item(self.upc or self.id, quantity=1)
                 except Exception as e:
@@ -468,7 +465,7 @@ class MeijerItem:
             # Remove from cart
             self._is_in_cart = False
             self._cart_quantity = 0
-            if self._meijer_client and hasattr(self._meijer_client, 'cart'):
+            if self._meijer_client and hasattr(self._meijer_client, "cart"):
                 try:
                     # Find and remove the item from cart
                     cart_items = self._meijer_client.cart.get_items()
@@ -488,7 +485,7 @@ class MeijerItem:
     def cart_quantity(self, value: int) -> None:
         """
         Set the quantity of this item in the cart.
-        
+
         Args:
             value: Quantity to set (0 removes from cart)
         """
@@ -498,25 +495,32 @@ class MeijerItem:
         else:
             # Update quantity
             self._cart_quantity = value
-            if self._meijer_client and hasattr(self._meijer_client, 'cart'):
+            if self._meijer_client and hasattr(self._meijer_client, "cart"):
                 try:
                     # Find the item in cart and update quantity
                     cart_items = self._meijer_client.cart.get_items()
                     for item in cart_items:
                         if item.upc == self.upc or item.id == self.id:
-                            self._meijer_client.cart.update_item_quantity(item.entry_number, value)
+                            self._meijer_client.cart.update_item_quantity(
+                                item.entry_number, value
+                            )
                             break
                 except Exception as e:
                     self.logger.warning(f"Failed to update cart quantity: {e}")
 
-    def update_state(self, favorite: Optional[bool] = None, in_list: Optional[bool] = None, 
-                    in_cart: Optional[bool] = None, cart_quantity: Optional[int] = None) -> None:
+    def update_state(
+        self,
+        favorite: Optional[bool] = None,
+        in_list: Optional[bool] = None,
+        in_cart: Optional[bool] = None,
+        cart_quantity: Optional[int] = None,
+    ) -> None:
         """
         Update the item state from external sources (e.g., API responses).
-        
+
         This method allows updating the item state without triggering API calls,
         useful when the state is already known from other operations.
-        
+
         Args:
             favorite: Whether item is in favorites
             in_list: Whether item is in shopping list
@@ -535,7 +539,7 @@ class MeijerItem:
     def get_state_summary(self) -> Dict[str, Any]:
         """
         Get a summary of the item's current state.
-        
+
         Returns:
             Dictionary with current state information
         """
@@ -546,25 +550,25 @@ class MeijerItem:
             "in_list": self._is_in_list,
             "in_cart": self._is_in_cart,
             "cart_quantity": self._cart_quantity,
-            "price": self.price
+            "price": self.price,
         }
 
     @async_property
     async def populated_price(self) -> Optional[float]:
         """
         Get the populated price using fallback methods.
-        
+
         This property will:
         1. Return existing price if available
         2. Try search API for pricing
         3. Fall back to shop'n'scan for pricing
         4. Fall back to cart operations for final pricing
-        
+
         Use this when you need to ensure data is populated before proceeding.
         """
         if self._price is not None:
             return self._price
-        
+
         # Try to populate price using fallback methods
         await self._populate_price_data()
         return self._price
@@ -573,14 +577,14 @@ class MeijerItem:
     async def force_refresh_price(self) -> Optional[float]:
         """
         Force refresh the price data, ignoring any cached values.
-        
+
         This is useful when you need to get the latest pricing information
         regardless of what's already cached.
         """
         # Clear any cached price data
         self._price = None
         self._price_population_triggered = False
-        
+
         # Populate fresh data
         await self._populate_price_data()
         return self._price
@@ -589,7 +593,7 @@ class MeijerItem:
     async def populated_details(self) -> Dict[str, Any]:
         """
         Get fully populated product details.
-        
+
         This will populate all available fields using the best available method.
         """
         await self._populate_all_data()
@@ -598,7 +602,7 @@ class MeijerItem:
     async def _populate_price_data(self) -> None:
         """
         Populate price data using fallback methods.
-        
+
         This method implements the fallback strategy:
         1. Search API (fastest)
         2. Shop'n'Scan (medium speed)
@@ -650,7 +654,9 @@ class MeijerItem:
                 return False
 
             # Use shop'n'scan to get product details
-            shop_scan_item = await self._meijer_client.shop_scan.lookup_barcode_price_async(self.upc)
+            shop_scan_item = (
+                await self._meijer_client.shop_scan.lookup_barcode_price_async(self.upc)
+            )
             if shop_scan_item:
                 self._update_from_item(shop_scan_item)
                 return True
@@ -667,13 +673,15 @@ class MeijerItem:
                 return False
 
             # Add item to cart temporarily to get pricing
-            cart_item = await self._meijer_client.cart.add_item_async(self.upc, quantity=1)
+            cart_item = await self._meijer_client.cart.add_item_async(
+                self.upc, quantity=1
+            )
             if cart_item:
                 # Extract pricing information
                 self.price = cart_item.base_price
-                self.sale_price = getattr(cart_item, 'sale_price', None)
-                self.unit_price = getattr(cart_item, 'unit_price', None)
-                
+                self.sale_price = getattr(cart_item, "sale_price", None)
+                self.unit_price = getattr(cart_item, "unit_price", None)
+
                 # Remove item from cart after getting pricing
                 await self._meijer_client.cart.remove_item_async(cart_item.entry_number)
                 return True
@@ -687,7 +695,7 @@ class MeijerItem:
         """Populate all available data fields."""
         # Populate price data first
         await self._populate_price_data()
-        
+
         # Populate additional details if needed
         if not self.description or not self.brand:
             await self._populate_from_search()
@@ -755,8 +763,10 @@ class MeijerItem:
 
     def __repr__(self) -> str:
         """Detailed representation of the item."""
-        return (f"MeijerItem(id='{self.id}', title='{self.title}', upc='{self.upc}', "
-                f"price={self.price}, brand='{self.brand}', category='{self.category}')")
+        return (
+            f"MeijerItem(id='{self.id}', title='{self.title}', upc='{self.upc}', "
+            f"price={self.price}, brand='{self.brand}', category='{self.category}')"
+        )
 
     # ============================================================================
     # Jupyter Notebook Rich Representations
@@ -770,9 +780,11 @@ class MeijerItem:
     @property
     def on_sale(self) -> bool:
         """Check if the item is currently on sale."""
-        return (self.sale_price is not None and 
-                self.price is not None and 
-                self.sale_price < self.price)
+        return (
+            self.sale_price is not None
+            and self.price is not None
+            and self.sale_price < self.price
+        )
 
     @property
     def discount_percentage(self) -> Optional[float]:
@@ -807,7 +819,7 @@ class MeijerItem:
     def search_relevance_score(self) -> float:
         """Calculate a basic search relevance score based on available data."""
         score = 0.0
-        
+
         # Base score for having basic info
         if self.title:
             score += 1.0
@@ -825,59 +837,59 @@ class MeijerItem:
             score += 0.2
         if self.is_available:
             score += 0.1
-            
+
         return min(score, 3.0)  # Cap at 3.0
 
     def matches_search_query(self, query: str) -> bool:
         """
         Check if this item matches a search query.
-        
+
         Args:
             query: Search query string
-            
+
         Returns:
             True if item matches query, False otherwise
         """
         if not query:
             return True
-            
+
         query_lower = query.lower()
-        
+
         # Check title
         if self.title and query_lower in self.title.lower():
             return True
-            
+
         # Check description
         if self.description and query_lower in self.description.lower():
             return True
-            
+
         # Check brand
         if self.brand and query_lower in self.brand.lower():
             return True
-            
+
         # Check category
         if self.category and query_lower in self.category.lower():
             return True
-            
+
         # Check UPC
         if self.upc and query_lower in self.upc:
             return True
-            
+
         return False
 
     def get_search_highlights(self, query: str) -> List[str]:
         """
         Get search highlights for this item based on a query.
-        
+
         Args:
             query: Search query string
-            
+
         Returns:
             List of highlighted fields that match the query
         """
         highlights = []
         query_lower = query.lower()
-        
+
         if self.title and query_lower in self.title.lower():
             highlights.append("title")
         if self.description and query_lower in self.description.lower():
@@ -888,44 +900,44 @@ class MeijerItem:
             highlights.append("category")
         if self.upc and query_lower in self.upc:
             highlights.append("upc")
-            
+
         return highlights
 
     def to_search_result(self) -> Dict[str, Any]:
         """
         Convert to search result format for API responses.
-        
+
         Returns:
             Dictionary formatted for search API responses
         """
         result = self.to_dict()
-        
+
         # Add search-specific fields
-        result.update({
-            "searchRelevanceScore": self.search_relevance_score,
-            "hasImage": self.has_image,
-            "onSale": self.on_sale,
-            "discountPercentage": self.discount_percentage,
-            "savingsAmount": self.savings_amount,
-            "effectivePrice": self.effective_price,
-            "priceDisplay": self.price_display,
-        })
-        
+        result.update(
+            {
+                "searchRelevanceScore": self.search_relevance_score,
+                "hasImage": self.has_image,
+                "onSale": self.on_sale,
+                "discountPercentage": self.discount_percentage,
+                "savingsAmount": self.savings_amount,
+                "effectivePrice": self.effective_price,
+                "priceDisplay": self.price_display,
+            }
+        )
+
         return result
 
     @classmethod
     def from_constructor_response(
-        cls,
-        constructor_data: Dict[str, Any],
-        client: Optional["Meijer"] = None
+        cls, constructor_data: Dict[str, Any], client: Optional["Meijer"] = None
     ) -> "MeijerItem":
         """
         Create a MeijerItem from Constructor.io response data.
-        
+
         Args:
             constructor_data: Raw data from Constructor.io API
             client: Optional Meijer client reference
-            
+
         Returns:
             MeijerItem instance populated with Constructor.io data
         """
@@ -933,7 +945,7 @@ class MeijerItem:
             # Extract data from Constructor.io result structure
             item_data = constructor_data.get("data", {})
             value = constructor_data.get("value", "")
-            
+
             # Create item with proper field mapping
             return cls(
                 id=item_data.get("id", str(constructor_data.get("id", ""))),
@@ -962,13 +974,14 @@ class MeijerItem:
                 raw_data=constructor_data,
                 _meijer_client=client,
             )
-            
+
         except Exception as e:
             # Log error but return a basic item
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to create MeijerItem from Constructor.io data: {e}")
-            
+
             # Return minimal item
             return cls(
                 id=str(constructor_data.get("id", "unknown")),
@@ -985,17 +998,17 @@ class MeijerItem:
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
                     <strong>ID:</strong> {self.id}<br>
-                    <strong>UPC:</strong> {self.upc or 'N/A'}<br>
-                    <strong>SKU:</strong> {self.sku or 'N/A'}<br>
-                    <strong>Brand:</strong> {self.brand or 'N/A'}<br>
-                    <strong>Category:</strong> {self.category or 'N/A'}<br>
+                    <strong>UPC:</strong> {self.upc or "N/A"}<br>
+                    <strong>SKU:</strong> {self.sku or "N/A"}<br>
+                    <strong>Brand:</strong> {self.brand or "N/A"}<br>
+                    <strong>Category:</strong> {self.category or "N/A"}<br>
                 </div>
                 <div>
-                    <strong>Price:</strong> ${self.price or 'N/A'}<br>
-                    <strong>Sale Price:</strong> ${self.sale_price or 'N/A'}<br>
-                    <strong>Unit Price:</strong> {self.unit_price or 'N/A'}<br>
-                    <strong>Available:</strong> {'Yes' if self.is_available else 'No'}<br>
-                    <strong>Weighted:</strong> {'Yes' if self.is_weighted else 'No'}<br>
+                    <strong>Price:</strong> ${self.price or "N/A"}<br>
+                    <strong>Sale Price:</strong> ${self.sale_price or "N/A"}<br>
+                    <strong>Unit Price:</strong> {self.unit_price or "N/A"}<br>
+                    <strong>Available:</strong> {"Yes" if self.is_available else "No"}<br>
+                    <strong>Weighted:</strong> {"Yes" if self.is_weighted else "No"}<br>
                 </div>
             </div>
         </div>
@@ -1008,15 +1021,15 @@ class MeijerItem:
         ## {self.title}
         
         - **ID**: {self.id}
-        - **UPC**: {self.upc or 'N/A'}
-        - **SKU**: {self.sku or 'N/A'}
-        - **Brand**: {self.brand or 'N/A'}
-        - **Category**: {self.category or 'N/A'}
-        - **Price**: ${self.price or 'N/A'}
-        - **Sale Price**: ${self.sale_price or 'N/A'}
-        - **Unit Price**: {self.unit_price or 'N/A'}
-        - **Available**: {'Yes' if self.is_available else 'No'}
-        - **Weighted**: {'Yes' if self.is_weighted else 'No'}
+        - **UPC**: {self.upc or "N/A"}
+        - **SKU**: {self.sku or "N/A"}
+        - **Brand**: {self.brand or "N/A"}
+        - **Category**: {self.category or "N/A"}
+        - **Price**: ${self.price or "N/A"}
+        - **Sale Price**: ${self.sale_price or "N/A"}
+        - **Unit Price**: {self.unit_price or "N/A"}
+        - **Available**: {"Yes" if self.is_available else "No"}
+        - **Weighted**: {"Yes" if self.is_weighted else "No"}
         """
 
 
@@ -1105,8 +1118,12 @@ class ListItem:
             "isComplete": self.is_complete,
             "isFavorite": self.is_favorite,
             "listingId": self.listing_id,
-            "promotionStart": self.promotion_start.isoformat() if self.promotion_start else None,
-            "promotionEnd": self.promotion_end.isoformat() if self.promotion_end else None,
+            "promotionStart": self.promotion_start.isoformat()
+            if self.promotion_start
+            else None,
+            "promotionEnd": self.promotion_end.isoformat()
+            if self.promotion_end
+            else None,
             "couponId": self.coupon_id,
         }
         # Remove None values
@@ -1118,5 +1135,7 @@ class ListItem:
 
     def __repr__(self) -> str:
         """Detailed representation of the list item."""
-        return (f"ListItem(list_item_id={self.list_item_id}, item_description='{self.item_description}', "
-                f"quantity={self.quantity}, is_complete={self.is_complete}, is_favorite={self.is_favorite})")
+        return (
+            f"ListItem(list_item_id={self.list_item_id}, item_description='{self.item_description}', "
+            f"quantity={self.quantity}, is_complete={self.is_complete}, is_favorite={self.is_favorite})"
+        )

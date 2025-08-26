@@ -73,7 +73,7 @@ async def demo_pickup_slots(cart: MeijerCart) -> None:
             print(f"✅ Found {len(pickup_slots)} pickup slots:")
             for i, slot in enumerate(pickup_slots[:5]):  # Show first 5
                 print(
-                    f"   {i+1}. {slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')} "
+                    f"   {i + 1}. {slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')} "
                     f"(ID: {slot.slot_id}, Available: {slot.available})"
                 )
         else:
@@ -103,7 +103,7 @@ async def demo_delivery_slots(cart: MeijerCart) -> None:
                     f" (Fee: ${slot.delivery_fee:.2f})" if slot.delivery_fee else ""
                 )
                 print(
-                    f"   {i+1}. {slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')} "
+                    f"   {i + 1}. {slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')} "
                     f"(ID: {slot.slot_id}, Available: {slot.available}){fee_info}"
                 )
         else:

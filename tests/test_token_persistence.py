@@ -52,7 +52,9 @@ def test_token_persistence():
             return
 
     else:
-        print("No credentials found. Please create ~/.config/meijer/auth.json file first.")
+        print(
+            "No credentials found. Please create ~/.config/meijer/auth.json file first."
+        )
         print("This test requires valid credentials to demonstrate token persistence.")
         return
 

@@ -29,6 +29,7 @@ from .commands import (
     ad_command,
     auth_group,
     cart_group,
+    categories_group,
     coupons_group,
     email_2fa_group,
     gas_command,
@@ -108,14 +109,15 @@ def cli(ctx: click.Context, verbose: int, proxy: str, local: bool):
     • watch - Manage price watches and alerts
     • ads - Browse weekly ad items
     • gas - Show gas station information
+    • categories - Browse product categories and departments
     """
     # Set up logging based on verbosity
     setup_logging(verbose)
 
     # Store proxy setting in context for commands to access
     ctx.ensure_object(dict)
-    ctx.obj['proxy'] = proxy
-    ctx.obj['local'] = local
+    ctx.obj["proxy"] = proxy
+    ctx.obj["local"] = local
 
     # Log CLI invocation for debugging
     logger = logging.getLogger(__name__)
@@ -135,6 +137,7 @@ cli.add_command(stores_group, name="stores")
 cli.add_command(settings_group, name="settings")
 cli.add_command(email_2fa_group, name="email-2fa")
 cli.add_command(price_watch_group, name="watch")
+cli.add_command(categories_group, name="categories")
 
 # Add individual commands with cleaner names
 cli.add_command(auth_group, name="auth")

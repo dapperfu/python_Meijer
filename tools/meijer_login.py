@@ -54,7 +54,7 @@ Examples:
         default="requests",
         help="Authentication method (default: requests)",
     )
-    
+
     parser.add_argument(
         "--headless",
         action="store_true",
@@ -87,9 +87,13 @@ Examples:
     try:
         # For hybrid method, we need to handle headless flag
         if args.method == "hybrid" and args.headless:
-            print("⚠️  Note: Using headless mode for hybrid method (less debugging info)")
-        
-        success = perform_login_and_save(args.method, args.output, headless=args.headless)
+            print(
+                "⚠️  Note: Using headless mode for hybrid method (less debugging info)"
+            )
+
+        success = perform_login_and_save(
+            args.method, args.output, headless=args.headless
+        )
 
         if success:
             print(f"\n✅ Login successful! Tokens saved to {args.output}")

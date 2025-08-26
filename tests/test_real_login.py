@@ -197,9 +197,13 @@ def main():
         if hybrid_tokens:
             print("✅ Hybrid authentication test successful")
         else:
-            print("⚠️  Hybrid authentication test failed (expected if Selenium not available)")
+            print(
+                "⚠️  Hybrid authentication test failed (expected if Selenium not available)"
+            )
     except Exception as e:
-        print(f"⚠️  Hybrid authentication test failed: {e} (expected if Selenium not available)")
+        print(
+            f"⚠️  Hybrid authentication test failed: {e} (expected if Selenium not available)"
+        )
 
     # Test 5: Complete login and save flow
     if not test_complete_login_flow("requests"):

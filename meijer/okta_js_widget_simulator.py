@@ -295,7 +295,7 @@ class OktaJSWidgetSimulator:
                                     name = item.get("name", "unknown")
                                     href = item.get("href", "no-href")
                                     method = item.get("method", "no-method")
-                                    print(f"     {i+1}. {name} -> {method} {href}")
+                                    print(f"     {i + 1}. {name} -> {method} {href}")
 
                     return True
 
@@ -719,20 +719,20 @@ class OktaJSWidgetSimulator:
             ]
 
             for i, auth_data in enumerate(auth_data_formats):
-                print(f"🔄 Trying format {i+1}: {list(auth_data.keys())}")
+                print(f"🔄 Trying format {i + 1}: {list(auth_data.keys())}")
 
                 response = self.session.post(
                     signin_url, data=auth_data, headers=self.session.headers
                 )
                 print(
-                    f"📥 Format {i+1} response: {response.status_code} ({len(response.content)} bytes)"
+                    f"📥 Format {i + 1} response: {response.status_code} ({len(response.content)} bytes)"
                 )
 
                 if response.status_code == 200:
-                    print(f"✅ Format {i+1} successful!")
+                    print(f"✅ Format {i + 1} successful!")
                     return self._process_signin_response(response)
                 elif response.status_code == 302:
-                    print(f"🔄 Format {i+1} redirect - following...")
+                    print(f"🔄 Format {i + 1} redirect - following...")
                     # Follow redirect
                     redirect_response = self.session.get(
                         response.headers.get("Location", "")

@@ -108,9 +108,7 @@ class TestMeijerList:
         call_args = self.mock_client._make_request.call_args
         assert call_args[0][0] == "POST"  # method
         assert "AddListItem" in call_args[0][1]  # URL
-        assert (
-            call_args[1]["json_data"]["listItems"][0]["itemDescription"] == "Milk"
-        )
+        assert call_args[1]["json_data"]["listItems"][0]["itemDescription"] == "Milk"
 
     def test_add_item_with_details_success(self):
         """Test adding item with details successfully."""
@@ -403,13 +401,20 @@ class TestMeijerList:
         mock_item = Mock()
         mock_item.name = "Test Item"
         mock_item.item_part_number = "123456789"
-        
+
         # Mock the get_stores method to avoid API calls
-        with patch.object(self.shopping_list.meijer, "get_stores", return_value=[]), \
-             patch.object(self.shopping_list, "get", return_value=[mock_item]), \
-             patch.object(self.shopping_list, "clear_list", return_value=True), \
-             patch.object(self.shopping_list.meijer, "get_product_detail", return_value=None), \
-             patch("builtins.__import__", side_effect=ImportError("No module named 'meijer.search'")):
+        with patch.object(
+            self.shopping_list.meijer, "get_stores", return_value=[]
+        ), patch.object(
+            self.shopping_list, "get", return_value=[mock_item]
+        ), patch.object(
+            self.shopping_list, "clear_list", return_value=True
+        ), patch.object(
+            self.shopping_list.meijer, "get_product_detail", return_value=None
+        ), patch(
+            "builtins.__import__",
+            side_effect=ImportError("No module named 'meijer.search'"),
+        ):
             result = self.shopping_list.defrag()
 
             assert result is False

@@ -28,26 +28,27 @@ from typing import NoReturn
 def check_authentication() -> None:
     """
     Check Meijer authentication status and print results.
-    
+
     This function attempts to import the Meijer client and check
     authentication status, providing user-friendly feedback.
     """
     try:
         from meijer.client import Meijer
+
         meijer = Meijer()
-        
+
         if meijer.is_authenticated():
             print("✅ Authenticated with Meijer")
             print("   You can use all price monitoring features")
         else:
             print("❌ Not authenticated with Meijer")
             print("   Run 'make auth login' to authenticate")
-            
+
     except ImportError:
         print("❌ Meijer API not available")
         print("   Make sure the core Meijer API is installed")
         print("   The API should be available in the parent directory")
-        
+
     except Exception as e:
         print(f"❌ Error checking authentication: {e}")
         print("   This might indicate a configuration issue")

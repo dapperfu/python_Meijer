@@ -26,7 +26,7 @@ class TestFuelPrice(unittest.TestCase):
             last_updated=datetime.now(),
             is_available=True,
         )
-        
+
         self.assertEqual(price.fuel_type, "Regular")
         self.assertEqual(price.price_per_gallon, 3.49)
         self.assertTrue(price.is_available)
@@ -50,7 +50,7 @@ class TestFuelPrice(unittest.TestCase):
     def test_fuel_price_defaults(self):
         """Test FuelPrice creation with defaults."""
         price = FuelPrice(fuel_type="Premium", price_per_gallon=4.29)
-        
+
         self.assertEqual(price.fuel_type, "Premium")
         self.assertEqual(price.price_per_gallon, 4.29)
         self.assertIsNone(price.last_updated)
@@ -67,7 +67,7 @@ class TestGasStationHours(unittest.TestCase):
             close_time=time(22, 0),  # 10:00 PM
             is_24_hours=False,
         )
-        
+
         self.assertEqual(hours.open_time, time(6, 0))
         self.assertEqual(hours.close_time, time(22, 0))
         self.assertFalse(hours.is_24_hours)
@@ -80,7 +80,7 @@ class TestGasStationHours(unittest.TestCase):
             close_time=time(23, 59),
             is_24_hours=True,
         )
-        
+
         self.assertTrue(hours.is_24_hours)
         self.assertTrue(hours.is_open())
 
@@ -90,29 +90,29 @@ class TestGasStationHours(unittest.TestCase):
             open_time=time(6, 0),
             close_time=time(22, 0),
         )
-        
+
         # Test during operating hours
         self.assertTrue(hours.is_open(time(12, 0)))  # Noon
-        self.assertTrue(hours.is_open(time(6, 0)))   # Opening time
+        self.assertTrue(hours.is_open(time(6, 0)))  # Opening time
         self.assertTrue(hours.is_open(time(22, 0)))  # Closing time
-        
+
         # Test outside operating hours
         self.assertFalse(hours.is_open(time(23, 0)))  # 11 PM
-        self.assertFalse(hours.is_open(time(5, 0)))   # 5 AM
+        self.assertFalse(hours.is_open(time(5, 0)))  # 5 AM
 
     def test_gas_station_hours_overnight_operation(self):
         """Test overnight operating hours (e.g., 6 PM to 6 AM)."""
         hours = GasStationHours(
             open_time=time(18, 0),  # 6 PM
-            close_time=time(6, 0),   # 6 AM
+            close_time=time(6, 0),  # 6 AM
         )
-        
+
         # Test during overnight hours
         self.assertTrue(hours.is_open(time(20, 0)))  # 8 PM
-        self.assertTrue(hours.is_open(time(2, 0)))   # 2 AM
-        self.assertTrue(hours.is_open(time(6, 0)))   # 6 AM (closing)
+        self.assertTrue(hours.is_open(time(2, 0)))  # 2 AM
+        self.assertTrue(hours.is_open(time(6, 0)))  # 6 AM (closing)
         self.assertTrue(hours.is_open(time(18, 0)))  # 6 PM (opening)
-        
+
         # Test during closed hours
         self.assertFalse(hours.is_open(time(12, 0)))  # Noon
         self.assertFalse(hours.is_open(time(10, 0)))  # 10 AM
@@ -124,7 +124,7 @@ class TestGasStationHours(unittest.TestCase):
             close_time=time(22, 0),
             days_open=["Monday", "Tuesday", "Wednesday"],
         )
-        
+
         self.assertTrue(hours.is_open(time(12, 0), "Monday"))
         self.assertTrue(hours.is_open(time(12, 0), "Tuesday"))
         self.assertFalse(hours.is_open(time(12, 0), "Thursday"))
@@ -149,7 +149,7 @@ class TestMeijerGas(unittest.TestCase):
             ],
             hours=GasStationHours(time(6, 0), time(22, 0)),
         )
-        
+
         self.assertEqual(gas.station_id, "GAS001")
         self.assertEqual(gas.store_id, "217")
         self.assertEqual(gas.address, "123 Main St")
@@ -166,7 +166,7 @@ class TestMeijerGas(unittest.TestCase):
             state="MI",
             zip_code="48105",
         )
-        
+
         self.assertEqual(gas.station_id, "GAS002")
         self.assertEqual(gas.store_id, "218")
         self.assertEqual(len(gas.fuel_prices), 0)
@@ -187,15 +187,15 @@ class TestMeijerGas(unittest.TestCase):
                 FuelPrice("Diesel", 4.89),
             ],
         )
-        
+
         regular_price = gas.get_fuel_price("Regular")
         self.assertIsNotNone(regular_price)
         self.assertEqual(regular_price.price_per_gallon, 3.49)
-        
+
         premium_price = gas.get_fuel_price("Premium")
         self.assertIsNotNone(premium_price)
         self.assertEqual(premium_price.price_per_gallon, 4.29)
-        
+
         # Test non-existent fuel type
         ethanol_price = gas.get_fuel_price("Ethanol")
         self.assertIsNone(ethanol_price)
@@ -215,9 +215,11 @@ class TestMeijerGas(unittest.TestCase):
                 FuelPrice("Diesel", 4.89, is_available=True),
             ],
         )
-        
+
         # Filter available fuel types manually since method doesn't exist
-        available_types = [price.fuel_type for price in gas.fuel_prices if price.is_available]
+        available_types = [
+            price.fuel_type for price in gas.fuel_prices if price.is_available
+        ]
         self.assertEqual(len(available_types), 2)
         self.assertIn("Regular", available_types)
         self.assertIn("Diesel", available_types)
@@ -238,7 +240,7 @@ class TestMeijerGas(unittest.TestCase):
                 FuelPrice("Diesel", 4.89),
             ],
         )
-        
+
         lowest_price = gas.get_lowest_price()
         self.assertIsNotNone(lowest_price)
         self.assertEqual(lowest_price.fuel_type, "Regular")
@@ -256,11 +258,11 @@ class TestMeijerGas(unittest.TestCase):
             zip_code="48104",
             hours=hours,
         )
-        
+
         # Test that the method exists and returns a boolean
         result = gas.is_currently_open()
         self.assertIsInstance(result, bool)
-        
+
         # Test that the method works (actual result depends on current time)
         # We can't predict the exact result, but we can test the method exists
 
@@ -274,7 +276,7 @@ class TestMeijerGas(unittest.TestCase):
             state="MI",
             zip_code="48104",
         )
-        
+
         # Should be open if no hours specified
         self.assertTrue(gas.is_currently_open())
 
@@ -291,7 +293,7 @@ class TestMeijerGas(unittest.TestCase):
             has_air_pump=True,
             has_convenience_store=True,
         )
-        
+
         self.assertTrue(gas.has_car_wash)
         self.assertTrue(gas.has_air_pump)
         self.assertTrue(gas.has_convenience_store)
@@ -307,7 +309,7 @@ class TestMeijerGas(unittest.TestCase):
             state="MI",
             zip_code="48104",
         )
-        
+
         self.assertIn("Credit Card", gas.payment_methods)
         self.assertIn("Cash", gas.payment_methods)
         self.assertIn("Meijer Gift Card", gas.payment_methods)
@@ -322,9 +324,9 @@ class TestMeijerGas(unittest.TestCase):
             "Zip": "48104",
             "MfcPhoneNumber": "555-1234",
         }
-        
+
         gas = MeijerGas.from_api_data(api_data, "217")
-        
+
         self.assertEqual(gas.station_id, "GAS001")
         self.assertEqual(gas.store_id, "217")
         self.assertEqual(gas.address, "123 Main St")
@@ -345,9 +347,9 @@ class TestMeijerGas(unittest.TestCase):
             fuel_prices=[FuelPrice("Regular", 3.49)],
             hours=GasStationHours(time(6, 0), time(22, 0)),
         )
-        
+
         gas_dict = gas.to_dict()
-        
+
         self.assertEqual(gas_dict["station_id"], "GAS001")
         self.assertEqual(gas_dict["store_id"], "217")
         self.assertEqual(len(gas_dict["fuel_prices"]), 1)

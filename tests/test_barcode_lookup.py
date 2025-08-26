@@ -114,7 +114,7 @@ class BarcodeLookupTester:
                     print(f"   ❌ {barcode}: Not found")
 
             print(
-                f"\n📈 Summary: {found_count}/{total_count} products found ({found_count/total_count*100:.1f}%)"
+                f"\n📈 Summary: {found_count}/{total_count} products found ({found_count / total_count * 100:.1f}%)"
             )
 
             return {

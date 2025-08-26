@@ -14,11 +14,11 @@ from typing import Optional, Any, Dict
 @dataclass
 class BaseModel:
     """Base model class for all dataclass models."""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert dataclass to dictionary.
-        
+
         Returns
         -------
         Dict[str, Any]
@@ -136,7 +136,9 @@ class AuthTokens(BaseModel):
 
         return cls(
             access_token=data["access_token"],
-            refresh_token=data.get("refresh_token"),  # Use .get() to handle missing field
+            refresh_token=data.get(
+                "refresh_token"
+            ),  # Use .get() to handle missing field
             expires_in=data["expires_in"],
             token_type=data.get("token_type", "Bearer"),
             expires_at=expires_at,

@@ -37,11 +37,11 @@ from .models import PriceRecord, ShopnScanPrice
 
 class PriceDatabase:
     """SQLite database for storing price monitoring data."""
-    
+
     def __init__(self, db_path: Optional[Path] = None):
         """
         Initialize the price database.
-        
+
         Parameters
         ----------
         db_path : Path, optional
@@ -49,20 +49,20 @@ class PriceDatabase:
         """
         if db_path is None:
             db_path = Path("./price_data/prices.db")
-        
+
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         self.logger = logging.getLogger(__name__)
-        
+
         # Initialize database schema
         self._init_database()
-    
+
     def _init_database(self) -> None:
         """Initialize the database schema."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Create tables
             cursor.executescript("""
                 -- Stores table
@@ -163,10 +163,10 @@ class PriceDatabase:
                 CREATE INDEX IF NOT EXISTS idx_shopnscan_upc ON shopnscan_verifications (upc);
                 CREATE INDEX IF NOT EXISTS idx_shopnscan_store ON shopnscan_verifications (store_id);
             """)
-            
+
             conn.commit()
             self.logger.info("Database schema initialized successfully")
-    
+
     @contextmanager
     def _get_connection(self):
         """Context manager for database connections."""
@@ -176,16 +176,16 @@ class PriceDatabase:
             yield conn
         finally:
             conn.close()
-    
+
     def add_store(self, store_data: Dict[str, Any]) -> bool:
         """
         Add or update a store in the database.
-        
+
         Parameters
         ----------
         store_data : Dict[str, Any]
             Store information including store_id, store_name, address, etc.
-        
+
         Returns
         -------
         bool
@@ -194,40 +194,47 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                cursor.execute("""
+
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO stores 
                     (store_id, store_name, address, city, state, zip_code, latitude, longitude, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    store_data['store_id'],
-                    store_data['store_name'],
-                    store_data.get('address'),
-                    store_data.get('city'),
-                    store_data.get('state'),
-                    store_data.get('zip_code'),
-                    store_data.get('latitude'),
-                    store_data.get('longitude'),
-                    datetime.now()
-                ))
-                
+                """,
+                    (
+                        store_data["store_id"],
+                        store_data["store_name"],
+                        store_data.get("address"),
+                        store_data.get("city"),
+                        store_data.get("state"),
+                        store_data.get("zip_code"),
+                        store_data.get("latitude"),
+                        store_data.get("longitude"),
+                        datetime.now(),
+                    ),
+                )
+
                 conn.commit()
-                self.logger.debug(f"Store {store_data['store_id']} added/updated successfully")
+                self.logger.debug(
+                    f"Store {store_data['store_id']} added/updated successfully"
+                )
                 return True
-                
+
         except Exception as e:
-            self.logger.error(f"Failed to add store {store_data.get('store_id', 'unknown')}: {e}")
+            self.logger.error(
+                f"Failed to add store {store_data.get('store_id', 'unknown')}: {e}"
+            )
             return False
-    
+
     def add_product(self, product_data: Dict[str, Any]) -> bool:
         """
         Add or update a product in the database.
-        
+
         Parameters
         ----------
         product_data : Dict[str, Any]
             Product information including upc, product_name, brand, etc.
-        
+
         Returns
         -------
         bool
@@ -236,39 +243,46 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                cursor.execute("""
+
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO products 
                     (upc, product_name, brand, category, subcategory, description, image_url, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    product_data['upc'],
-                    product_data['product_name'],
-                    product_data.get('brand'),
-                    product_data.get('category'),
-                    product_data.get('subcategory'),
-                    product_data.get('description'),
-                    product_data.get('image_url'),
-                    datetime.now()
-                ))
-                
+                """,
+                    (
+                        product_data["upc"],
+                        product_data["product_name"],
+                        product_data.get("brand"),
+                        product_data.get("category"),
+                        product_data.get("subcategory"),
+                        product_data.get("description"),
+                        product_data.get("image_url"),
+                        datetime.now(),
+                    ),
+                )
+
                 conn.commit()
-                self.logger.debug(f"Product {product_data['upc']} added/updated successfully")
+                self.logger.debug(
+                    f"Product {product_data['upc']} added/updated successfully"
+                )
                 return True
-                
+
         except Exception as e:
-            self.logger.error(f"Failed to add product {product_data.get('upc', 'unknown')}: {e}")
+            self.logger.error(
+                f"Failed to add product {product_data.get('upc', 'unknown')}: {e}"
+            )
             return False
-    
+
     def add_price_record(self, price_record: PriceRecord) -> bool:
         """
         Add a price record to the database.
-        
+
         Parameters
         ----------
         price_record : PriceRecord
             Price record to add
-        
+
         Returns
         -------
         bool
@@ -277,62 +291,73 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
+
                 # Ensure product exists
-                self.add_product({
-                    'upc': price_record.product_id,  # Assuming product_id is UPC
-                    'product_name': price_record.product_name,
-                    'brand': None,
-                    'category': None,
-                    'subcategory': None,
-                    'description': None,
-                    'image_url': None
-                })
-                
+                self.add_product(
+                    {
+                        "upc": price_record.product_id,  # Assuming product_id is UPC
+                        "product_name": price_record.product_name,
+                        "brand": None,
+                        "category": None,
+                        "subcategory": None,
+                        "description": None,
+                        "image_url": None,
+                    }
+                )
+
                 # Ensure store exists
-                self.add_store({
-                    'store_id': price_record.store_id,
-                    'store_name': price_record.store_name,
-                    'address': None,
-                    'city': None,
-                    'state': None,
-                    'zip_code': None,
-                    'latitude': None,
-                    'longitude': None
-                })
-                
+                self.add_store(
+                    {
+                        "store_id": price_record.store_id,
+                        "store_name": price_record.store_name,
+                        "address": None,
+                        "city": None,
+                        "state": None,
+                        "zip_code": None,
+                        "latitude": None,
+                        "longitude": None,
+                    }
+                )
+
                 # Add price record
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO price_records 
                     (upc, store_id, price, original_price, sale_price, is_clearance, 
                      is_on_sale, availability, search_query, verification_method, timestamp)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    price_record.product_id,
-                    price_record.store_id,
-                    price_record.price,
-                    price_record.original_price,
-                    price_record.price if price_record.is_on_sale else None,
-                    price_record.is_clearance,
-                    price_record.is_on_sale,
-                    price_record.availability,
-                    price_record.search_query,
-                    'search',
-                    price_record.timestamp
-                ))
-                
+                """,
+                    (
+                        price_record.product_id,
+                        price_record.store_id,
+                        price_record.price,
+                        price_record.original_price,
+                        price_record.price if price_record.is_on_sale else None,
+                        price_record.is_clearance,
+                        price_record.is_on_sale,
+                        price_record.availability,
+                        price_record.search_query,
+                        "search",
+                        price_record.timestamp,
+                    ),
+                )
+
                 conn.commit()
-                self.logger.debug(f"Price record added for {price_record.product_id} at {price_record.store_id}")
+                self.logger.debug(
+                    f"Price record added for {price_record.product_id} at {price_record.store_id}"
+                )
                 return True
-                
+
         except Exception as e:
             self.logger.error(f"Failed to add price record: {e}")
             return False
-    
-    def add_search_query(self, query_text: str, results_count: int = 0, stores_searched: int = 0) -> Optional[int]:
+
+    def add_search_query(
+        self, query_text: str, results_count: int = 0, stores_searched: int = 0
+    ) -> Optional[int]:
         """
         Add a search query to the database.
-        
+
         Parameters
         ----------
         query_text : str
@@ -341,7 +366,7 @@ class PriceDatabase:
             Number of results found
         stores_searched : int
             Number of stores searched
-        
+
         Returns
         -------
         Optional[int]
@@ -350,33 +375,38 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                cursor.execute("""
+
+                cursor.execute(
+                    """
                     INSERT INTO search_queries (query_text, results_count, stores_searched)
                     VALUES (?, ?, ?)
-                """, (query_text, results_count, stores_searched))
-                
+                """,
+                    (query_text, results_count, stores_searched),
+                )
+
                 search_id = cursor.lastrowid
                 conn.commit()
-                
-                self.logger.debug(f"Search query '{query_text}' added with ID {search_id}")
+
+                self.logger.debug(
+                    f"Search query '{query_text}' added with ID {search_id}"
+                )
                 return search_id
-                
+
         except Exception as e:
             self.logger.error(f"Failed to add search query: {e}")
             return None
-    
+
     def add_search_result(self, search_id: int, result_data: Dict[str, Any]) -> bool:
         """
         Add a search result to the database.
-        
+
         Parameters
         ----------
         search_id : int
             ID of the search query
         result_data : Dict[str, Any]
             Search result data
-        
+
         Returns
         -------
         bool
@@ -385,53 +415,58 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
+
                 # Ensure product exists
-                self.add_product({
-                    'upc': result_data['upc'],
-                    'product_name': result_data['product_name'],
-                    'brand': result_data.get('brand'),
-                    'category': result_data.get('category'),
-                    'subcategory': result_data.get('subcategory'),
-                    'description': result_data.get('description'),
-                    'image_url': result_data.get('image_url')
-                })
-                
+                self.add_product(
+                    {
+                        "upc": result_data["upc"],
+                        "product_name": result_data["product_name"],
+                        "brand": result_data.get("brand"),
+                        "category": result_data.get("category"),
+                        "subcategory": result_data.get("subcategory"),
+                        "description": result_data.get("description"),
+                        "image_url": result_data.get("image_url"),
+                    }
+                )
+
                 # Add search result
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO search_results 
                     (search_id, upc, store_id, product_name, price, original_price, 
                      is_clearance, is_on_sale, availability, timestamp)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    search_id,
-                    result_data['upc'],
-                    result_data['store_id'],
-                    result_data['product_name'],
-                    result_data['price'],
-                    result_data.get('original_price'),
-                    result_data.get('is_clearance', False),
-                    result_data.get('is_on_sale', False),
-                    result_data.get('availability', 'unknown'),
-                    datetime.now()
-                ))
-                
+                """,
+                    (
+                        search_id,
+                        result_data["upc"],
+                        result_data["store_id"],
+                        result_data["product_name"],
+                        result_data["price"],
+                        result_data.get("original_price"),
+                        result_data.get("is_clearance", False),
+                        result_data.get("is_on_sale", False),
+                        result_data.get("availability", "unknown"),
+                        datetime.now(),
+                    ),
+                )
+
                 conn.commit()
                 return True
-                
+
         except Exception as e:
             self.logger.error(f"Failed to add search result: {e}")
             return False
-    
+
     def add_shopnscan_verification(self, verification: ShopnScanPrice) -> bool:
         """
         Add a Shop'n'Scan verification to the database.
-        
+
         Parameters
         ----------
         verification : ShopnScanPrice
             Shop'n'Scan verification data
-        
+
         Returns
         -------
         bool
@@ -440,43 +475,50 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                cursor.execute("""
+
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO shopnscan_verifications 
                     (upc, store_id, verified_price, sale_price, original_price, 
                      is_clearance, is_on_sale, verification_status, verification_timestamp)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    verification.upc,
-                    verification.store_id,
-                    verification.current_price,
-                    verification.sale_price,
-                    verification.original_price,
-                    verification.is_clearance,
-                    verification.is_on_sale,
-                    verification.verification_status,
-                    verification.timestamp
-                ))
-                
+                """,
+                    (
+                        verification.upc,
+                        verification.store_id,
+                        verification.current_price,
+                        verification.sale_price,
+                        verification.original_price,
+                        verification.is_clearance,
+                        verification.is_on_sale,
+                        verification.verification_status,
+                        verification.timestamp,
+                    ),
+                )
+
                 conn.commit()
-                self.logger.debug(f"Shop'n'Scan verification added for {verification.upc} at {verification.store_id}")
+                self.logger.debug(
+                    f"Shop'n'Scan verification added for {verification.upc} at {verification.store_id}"
+                )
                 return True
-                
+
         except Exception as e:
             self.logger.error(f"Failed to add Shop'n'Scan verification: {e}")
             return False
-    
-    def search_products_by_query(self, query: str, limit: int = 100) -> List[Dict[str, Any]]:
+
+    def search_products_by_query(
+        self, query: str, limit: int = 100
+    ) -> List[Dict[str, Any]]:
         """
         Search for products by query text.
-        
+
         Parameters
         ----------
         query : str
             Search query text
         limit : int
             Maximum number of results to return
-        
+
         Returns
         -------
         List[Dict[str, Any]]
@@ -485,41 +527,46 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
+
                 # Search in products table
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT DISTINCT p.upc, p.product_name, p.brand, p.category, p.subcategory
                     FROM products p
                     WHERE p.product_name LIKE ? OR p.brand LIKE ? OR p.category LIKE ?
                     ORDER BY p.product_name
                     LIMIT ?
-                """, (f'%{query}%', f'%{query}%', f'%{query}%', limit))
-                
+                """,
+                    (f"%{query}%", f"%{query}%", f"%{query}%", limit),
+                )
+
                 results = []
                 for row in cursor.fetchall():
-                    results.append({
-                        'upc': row['upc'],
-                        'product_name': row['product_name'],
-                        'brand': row['brand'],
-                        'category': row['category'],
-                        'subcategory': row['subcategory']
-                    })
-                
+                    results.append(
+                        {
+                            "upc": row["upc"],
+                            "product_name": row["product_name"],
+                            "brand": row["brand"],
+                            "category": row["category"],
+                            "subcategory": row["subcategory"],
+                        }
+                    )
+
                 return results
-                
+
         except Exception as e:
             self.logger.error(f"Failed to search products: {e}")
             return []
-    
+
     def get_product_prices_by_upc(self, upc: str) -> List[Dict[str, Any]]:
         """
         Get all price records for a specific UPC across all stores.
-        
+
         Parameters
         ----------
         upc : str
             Product UPC code
-        
+
         Returns
         -------
         List[Dict[str, Any]]
@@ -528,45 +575,52 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                cursor.execute("""
+
+                cursor.execute(
+                    """
                     SELECT pr.*, s.store_name, p.product_name
                     FROM price_records pr
                     JOIN stores s ON pr.store_id = s.store_id
                     JOIN products p ON pr.upc = p.upc
                     WHERE pr.upc = ?
                     ORDER BY pr.timestamp DESC
-                """, (upc,))
-                
+                """,
+                    (upc,),
+                )
+
                 results = []
                 for row in cursor.fetchall():
-                    results.append({
-                        'id': row['id'],
-                        'upc': row['upc'],
-                        'store_id': row['store_id'],
-                        'store_name': row['store_name'],
-                        'product_name': row['product_name'],
-                        'price': row['price'],
-                        'original_price': row['original_price'],
-                        'sale_price': row['sale_price'],
-                        'is_clearance': bool(row['is_clearance']),
-                        'is_on_sale': bool(row['is_on_sale']),
-                        'availability': row['availability'],
-                        'search_query': row['search_query'],
-                        'verification_method': row['verification_method'],
-                        'timestamp': row['timestamp']
-                    })
-                
+                    results.append(
+                        {
+                            "id": row["id"],
+                            "upc": row["upc"],
+                            "store_id": row["store_id"],
+                            "store_name": row["store_name"],
+                            "product_name": row["product_name"],
+                            "price": row["price"],
+                            "original_price": row["original_price"],
+                            "sale_price": row["sale_price"],
+                            "is_clearance": bool(row["is_clearance"]),
+                            "is_on_sale": bool(row["is_on_sale"]),
+                            "availability": row["availability"],
+                            "search_query": row["search_query"],
+                            "verification_method": row["verification_method"],
+                            "timestamp": row["timestamp"],
+                        }
+                    )
+
                 return results
-                
+
         except Exception as e:
             self.logger.error(f"Failed to get product prices for UPC {upc}: {e}")
             return []
-    
-    def get_price_history(self, upc: str, store_id: str, days: int = 30) -> List[Dict[str, Any]]:
+
+    def get_price_history(
+        self, upc: str, store_id: str, days: int = 30
+    ) -> List[Dict[str, Any]]:
         """
         Get price history for a specific product at a specific store.
-        
+
         Parameters
         ----------
         upc : str
@@ -575,7 +629,7 @@ class PriceDatabase:
             Store identifier
         days : int
             Number of days of history to retrieve
-        
+
         Returns
         -------
         List[Dict[str, Any]]
@@ -584,8 +638,9 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                cursor.execute("""
+
+                cursor.execute(
+                    """
                     SELECT pr.*, s.store_name, p.product_name
                     FROM price_records pr
                     JOIN stores s ON pr.store_id = s.store_id
@@ -593,44 +648,50 @@ class PriceDatabase:
                     WHERE pr.upc = ? AND pr.store_id = ?
                     AND pr.timestamp >= datetime('now', '-{} days')
                     ORDER BY pr.timestamp DESC
-                """.format(days), (upc, store_id))
-                
+                """.format(days),
+                    (upc, store_id),
+                )
+
                 results = []
                 for row in cursor.fetchall():
-                    results.append({
-                        'id': row['id'],
-                        'upc': row['upc'],
-                        'store_id': row['store_id'],
-                        'store_name': row['store_name'],
-                        'product_name': row['product_name'],
-                        'price': row['price'],
-                        'original_price': row['original_price'],
-                        'sale_price': row['sale_price'],
-                        'is_clearance': bool(row['is_clearance']),
-                        'is_on_sale': bool(row['is_on_sale']),
-                        'availability': row['availability'],
-                        'search_query': row['search_query'],
-                        'verification_method': row['verification_method'],
-                        'timestamp': row['timestamp']
-                    })
-                
+                    results.append(
+                        {
+                            "id": row["id"],
+                            "upc": row["upc"],
+                            "store_id": row["store_id"],
+                            "store_name": row["store_name"],
+                            "product_name": row["product_name"],
+                            "price": row["price"],
+                            "original_price": row["original_price"],
+                            "sale_price": row["sale_price"],
+                            "is_clearance": bool(row["is_clearance"]),
+                            "is_on_sale": bool(row["is_on_sale"]),
+                            "availability": row["availability"],
+                            "search_query": row["search_query"],
+                            "verification_method": row["verification_method"],
+                            "timestamp": row["timestamp"],
+                        }
+                    )
+
                 return results
-                
+
         except Exception as e:
             self.logger.error(f"Failed to get price history: {e}")
             return []
-    
-    def find_price_drops(self, min_drop_percent: float = 5.0, days: int = 7) -> List[Dict[str, Any]]:
+
+    def find_price_drops(
+        self, min_drop_percent: float = 5.0, days: int = 7
+    ) -> List[Dict[str, Any]]:
         """
         Find products with significant price drops.
-        
+
         Parameters
         ----------
         min_drop_percent : float
             Minimum price drop percentage to consider
         days : int
             Number of days to look back for price changes
-        
+
         Returns
         -------
         List[Dict[str, Any]]
@@ -639,8 +700,9 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                cursor.execute("""
+
+                cursor.execute(
+                    """
                     WITH price_changes AS (
                         SELECT 
                             pr1.upc,
@@ -668,38 +730,44 @@ class PriceDatabase:
                     JOIN stores s ON pc.store_id = s.store_id
                     WHERE pc.drop_percent >= ?
                     ORDER BY pc.drop_percent DESC
-                """.format(days, days), (min_drop_percent,))
-                
+                """.format(days, days),
+                    (min_drop_percent,),
+                )
+
                 results = []
                 for row in cursor.fetchall():
-                    results.append({
-                        'upc': row['upc'],
-                        'store_id': row['store_id'],
-                        'product_name': row['product_name'],
-                        'store_name': row['store_name'],
-                        'current_price': row['current_price'],
-                        'previous_price': row['previous_price'],
-                        'price_drop': row['price_drop'],
-                        'drop_percent': row['drop_percent'],
-                        'current_timestamp': row['current_timestamp'],
-                        'previous_timestamp': row['previous_timestamp']
-                    })
-                
+                    results.append(
+                        {
+                            "upc": row["upc"],
+                            "store_id": row["store_id"],
+                            "product_name": row["product_name"],
+                            "store_name": row["store_name"],
+                            "current_price": row["current_price"],
+                            "previous_price": row["previous_price"],
+                            "price_drop": row["price_drop"],
+                            "drop_percent": row["drop_percent"],
+                            "current_timestamp": row["current_timestamp"],
+                            "previous_timestamp": row["previous_timestamp"],
+                        }
+                    )
+
                 return results
-                
+
         except Exception as e:
             self.logger.error(f"Failed to find price drops: {e}")
             return []
-    
-    def get_clearance_deals(self, max_price: Optional[float] = None) -> List[Dict[str, Any]]:
+
+    def get_clearance_deals(
+        self, max_price: Optional[float] = None
+    ) -> List[Dict[str, Any]]:
         """
         Find products on clearance.
-        
+
         Parameters
         ----------
         max_price : float, optional
             Maximum price to consider for clearance items
-        
+
         Returns
         -------
         List[Dict[str, Any]]
@@ -708,7 +776,7 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
+
                 query = """
                     SELECT 
                         pr.upc,
@@ -724,39 +792,41 @@ class PriceDatabase:
                     JOIN stores s ON pr.store_id = s.store_id
                     WHERE pr.is_clearance = 1
                 """
-                
+
                 params = []
                 if max_price is not None:
                     query += " AND pr.price <= ?"
                     params.append(max_price)
-                
+
                 query += " ORDER BY pr.timestamp DESC"
-                
+
                 cursor.execute(query, params)
-                
+
                 results = []
                 for row in cursor.fetchall():
-                    results.append({
-                        'upc': row['upc'],
-                        'store_id': row['store_id'],
-                        'product_name': row['product_name'],
-                        'store_name': row['store_name'],
-                        'price': row['price'],
-                        'original_price': row['original_price'],
-                        'sale_price': row['sale_price'],
-                        'timestamp': row['timestamp']
-                    })
-                
+                    results.append(
+                        {
+                            "upc": row["upc"],
+                            "store_id": row["store_id"],
+                            "product_name": row["product_name"],
+                            "store_name": row["store_name"],
+                            "price": row["price"],
+                            "original_price": row["original_price"],
+                            "sale_price": row["sale_price"],
+                            "timestamp": row["timestamp"],
+                        }
+                    )
+
                 return results
-                
+
         except Exception as e:
             self.logger.error(f"Failed to get clearance deals: {e}")
             return []
-    
+
     def get_database_stats(self) -> Dict[str, Any]:
         """
         Get database statistics.
-        
+
         Returns
         -------
         Dict[str, Any]
@@ -765,15 +835,22 @@ class PriceDatabase:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
+
                 stats = {}
-                
+
                 # Count records in each table
-                tables = ['stores', 'products', 'price_records', 'search_queries', 'search_results', 'shopnscan_verifications']
+                tables = [
+                    "stores",
+                    "products",
+                    "price_records",
+                    "search_queries",
+                    "search_results",
+                    "shopnscan_verifications",
+                ]
                 for table in tables:
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
-                    stats[f'{table}_count'] = cursor.fetchone()[0]
-                
+                    stats[f"{table}_count"] = cursor.fetchone()[0]
+
                 # Get date range of price records
                 cursor.execute("""
                     SELECT 
@@ -783,11 +860,11 @@ class PriceDatabase:
                 """)
                 date_range = cursor.fetchone()
                 if date_range and date_range[0]:
-                    stats['earliest_price_record'] = date_range[0]
-                    stats['latest_price_record'] = date_range[1]
-                
+                    stats["earliest_price_record"] = date_range[0]
+                    stats["latest_price_record"] = date_range[1]
+
                 return stats
-                
+
         except Exception as e:
             self.logger.error(f"Failed to get database stats: {e}")
             return {}
