@@ -26,6 +26,7 @@ browsing products by department.
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin
 
 from .exceptions import MeijerError
 
@@ -222,17 +223,19 @@ class CategoriesManager:
         """
         try:
             endpoint = self.endpoints["categories"]
-            params = {}
+            url = urljoin(self.client.api_base_url, endpoint)
+            params: Dict[str, Any] = {}
 
             if store_id:
                 params["store"] = store_id
 
             self.logger.info(f"Fetching categories for store: {store_id or 'all'}")
 
-            response = self.client._make_request("GET", endpoint, params=params)
+            response = self.client._make_request("GET", url, params=params)
 
             if response.status_code == 200:
                 data = response.json()
+                self.logger.info(f"Categories API response: {data}")
                 return self._parse_categories_response(data)
             else:
                 self.logger.error(
@@ -285,7 +288,13 @@ class CategoriesManager:
             endpoint = self.endpoints["category_products"].format(
                 category_id=category_id
             )
-            params = {"page": page, "limit": limit, "sortBy": sort_by, **kwargs}
+            url = urljoin(self.client.api_base_url, endpoint)
+            params: Dict[str, Any] = {
+                "page": page,
+                "limit": limit,
+                "sortBy": sort_by,
+                **kwargs,
+            }
 
             if store_id:
                 params["store"] = store_id
@@ -294,7 +303,7 @@ class CategoriesManager:
                 f"Fetching products for category {category_id} (page {page})"
             )
 
-            response = self.client._make_request("GET", endpoint, params=params)
+            response = self.client._make_request("GET", url, params=params)
 
             if response.status_code == 200:
                 data = response.json()
@@ -340,14 +349,15 @@ class CategoriesManager:
             endpoint = self.endpoints["featured_products"].format(
                 category_id=category_id
             )
-            params = {"limit": limit}
+            url = urljoin(self.client.api_base_url, endpoint)
+            params: Dict[str, Any] = {"limit": limit}
 
             if store_id:
                 params["store"] = store_id
 
             self.logger.info(f"Fetching featured products for category {category_id}")
 
-            response = self.client._make_request("GET", endpoint, params=params)
+            response = self.client._make_request("GET", url, params=params)
 
             if response.status_code == 200:
                 data = response.json()
@@ -446,33 +456,52 @@ class CategoriesManager:
         """Parse the categories API response."""
         categories = []
 
-        if "categories" in data:
-            for cat_data in data["categories"]:
-                category = Category(
-                    id=cat_data.get("id", ""),
-                    name=cat_data.get("name", ""),
-                    description=cat_data.get("description"),
-                    parent_id=cat_data.get("parentId"),
-                    level=cat_data.get("level", 1),
-                    product_count=cat_data.get("productCount", 0),
-                    image_url=cat_data.get("imageUrl"),
-                    is_active=cat_data.get("active", True),
-                    sort_order=cat_data.get("sortOrder", 0),
-                    created_at=self._parse_datetime(cat_data.get("createdAt")),
-                    updated_at=self._parse_datetime(cat_data.get("updatedAt")),
+        # Handle both formats: direct list or wrapped in "categories" key
+        if isinstance(data, list):
+            # Direct list of categories
+            categories_data = data
+        elif "categories" in data:
+            # Wrapped in "categories" key
+            categories_data = data["categories"]
+        else:
+            # Try to find any list-like structure
+            for key, value in data.items():
+                if isinstance(value, list) and value and isinstance(value[0], dict):
+                    if "id" in value[0] and "name" in value[0]:
+                        categories_data = value
+                        break
+            else:
+                # No valid categories found
+                return []
+
+        for cat_data in categories_data:
+            category = Category(
+                id=cat_data.get("id", ""),
+                name=cat_data.get("name", ""),
+                description=cat_data.get("description"),
+                parent_id=cat_data.get("parentId"),
+                level=cat_data.get("level", 1),
+                product_count=cat_data.get("productCount", 0),
+                image_url=cat_data.get(
+                    "thumbnailUrl"
+                ),  # Use thumbnailUrl from response
+                is_active=not cat_data.get("hide", False),  # Invert hide logic
+                sort_order=cat_data.get("webDeptNavOrder", 0),
+                created_at=self._parse_datetime(cat_data.get("createdAt")),
+                updated_at=self._parse_datetime(cat_data.get("updatedAt")),
+            )
+
+            # Handle subcategories if present
+            if "subcategories" in cat_data and cat_data["subcategories"]:
+                category.subcategories = self._parse_categories_response(
+                    cat_data["subcategories"]
                 )
 
-                # Handle subcategories if present
-                if "subcategories" in cat_data:
-                    category.subcategories = self._parse_categories_response(
-                        {"categories": cat_data["subcategories"]}
-                    )
+            # Handle featured products if present
+            if "featuredProducts" in cat_data:
+                category.featured_products = cat_data["featuredProducts"]
 
-                # Handle featured products if present
-                if "featuredProducts" in cat_data:
-                    category.featured_products = cat_data["featuredProducts"]
-
-                categories.append(category)
+            categories.append(category)
 
         return categories
 
