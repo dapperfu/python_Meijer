@@ -159,18 +159,35 @@ class Meijer:
     - Store information
     """
 
-    def __init__(self, auth: Optional[str] = None, base_url: Optional[str] = None):
+    # Class variable to track if refresh token warning has been shown
+    _refresh_token_warning_shown = False
+
+    @classmethod
+    def reset_refresh_token_warning(cls) -> None:
+        """Reset the refresh token warning flag to allow showing it again."""
+        cls._refresh_token_warning_shown = False
+
+    def __init__(
+        self,
+        auth_file: Optional[str] = None,
+        subscription_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        proxy: Optional[str] = None,
+        local_backend: Optional[str] = None,
+    ):
         """
         Initialize Meijer client.
 
         Args:
-            auth: Authentication method - can be:
+            auth_file: Authentication method - can be:
                 - Path to auth.json file with bearer token or credentials
                 - Path to mitmproxy log file
                 - None to auto-detect from ~/.config/meijer/auth.json
             base_url: Base URL for API endpoints. If provided, will redirect all API calls
                      to this URL instead of the default Meijer domains.
                      Example: "http://127.0.0.1:5000" for local Flask server
+            proxy: Proxy settings for the client
+            local_backend: Local backend for testing
         """
         self.logger = logging.getLogger(__name__)
 
@@ -270,7 +287,7 @@ class Meijer:
         self.stores = StoresInterface(self)
 
         # Load authentication
-        self._load_auth(auth)
+        self._load_auth(auth_file)
 
         # Update mPerks client with authentication token
         self._update_mperks_auth()
@@ -327,6 +344,14 @@ class Meijer:
 
         # Request deduplication
         self._pending_requests = {}  # Track in-flight requests to avoid duplicates
+
+        # Set proxy settings
+        if proxy:
+            self.configure_proxy(proxy)
+
+        # Set local backend for testing
+        if local_backend:
+            self._setup_local_endpoints(local_backend)
 
     def _rate_limit(self, endpoint: str) -> None:
         """
@@ -723,16 +748,20 @@ class Meijer:
                 if tokens:
                     # Check if we have a refresh token
                     if not tokens.refresh_token or tokens.refresh_token.strip() == "":
-                        self.logger.warning(
-                            "⚠️ No refresh token available - tokens cannot be refreshed automatically"
-                        )
-                        print(
-                            "⚠️ Your current tokens cannot be refreshed automatically (no refresh token)"
-                        )
-                        print(
-                            "💡 Run 'meijer auth' to re-authenticate and get new tokens with refresh capability"
-                        )
-                        return False
+                        # Only show refresh token warning once per session
+                        if not Meijer._refresh_token_warning_shown:
+                            self.logger.warning(
+                                "⚠️ No refresh token available - tokens cannot be refreshed automatically"
+                            )
+                            Meijer._refresh_token_warning_shown = True
+                        # Don't return False - allow tokens without refresh capability to work
+                        # Just check if they're still valid
+                        if tokens.is_expired(buffer_seconds=0):
+                            self.logger.warning("❌ Tokens are expired")
+                            return False
+                        else:
+                            self.logger.info("✅ Tokens are valid (no refresh capability)")
+                            return True
 
                     # Check if token is close to expiring
                     if tokens.is_expired(buffer_seconds=600):  # 10 minutes buffer

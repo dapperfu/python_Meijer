@@ -608,3 +608,76 @@ Update successful. Updated existing file /keg/cursor/Cursor-1.4.5-x86_64.AppImag
 [2128548:0825/175258.279545:ERROR:atom_cache.cc(229)] Add WM_CHANGE_STATE to kAtomsToCache
 [90m[main 2025-08-25T22:00:29.725Z][0m update#setState checking for updates
 [90m[main 2025-08-25T22:00:29.884Z][0m update#setState idle
+[90m[main 2025-08-25T23:00:29.727Z][0m update#setState checking for updates
+[90m[main 2025-08-25T23:00:29.910Z][0m update#setState idle
+[93m[main 2025-08-25T23:40:49.038Z][0m No ptyHost heartbeat after 6 seconds
+[90m[main 2025-08-25T23:53:58.726Z][0m Extension host with pid 2128746 exited with code: 0, signal: unknown.
+[91m[main 2025-08-25T23:53:59.178Z][0m [UtilityProcess id: 2, type: fileWatcher, pid: 2128773]: crashed with code 15 and reason 'killed'
+[90m[main 2025-08-25T23:54:12.112Z][0m Extension host with pid 2129748 exited with code: 0, signal: unknown.
+[91m[main 2025-08-25T23:54:12.680Z][0m [UtilityProcess id: 3, type: fileWatcher, pid: 2129738]: crashed with code 15 and reason 'killed'
+[90m[main 2025-08-26T00:00:29.730Z][0m update#setState checking for updates
+[90m[main 2025-08-26T00:00:29.932Z][0m update#setState idle
+[91m[main 2025-08-26T00:24:58.529Z][0m Listing processes failed: Error: cat: /proc/2332031/stat: No such file or directory
+/keg/cursor/tmp/.mount_Cursorn0EZFl/usr/share/cursor/resources/app/out/vs/base/node/cpuUsage.sh: line 27: let: PROCESS_TIME_BEFORE=+: syntax error: operand expected (error token is "+")
+
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[90m[main 2025-08-26T00:37:25.398Z][0m Extension host with pid 2326354 exited with code: 0, signal: unknown.
+[91m[main 2025-08-26T00:37:25.477Z][0m [UtilityProcess id: 6, type: fileWatcher, pid: 2326344]: crashed with code 15 and reason 'killed'
+[2128548:0825/205243.157914:ERROR:browser_main_loop.cc(278)] GLib-GObject: ../../../gobject/gsignal.c:2685: instance '0x368403db8950' has no handler with id '2962'
+[90m[main 2025-08-26T00:52:44.038Z][0m Extension host with pid 2144179 exited with code: 0, signal: unknown.
+[91m[main 2025-08-26T00:52:44.350Z][0m [UtilityProcess id: 4, type: fileWatcher, pid: 2144169]: crashed with code 15 and reason 'killed'
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[90m[main 2025-08-26T01:00:29.733Z][0m update#setState checking for updates
+[90m[main 2025-08-26T01:00:29.789Z][0m update#setState idle
+[2128606:0825/213105.270184:ERROR:gl_surface_presentation_helper.cc(260)] GetVSyncParametersIfAvailable() failed for 1 times!
+[2128606:0825/213105.270718:ERROR:gl_surface_presentation_helper.cc(260)] GetVSyncParametersIfAvailable() failed for 2 times!
+[90m[main 2025-08-26T02:00:29.735Z][0m update#setState checking for updates
+[90m[main 2025-08-26T02:00:29.924Z][0m update#setState idle
+ATTENTION: default value of option mesa_glthread overridden by environment.
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[90m[main 2025-08-26T02:53:30.136Z][0m Extension host with pid 2449648 exited with code: 0, signal: unknown.
+[91m[main 2025-08-26T02:53:30.185Z][0m [UtilityProcess id: 9, type: fileWatcher, pid: 2449638]: crashed with code 15 and reason 'killed'
+[90m[main 2025-08-26T02:53:32.146Z][0m Extension host with pid 2152326 exited with code: 0, signal: unknown.
+[90m[main 2025-08-26T03:00:29.737Z][0m update#setState checking for updates
+[90m[main 2025-08-26T03:00:29.802Z][0m update#setState idle
+[2128548:0825/232414.215875:ERROR:browser_main_loop.cc(278)] GLib-GObject: ../../../gobject/gsignal.c:2685: instance '0x3684000f4190' has no handler with id '3236'
+[90m[main 2025-08-26T04:00:29.741Z][0m update#setState checking for updates
+[90m[main 2025-08-26T04:00:29.900Z][0m update#setState idle
+[90m[main 2025-08-26T05:00:29.743Z][0m update#setState checking for updates
+[90m[main 2025-08-26T05:00:29.933Z][0m update#setState idle
+X connection to :0 broken (explicit kill or server shutdown).
+ATTENTION: default value of option mesa_glthread overridden by environment.
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+libva info: VA-API version 1.20.0
+libva info: Trying to open /usr/lib/x86_64-linux-gnu/dri/radeonsi_drv_video.so
+libva info: Found init function __vaDriverInit_1_20
+libva info: va_openDriver() returns 0
+ATTENTION: default value of option mesa_glthread overridden by environment.
+ATTENTION: default value of option mesa_glthread overridden by environment.
+[Parent 7306, Main Thread] WARNING: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:7306): GLib-GObject-CRITICAL **: 11:54:10.457: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding'
+[Parent 7306, Main Thread] WARNING: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:7306): GLib-GObject-CRITICAL **: 11:54:11.412: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding'
+[Parent 7306, Main Thread] WARNING: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:7306): GLib-GObject-CRITICAL **: 11:54:12.773: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding'
+[Parent 7306, Main Thread] WARNING: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:7306): GLib-GObject-CRITICAL **: 11:54:13.999: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding'
+libva info: VA-API version 1.20.0
+libva info: Trying to open /usr/lib/x86_64-linux-gnu/dri/radeonsi_drv_video.so
+libva info: Found init function __vaDriverInit_1_20
+libva info: va_openDriver() returns 0
+[Parent 7306, Main Thread] WARNING: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:7306): GLib-GObject-CRITICAL **: 12:00:05.105: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding'
+[Parent 7306, Main Thread] WARNING: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:7306): GLib-GObject-CRITICAL **: 12:00:34.089: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding'
+[Parent 7306, Main Thread] WARNING: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding': 'glib warning', file /builds/worker/checkouts/gecko/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox:7306): GLib-GObject-CRITICAL **: 12:00:34.566: g_object_set_is_valid_property: object class 'GtkImage' has no property named 'padding'
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt

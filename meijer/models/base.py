@@ -43,11 +43,11 @@ class AuthTokens(BaseModel):
     access_token: str
     """Access token for API authentication"""
 
-    refresh_token: str
-    """Refresh token for obtaining new access tokens"""
-
     expires_in: int
     """Token expiration time in seconds"""
+
+    refresh_token: Optional[str] = None
+    """Refresh token for obtaining new access tokens (optional)"""
 
     token_type: str = "Bearer"
     """Type of token (default: Bearer)"""
@@ -136,7 +136,7 @@ class AuthTokens(BaseModel):
 
         return cls(
             access_token=data["access_token"],
-            refresh_token=data["refresh_token"],
+            refresh_token=data.get("refresh_token"),  # Use .get() to handle missing field
             expires_in=data["expires_in"],
             token_type=data.get("token_type", "Bearer"),
             expires_at=expires_at,

@@ -6,6 +6,7 @@ click>=8.0.0
 urllib3>=1.26.0
 rich>=12.0.0
 openpyxl>=3.1.0
+toml>=0.10.0
 
 # Barcode generation
 python-barcode>=0.15.1

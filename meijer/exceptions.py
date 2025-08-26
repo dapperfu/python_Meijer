@@ -77,6 +77,18 @@ class CouponError(MeijerError):
     pass
 
 
+class RegistrationError(MeijerError):
+    """Raised when account registration operations fail."""
+
+    pass
+
+
+class ValidationError(MeijerError):
+    """Raised when input validation fails."""
+
+    pass
+
+
 # ============================================================================
 # Error Handling Utilities
 # ============================================================================

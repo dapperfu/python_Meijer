@@ -1,8 +1,0 @@
-Flask>=2.3.0
-Flask-Bootstrap>=3.3.7.1
-Werkzeug>=2.3.0
-ruff>=0.1.0
-# Add meijer package for real integration
-# Note: This should point to the local meijer package
-# -e ../python_Meijer
-# meijer package is installed as meijer-cli

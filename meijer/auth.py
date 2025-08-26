@@ -82,18 +82,23 @@ class MeijerAuth(AuthBase):
 
         # Check if token is close to expiring (within 10 minutes)
         if tokens.is_expired(buffer_seconds=600):  # 10 minutes buffer
-            self.logger.info("🔄 Token expiring soon, proactively refreshing...")
-            if self.token_storage.refresh_tokens(tokens.refresh_token):
-                # Reload the refreshed tokens
-                tokens = self.token_storage.load_tokens()
-                if tokens:
-                    self.logger.info("✅ Tokens refreshed successfully")
-                else:
-                    self.logger.error("❌ Failed to load refreshed tokens")
-                    return None
+            if not tokens.refresh_token:
+                self.logger.warning("⚠️ Token expiring soon but no refresh token available")
+                self.logger.warning("💡 Tokens will work until they expire, then re-authentication required")
+                # Continue with current tokens - they're still valid
             else:
-                self.logger.error("❌ Failed to refresh tokens")
-                return None
+                self.logger.info("🔄 Token expiring soon, proactively refreshing...")
+                if self.token_storage.refresh_tokens(tokens.refresh_token):
+                    # Reload the refreshed tokens
+                    tokens = self.token_storage.load_tokens()
+                    if tokens:
+                        self.logger.info("✅ Tokens refreshed successfully")
+                    else:
+                        self.logger.error("❌ Failed to load refreshed tokens")
+                        return None
+                else:
+                    self.logger.error("❌ Failed to refresh tokens")
+                    return None
 
         return tokens
 
@@ -215,6 +220,9 @@ class TokenStorage:
 
         # Check if token needs refresh
         if tokens.is_expired(buffer_seconds=self.refresh_buffer_seconds):
+            if not tokens.refresh_token:
+                self.logger.warning("⚠️ No refresh token available - tokens cannot be refreshed")
+                return None
             self.logger.info("🔄 Access token expired, attempting refresh...")
             if self.refresh_tokens(tokens.refresh_token):
                 tokens = self.load_tokens()  # Reload refreshed tokens
