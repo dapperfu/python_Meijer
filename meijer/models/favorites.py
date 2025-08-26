@@ -7,7 +7,7 @@ from the Meijer mobile app, based on analysis of the decompiled APK and HTTP tra
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -28,11 +28,12 @@ class FavoriteListItem:
     item_display_order: int
     """Order in which the item appears in the favorites list"""
 
-    item_part_number: Optional[str] = None
-    """Part number/UPC of the item (if applicable)"""
-
     item_description: str
     """Description/name of the favorite item"""
+
+    # Optional fields with defaults
+    item_part_number: Optional[str] = None
+    """Part number/UPC of the item (if applicable)"""
 
     is_item_in_active_list: bool = False
     """Whether the item is currently in the active shopping list"""
@@ -292,11 +293,12 @@ class UpdateConfirmation:
     item_display_order: int
     """Order in which the item appears"""
 
-    item_part_number: Optional[str] = None
-    """Part number/UPC of the item"""
-
     item_description: str
     """Description/name of the item"""
+
+    # Optional fields with defaults
+    item_part_number: Optional[str] = None
+    """Part number/UPC of the item"""
 
     is_item_in_active_list: bool = False
     """Whether the item is in the active list"""

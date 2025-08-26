@@ -446,7 +446,7 @@ def list_favorites():
 
     try:
         logger.debug("Fetching favorite items")
-        favorites = client.list.get_favorites()
+        favorites = client.favorites.get_favorites()
         logger.debug(f"Retrieved {len(favorites)} favorite items")
 
         if not favorites:
@@ -500,6 +500,80 @@ def list_favorites():
     except Exception as e:
         logger.error(f"Failed to show favorites: {e}", exc_info=True)
         raise click.ClickException(f"❌ Failed to show favorites: {e}")
+
+
+@list_group.command("add-favorite")
+@click.argument("description", required=True)
+@click.option("--upc", help="UPC/part number for the item")
+def list_add_favorite(description: str, upc: str = None):
+    """Add an item to favorites."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Add favorite command called: {description} (UPC: {upc})")
+
+    client = get_meijer_client()
+
+    try:
+        logger.debug("Adding item to favorites")
+        result = client.favorites.add_favorite(description, upc)
+
+        if result:
+            click.echo(f"✅ Successfully added '{description}' to favorites")
+            click.echo(f"   Item ID: {result.list_item_id}")
+        else:
+            click.echo(f"❌ Failed to add '{description}' to favorites")
+
+    except Exception as e:
+        logger.error(f"Failed to add favorite: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to add favorite: {e}")
+
+
+@list_group.command("remove-favorite")
+@click.argument("description", required=True)
+def list_remove_favorite(description: str):
+    """Remove an item from favorites by description."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Remove favorite command called: {description}")
+
+    client = get_meijer_client()
+
+    try:
+        logger.debug("Removing item from favorites")
+        result = client.favorites.delete_favorite_by_description(description)
+
+        if result:
+            click.echo(f"✅ Successfully removed '{description}' from favorites")
+        else:
+            click.echo(f"❌ Failed to remove '{description}' from favorites")
+
+    except Exception as e:
+        logger.error(f"Failed to remove favorite: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to remove favorite: {e}")
+
+
+@list_group.command("add-to-list")
+@click.argument("description", required=True)
+def list_add_favorite_to_list(description: str):
+    """Add a favorite item to the shopping list."""
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Add favorite to list command called: {description}")
+
+    client = get_meijer_client()
+
+    try:
+        logger.debug("Adding favorite to shopping list")
+        result = client.favorites.add_favorite_to_shopping_list_by_description(
+            description
+        )
+
+        if result:
+            click.echo(f"✅ Successfully added '{description}' to shopping list")
+            click.echo(f"   Item ID: {result.list_item_id}")
+        else:
+            click.echo(f"❌ Failed to add '{description}' to shopping list")
+
+    except Exception as e:
+        logger.error(f"Failed to add favorite to list: {e}", exc_info=True)
+        raise click.ClickException(f"❌ Failed to add favorite to list: {e}")
 
 
 @list_group.command("clear")
