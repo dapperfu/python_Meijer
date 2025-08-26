@@ -285,6 +285,7 @@ class CategoriesManager:
             If there's an error retrieving category products
         """
         try:
+            # First try the direct category products endpoint
             endpoint = self.endpoints["category_products"].format(
                 category_id=category_id
             )
@@ -309,16 +310,92 @@ class CategoriesManager:
                 data = response.json()
                 return self._parse_category_products_response(data)
             else:
-                self.logger.error(
-                    f"Category products request failed: {response.status_code} - {response.text}"
+                self.logger.warning(
+                    f"Category products endpoint failed: {response.status_code} - {response.text}"
                 )
-                raise MeijerError(
-                    f"Failed to get category products: {response.status_code}"
+                # Fallback to search-based approach
+                return self._get_category_products_via_search(
+                    category_id, store_id, page, limit, sort_by
                 )
 
         except Exception as e:
-            self.logger.error(f"Error getting category products: {e}")
-            raise MeijerError(f"Failed to get category products: {str(e)}") from e
+            self.logger.warning(f"Category products endpoint error: {e}")
+            # Fallback to search-based approach
+            return self._get_category_products_via_search(
+                category_id, store_id, page, limit, sort_by
+            )
+
+    def _get_category_products_via_search(
+        self,
+        category_id: str,
+        store_id: Optional[str] = None,
+        page: int = 1,
+        limit: int = 24,
+        sort_by: str = "relevance",
+    ) -> List[CategoryProduct]:
+        """
+        Get category products using search functionality as fallback.
+
+        This method is used when the direct category products endpoint fails.
+        """
+        try:
+            self.logger.info(f"Using search fallback for category {category_id}")
+
+            # Get category name for search
+            categories = self.get_categories(store_id)
+            category_name = None
+
+            # Find the category by ID
+            for category in categories:
+                if category.id == category_id:
+                    category_name = category.name
+                    break
+
+            if not category_name:
+                self.logger.warning(
+                    f"Category {category_id} not found, using ID as search term"
+                )
+                category_name = category_id
+
+            # Use search functionality to find products in this category
+            if hasattr(self.client, "search") and self.client.search:
+                search_results = self.client.search.search(category_name, limit, page)
+
+                # Convert search results to CategoryProduct format
+                products = []
+                for item in search_results.results:
+                    product = CategoryProduct(
+                        product_id=item.upc or str(item.id)
+                        if hasattr(item, "id")
+                        else "",
+                        name=item.title or "",
+                        price=item.price,
+                        original_price=item.original_price
+                        if hasattr(item, "original_price")
+                        else None,
+                        image_url=item.image_url
+                        if hasattr(item, "image_url")
+                        else None,
+                        description=item.description
+                        if hasattr(item, "description")
+                        else None,
+                        category_id=category_id,
+                        store_id=store_id,
+                        is_on_sale=item.is_on_sale
+                        if hasattr(item, "is_on_sale")
+                        else False,
+                    )
+                    products.append(product)
+
+                self.logger.info(f"Found {len(products)} products via search fallback")
+                return products
+            else:
+                self.logger.warning("Search functionality not available for fallback")
+                return []
+
+        except Exception as e:
+            self.logger.error(f"Search fallback failed: {e}")
+            return []
 
     def get_featured_products(
         self, category_id: str, store_id: Optional[str] = None, limit: int = 10
@@ -363,16 +440,20 @@ class CategoriesManager:
                 data = response.json()
                 return self._parse_category_products_response(data)
             else:
-                self.logger.error(
-                    f"Featured products request failed: {response.status_code} - {response.text}"
+                self.logger.warning(
+                    f"Featured products endpoint failed: {response.status_code} - {response.text}"
                 )
-                raise MeijerError(
-                    f"Failed to get featured products: {response.status_code}"
-                )
+                # Fallback to search-based approach for featured products
+                return self._get_category_products_via_search(
+                    category_id, store_id, 1, limit, "relevance"
+                )[:limit]
 
         except Exception as e:
-            self.logger.error(f"Error getting featured products: {e}")
-            raise MeijerError(f"Failed to get featured products: {str(e)}") from e
+            self.logger.warning(f"Featured products endpoint error: {e}")
+            # Fallback to search-based approach for featured products
+            return self._get_category_products_via_search(
+                category_id, store_id, 1, limit, "relevance"
+            )[:limit]
 
     def search_categories(
         self, query: str, store_id: Optional[str] = None, limit: int = 20

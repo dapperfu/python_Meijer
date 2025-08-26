@@ -90,7 +90,7 @@ class CouponOperations:
                         f"API reports {total_count} total coupons available"
                     )
 
-                coupons = self.client.coupons.create_meijer_coupons_from_response(
+                coupons = self.client.coupons.create_coupons_from_response(
                     response_data
                 )
                 self.logger.info(
@@ -127,7 +127,7 @@ class CouponOperations:
 
             if use_pagination and limit > 50:
                 # Use pagination for large requests to get all available coupons
-                all_coupons = []
+                all_coupons: List[Coupon] = []
                 current_page = 1
                 page_size = 50  # Optimal page size for the API
                 total_coupons = None
@@ -179,10 +179,8 @@ class CouponOperations:
                                 f"Total coupons available: {total_coupons}"
                             )
 
-                        page_coupons = (
-                            self.client.coupons.create_meijer_coupons_from_response(
-                                page_data
-                            )
+                        page_coupons = self.client.coupons.create_coupons_from_response(
+                            page_data
                         )
 
                         if not page_coupons:

@@ -8,9 +8,10 @@ This module provides coupon management functionality including:
 """
 
 import json
-from typing import List, Optional, Dict, Any
-from .models.coupons import Coupon, CouponCollection, CouponType, CouponStatus
-from .exceptions import MeijerAPIError, CouponError
+from typing import Any, Dict, List, Optional
+
+from .exceptions import CouponError, MeijerAPIError
+from .models.coupons import Coupon, CouponCollection, CouponStatus, CouponType
 
 
 class CouponManager:
@@ -90,34 +91,41 @@ class CouponManager:
 
         return coupon
 
-    def _map_coupon_type(self, api_type: Optional[str]) -> CouponType:
+    def _map_coupon_type(self, api_type: Optional[bool]) -> CouponType:
         """Map API coupon type to our enum."""
-        if not api_type:
+        if api_type is None:
             return CouponType.DIGITAL
 
-        type_mapping = {
-            "manufacturer": CouponType.MANUFACTURER,
-            "store": CouponType.STORE,
-            "digital": CouponType.DIGITAL,
-            "printable": CouponType.PRINTABLE,
-            "reward": CouponType.REWARD,
-        }
+        # For boolean manufacturerCoupon field, map to appropriate type
+        if api_type:
+            return CouponType.MANUFACTURER
+        else:
+            return CouponType.STORE
 
-        return type_mapping.get(api_type.lower(), CouponType.DIGITAL)
-
-    def _map_coupon_status(self, api_status: Optional[str]) -> CouponStatus:
+    def _map_coupon_status(self, api_status: Optional[bool]) -> CouponStatus:
         """Map API coupon status to our enum."""
-        if not api_status:
+        if api_status is None:
             return CouponStatus.ACTIVE
 
-        status_mapping = {
-            "active": CouponStatus.ACTIVE,
-            "expired": CouponStatus.EXPIRED,
-            "used": CouponStatus.USED,
-            "inactive": CouponStatus.INACTIVE,
+        # For boolean isClipped field, map to appropriate status
+        if api_status:
+            return CouponStatus.ACTIVE  # Clipped coupons are active
+        else:
+            return CouponStatus.ACTIVE  # Available coupons are also active
+
+    def _map_discount_type(self, discount_type_id: Optional[int]) -> Optional[str]:
+        """Map API discount type ID to string representation."""
+        if discount_type_id is None:
+            return None
+
+        type_mapping = {
+            1: "dollar",  # Fixed dollar amount off
+            2: "percentage",  # Percentage off
+            3: "bogo",  # Buy one get one
+            4: "free",  # Free item
         }
 
-        return status_mapping.get(api_status.lower(), CouponStatus.ACTIVE)
+        return type_mapping.get(discount_type_id, "unknown")
 
     def clip(self, coupon_id: str) -> bool:
         """Clip a specific coupon by ID."""
@@ -335,7 +343,7 @@ class CouponManager:
             self.refresh()
 
         # Restore from backup
-        restored_count = self._coupons_cache.restore_from_backup(backup_filepath)
+        self._coupons_cache.restore_from_backup(backup_filepath)
 
         # Count how many were clipped
         clipped_count = self._coupons_cache.get_clipped_count()
@@ -364,9 +372,65 @@ class CouponManager:
             if not coupons_data:
                 return []
 
-            # Parse the coupons data
-            collection = self._parse_coupons(coupons_data)
-            return collection.coupons
+            # Parse the coupons data with proper field mapping
+            coupons = []
+            for coupon_data in coupons_data:
+                try:
+                    # Extract data from the nested offer structure
+                    offer_data = coupon_data.get("offer", {})
+
+                    # Map the API fields to our Coupon model
+                    coupon = Coupon(
+                        id=str(
+                            offer_data.get(
+                                "meijerOfferId", coupon_data.get("id", "") or ""
+                            )
+                        ),
+                        name=offer_data.get(
+                            "title", coupon_data.get("title", "") or ""
+                        ),
+                        description=offer_data.get(
+                            "description", coupon_data.get("description")
+                        ),
+                        coupon_type=self._map_coupon_type(
+                            offer_data.get("manufacturerCoupon")
+                        ),
+                        status=self._map_coupon_status(coupon_data.get("isClipped")),
+                        clipped=coupon_data.get("isClipped", False),
+                        auto_clipped=coupon_data.get("isAutoClipped", False),
+                        discount_amount=offer_data.get("redeemAmount"),
+                        discount_type=self._map_discount_type(
+                            offer_data.get("discountTypeId")
+                        ),
+                        minimum_purchase=offer_data.get("conditionValue"),
+                        redeem_amount=offer_data.get("redeemAmount"),
+                        start_date=offer_data.get("redemptionStartDate"),
+                        end_date=offer_data.get("redemptionEndDate"),
+                        created_date=offer_data.get("modifiedTs"),
+                        modified_date=offer_data.get("modifiedTs"),
+                        product_ids=[],  # Could be extracted from other fields if available
+                        category=offer_data.get("category", {}).get("segmentName"),
+                        department=offer_data.get("departments", [{}])[0].get(
+                            "categoryName"
+                        )
+                        if offer_data.get("departments")
+                        else None,
+                        brand=None,  # Not available in this API response
+                        image_url=offer_data.get("imageURL"),
+                        large_image_url=offer_data.get("largeImageURL"),
+                        terms_and_conditions=offer_data.get("termsAndConditions"),
+                        restrictions=[],  # Could be extracted from other fields if available
+                        metadata=coupon_data,
+                    )
+                    coupons.append(coupon)
+                except Exception as e:
+                    # Log error but continue processing other coupons
+                    print(
+                        f"Error parsing coupon {coupon_data.get('id', 'unknown')}: {e}"
+                    )
+                    continue
+
+            return coupons
 
         except Exception as e:
             print(f"Error creating coupons from response: {e}")
@@ -383,7 +447,4 @@ class CouponManager:
         return f"CouponManager(cache_size={len(self._coupons_cache) if self._coupons_cache else 0})"
 
 
-class CouponError(MeijerAPIError):
-    """Exception raised for coupon-related errors."""
 
-    pass

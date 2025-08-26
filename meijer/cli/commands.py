@@ -1289,9 +1289,18 @@ def coupons_list(clipped: bool, available: bool):
                 "✅ Clipped" if getattr(coupon, "clipped", False) else "⭕ Available"
             )
             description = getattr(coupon, "description", "") or ""
-            expires = getattr(coupon, "redemption_end_date", "") or ""
 
-            table.add_row(str(i), status, coupon.title, description, expires)
+            # Convert datetime to string for display
+            end_date = getattr(coupon, "end_date", None)
+            if end_date:
+                if hasattr(end_date, "strftime"):
+                    expires = end_date.strftime("%Y-%m-%d")
+                else:
+                    expires = str(end_date)
+            else:
+                expires = ""
+
+            table.add_row(str(i), status, coupon.name, description, expires)
 
         console.print(table)
 
