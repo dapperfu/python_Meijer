@@ -17,19 +17,20 @@ for complete token refresh capability.
 """
 
 import json
-import os
-from typing import Dict, Any, Tuple
 import logging
+import os
 import re
+from typing import Any, Dict, List, Tuple
 from urllib.parse import parse_qs, urlparse
 
+# Import mitmproxy modules with fallback
 try:
     from mitmproxy import io
-    from mitmproxy.http import HTTPFlow
+
+    MITMPROXY_AVAILABLE = True
 except ImportError:
     # Graceful fallback if mitmproxy is not available
-    HTTPFlow = None
-    io = None
+    MITMPROXY_AVAILABLE = False
 
 try:
     from .auth import get_meijer_config_path
@@ -54,14 +55,14 @@ class MeijerAuthLogAnalyzer:
             log_file: Path to the mitmproxy log file
         """
         self.log_file = log_file
-        self.flows = []
-        self.auth_tokens = {}
+        self.flows: list[Any] = []
+        self.auth_tokens: dict[str, Any] = {}
         # Use the correct config path that TokenStorage expects
         self.auth_file = get_meijer_config_path("auth.json")
 
     def load_flows(self) -> bool:
         """Load flows from mitmproxy log file."""
-        if not io:
+        if not MITMPROXY_AVAILABLE:
             logger.error(
                 "mitmproxy not available. Please install: pip install mitmproxy"
             )
@@ -87,7 +88,7 @@ class MeijerAuthLogAnalyzer:
             logger.error(f"Failed to load flows: {e}")
             return False
 
-    def extract_oauth2_parameters(self, url: str) -> Dict[str, str]:
+    def extract_oauth2_parameters(self, url: str) -> Dict[str, List[str]]:
         """Extract OAuth2 parameters from URL query string."""
         try:
             parsed = urlparse(url)
@@ -407,7 +408,7 @@ class MeijerAuthLogAnalyzer:
         )
 
         # Full login requires both context and actual tokens
-        full_login = has_auth_context and token_data.get("access_token")
+        full_login = bool(has_auth_context and token_data.get("access_token"))
 
         # Store authentication context even if we don't have final tokens
         if has_auth_context:
@@ -445,7 +446,7 @@ class MeijerAuthLogAnalyzer:
         Returns:
             Dictionary with validation results and recommendations
         """
-        validation = {
+        validation: Dict[str, Any] = {
             "can_refresh": False,
             "missing_components": [],
             "recommendations": [],
@@ -507,6 +508,9 @@ class MeijerAuthLogAnalyzer:
         """
         Search for api.meijer.com calls to extract bearer tokens and subscription keys.
 
+        This method performs a reverse search through the log file, finding the LAST
+        (most recent chronologically) api.meijer.com call with a Bearer token.
+
         Returns:
             Tuple of (found, token_data)
         """
@@ -517,6 +521,8 @@ class MeijerAuthLogAnalyzer:
         bearer_requests = []
 
         for flow in self.flows:
+            if not hasattr(flow, "request") or not hasattr(flow.request, "pretty_url"):
+                continue
             url = flow.request.pretty_url
             method = flow.request.method
             timestamp = flow.timestamp_start
@@ -525,6 +531,8 @@ class MeijerAuthLogAnalyzer:
                 api_calls.append({"timestamp": timestamp, "url": url, "method": method})
 
                 # Extract bearer token from Authorization header
+                if not hasattr(flow.request, "headers"):
+                    continue
                 auth_header = flow.request.headers.get("Authorization", "")
                 if auth_header.startswith("Bearer "):
                     # Extract subscription key from ocp-apim-subscription-key header
@@ -583,9 +591,10 @@ class MeijerAuthLogAnalyzer:
         if bearer_requests:
             logger.info(f"Found {len(bearer_requests)} API calls with Bearer tokens")
 
-            # Sort by timestamp (newest first) and use the most recent
-            bearer_requests.sort(key=lambda x: x["timestamp"], reverse=True)
-            latest = bearer_requests[0]
+            # REVERSE SEARCH: Find the LAST api.meijer.com call with Bearer token in the log
+            # This ensures we get the most recent token chronologically
+            # Since flows are loaded in chronological order, bearer_requests[-1] is the latest
+            latest = bearer_requests[-1]
 
             token_data.update(
                 {
@@ -600,7 +609,7 @@ class MeijerAuthLogAnalyzer:
             )
 
             logger.info(
-                f"✅ Using Bearer token from most recent API call: {latest['url']}"
+                f"✅ Using Bearer token from last API call in log: {latest['url']}"
             )
             logger.info(f"   Timestamp: {latest['timestamp']}")
             logger.info(f"   Method: {latest['method']}")
