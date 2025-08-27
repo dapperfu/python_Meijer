@@ -29,7 +29,7 @@ show_logs() {
         echo "❌ No logs/ directory found"
     fi
     echo ""
-    echo "💡 Extract authentication tokens from log files as needed for your project"
+    echo "💡 Log files are ready for analysis in your project"
 }
 
 # Main script logic
