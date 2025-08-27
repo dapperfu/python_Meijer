@@ -4,9 +4,9 @@ Demo script for the authenticated Meijer client.
 Shows how to use browser automation for initial landing and then requests for authentication.
 """
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
 
 # Add the parent directory to the path so we can import meijer

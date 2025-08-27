@@ -51,7 +51,7 @@ def test_enhanced_cart_import():
     print("\n🛒 Testing EnhancedCartV2 import...")
 
     try:
-        from meijer.enhanced_cart_v2 import EnhancedCartV2, CartOperationResult
+        from meijer.enhanced_cart_v2 import CartOperationResult, EnhancedCartV2
 
         print("✅ EnhancedCartV2 imported successfully")
         print(f"   EnhancedCartV2 class: {EnhancedCartV2}")

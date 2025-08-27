@@ -7,8 +7,9 @@ and helps identify why GET requests are being made instead of POST.
 """
 
 import sys
-import requests
 from pathlib import Path
+
+import requests
 
 # Add the meijer package to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))

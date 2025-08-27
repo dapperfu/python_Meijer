@@ -28,9 +28,9 @@ This script demonstrates actual cart functionality including:
 Based on the actual cart API endpoints found in mitmproxy logs.
 """
 
-import sys
-import os
 import logging
+import os
+import sys
 
 # Add the project root to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

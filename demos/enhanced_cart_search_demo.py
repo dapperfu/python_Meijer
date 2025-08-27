@@ -29,8 +29,8 @@ import sys
 sys.path.insert(0, "..")
 
 from meijer.client import Meijer
-from meijer.enhanced_search import UPCSearchResult
 from meijer.enhanced_cart_v2 import CartOperationResult
+from meijer.enhanced_search import UPCSearchResult
 
 
 async def demo_enhanced_search(client: Meijer) -> None:

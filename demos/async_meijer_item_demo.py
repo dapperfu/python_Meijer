@@ -27,7 +27,7 @@ async def demo_async_meijer_item():
     try:
         # Import the client and models
         from meijer import Meijer
-        from meijer.models import create_meijer_item, MeijerItem
+        from meijer.models import MeijerItem, create_meijer_item
 
         print("1. 🔐 Initializing Meijer client...")
         client = Meijer()

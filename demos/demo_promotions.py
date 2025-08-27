@@ -24,12 +24,12 @@ including dynamic pricing, stackable discounts, loyalty rewards, and deal optimi
 import asyncio
 from datetime import datetime, timedelta
 
-from meijer import PromotionsManager, Promotion, PromotionRule, FlashSale
+from meijer import FlashSale, Promotion, PromotionRule, PromotionsManager
 from meijer.promotions import (
-    PromotionType,
-    PromotionStatus,
     DiscountType,
     EligibilityType,
+    PromotionStatus,
+    PromotionType,
 )
 
 

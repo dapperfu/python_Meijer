@@ -10,6 +10,7 @@ This demonstrates:
 
 import asyncio
 import logging
+
 from meijer.models import create_meijer_item
 
 # Configure logging

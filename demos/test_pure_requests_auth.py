@@ -4,10 +4,10 @@ Focused test script for the pure requests authentication method.
 This script tests the exact flow replication from the captured logs.
 """
 
-import sys
-import logging
-import time
 import json
+import logging
+import sys
+import time
 from pathlib import Path
 
 # Add the parent directory to the path so we can import the meijer module

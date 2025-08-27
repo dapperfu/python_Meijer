@@ -6,8 +6,8 @@ This script demonstrates the enhanced BOGO detection functionality
 in the Meijer Shop & Scan module.
 """
 
-import sys
 import os
+import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

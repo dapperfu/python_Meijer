@@ -6,8 +6,8 @@ This script demonstrates the comprehensive favorites functionality
 including adding, removing, searching, and managing favorites.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the parent directory to the path so we can import meijer
@@ -15,9 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from meijer import Meijer
 from meijer.models.favorites import (
-    FavoriteListItem,
     AddFavoritesRequest,
     DeleteFavoritesRequest,
+    FavoriteListItem,
 )
 
 

@@ -21,8 +21,8 @@ This script demonstrates the comprehensive account management capabilities
 including profile management, receipts, orders, savings, and preferences.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the parent directory to the path to import meijer

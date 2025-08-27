@@ -6,8 +6,8 @@ This script demonstrates how to use the mPerks client to fetch real rewards
 from the Meijer API and create reward objects from the actual JSON responses.
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add the meijer package to the path

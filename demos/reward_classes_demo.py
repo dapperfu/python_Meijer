@@ -11,17 +11,17 @@ This script demonstrates the reward class hierarchy and shows how to:
 """
 
 import sys
-from pathlib import Path
-from decimal import Decimal
 from datetime import datetime, timedelta
+from decimal import Decimal
+from pathlib import Path
 
 # Add the meijer package to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from meijer.models.rewards import (
     RewardFactory,
-    RewardStatus,
     RewardMetadata,
+    RewardStatus,
     create_example_rewards,
 )
 

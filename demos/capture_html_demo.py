@@ -49,8 +49,8 @@ def demo_html_capture():
             print("\n📁 Captured files in /tmp/:")
 
             # List captured files
-            import os
             import glob
+            import os
 
             captured_files = glob.glob("/tmp/meijer_auth_*.html")
             if captured_files:
