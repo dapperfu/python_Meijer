@@ -31,7 +31,7 @@ if analyzer.load_flows():
 
     if auth_flows:
         flow = auth_flows[0]
-        print(f"\nFirst auth flow:")
+        print("\nFirst auth flow:")
         print(f"  Method: {flow.request.method}")
         print(f"  URL: {flow.request.pretty_url}")
         print(

@@ -7,8 +7,7 @@ favorites to shopping list items.
 """
 
 import json
-import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 from .exceptions import MeijerAuthenticationError

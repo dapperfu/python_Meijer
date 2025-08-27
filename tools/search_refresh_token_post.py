@@ -40,7 +40,7 @@ def search_refresh_token_in_post(log_path: Path) -> None:
             if post_match:
                 client_id = post_match.group(1)
                 refresh_token = post_match.group(2)
-                print(f"🎯 REFRESH TOKEN FOUND!")
+                print("🎯 REFRESH TOKEN FOUND!")
                 print(f"   Client ID: {client_id}")
                 print(f"   Refresh Token: {refresh_token}")
                 print()
@@ -81,7 +81,7 @@ def search_refresh_token_in_post(log_path: Path) -> None:
 def search_for_oauth_tokens(log_path: Path) -> None:
     """Search for OAuth tokens in the log file."""
 
-    print(f"\n🔍 SEARCHING FOR OAUTH TOKENS...")
+    print("\n🔍 SEARCHING FOR OAUTH TOKENS...")
     print("=" * 80)
 
     try:
@@ -122,12 +122,12 @@ def search_for_oauth_tokens(log_path: Path) -> None:
 
                     try:
                         context_str = context.decode("utf-8", errors="ignore")
-                        print(f"  First occurrence context:")
+                        print("  First occurrence context:")
                         print(f"    {context_str[:300]}...")
                     except Exception:
-                        print(f"  Could not decode context")
+                        print("  Could not decode context")
             else:
-                print(f"  ❌ Not found")
+                print("  ❌ Not found")
 
     except Exception as e:
         print(f"Error during OAuth token search: {e}")
@@ -136,7 +136,7 @@ def search_for_oauth_tokens(log_path: Path) -> None:
 def search_for_specific_flow(log_path: Path) -> None:
     """Search for the specific login flow sequence."""
 
-    print(f"\n🔍 SEARCHING FOR LOGIN FLOW SEQUENCE...")
+    print("\n🔍 SEARCHING FOR LOGIN FLOW SEQUENCE...")
     print("=" * 80)
 
     try:
@@ -172,7 +172,7 @@ def search_for_specific_flow(log_path: Path) -> None:
                     context_str = context.decode("utf-8", errors="ignore")
                     print(f"    Context: {context_str[:150]}...")
                 except Exception:
-                    print(f"    Could not decode context")
+                    print("    Could not decode context")
             else:
                 print(f"  ❌ {pattern}: Not found")
 

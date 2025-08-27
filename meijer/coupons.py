@@ -10,7 +10,7 @@ This module provides coupon management functionality including:
 import json
 from typing import Any, Dict, List, Optional
 
-from .exceptions import CouponError, MeijerAPIError
+from .exceptions import CouponError
 from .models.coupons import Coupon, CouponCollection, CouponStatus, CouponType
 
 
@@ -445,6 +445,3 @@ class CouponManager:
     def __repr__(self) -> str:
         """Detailed representation of the coupon manager."""
         return f"CouponManager(cache_size={len(self._coupons_cache) if self._coupons_cache else 0})"
-
-
-

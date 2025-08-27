@@ -9,7 +9,6 @@ This script demonstrates:
 """
 
 import time
-from typing import Optional
 
 from meijer import MeijerClient
 from meijer.exceptions import MeijerAuthenticationError
@@ -72,7 +71,7 @@ def demonstrate_dedup(client):
             deduplicated_count = result.get("deduplicated_count", 0)
             removed_duplicates = result.get("removed_duplicates", 0)
 
-            print(f"\n📊 Deduplication Results:")
+            print("\n📊 Deduplication Results:")
             print(f"   Original items: {original_count}")
             print(f"   After dedup: {deduplicated_count}")
             print(f"   Duplicates removed: {removed_duplicates}")

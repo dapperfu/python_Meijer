@@ -3,7 +3,6 @@
 Search binary mitmproxy log file for specific endpoints and tokens.
 """
 
-import re
 from pathlib import Path
 
 
@@ -96,7 +95,7 @@ def search_binary_log(log_path: Path) -> None:
 def search_for_specific_urls(log_path: Path) -> None:
     """Search for the specific URLs mentioned in the user query."""
 
-    print(f"\n🔍 SEARCHING FOR SPECIFIC URLS...")
+    print("\n🔍 SEARCHING FOR SPECIFIC URLS...")
     print("=" * 80)
 
     target_urls = [
@@ -134,12 +133,12 @@ def search_for_specific_urls(log_path: Path) -> None:
 
                     try:
                         context_str = context.decode("utf-8", errors="ignore")
-                        print(f"  First occurrence context:")
+                        print("  First occurrence context:")
                         print(f"    {context_str[:300]}...")
                     except Exception:
-                        print(f"  Could not decode context")
+                        print("  Could not decode context")
             else:
-                print(f"  ❌ Not found")
+                print("  ❌ Not found")
 
         except Exception as e:
             print(f"  Error searching: {e}")
@@ -148,7 +147,7 @@ def search_for_specific_urls(log_path: Path) -> None:
 def search_for_tokens_in_context(log_path: Path) -> None:
     """Search for tokens in the context of id.meijer.com requests."""
 
-    print(f"\n🔍 SEARCHING FOR TOKENS IN ID.MEIJER.COM CONTEXT...")
+    print("\n🔍 SEARCHING FOR TOKENS IN ID.MEIJER.COM CONTEXT...")
     print("=" * 80)
 
     try:
@@ -195,9 +194,9 @@ def search_for_tokens_in_context(log_path: Path) -> None:
                     window_str = window.decode("utf-8", errors="ignore")
                     print(f"  Context: {window_str[:200]}...")
                 except Exception:
-                    print(f"  Could not decode context")
+                    print("  Could not decode context")
             else:
-                print(f"  No tokens found in window")
+                print("  No tokens found in window")
 
     except Exception as e:
         print(f"Error during token search: {e}")

@@ -55,7 +55,7 @@ def extract_refresh_token_context(log_path: Path) -> None:
 def extract_device_fingerprint_context(log_path: Path) -> None:
     """Extract context around device fingerprint endpoint."""
 
-    print(f"\n🔍 EXTRACTING DEVICE FINGERPRINT CONTEXT...")
+    print("\n🔍 EXTRACTING DEVICE FINGERPRINT CONTEXT...")
     print("=" * 80)
 
     try:
@@ -91,7 +91,7 @@ def extract_device_fingerprint_context(log_path: Path) -> None:
 def extract_login_redirect_context(log_path: Path) -> None:
     """Extract context around login token redirect."""
 
-    print(f"\n🔍 EXTRACTING LOGIN TOKEN REDIRECT CONTEXT...")
+    print("\n🔍 EXTRACTING LOGIN TOKEN REDIRECT CONTEXT...")
     print("=" * 80)
 
     try:
@@ -137,7 +137,7 @@ def extract_login_redirect_context(log_path: Path) -> None:
 def extract_bm_params_context(log_path: Path) -> None:
     """Extract context around _bm/get_params endpoint."""
 
-    print(f"\n🔍 EXTRACTING BM PARAMS CONTEXT...")
+    print("\n🔍 EXTRACTING BM PARAMS CONTEXT...")
     print("=" * 80)
 
     try:

@@ -76,7 +76,7 @@ def search_serversidesignal(log_path: Path) -> None:
 def search_for_bm_params_response(log_path: Path) -> None:
     """Search for the _bm/get_params response specifically."""
 
-    print(f"\n🔍 SEARCHING FOR _BM/GET_PARAMS RESPONSE...")
+    print("\n🔍 SEARCHING FOR _BM/GET_PARAMS RESPONSE...")
     print("=" * 80)
 
     try:
@@ -112,7 +112,7 @@ def search_for_bm_params_response(log_path: Path) -> None:
                     json_end = context_str.find("}", json_start)
                     if json_end != -1:
                         json_content = context_str[json_start : json_end + 1]
-                        print(f"🎯 JSON RESPONSE FOUND:")
+                        print("🎯 JSON RESPONSE FOUND:")
                         print(f"   Content: {json_content}")
 
                         # Look for serversidesignal in the JSON

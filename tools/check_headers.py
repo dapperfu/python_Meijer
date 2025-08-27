@@ -24,4 +24,4 @@ for i, flow in enumerate(api_flows[:5]):
     if auth_header != "NOT_FOUND":
         print(f"   AUTHORIZATION: {auth_header[:50]}...")
     else:
-        print(f"   AUTHORIZATION: NOT_FOUND")
+        print("   AUTHORIZATION: NOT_FOUND")

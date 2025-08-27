@@ -256,7 +256,15 @@ class Meijer:
         self.coupons = CouponManager(self)
         self.coupon_ops = CouponOperations(self)
         self.product_ops = ProductOperations(self)
-        self.search = Search(self)
+        # Initialize search functionality
+        try:
+            from .enhanced_search import EnhancedSearch
+
+            self.search = EnhancedSearch(self)
+            self.logger.info("Using enhanced search module")
+        except ImportError:
+            self.search = Search(self)
+            self.logger.info("Using fallback search module")
         self.shop_scan = ShopNScan(self)
         self.favorites = FavoritesManager(self)
 
@@ -293,12 +301,19 @@ class Meijer:
 
         # Initialize cart instance
         try:
-            from .cart import MeijerCart
+            from .enhanced_cart_v2 import EnhancedCartV2
 
-            self.cart = MeijerCart(self, store_id="217")
+            self.cart = EnhancedCartV2(self, store_id="217")
         except ImportError:
-            self.logger.warning("Cart module not available")
-            self.cart = None
+            self.logger.warning("Enhanced cart module not available")
+            try:
+                from .cart import MeijerCart
+
+                self.cart = MeijerCart(self, store_id="217")
+                self.logger.info("Using fallback cart module")
+            except ImportError:
+                self.logger.warning("Cart module not available")
+                self.cart = None
 
         # Add alias for CLI compatibility
         self.list = self.shopping_list
@@ -356,14 +371,14 @@ class Meijer:
         self.proxy_port = None
 
         # Rate limiting and caching for API efficiency
-        self._request_cache = {}  # Simple in-memory cache
-        self._last_request_time = {}  # Track last request time per endpoint
+        self._request_cache: Dict[str, Any] = {}  # Simple in-memory cache
+        self._last_request_time: Dict[str, float] = {}  # Track last request time per endpoint
         self._min_request_interval = (
             0.5  # Minimum seconds between requests to same endpoint
         )
 
         # Request deduplication
-        self._pending_requests = {}  # Track in-flight requests to avoid duplicates
+        self._pending_requests: Dict[str, Any] = {}  # Track in-flight requests to avoid duplicates
 
         # Set proxy settings
         if proxy:

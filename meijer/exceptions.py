@@ -78,6 +78,12 @@ class CouponError(MeijerError):
     pass
 
 
+class SearchError(MeijerError):
+    """Raised when search operations fail."""
+
+    pass
+
+
 class RegistrationError(MeijerError):
     """Raised when account registration operations fail."""
 
@@ -171,6 +177,10 @@ def handle_meijer_operation(
 
     except ShopScanError as e:
         logger.error(f"📱 Shop & Scan error in {operation_name}: {e}")
+        return None
+
+    except SearchError as e:
+        logger.error(f"🔍 Search error in {operation_name}: {e}")
         return None
 
     except MeijerAPIError as e:

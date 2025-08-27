@@ -29,7 +29,7 @@ def extract_complete_login_flow(log_path: Path) -> None:
 
             try:
                 context_str = context.decode("utf-8", errors="ignore")
-                print(f"Context around refresh token POST request:")
+                print("Context around refresh token POST request:")
                 print(context_str)
                 print()
 
@@ -62,7 +62,7 @@ def extract_complete_login_flow(log_path: Path) -> None:
 
             try:
                 context_str = context.decode("utf-8", errors="ignore")
-                print(f"Context around authorization code request:")
+                print("Context around authorization code request:")
                 print(context_str)
                 print()
 
@@ -93,7 +93,7 @@ def extract_complete_login_flow(log_path: Path) -> None:
 
             try:
                 context_str = context.decode("utf-8", errors="ignore")
-                print(f"Context around state token:")
+                print("Context around state token:")
                 print(context_str)
                 print()
 

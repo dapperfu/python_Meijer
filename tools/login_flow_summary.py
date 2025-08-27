@@ -37,8 +37,8 @@ def create_login_flow_summary(log_path: Path) -> None:
                     refresh_token = refresh_match.group(1)
                     tokens["refresh_token"] = refresh_token
                     print(f"✅ Refresh Token: {refresh_token}")
-                    print(f"   Context: POST request to id.meijer.com")
-                    print(f"   Usage: OAuth2 refresh token for re-authentication")
+                    print("   Context: POST request to id.meijer.com")
+                    print("   Usage: OAuth2 refresh token for re-authentication")
                 else:
                     print("❌ Could not extract refresh token")
             except Exception as e:
@@ -62,8 +62,8 @@ def create_login_flow_summary(log_path: Path) -> None:
                     auth_code = code_match.group(1)
                     tokens["authorization_code"] = auth_code
                     print(f"✅ Authorization Code: {auth_code}")
-                    print(f"   Context: OAuth2 authorization code flow")
-                    print(f"   Usage: Exchange for access/refresh tokens")
+                    print("   Context: OAuth2 authorization code flow")
+                    print("   Usage: Exchange for access/refresh tokens")
                 else:
                     print("❌ Could not extract authorization code")
             except Exception as e:
@@ -87,8 +87,8 @@ def create_login_flow_summary(log_path: Path) -> None:
                     state_token = state_match.group(1)
                     tokens["state_token"] = state_token
                     print(f"✅ State Token: {state_token}")
-                    print(f"   Context: Login redirect URL")
-                    print(f"   Usage: CSRF protection and state management")
+                    print("   Context: Login redirect URL")
+                    print("   Usage: CSRF protection and state management")
                 else:
                     print("❌ Could not extract state token")
             except Exception as e:
@@ -127,8 +127,8 @@ def create_login_flow_summary(log_path: Path) -> None:
                         token_key = f"serversidesignal_{i + 1}"
                         tokens[token_key] = signal_value
                         print(f"✅ Server Side Signal {i + 1}: {signal_value[:100]}...")
-                        print(f"   Context: _bm/get_params response")
-                        print(f"   Usage: Bot detection and device fingerprinting")
+                        print("   Context: _bm/get_params response")
+                        print("   Usage: Bot detection and device fingerprinting")
                     else:
                         print(f"❌ Could not extract server side signal {i + 1}")
                 except Exception as e:
