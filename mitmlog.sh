@@ -12,7 +12,7 @@ start_logging() {
     echo "🔌 SOCKS5 proxy available on 0.0.0.0:1080"
     echo "🌍 HTTP proxy available on 0.0.0.0:8080"
     echo "⏹️  Press Ctrl+C when done"
-    echo "🔑 After stopping, run 'make auth' to extract authentication tokens"
+    echo "🔑 After stopping, extract authentication tokens as needed"
     echo ""
     mkdir -p logs
     echo "📁 Logs will be stored in logs/ directory"
@@ -29,8 +29,7 @@ show_logs() {
         echo "❌ No logs/ directory found"
     fi
     echo ""
-    echo "💡 Use 'make auth' to extract tokens from the most recent log file"
-    echo "💡 Or specify a specific file: 'make auth FILE=logs/meijer_mitm_20250117_191500.log'"
+    echo "💡 Extract authentication tokens from log files as needed for your project"
 }
 
 # Main script logic
