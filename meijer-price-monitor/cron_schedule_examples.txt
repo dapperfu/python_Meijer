@@ -1,0 +1,74 @@
+# LEGO Price Collection Cron Job Examples
+# Copy one of these lines to your crontab (crontab -e)
+
+# ===========================================
+# RECOMMENDED SCHEDULES
+# ===========================================
+
+# Daily at 6:00 AM (before store opens)
+0 6 * * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# Twice daily: 6:00 AM and 6:00 PM
+0 6,18 * * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# Every 6 hours (4 times per day)
+0 */6 * * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# Weekdays only at 6:00 AM (Monday-Friday)
+0 6 * * 1-5 /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# ===========================================
+# FREQUENT MONITORING (for testing)
+# ===========================================
+
+# Every hour during business hours (8 AM - 8 PM)
+0 8-20 * * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# Every 30 minutes during business hours
+*/30 8-20 * * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# Every 15 minutes (very frequent - use with caution)
+*/15 * * * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# ===========================================
+# WEEKEND FOCUSED (LEGO sales often happen on weekends)
+# ===========================================
+
+# Saturday and Sunday at 8:00 AM
+0 8 * * 0,6 /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# Friday evening, Saturday morning, Sunday morning
+0 18 * * 5,0 6 * * 6 /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# ===========================================
+# MONTHLY SCHEDULE (for long-term tracking)
+# ===========================================
+
+# First day of every month at 6:00 AM
+0 6 1 * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# Every 15th of the month at 6:00 AM
+0 6 15 * * /projects/python_Meijer/meijer-price-monitor/cron_lego_price_collector.sh
+
+# ===========================================
+# CRON TIME FORMAT EXPLANATION
+# ===========================================
+# Format: minute hour day month day-of-week
+# 
+# minute: 0-59
+# hour: 0-23 (24-hour format)
+# day: 1-31
+# month: 1-12
+# day-of-week: 0-7 (0 and 7 are Sunday)
+#
+# Special characters:
+# * = any value
+# , = list of values (e.g., 1,3,5)
+# - = range of values (e.g., 1-5)
+# / = step values (e.g., */15 = every 15 minutes)
+#
+# Examples:
+# 0 6 * * *     = Every day at 6:00 AM
+# */30 8-20 * * * = Every 30 minutes from 8 AM to 8 PM
+# 0 6 * * 1-5   = Weekdays only at 6:00 AM
+# 0 6 1 * *     = First day of every month at 6:00 AM
