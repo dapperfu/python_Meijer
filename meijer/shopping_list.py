@@ -1198,6 +1198,12 @@ class MeijerList:
                 "total_items": total_items,
             }
 
+        # Track completion status before clearing the list
+        completion_status = {}
+        for item_data in sorted_items:
+            item = item_data["item"]
+            completion_status[item.name] = item.is_complete
+
         # Clear the current list
         self.logger.info("🗑️  Clearing current shopping list...")
         self.clear_list()
@@ -1205,6 +1211,7 @@ class MeijerList:
         # Re-add items in sorted order with minimal location notes
         self.logger.info("📝 Re-adding items in aisle order with ILC-based notes...")
         added_count = 0
+        items_to_complete = []  # Track items that need to be marked as completed
 
         for idx, item_data in enumerate(sorted_items):
             item = item_data["item"]
@@ -1338,6 +1345,10 @@ class MeijerList:
                 self.logger.info(
                     f"✅ Added: {item.name} (Location: {location_display})"
                 )
+
+                # Track if this item needs to be marked as completed
+                if completion_status.get(item.name, False):
+                    items_to_complete.append(item.name)
             else:
                 self.logger.warning(f"⚠️  Failed to re-add item: {item.name}")
 
@@ -1355,6 +1366,32 @@ class MeijerList:
         self.logger.info("🎯 Match Confidence Summary:")
         for confidence, count in confidence_counts.items():
             self.logger.info(f"   {confidence}: {count} item(s)")
+
+        # Restore completion status for items that were previously completed
+        if items_to_complete:
+            self.logger.info(
+                f"🔄 Restoring completion status for {len(items_to_complete)} items..."
+            )
+            completed_count = 0
+
+            # Get the current list to find the new item IDs
+            current_items = self.get()
+            for current_item in current_items:
+                if current_item.name in items_to_complete:
+                    success = self.complete_item(str(current_item.list_item_id))
+                    if success:
+                        completed_count += 1
+                        self.logger.info(
+                            f"✅ Restored completion status: {current_item.name}"
+                        )
+                    else:
+                        self.logger.warning(
+                            f"⚠️  Failed to restore completion status: {current_item.name}"
+                        )
+
+            self.logger.info(
+                f"🎯 Completion status restored for {completed_count}/{len(items_to_complete)} items"
+            )
 
         # Return the organized data structure
         return {
