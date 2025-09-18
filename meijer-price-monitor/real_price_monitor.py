@@ -124,56 +124,85 @@ class RealPriceMonitor:
             print(f"❌ Search failed: {e}")
             return []
 
-    def get_product_price_info(
-        self, upc: str, product_name: str
-    ) -> Optional[Dict[str, Any]]:
-        """Get price information by adding product to shopping list."""
+    def get_product_price_info(self, search_item) -> Optional[Dict[str, Any]]:
+        """Get price information from search results (Method 1 - Most Reliable)."""
         try:
-            # Add to shopping list
-            success = self.client.shopping_list.add_item_with_details(
-                upc=upc, quantity=1, description=product_name
-            )
+            upc = search_item.upc
+            product_name = search_item.title
+            
+            # Get store info
+            stores = self.client.get_stores()
+            store_id = str(stores[0].store_id) if stores else "unknown"
+            store_name = stores[0].name if stores else "Unknown Store"
 
-            if not success:
+            # Extract price from multiple sources in search results
+            price = None
+            original_price = None
+            sale_price = None
+            is_on_sale = False
+            is_clearance = False
+            
+            # Method 1: Check unit_price (most reliable)
+            if hasattr(search_item, 'unit_price') and search_item.unit_price:
+                price = float(search_item.unit_price)
+            
+            # Method 2: Check raw_data price
+            elif hasattr(search_item, 'raw_data') and search_item.raw_data:
+                raw_data = search_item.raw_data
+                if 'data' in raw_data and 'price' in raw_data['data']:
+                    price = float(raw_data['data']['price'])
+            
+            # Method 3: Check populated_details price
+            elif hasattr(search_item, 'populated_details') and search_item.populated_details:
+                populated = search_item.populated_details
+                if 'unitPrice' in populated:
+                    price = float(populated['unitPrice'])
+            
+            # Check for sale information
+            if hasattr(search_item, 'on_sale'):
+                is_on_sale = search_item.on_sale
+            
+            if hasattr(search_item, 'raw_data') and search_item.raw_data:
+                raw_data = search_item.raw_data
+                if 'data' in raw_data:
+                    data = raw_data['data']
+                    if 'sale' in data:
+                        is_on_sale = data['sale']
+                    if 'discountSalePriceValue' in data and data['discountSalePriceValue']:
+                        sale_price = float(data['discountSalePriceValue'])
+                        if not price:
+                            price = sale_price
+            
+            # Get aisle info from product detail
+            aisle = None
+            section = None
+            try:
+                product_detail = self.client.get_product_detail(upc, store_id)
+                if product_detail:
+                    aisle = product_detail.aisle_primary
+                    section = product_detail.section
+            except Exception:
+                pass
+
+            if price is None:
+                print(f"⚠️  No price found for {product_name}")
                 return None
 
-            # Get shopping list to find the item
-            items = self.client.shopping_list.get()
-            for item in items:
-                if item.item_part_number == upc:
-                    # Get store info
-                    stores = self.client.get_stores()
-                    store_id = str(stores[0].store_id) if stores else "unknown"
-                    store_name = stores[0].name if stores else "Unknown Store"
-
-                    # Get aisle info from product detail
-                    aisle = None
-                    section = None
-                    try:
-                        product_detail = self.client.get_product_detail(upc, store_id)
-                        if product_detail:
-                            aisle = product_detail.aisle_primary
-                            section = product_detail.section
-                    except Exception:
-                        pass
-
-                    return {
-                        "upc": upc,
-                        "name": item.name,
-                        "store_id": store_id,
-                        "store_name": store_name,
-                        "price": getattr(item, "unit_price", None),
-                        "original_price": None,  # Not available from shopping list
-                        "sale_price": None,  # Not available from shopping list
-                        "is_clearance": False,  # Would need additional logic
-                        "is_on_sale": False,  # Would need additional logic
-                        "availability": "in_stock",  # Assume in stock if added
-                        "aisle": aisle,
-                        "section": section,
-                        "timestamp": datetime.now(),
-                    }
-
-            return None
+            return {
+                "upc": upc,
+                "name": product_name,
+                "store_id": store_id,
+                "store_name": store_name,
+                "price": price,
+                "original_price": original_price,
+                "sale_price": sale_price,
+                "is_clearance": is_clearance,
+                "is_on_sale": is_on_sale,
+                "availability": "in_stock",
+                "aisle": aisle,
+                "section": section,
+                "timestamp": datetime.now(),
+            }
 
         except Exception as e:
             print(f"❌ Error getting price for {upc}: {e}")
@@ -188,7 +217,7 @@ class RealPriceMonitor:
                 # Insert/update product
                 cursor.execute(
                     """
-                    INSERT OR REPLACE INTO products (upc, name, brand, category, updated_at)
+                    INSERT OR REPLACE INTO products (upc, product_name, brand, category, updated_at)
                     VALUES (?, ?, ?, ?, ?)
                 """,
                     (
@@ -203,7 +232,7 @@ class RealPriceMonitor:
                 # Insert/update store
                 cursor.execute(
                     """
-                    INSERT OR REPLACE INTO stores (store_id, name, created_at)
+                    INSERT OR REPLACE INTO stores (store_id, store_name, created_at)
                     VALUES (?, ?, ?)
                 """,
                     (price_info["store_id"], price_info["store_name"], datetime.now()),
@@ -214,8 +243,8 @@ class RealPriceMonitor:
                     """
                     INSERT INTO price_records 
                     (upc, store_id, price, original_price, sale_price, is_clearance, 
-                     is_on_sale, availability, aisle, section, timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     is_on_sale, availability, timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         price_info["upc"],
@@ -226,8 +255,6 @@ class RealPriceMonitor:
                         price_info["is_clearance"],
                         price_info["is_on_sale"],
                         price_info["availability"],
-                        price_info["aisle"],
-                        price_info["section"],
                         price_info["timestamp"],
                     ),
                 )
@@ -258,29 +285,32 @@ class RealPriceMonitor:
         if not products:
             return {"success": False, "error": "No products found"}
 
-        # Collect price information
+        # Collect price information using search results
         collected = 0
         failed = 0
 
-        for i, product in enumerate(products, 1):
-            print(f"\n📦 Processing {i}/{len(products)}: {product['name']}")
+        # Get search results for price extraction
+        search_results = self.search.search("LEGO", results_per_page=max_products)
+        
+        for i, search_item in enumerate(search_results.results, 1):
+            print(f"\n📦 Processing {i}/{len(search_results.results)}: {search_item.title}")
 
-            price_info = self.get_product_price_info(product["upc"], product["name"])
+            price_info = self.get_product_price_info(search_item)
 
             if price_info:
                 if self.store_price_record(price_info):
                     collected += 1
                     print(f"✅ Stored: {price_info['name']} - ${price_info['price']}")
                     if price_info["aisle"]:
-                        print(
-                            f"   Location: Aisle {price_info['aisle']}, Section {price_info['section']}"
-                        )
+                        print(f"   Location: Aisle {price_info['aisle']}, Section {price_info['section']}")
+                    if price_info["is_on_sale"]:
+                        print(f"   🏷️  ON SALE!")
                 else:
                     failed += 1
-                    print(f"❌ Failed to store: {product['name']}")
+                    print(f"❌ Failed to store: {search_item.title}")
             else:
                 failed += 1
-                print(f"❌ No price info: {product['name']}")
+                print(f"❌ No price info: {search_item.title}")
 
         return {
             "success": True,
@@ -296,7 +326,7 @@ class RealPriceMonitor:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    SELECT pr.*, p.name, s.name as store_name
+                    SELECT pr.*, p.product_name, s.store_name
                     FROM price_records pr
                     JOIN products p ON pr.upc = p.upc
                     JOIN stores s ON pr.store_id = s.store_id
@@ -324,9 +354,9 @@ class RealPriceMonitor:
                     """
                     SELECT 
                         pr.upc,
-                        p.name,
+                        p.product_name,
                         pr.store_id,
-                        s.name as store_name,
+                        s.store_name,
                         MIN(pr.price) as lowest_price,
                         MAX(pr.price) as highest_price,
                         (MAX(pr.price) - MIN(pr.price)) as price_drop,
