@@ -37,7 +37,7 @@ try:
     parent_dir = project_root.parent
     sys.path.insert(0, str(parent_dir))
 
-    from meijer.client import Meijer
+    from meijer import Meijer
     from meijer.search import Search
     from meijer.stores import MeijerStore
 
