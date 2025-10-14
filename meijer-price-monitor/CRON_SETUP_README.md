@@ -227,3 +227,5 @@ Once set up, your LEGO price collection will run automatically, building a compr
 - Create a web dashboard
 - Expand to other product categories
 - Implement automated notifications
+
+

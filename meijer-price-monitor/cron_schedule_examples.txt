@@ -72,3 +72,5 @@
 # */30 8-20 * * * = Every 30 minutes from 8 AM to 8 PM
 # 0 6 * * 1-5   = Weekdays only at 6:00 AM
 # 0 6 1 * *     = First day of every month at 6:00 AM
+
+

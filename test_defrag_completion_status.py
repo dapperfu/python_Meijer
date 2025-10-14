@@ -146,3 +146,5 @@ def test_defrag_completion_status():
 if __name__ == "__main__":
     success = test_defrag_completion_status()
     sys.exit(0 if success else 1)
+
+
