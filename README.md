@@ -704,6 +704,69 @@ pytest --cov=meijer
 4. Add tests for new functionality
 5. Submit a pull request
 
+## Development Tools
+
+### Modern Development Setup
+
+This project uses modern development tools for network analysis and testing:
+
+#### Hardware Setup
+- **Device**: Google Pixel 4a
+- **OS**: LineageOS 22 (Android 14)
+- **Root**: Required for certificate installation
+
+#### Software Tools
+
+1. **mitmproxy** - Network traffic analysis
+   - **Website**: https://mitmproxy.org/
+   - **GitHub**: https://github.com/mitmproxy/mitmproxy
+   - **Installation**: `pip install mitmproxy`
+   - **Usage**: `mitmproxy -p 8080` for traffic capture
+
+2. **LineageOS** - Custom Android ROM
+   - **Website**: https://lineageos.org/
+   - **GitHub**: https://github.com/LineageOS
+   - **Features**: "Always Trust User Certificates" option enabled
+
+3. **Cert Fixer** - Certificate management
+   - **Purpose**: Automatically installs and manages SSL certificates
+   - **Compatibility**: Works with LineageOS and mitmproxy
+   - **GitHub**: https://github.com/LineageOS/lineageos_android_packages_apps_CertFixer
+   - **Setup**: Install from [F-Droid](https://f-droid.org/) or GitHub releases
+
+#### Development Workflow
+
+1. **Network Analysis**:
+   ```bash
+   # Start mitmproxy
+   mitmproxy -p 8080
+   
+   # Configure device to use proxy
+   # IP: Your computer's IP
+   # Port: 8080
+   ```
+
+2. **Certificate Installation**:
+   - Enable "Always Trust User Certificates" in LineageOS settings
+   - Install mitmproxy certificate using Cert Fixer
+   - Verify certificate is trusted in system settings
+
+3. **Log Analysis**:
+   ```bash
+   # Analyze captured traffic
+   meijer auth log --mode full --log-file /path/to/logfile
+   
+   # Quick token extraction
+   meijer auth log --mode quick
+   ```
+
+#### Legacy Tools (Deprecated)
+
+The following tools are no longer recommended for development:
+- ~~Old Android devices with outdated security~~
+- ~~Manual certificate installation methods~~
+- ~~Outdated proxy tools~~
+
 ## License
 
 MIT License - see LICENSE file for details.
