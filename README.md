@@ -771,6 +771,40 @@ The following tools are no longer recommended for development:
 
 MIT License - see LICENSE file for details.
 
+## Documentation
+
+### Traffic Capture and Analysis
+
+Comprehensive guides for capturing and analyzing Meijer API traffic:
+
+- **[Makefile Logging Documentation](docs/MAKEFILE_LOGGING.md)** - Complete guide to using Makefile commands for traffic capture and analysis
+- **[Android WiFi Proxy Setup Guide](docs/ANDROID_PROXY_SETUP.md)** - Step-by-step instructions for configuring Android devices to use proxy servers
+- **[Traffic Capture Integration Guide](docs/TRAFFIC_CAPTURE_INTEGRATION.md)** - Complete workflow combining Makefile logging with Android proxy configuration
+
+### Quick Start for Traffic Capture
+
+1. **Start Proxy Server**:
+   ```bash
+   make log
+   ```
+
+2. **Configure Android Device**:
+   - Set WiFi proxy to your development machine's IP:8080
+   - Install mitmproxy certificate from `mitm.it`
+
+3. **Capture Traffic**:
+   - Use Meijer app on Android device
+   - Perform actions (login, browse, add to cart)
+
+4. **Extract Authentication**:
+   ```bash
+   make auth
+   ```
+
+### Additional Documentation
+
+- **[Documentation Overview](docs/README.md)** - Complete documentation index and navigation guide
+
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/dapperfu/python_Meijer/issues)
