@@ -13,8 +13,7 @@ A comprehensive command-line interface for managing Meijer shopping lists, coupo
 - 🛍️ **Cart Operations**: Add items, view contents, and manage fulfillment
 - 🏪 **Store Information**: Search stores, view details, and find nearby locations
 - ⛽ **Gas Station Data**: Check fuel prices and station information
-- 🔐 **Authentication**: Multiple login methods with token management
-- 📧 **Email 2FA**: Automated verification code handling
+- 🔐 **Authentication**: Token-based authentication with MITM proxy integration
 - 📊 **Data Export**: Multiple formats (CSV, Excel, JSON, Text)
 - 🎯 **Cost Estimation**: Smart pricing with multiple methodologies
 
@@ -164,7 +163,7 @@ meijer [COMMAND] --help
 
 ## Authentication Methods
 
-**⚠️ IMPORTANT**: Due to Meijer's security measures, traditional login methods no longer work. **MITM proxy capture is the only reliable authentication method.**
+**⚠️ IMPORTANT**: Due to Meijer's security measures, **MITM proxy capture is the only reliable authentication method.**
 
 ### 1. **MITM Proxy Log Analysis** (Required)
 - **Command**: `meijer auth log --mode full`
@@ -189,35 +188,6 @@ meijer [COMMAND] --help
 - **Requirements**: mitmproxy logs, any app activity
 
 ## Configuration
-
-### Email 2FA Setup
-
-1. **Create configuration**:
-   ```bash
-   meijer email-2fa setup
-   ```
-
-2. **Edit email.txt** with your server details:
-   ```ini
-   server=imap.gmail.com
-   port=993
-   username=your.email@gmail.com
-   password=your-app-password
-   use_ssl=true
-   ```
-
-3. **Test connection**:
-   ```bash
-   meijer email-2fa test
-   ```
-
-### Credentials Storage
-
-Store credentials in `~/.config/meijer/login.txt`:
-```txt
-your.username@email.com
-your_password
-```
 
 ### Proxy Configuration
 
@@ -303,11 +273,6 @@ meijer status
    - Ensure mitmproxy is running on specified port
    - Check firewall settings
    - Verify proxy host/port configuration
-
-3. **Email 2FA Problems**
-   - Verify IMAP server settings
-   - Check app password for Gmail
-   - Test connection with `meijer email-2fa test`
 
 ### Verbose Logging
 
