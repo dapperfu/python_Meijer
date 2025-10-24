@@ -62,7 +62,17 @@ reqs-edit:
 reqs-validate:
 	@echo "🔍 Validating requirements links and consistency"
 	@echo "================================================"
-	@${VENV}/bin/doorstop validate --all
+	@mkdir -p ./reqs/export
+	@${VENV}/bin/doorstop publish all ./reqs/export/ --text --width 80
+	@echo ""
+	@echo "📋 System Requirements (SYS):"
+	@cat ./reqs/export/SYS.txt
+	@echo ""
+	@echo "📋 Software Requirements (SRS):"
+	@cat ./reqs/export/SRS.txt
+	@echo ""
+	@echo "📋 Test Cases (TEST):"
+	@cat ./reqs/export/TEST.txt
 	@echo ""
 	@echo "✅ Validation complete!"
 
@@ -72,14 +82,17 @@ reqs-export:
 	@echo "========================"
 	@echo "Available formats: html, markdown, csv, yaml"
 	@echo ""
-	@read -p "Enter format (html/markdown/csv/yaml) [html]: " format; \
+	@read -p "Enter format (html/markdown/text) [html]: " format; \
 	format=$${format:-html}; \
 	read -p "Enter document prefix (SYS/SRS/TEST/all) [all]: " prefix; \
 	prefix=$${prefix:-all}; \
-	if [ "$$prefix" = "all" ]; then \
-		${VENV}/bin/doorstop publish --all --format $$format --output ./reqs/export/; \
+	mkdir -p ./reqs/export; \
+	if [ "$$format" = "html" ]; then \
+		${VENV}/bin/doorstop publish $$prefix ./reqs/export/ --html; \
+	elif [ "$$format" = "markdown" ]; then \
+		${VENV}/bin/doorstop publish $$prefix ./reqs/export/ --markdown; \
 	else \
-		${VENV}/bin/doorstop publish $$prefix --format $$format --output ./reqs/export/; \
+		${VENV}/bin/doorstop publish $$prefix ./reqs/export/ --text; \
 	fi
 	@echo ""
 	@echo "✅ Export complete! Files saved to ./reqs/export/"
@@ -89,8 +102,8 @@ reqs-publish:
 	@echo "📚 Publishing requirements documentation"
 	@echo "======================================="
 	@mkdir -p ./reqs/export
-	@${VENV}/bin/doorstop publish --all --format html --output ./reqs/export/
-	@${VENV}/bin/doorstop publish --all --format markdown --output ./reqs/export/
+	@${VENV}/bin/doorstop publish all ./reqs/export/ --html
+	@${VENV}/bin/doorstop publish all ./reqs/export/ --markdown
 	@echo ""
 	@echo "✅ Documentation published to ./reqs/export/"
 	@echo "📄 HTML: ./reqs/export/index.html"
@@ -100,7 +113,17 @@ reqs-publish:
 reqs-tree:
 	@echo "🌳 Requirements Document Tree"
 	@echo "============================"
-	@${VENV}/bin/doorstop tree
+	@mkdir -p ./reqs/export
+	@${VENV}/bin/doorstop publish all ./reqs/export/ --text --width 80
+	@echo ""
+	@echo "📋 System Requirements (SYS):"
+	@cat ./reqs/export/SYS.txt
+	@echo ""
+	@echo "📋 Software Requirements (SRS):"
+	@cat ./reqs/export/SRS.txt
+	@echo ""
+	@echo "📋 Test Cases (TEST):"
+	@cat ./reqs/export/TEST.txt
 	@echo ""
 	@echo "📋 Document hierarchy:"
 	@echo "  SYS  - System Requirements"

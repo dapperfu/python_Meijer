@@ -1,0 +1,10 @@
+1.0     SYS001
+
+        Child links: SRS001, SRS002, SRS003
+
+1.1     SYS002
+
+        Child links: SRS004, SRS005
+
+1.2     SYS003
+
