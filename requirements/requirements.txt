@@ -33,3 +33,6 @@ pre-commit>=3.5.0
 
 # Version management
 hatch>=1.14.0
+
+# Requirements management
+doorstop>=3.0.0

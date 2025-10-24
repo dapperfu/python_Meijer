@@ -59,6 +59,32 @@ meijer list defrag --show
 meijer list defrag --store-id 217 --show
 ```
 
+## Requirements Management
+
+This project uses [Doorstop](https://doorstop.readthedocs.io/) for requirements management with a hierarchical document structure:
+
+- **SYS**: System Requirements (high-level)
+- **SRS**: Software Requirements (detailed, child of SYS)  
+- **TEST**: Test Cases (validation, child of SRS)
+
+### Quick Start with Requirements
+
+```bash
+# Initialize requirements structure (one-time)
+make reqs-init
+
+# Add a new requirement
+make reqs-add
+
+# View requirements tree
+make reqs-tree
+
+# Export requirements documentation
+make reqs-publish
+```
+
+Requirements are stored in the `reqs/` directory. See `reqs/README.md` for detailed usage instructions.
+
 ## Installation
 
 ```bash

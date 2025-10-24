@@ -1,0 +1,93 @@
+# Requirements Management with Doorstop
+
+This project uses the `doorstop` Python package for requirements management with a hierarchical document structure.
+
+## Document Hierarchy
+
+The requirements are organized in a three-level hierarchy:
+
+- **SYS** (System Requirements): High-level system requirements
+- **SRS** (Software Requirements): Detailed software requirements (child of SYS)
+- **TEST** (Test Cases): Test cases and validation criteria (child of SRS)
+
+## File Structure
+
+```
+reqs/
+├── sys/           # System requirements (SYS)
+│   ├── .doorstop.yml
+│   └── SYS001.yml
+├── srs/           # Software requirements (SRS)
+│   ├── .doorstop.yml
+│   └── SRS001.yml
+└── test/          # Test cases (TEST)
+    ├── .doorstop.yml
+    └── TEST001.yml
+```
+
+## Workflow
+
+### Adding Requirements
+
+1. **System Requirements**: Use `make reqs-add` and select SYS
+2. **Software Requirements**: Use `make reqs-add` and select SRS
+3. **Test Cases**: Use `make reqs-add` and select TEST
+
+### Requirement ID Format
+
+- System Requirements: `SYS001`, `SYS002`, etc.
+- Software Requirements: `SRS001`, `SRS002`, etc.
+- Test Cases: `TEST001`, `TEST002`, etc.
+
+### Linking Requirements
+
+- Use parent-child relationships in doorstop
+- Reference requirements by ID in code comments
+- Link test cases to specific software requirements
+
+## Commands
+
+- `make reqs-init`: Initialize doorstop structure (one-time)
+- `make reqs-add`: Add new requirement (interactive)
+- `make reqs-edit`: Edit requirements
+- `make reqs-validate`: Validate requirement links
+- `make reqs-export`: Export to HTML/Markdown/CSV/YAML
+- `make reqs-publish`: Generate and publish requirement docs
+- `make reqs-tree`: View document tree structure
+- `make reqs-help`: Show requirements management help
+
+## StrictDoc Compatibility
+
+- Use doorstop as the primary requirements management tool
+- Export doorstop documents to formats compatible with StrictDoc when needed
+- Maintain parallel documentation where necessary
+- Follow StrictDoc grammar rules when generating StrictDoc files from doorstop exports
+
+## Migration Strategy
+
+- Existing requirements in `requirements/` directory remain unchanged
+- New requirements are added to doorstop
+- Gradual migration of existing requirements over time
+- Maintain backward compatibility with existing documentation
+
+## Best Practices
+
+1. **Requirement Writing**:
+   - Write clear, testable requirements
+   - Use consistent terminology
+   - Include acceptance criteria
+
+2. **Traceability**:
+   - Link requirements to code implementation
+   - Maintain parent-child relationships
+   - Document requirement changes
+
+3. **Validation**:
+   - Run `make reqs-validate` regularly
+   - Ensure all requirements have proper links
+   - Check for orphaned requirements
+
+4. **Documentation**:
+   - Export requirements for stakeholders
+   - Maintain up-to-date requirement documents
+   - Use consistent formatting and structure

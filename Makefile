@@ -10,6 +10,7 @@ include .makefile/development.mk
 include .makefile/traffic.mk
 include .makefile/quality.mk
 include .makefile/documentation.mk
+include .makefile/requirements.mk
 include .makefile/completion.mk
 include .makefile/version.mk
 
@@ -53,6 +54,16 @@ help:
 	@echo "  make docs-clean   - Clean documentation build artifacts"
 	@echo "  make docs-deploy  - Deploy documentation to GitHub Pages"
 	@echo "  make docs-validate - Validate documentation standards"
+	@echo ""
+	@echo "📋 Requirements Management:"
+	@echo "  make reqs-init    - Initialize doorstop structure (one-time)"
+	@echo "  make reqs-add     - Add new requirement (interactive)"
+	@echo "  make reqs-edit    - Edit requirements"
+	@echo "  make reqs-validate - Validate requirement links"
+	@echo "  make reqs-export  - Export to HTML/Markdown/CSV/YAML"
+	@echo "  make reqs-publish - Generate and publish requirement docs"
+	@echo "  make reqs-tree    - View document tree structure"
+	@echo "  make reqs-help    - Show requirements management help"
 	@echo ""
 	@echo "⌨️  Bash Completion:"
 	@echo "  make completion   - Show completion installation instructions"

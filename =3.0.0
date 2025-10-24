@@ -1,0 +1,36 @@
+Collecting doorstop
+  Downloading doorstop-3.0.2-py3-none-any.whl.metadata (5.6 kB)
+Collecting bottle<0.14.0,>=0.13.4 (from doorstop)
+  Downloading bottle-0.13.4-py2.py3-none-any.whl.metadata (1.6 kB)
+Collecting markdown<4.0.0,>=3.3.3 (from doorstop)
+  Using cached markdown-3.9-py3-none-any.whl.metadata (5.1 kB)
+Requirement already satisfied: openpyxl>=3.1.2 in ./venv/lib/python3.12/site-packages (from doorstop) (3.1.5)
+Collecting plantuml-markdown<4.0.0,>=3.4.2 (from doorstop)
+  Downloading plantuml_markdown-3.11.1-py3-none-any.whl.metadata (18 kB)
+Collecting python-frontmatter<2.0,>=1.0 (from doorstop)
+  Downloading python_frontmatter-1.1.0-py3-none-any.whl.metadata (4.1 kB)
+Collecting python-markdown-math<0.7,>=0.6 (from doorstop)
+  Downloading python_markdown_math-0.6-py2.py3-none-any.whl.metadata (2.9 kB)
+Requirement already satisfied: pyyaml<7.0,>=6.0 in ./venv/lib/python3.12/site-packages (from doorstop) (6.0.2)
+Requirement already satisfied: requests<3.0,>=2.0 in ./venv/lib/python3.12/site-packages (from doorstop) (2.32.5)
+Requirement already satisfied: six in ./venv/lib/python3.12/site-packages (from doorstop) (1.17.0)
+Collecting verchew<4.0.0,>=3.4.2 (from doorstop)
+  Downloading verchew-3.4.2-py3-none-any.whl.metadata (4.3 kB)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./venv/lib/python3.12/site-packages (from requests<3.0,>=2.0->doorstop) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./venv/lib/python3.12/site-packages (from requests<3.0,>=2.0->doorstop) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./venv/lib/python3.12/site-packages (from requests<3.0,>=2.0->doorstop) (2.5.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./venv/lib/python3.12/site-packages (from requests<3.0,>=2.0->doorstop) (2025.8.3)
+Requirement already satisfied: et-xmlfile in ./venv/lib/python3.12/site-packages (from openpyxl>=3.1.2->doorstop) (2.0.0)
+Downloading doorstop-3.0.2-py3-none-any.whl (1.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 7.3 MB/s  0:00:00
+
+Downloading bottle-0.13.4-py2.py3-none-any.whl (103 kB)
+Using cached markdown-3.9-py3-none-any.whl (107 kB)
+Downloading plantuml_markdown-3.11.1-py3-none-any.whl (20 kB)
+Downloading python_frontmatter-1.1.0-py3-none-any.whl (9.8 kB)
+Downloading python_markdown_math-0.6-py2.py3-none-any.whl (3.8 kB)
+Downloading verchew-3.4.2-py3-none-any.whl (10 kB)
+Installing collected packages: python-markdown-math, bottle, verchew, python-frontmatter, markdown, plantuml-markdown, doorstop
+
+
+Successfully installed bottle-0.13.4 doorstop-3.0.2 markdown-3.9 plantuml-markdown-3.11.1 python-frontmatter-1.1.0 python-markdown-math-0.6 verchew-3.4.2
